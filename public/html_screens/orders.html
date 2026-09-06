@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html class="h-full bg-[#fbf9f5]" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+        name="viewport" />
+    <title>Orders Inbox - Desktop & Mobile Dashboard</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&amp;display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'on-secondary-fixed': '#281800',
+                        'background': '#fbf9f5',
+                        'surface-dim': '#dbdad6',
+                        'on-surface-variant': '#4e4542',
+                        'inverse-primary': '#d4c3be',
+                        'surface': '#fbf9f5',
+                        'on-secondary': '#ffffff',
+                        'surface-container-highest': '#e4e2de',
+                        'primary-fixed-dim': '#d4c3be',
+                        'soft-blush': '#F5ECE7',
+                        'outline': '#807571',
+                        'tertiary': '#1a0903',
+                        'on-secondary-fixed-variant': '#584323',
+                        'primary-fixed': '#f1dfd9',
+                        'inverse-on-surface': '#f2f0ed',
+                        'secondary': '#725b38',
+                        'surface-container': '#efeeea',
+                        'surface-bright': '#fbf9f5',
+                        'espresso-deep': '#191312',
+                        'muted-gold': '#B39366',
+                        'tertiary-fixed': '#ffdbcd',
+                        'border-delicate': '#E8E2D9',
+                        'primary-container': '#2b211e',
+                        'tertiary-container': '#331e15',
+                        'outline-variant': '#d2c3c0',
+                        'primary': '#140c09',
+                        'on-error': '#ffffff',
+                        'secondary-container': '#fedeb2',
+                        'linen': '#F3EFEA',
+                        'on-primary-fixed': '#231917',
+                        'alabaster': '#FDFCFA',
+                        'on-tertiary-container': '#a48377',
+                        'on-secondary-container': '#78603e',
+                        'inverse-surface': '#30312e',
+                        'secondary-fixed-dim': '#e0c298',
+                        'tertiary-fixed-dim': '#e3bfb0',
+                        'on-primary-fixed-variant': '#504441',
+                        'surface-variant': '#e4e2de',
+                        'on-surface': '#1b1c1a',
+                        'surface-container-high': '#eae8e4',
+                        'on-tertiary-fixed': '#2a170e',
+                        'on-error-container': '#93000a',
+                        'on-primary': '#ffffff',
+                        'secondary-fixed': '#fedeb2',
+                        'on-background': '#1b1c1a',
+                        'error': '#ba1a1a',
+                        'on-primary-container': '#968783',
+                        'error-container': '#ffdad6',
+                        'on-tertiary': '#ffffff',
+                        'surface-container-low': '#f5f3ef',
+                        'surface-tint': '#695b58',
+                        'surface-container-lowest': '#ffffff',
+                        'on-tertiary-fixed-variant': '#5b4136'
+                    },
+                    fontFamily: {
+                        'sans': ['Plus Jakarta Sans', 'sans-serif']
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        @layer base {
+
+            html,
+            body {
+                width: 100%;
+                margin: 0;
+                padding: 0;
+                min-height: 100%;
+                background-color: #fbf9f5;
+                font-family: 'Plus Jakarta Sans', sans-serif;
+            }
+
+            .pb-safe {
+                padding-bottom: env(safe-area-inset-bottom, 0px);
+            }
+
+            .pt-safe {
+                padding-top: env(safe-area-inset-top, 0px);
+            }
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-background font-sans text-on-surface antialiased min-h-screen flex flex-col lg:flex-row selection:bg-secondary-fixed-dim selection:text-on-secondary-fixed">
+
+    <!-- DESKTOP FIXED LEFT SIDEBAR (Hidden on mobile, visible on lg:) -->
+    <aside
+        class="hidden lg:flex flex-col w-64 shrink-0 bg-surface-container-lowest border-r border-border-delicate min-h-screen sticky top-0 h-screen z-30 p-6 justify-between select-none shadow-sm">
+        <div class="flex flex-col gap-8">
+            <!-- Brand Emblem & Title -->
+            <div class="flex items-center gap-3 px-2">
+                <div
+                    class="w-11 h-11 rounded-2xl bg-primary-container text-on-primary flex items-center justify-center shadow-sm">
+                    <span class="material-symbols-outlined text-[26px] text-muted-gold">handyman</span>
+                </div>
+                <div class="flex flex-col">
+                    <h2 class="font-bold text-lg text-primary tracking-tight leading-none">Kala Sangam</h2>
+                    <span class="text-xs text-secondary font-medium mt-1">Artisan Studio • कला संगम</span>
+                </div>
+            </div>
+
+            <!-- Rural Local Sync Badge in Sidebar -->
+            <div
+                class="flex items-center gap-2 px-3 py-2 bg-surface-container-low rounded-xl text-on-surface-variant border border-border-delicate/40">
+                <span class="w-2.5 h-2.5 rounded-full bg-[#25D366] animate-pulse shrink-0"></span>
+                <div class="flex flex-col">
+                    <span class="text-xs font-bold text-on-surface">Offline Sync Ready</span>
+                    <span class="text-[11px] text-outline">सुरक्षित ऑफलाइन डेटा</span>
+                </div>
+            </div>
+
+            <!-- Desktop Nav Items with Large 48px+ Touch Targets -->
+            <nav class="flex flex-col gap-2" aria-label="Desktop App Navigation">
+                <!-- Home -->
+                <a href="#"
+                    class="flex items-center gap-3.5 px-4 min-h-[52px] h-[52px] rounded-2xl text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all font-semibold">
+                    <span class="material-symbols-outlined text-[24px]">home</span>
+                    <span class="text-[15px]">Home • आवास</span>
+                </a>
+                <!-- Catalog -->
+                <a href="catalogue.html"
+                    class="flex items-center gap-3.5 px-4 min-h-[52px] h-[52px] rounded-2xl text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all font-semibold">
+                    <span class="material-symbols-outlined text-[24px]">category</span>
+                    <span class="text-[15px]">Catalog • कैटलॉग</span>
+                </a>
+                <!-- Orders (Active state) -->
+                <a href="#"
+                    class="flex items-center justify-between px-4 min-h-[52px] h-[52px] rounded-2xl bg-primary-container text-on-primary shadow-sm font-bold transition-all">
+                    <div class="flex items-center gap-3.5">
+                        <span class="material-symbols-outlined text-[24px] text-muted-gold"
+                            style="font-variation-settings: 'FILL' 1;">package_2</span>
+                        <span class="text-[15px]">Orders • ऑर्डर्स</span>
+                    </div>
+                    <span
+                        class="nav-orders-badge w-6 h-6 rounded-full bg-secondary text-on-secondary text-xs flex items-center justify-center font-bold">3</span>
+                </a>
+                <!-- Profile -->
+                <a href="details.html"
+                    class="flex items-center gap-3.5 px-4 min-h-[52px] h-[52px] rounded-2xl text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all font-semibold">
+                    <span class="material-symbols-outlined text-[24px]">person</span>
+                    <span class="text-[15px]">Profile • प्रोफ़ाइल</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Sidebar Footer Help & Artisan Card -->
+        <div class="flex flex-col gap-3 pt-6 border-t border-border-delicate">
+            <div class="flex items-center gap-3 px-3 py-2 rounded-xl bg-surface-container-low">
+                <div
+                    class="w-9 h-9 rounded-full bg-secondary-fixed text-on-secondary-fixed flex items-center justify-center font-bold text-sm shrink-0">
+                    RK
+                </div>
+                <div class="flex flex-col min-w-0">
+                    <span class="text-xs font-bold text-primary truncate">Ramesh Kumar</span>
+                    <span class="text-[11px] text-outline truncate">Shop #84 • Varanasi</span>
+                </div>
+            </div>
+            <a href="tel:1800-KALA"
+                class="flex items-center justify-center gap-2 text-xs font-semibold text-secondary hover:text-primary py-2 transition-colors">
+                <span class="material-symbols-outlined text-[18px]">support_agent</span>
+                <span>1800-KALA • सहायता केंद्र</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA (Scrollable, full height on desktop, standard stacked layout on mobile) -->
+    <main class="flex-1 flex flex-col min-w-0 overflow-y-auto w-full">
+        <!-- Top App Navigation Header -->
+        <header
+            class="w-full bg-surface-container-lowest px-4 lg:px-8 py-4 border-b border-border-delicate shadow-sm flex flex-col gap-3 sticky top-0 z-20">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <!-- Mobile-only back button -->
+                    <button aria-label="Go back to Dashboard"
+                        class="lg:hidden w-[48px] h-[48px] flex items-center justify-center rounded-full bg-surface-container-low text-on-surface active:bg-surface-container-high transition-colors"
+                        type="button">
+                        <span class="material-symbols-outlined text-[24px]">arrow_back</span>
+                    </button>
+                    <div class="flex flex-col">
+                        <h1 class="text-xl lg:text-2xl text-on-surface leading-tight font-extrabold tracking-tight">
+                            Orders Inbox</h1>
+                        <span class="text-xs lg:text-sm text-on-surface-variant font-medium">नए ऑर्डर • Incoming Artisan
+                            Orders</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 lg:gap-3">
+                    <!-- Desktop Search Bar -->
+                    <div
+                        class="hidden md:flex items-center bg-surface-container-low px-4 py-2 rounded-full border border-border-delicate/60 w-64">
+                        <span class="material-symbols-outlined text-outline text-[20px] mr-2">search</span>
+                        <input type="text" placeholder="Search order / buyer..."
+                            class="bg-transparent text-xs text-primary focus:outline-none w-full" />
+                    </div>
+
+                    <!-- Language Switcher Pill (Min 48px tap target) -->
+                    <button aria-label="Toggle language between English and Hindi"
+                        class="min-h-[48px] h-[48px] px-4 flex items-center gap-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface font-semibold text-sm active:bg-secondary-fixed transition-colors shadow-sm"
+                        id="lang-toggle-btn" type="button">
+                        <span class="material-symbols-outlined text-[20px] text-secondary">translate</span>
+                        <span class="font-bold text-primary">A / अ</span>
+                    </button>
+
+                    <!-- Alerts Bell with Dot -->
+                    <button aria-label="Notifications, 3 pending"
+                        class="relative min-w-[48px] min-h-[48px] w-[48px] h-[48px] flex items-center justify-center rounded-full bg-surface-container-low text-on-surface hover:bg-surface-container-high active:bg-surface-container-highest transition-colors shadow-sm"
+                        type="button">
+                        <span class="material-symbols-outlined text-[24px]">notifications</span>
+                        <span
+                            class="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-secondary rounded-full ring-2 ring-surface-container-lowest"></span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Status Filter Pills with Responsive Alignment -->
+            <div aria-label="Order status categories" class="flex items-center gap-2 overflow-x-auto py-1 no-scrollbar"
+                role="tablist">
+                <button aria-selected="true"
+                    class="min-h-[48px] h-[48px] px-5 rounded-full bg-primary-container text-on-primary flex items-center gap-2 shrink-0 shadow-sm active:scale-95 transition-transform"
+                    role="tab" type="button">
+                    <span class="text-sm font-semibold">Pending Action • कार्रवाई बाकी</span>
+                    <span
+                        class="w-6 h-6 rounded-full bg-secondary text-on-secondary text-xs flex items-center justify-center font-bold"
+                        id="pending-badge-counter">3</span>
+                </button>
+                <button aria-selected="false"
+                    class="min-h-[48px] h-[48px] px-5 rounded-full bg-surface-container-low hover:bg-surface-container-high text-on-surface-variant flex items-center gap-2 shrink-0 active:bg-surface-container-high transition-colors"
+                    role="tab" type="button">
+                    <span class="text-sm font-medium">Packed • पैक हुआ</span>
+                    <span
+                        class="w-6 h-6 rounded-full bg-surface-container-highest text-on-surface text-xs flex items-center justify-center font-bold"
+                        id="packed-badge-counter">5</span>
+                </button>
+                <button aria-selected="false"
+                    class="min-h-[48px] h-[48px] px-5 rounded-full bg-surface-container-low hover:bg-surface-container-high text-on-surface-variant flex items-center gap-2 shrink-0 active:bg-surface-container-high transition-colors"
+                    role="tab" type="button">
+                    <span class="text-sm font-medium">Delivered • डिलीवर हुआ</span>
+                    <span
+                        class="w-6 h-6 rounded-full bg-surface-container-highest text-on-surface text-xs flex items-center justify-center font-bold">14</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Workspace Container -->
+        <div class="px-4 lg:px-8 py-6 flex flex-col gap-6 max-w-[1400px] w-full mx-auto pb-32 lg:pb-12">
+
+            <!-- Low Literacy Voice Guide & Local Sync Notice -->
+            <section aria-label="Audio guide and device storage status"
+                class="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+                <!-- Voice Banner -->
+                <div
+                    class="bg-tertiary-fixed text-on-tertiary-fixed p-4 lg:px-6 rounded-2xl shadow-sm flex items-center justify-between gap-4 flex-1 border border-border-delicate/40">
+                    <div class="flex items-center gap-3.5 flex-1">
+                        <div
+                            class="w-12 h-12 rounded-full bg-secondary-fixed flex items-center justify-center shrink-0 shadow-inner">
+                            <span class="material-symbols-outlined text-secondary text-[28px]"
+                                style="font-variation-settings: 'FILL' 1;">mic</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <p class="text-sm lg:text-base text-on-tertiary-fixed font-bold leading-snug">
+                                3 नए आर्डर तैयार हैं! (3 New Orders Ready)
+                            </p>
+                            <p class="text-xs lg:text-sm text-on-tertiary-fixed-variant leading-tight">
+                                Tap 'Accept &amp; Pack' to dispatch today before courier pickup.
+                            </p>
+                        </div>
+                    </div>
+                    <!-- Voice Speaker Accessibility Button (48px tap target) -->
+                    <button aria-label="बोलकर सुनें - Listen to Hindi instructions"
+                        class="min-w-[48px] min-h-[48px] w-[48px] h-[48px] rounded-full bg-primary-container text-on-primary flex items-center justify-center shrink-0 active:scale-90 hover:scale-105 transition-all shadow-md"
+                        id="voice-listen-btn" type="button">
+                        <span class="material-symbols-outlined text-[24px]">volume_up</span>
+                    </button>
+                </div>
+
+                <!-- Local Offline Sync Pill Banner -->
+                <div
+                    class="flex items-center justify-between md:justify-center gap-2.5 px-5 py-3.5 bg-surface-container-low rounded-2xl border border-border-delicate/60 shrink-0">
+                    <div class="flex items-center gap-2 text-on-surface-variant">
+                        <span class="material-symbols-outlined text-[20px] text-[#25D366]"
+                            style="font-variation-settings: 'FILL' 1;">cloud_done</span>
+                        <span class="text-xs lg:text-sm font-semibold">Stored locally • सुरक्षित ऑफलाइन डेटा</span>
+                    </div>
+                    <span class="w-2.5 h-2.5 rounded-full bg-[#25D366] animate-pulse"></span>
+                </div>
+            </section>
+
+            <!-- Responsive Orders Command Center Grid (grid-cols-1 lg:grid-cols-2 xl:grid-cols-3) -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6" id="orders-list">
+
+                <!-- ORDER 1: ONDC Network Order -->
+                <article
+                    class="order-card bg-surface-container-lowest rounded-3xl p-5 shadow-sm border border-border-delicate flex flex-col justify-between gap-4 transition-all duration-500 hover:shadow-md"
+                    id="order-ks-8921">
+                    <div class="flex flex-col gap-4">
+                        <!-- Order Header info -->
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="flex flex-col">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-sm font-bold text-on-surface">#KS-8921</span>
+                                    <span class="text-on-surface-variant">•</span>
+                                    <span class="text-xs text-on-surface-variant">10m ago</span>
+                                </div>
+                                <span class="text-xs text-secondary font-bold">Requires accept today</span>
+                            </div>
+                            <!-- Official ONDC Source Tag -->
+                            <span
+                                class="inline-flex items-center gap-1 bg-surface-container-high text-primary text-xs px-3 py-1.5 rounded-full font-bold">
+                                <span class="material-symbols-outlined text-[16px] text-primary"
+                                    style="font-variation-settings: 'FILL' 1;">hub</span>
+                                ONDC via Mystore
+                            </span>
+                        </div>
+
+                        <!-- Item Row Details -->
+                        <div class="flex items-center gap-3.5 bg-surface-container-low p-3.5 rounded-2xl">
+                            <img class="w-[76px] h-[76px] rounded-xl object-cover shrink-0 shadow-sm"
+                                alt="Handwoven Blue Pure Silk Saree" height="76"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAhQyBCcHXxppvzIjiac0wXbDfq62WaB0pTHDam0UqgMIt80v8bTscpCYepAYhHzwyqdSDVwKBNGDU9Lh-0pgmb6R_Xsdf2mYuyI5v7xHSnUvaB5oyD0DKaxQR9MG1xRqs4oJnxr4fOtRfF0qz1JxSpe60gPE0oIJiv6Qr1AYzi90D-zTBtf49gaWbwbab-kE-5l2lN0FBHVhzoCrgX4nfYwPD_5qcNZV6HV33lWUnDsCVeVxBWDZ5M"
+                                width="76" />
+                            <div class="flex flex-col flex-1 min-w-0">
+                                <h2 class="text-sm font-bold text-on-surface truncate">Handwoven Blue Pure Silk Saree
+                                </h2>
+                                <div class="flex items-center gap-2 mt-0.5">
+                                    <span class="text-xs text-on-surface-variant font-medium">Qty: 1 Unit</span>
+                                    <span class="text-xs text-on-surface-variant">•</span>
+                                    <span class="text-base font-extrabold text-on-surface">₹1,200</span>
+                                </div>
+                                <span class="inline-flex items-center gap-1 text-[#1A3824] text-xs font-bold mt-1">
+                                    <span class="material-symbols-outlined text-[16px] text-[#25D366]"
+                                        style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                                    Paid Online • भुगतान हुआ
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Destination specs -->
+                        <div class="flex items-center gap-2 px-1 text-on-surface-variant text-xs">
+                            <span
+                                class="material-symbols-outlined text-[20px] text-on-surface-variant shrink-0">local_shipping</span>
+                            <p class="truncate">Ship to: <strong class="text-on-surface">Lucknow, UP</strong> (ONDC
+                                Pickup Agent)</p>
+                        </div>
+                    </div>
+
+                    <!-- Action Panel -->
+                    <div class="flex flex-col gap-2 pt-2 border-t border-border-delicate/40">
+                        <button aria-label="Accept and pack order KS-8921"
+                            class="action-btn w-full min-h-[52px] h-[52px] rounded-full bg-primary-container hover:bg-black text-on-primary text-sm font-bold flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all"
+                            onclick="handleAccept(this, 'KS-8921')" type="button">
+                            <span class="material-symbols-outlined text-[22px]">inventory_2</span>
+                            <span>Accept &amp; Pack • स्वीकारें</span>
+                        </button>
+                        <div class="flex items-center justify-between px-1">
+                            <button aria-label="Download or view packaging slip"
+                                class="min-h-[48px] h-[48px] px-3 rounded-full text-secondary hover:text-primary font-bold text-xs flex items-center gap-1.5 active:bg-surface-container transition-colors"
+                                type="button">
+                                <span class="material-symbols-outlined text-[20px]">receipt_long</span>
+                                View Slip • पर्ची देखें
+                            </button>
+                            <span class="text-[11px] text-outline font-medium">Auto-dispatch enabled</span>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- ORDER 2: WhatsApp Direct Order with Voice Note -->
+                <article
+                    class="order-card bg-surface-container-lowest rounded-3xl p-5 shadow-sm border border-border-delicate flex flex-col justify-between gap-4 transition-all duration-500 hover:shadow-md"
+                    id="order-ks-8919">
+                    <div class="flex flex-col gap-4">
+                        <!-- Header -->
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="flex flex-col">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-sm font-bold text-on-surface">#KS-8919</span>
+                                    <span class="text-on-surface-variant">•</span>
+                                    <span class="text-xs text-on-surface-variant">35m ago</span>
+                                </div>
+                                <span class="text-xs text-[#752801] font-bold">Direct Customer • 0% Fee</span>
+                            </div>
+                            <!-- WhatsApp Badge -->
+                            <span
+                                class="inline-flex items-center gap-1 bg-[#25D366]/15 text-[#1A3824] text-xs px-3 py-1.5 rounded-full font-bold">
+                                <span class="material-symbols-outlined text-[16px] text-[#25D366]"
+                                    style="font-variation-settings: 'FILL' 1;">chat</span>
+                                WhatsApp Direct
+                            </span>
+                        </div>
+
+                        <!-- Item Row Details -->
+                        <div class="flex items-center gap-3.5 bg-surface-container-low p-3.5 rounded-2xl">
+                            <img class="w-[76px] h-[76px] rounded-xl object-cover shrink-0 shadow-sm"
+                                alt="Handcrafted Brass Puja Diya" height="76"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuADLHGnD6b5Mm5Kw6N6ujayRO4j8q3V_3lPPR6jofXW8d6UpwFr5ROvLMj56XzD8ReYxRehGbr2PQeYAe6ypCJ_6nk1eBFMY6s0aQREkKO7tE1mFg6EQzsJ3_1CuY__0M3Cc_R3gDrtdl2831xaH86wDkZt_ZPSSo_gI8oiNrmjWotyxr4Lt_om_Uin7S3GW-j2bvNEcaYqzwKGYuGrvgbXyF_Mr0htSeCB1AhU9_zyueMDCUW5wsWP"
+                                width="76" />
+                            <div class="flex flex-col flex-1 min-w-0">
+                                <h2 class="text-sm font-bold text-on-surface truncate">Handcrafted Brass Puja Diya</h2>
+                                <div class="flex items-center gap-2 mt-0.5">
+                                    <span class="text-xs text-on-surface-variant font-medium">Qty: 2 Units</span>
+                                    <span class="text-xs text-on-surface-variant">•</span>
+                                    <span class="text-base font-extrabold text-on-surface">₹900</span>
+                                </div>
+                                <span class="inline-flex items-center gap-1 text-secondary text-xs font-bold mt-1">
+                                    <span class="material-symbols-outlined text-[16px]">payments</span>
+                                    Cash on Delivery (COD)
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Customer Voice Note Banner (Delight Moment) -->
+                        <div
+                            class="flex items-center justify-between bg-surface-container p-2.5 rounded-2xl border border-border-delicate/40">
+                            <div class="flex items-center gap-2 flex-1 min-w-0 pr-2">
+                                <span class="material-symbols-outlined text-secondary text-[22px] shrink-0"
+                                    style="font-variation-settings: 'FILL' 1;">graphic_eq</span>
+                                <p class="text-xs text-on-surface truncate italic font-medium">"Please pack safely for
+                                    Diwali"</p>
+                            </div>
+                            <button aria-label="Play buyer voice message"
+                                class="min-h-[48px] h-[48px] px-3.5 rounded-full bg-surface-container-highest hover:bg-border-delicate text-on-surface text-xs font-bold flex items-center gap-1 active:scale-95 transition-all shrink-0"
+                                type="button">
+                                <span class="material-symbols-outlined text-[18px]">play_arrow</span>
+                                0:12
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex flex-col gap-2 pt-2 border-t border-border-delicate/40">
+                        <button aria-label="Accept and pack order KS-8919"
+                            class="action-btn w-full min-h-[52px] h-[52px] rounded-full bg-primary-container hover:bg-black text-on-primary text-sm font-bold flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all"
+                            onclick="handleAccept(this, 'KS-8919')" type="button">
+                            <span class="material-symbols-outlined text-[22px]">inventory_2</span>
+                            <span>Accept &amp; Pack • स्वीकारें</span>
+                        </button>
+                        <!-- WhatsApp Quick Chat Button: 48px min height -->
+                        <a aria-label="Message Buyer on WhatsApp"
+                            class="w-full min-h-[48px] h-[48px] rounded-full bg-[#25D366] hover:bg-emerald-600 text-white font-bold flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all text-xs"
+                            href="https://wa.me/" rel="noopener noreferrer" target="_blank">
+                            <span class="material-symbols-outlined text-[20px]"
+                                style="font-variation-settings: 'FILL' 1;">chat</span>
+                            <span>Message Buyer • ग्राहक को मैसेज करें</span>
+                        </a>
+                    </div>
+                </article>
+
+                <!-- ORDER 3: ONDC via Paytm -->
+                <article
+                    class="order-card bg-surface-container-lowest rounded-3xl p-5 shadow-sm border border-border-delicate flex flex-col justify-between gap-4 transition-all duration-500 hover:shadow-md"
+                    id="order-ks-8915">
+                    <div class="flex flex-col gap-4">
+                        <!-- Header -->
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="flex flex-col">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-sm font-bold text-on-surface">#KS-8915</span>
+                                    <span class="text-on-surface-variant">•</span>
+                                    <span class="text-xs text-on-surface-variant">2 hours ago</span>
+                                </div>
+                                <span class="text-xs text-on-surface-variant">ONDC Pickup Agent</span>
+                            </div>
+                            <!-- Paytm Source Tag -->
+                            <span
+                                class="inline-flex items-center gap-1 bg-surface-container-high text-primary text-xs px-3 py-1.5 rounded-full font-bold">
+                                <span class="material-symbols-outlined text-[16px] text-primary"
+                                    style="font-variation-settings: 'FILL' 1;">storefront</span>
+                                ONDC via Paytm
+                            </span>
+                        </div>
+
+                        <!-- Item Row Details -->
+                        <div class="flex items-center gap-3.5 bg-surface-container-low p-3.5 rounded-2xl">
+                            <img class="w-[76px] h-[76px] rounded-xl object-cover shrink-0 shadow-sm"
+                                alt="Handmade Terracotta Pitcher" height="76"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBIV_cz3e1s9PecVuCoGvMdgmVr148ixCtI8BtKEU7mdqCNcwrLRU5CKHEU1i-wQ7J1_mMLxTz_WcLs43UwJEptHZiuftIiXk1bgpQcNFt1oZ3J5vgnuoOACpsBbWUMbgpyeZRA9ILNCkINyizTmNUDUwDz_oksdIc_GVmWmnA0ofIdZuVjYVeygDD9wIglXqPy1XQ4eM48-E2szZRpH5-1rZ0Upwzn8d6POJGUKlaFuHz19Yi2WFd1"
+                                width="76" />
+                            <div class="flex flex-col flex-1 min-w-0">
+                                <h2 class="text-sm font-bold text-on-surface truncate">Handmade Terracotta Pitcher</h2>
+                                <div class="flex items-center gap-2 mt-0.5">
+                                    <span class="text-xs text-on-surface-variant font-medium">Qty: 1 Unit</span>
+                                    <span class="text-xs text-on-surface-variant">•</span>
+                                    <span class="text-base font-extrabold text-on-surface">₹200</span>
+                                </div>
+                                <span class="inline-flex items-center gap-1 text-[#1A3824] text-xs font-bold mt-1">
+                                    <span class="material-symbols-outlined text-[16px] text-[#25D366]"
+                                        style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                                    Paid Online • प्रीपेड
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Delivery destination -->
+                        <div class="flex items-center gap-2 px-1 text-on-surface-variant text-xs">
+                            <span
+                                class="material-symbols-outlined text-[20px] text-on-surface-variant shrink-0">location_on</span>
+                            <p class="truncate">Ship to: <strong class="text-on-surface">Varanasi, UP</strong></p>
+                        </div>
+                    </div>
+
+                    <!-- Action Panel -->
+                    <div class="flex flex-col gap-2 pt-2 border-t border-border-delicate/40">
+                        <button aria-label="Accept and pack order KS-8915"
+                            class="action-btn w-full min-h-[52px] h-[52px] rounded-full bg-primary-container hover:bg-black text-on-primary text-sm font-bold flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all"
+                            onclick="handleAccept(this, 'KS-8915')" type="button">
+                            <span class="material-symbols-outlined text-[22px]">inventory_2</span>
+                            <span>Accept &amp; Pack • स्वीकारें</span>
+                        </button>
+                        <div class="flex items-center justify-between px-1">
+                            <button aria-label="Download or view packaging slip"
+                                class="min-h-[48px] h-[48px] px-3 rounded-full text-secondary hover:text-primary font-bold text-xs flex items-center gap-1.5 active:bg-surface-container transition-colors"
+                                type="button">
+                                <span class="material-symbols-outlined text-[20px]">receipt_long</span>
+                                View Slip • पर्ची देखें
+                            </button>
+                            <span class="text-[11px] text-outline font-medium">Standard Logistics</span>
+                        </div>
+                    </div>
+                </article>
+
+            </div>
+
+            <!-- Artisanal Encouragement Footer Note -->
+            <div
+                class="text-center py-6 flex flex-col items-center justify-center gap-1.5 text-on-surface-variant border-t border-border-delicate/40 mt-4">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-secondary text-[24px]">verified</span>
+                    <p class="text-xs font-bold text-on-surface">100% Guaranteed Payouts via ONDC Settlements</p>
+                </div>
+                <p class="text-[11px] text-outline">सभी लेन-देन भारत सरकार द्वारा मान्यता प्राप्त ONDC नेटवर्क के तहत
+                    सुरक्षित हैं</p>
+            </div>
+
+        </div>
+
+        <!-- Sticky In-Page Bottom Navigation Bar (Visible ONLY on Mobile < lg:, Hidden on lg:) -->
+        <nav aria-label="App Navigation"
+            class="lg:hidden fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-surface-container-lowest px-4 py-2 shadow-[0_-4px_16px_rgba(46,36,30,0.08)] flex items-center justify-around z-40 border-t border-border-delicate">
+            <button aria-label="Go to Home"
+                class="min-w-[64px] min-h-[48px] h-[48px] flex flex-col items-center justify-center text-on-surface-variant active:text-on-surface transition-colors"
+                type="button">
+                <span class="material-symbols-outlined text-[24px]">home</span>
+                <span class="text-[11px] font-semibold">Home</span>
+            </button>
+            <button aria-label="Go to Catalog"
+                class="min-w-[64px] min-h-[48px] h-[48px] flex flex-col items-center justify-center text-on-surface-variant active:text-on-surface transition-colors"
+                type="button">
+                <span class="material-symbols-outlined text-[24px]">category</span>
+                <span class="text-[11px] font-semibold">Catalog</span>
+            </button>
+            <!-- Orders tab (Active) -->
+            <button aria-label="Current tab: Orders Inbox, 3 unhandled orders"
+                class="relative min-w-[64px] min-h-[48px] h-[48px] flex flex-col items-center justify-center text-primary font-bold transition-colors"
+                type="button">
+                <div class="relative flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[24px] text-secondary"
+                        style="font-variation-settings: 'FILL' 1;">package_2</span>
+                    <span
+                        class="nav-orders-badge absolute -top-1.5 -right-2 w-4 h-4 rounded-full bg-secondary text-on-secondary text-[10px] font-bold flex items-center justify-center">3</span>
+                </div>
+                <span class="text-[11px] text-secondary font-bold">Orders</span>
+            </button>
+            <button aria-label="Go to Artisan Profile"
+                class="min-w-[64px] min-h-[48px] h-[48px] flex flex-col items-center justify-center text-on-surface-variant active:text-on-surface transition-colors"
+                type="button">
+                <span class="material-symbols-outlined text-[24px]">person</span>
+                <span class="text-[11px] font-semibold">Profile</span>
+            </button>
+        </nav>
+
+        <!-- Floating Audio / Feedback Toast -->
+        <div class="fixed top-6 left-1/2 -translate-x-1/2 bg-primary-container text-on-primary px-6 py-3 rounded-full shadow-xl text-sm font-semibold flex items-center gap-2.5 opacity-0 pointer-events-none transition-all duration-300 z-50 border border-border-delicate/20"
+            id="live-toast">
+            <span class="material-symbols-outlined text-[#25D366] text-[22px]"
+                style="font-variation-settings: 'FILL' 1;">check_circle</span>
+            <span id="toast-text">Order accepted</span>
+        </div>
+    </main>
+
+    <script>
+        let pendingCount = 3;
+        let packedCount = 5;
+
+        function handleAccept(btn, orderId) {
+            if (btn.dataset.accepted === "true") return;
+            btn.dataset.accepted = "true";
+
+            // Immediate tactile feedback: switch to confirmed packed state
+            btn.classList.remove('bg-primary-container', 'hover:bg-black', 'text-on-primary');
+            btn.classList.add('bg-[#1A3824]', 'text-on-primary');
+            btn.innerHTML = `
+                <span class="material-symbols-outlined text-[22px] text-[#25D366]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                <span>Packed • पैक हो गया</span>
+            `;
+
+            // Decrement pending counter & increment packed counter
+            if (pendingCount > 0) {
+                pendingCount--;
+                packedCount++;
+                const pendingBadge = document.getElementById('pending-badge-counter');
+                const packedBadge = document.getElementById('packed-badge-counter');
+                const navBadges = document.querySelectorAll('.nav-orders-badge');
+                if (pendingBadge) pendingBadge.textContent = pendingCount;
+                if (packedBadge) packedBadge.textContent = packedCount;
+                navBadges.forEach(b => b.textContent = pendingCount);
+            }
+
+            // Show celebratory toast notification
+            const toast = document.getElementById('live-toast');
+            const toastText = document.getElementById('toast-text');
+            if (toast && toastText) {
+                toastText.textContent = `ऑर्डर ${orderId} पैक हो गया! Ready for pickup.`;
+                toast.classList.remove('opacity-0', 'pointer-events-none', '-translate-y-2');
+                toast.classList.add('opacity-100', 'translate-y-0');
+                setTimeout(() => {
+                    toast.classList.add('opacity-0', 'pointer-events-none', '-translate-y-2');
+                    toast.classList.remove('opacity-100', 'translate-y-0');
+                }, 2800);
+            }
+
+            // After 1.5 seconds (1500ms), dim and move the article to the bottom
+            setTimeout(() => {
+                const card = btn.closest('article');
+                if (card) {
+                    card.classList.add('opacity-50', 'order-last', 'scale-[0.98]');
+                }
+            }, 1500);
+        }
+
+        // Voice narration simulation
+        const voiceBtn = document.getElementById('voice-listen-btn');
+        if (voiceBtn) {
+            voiceBtn.addEventListener('click', () => {
+                voiceBtn.classList.add('animate-pulse', 'bg-secondary');
+                const toast = document.getElementById('live-toast');
+                const toastText = document.getElementById('toast-text');
+                if (toast && toastText) {
+                    toastText.textContent = '🔊 "आपके पास 3 नए आर्डर हैं। पैक करने के लिए नीचे बटन दबाएं।"';
+                    toast.classList.remove('opacity-0', 'pointer-events-none', '-translate-y-2');
+                    toast.classList.add('opacity-100', 'translate-y-0');
+                    setTimeout(() => {
+                        voiceBtn.classList.remove('animate-pulse', 'bg-secondary');
+                        toast.classList.add('opacity-0', 'pointer-events-none', '-translate-y-2');
+                        toast.classList.remove('opacity-100', 'translate-y-0');
+                    }, 3200);
+                }
+            });
+        }
+
+        // Simple language flip display
+        const langBtn = document.getElementById('lang-toggle-btn');
+        if (langBtn) {
+            let hindi = false;
+            langBtn.addEventListener('click', () => {
+                hindi = !hindi;
+                const span = langBtn.querySelector('span:last-child');
+                if (span) span.textContent = hindi ? 'अ / A' : 'A / अ';
+            });
+        }
+    </script>
+
+  <!-- KalaSangam Interactive Prototype Switcher Dock -->
+  <div id="prototype-dock" class="fixed bottom-3 left-1/2 -translate-x-1/2 z-50 bg-[#180f0a]/92 backdrop-blur-md text-white px-3 py-1.5 rounded-full shadow-2xl border border-white/15 flex items-center gap-1 sm:gap-2 text-[11px] sm:text-xs font-semibold max-w-[96vw] overflow-x-auto transition-all hover:bg-[#180f0a]">
+    <div class="flex items-center gap-1 text-white/50 text-[10px] uppercase font-bold tracking-wider px-1.5 hidden md:flex shrink-0">
+      <span class="material-symbols-outlined text-[14px] text-[#ff9062]">view_carousel</span>
+      <span>Screens:</span>
+    </div>
+    <a href="auth.html" class="px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 shrink-0 text-white/80 hover:text-white hover:bg-white/10">
+      <span class="material-symbols-outlined text-[15px]">lock</span>
+      <span>Auth</span>
+    </a>
+    <a href="home.html" class="px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 shrink-0 text-white/80 hover:text-white hover:bg-white/10">
+      <span class="material-symbols-outlined text-[15px]">cottage</span>
+      <span>Home</span>
+    </a>
+    <a href="catalogue.html" class="px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 shrink-0 text-white/80 hover:text-white hover:bg-white/10">
+      <span class="material-symbols-outlined text-[15px]">inventory_2</span>
+      <span>Catalog</span>
+    </a>
+    <a href="orders.html" class="px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 shrink-0 bg-[#ff9062] text-[#180f0a] font-bold shadow-xs">
+      <span class="material-symbols-outlined text-[15px]">receipt_long</span>
+      <span>Orders</span>
+    </a>
+    <a href="capture.html" class="px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 shrink-0 text-white/80 hover:text-white hover:bg-white/10">
+      <span class="material-symbols-outlined text-[15px]">photo_camera</span>
+      <span>Capture</span>
+    </a>
+    <a href="review.html" class="px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 shrink-0 text-white/80 hover:text-white hover:bg-white/10">
+      <span class="material-symbols-outlined text-[15px]">rate_review</span>
+      <span>Review</span>
+    </a>
+    <a href="details.html" class="px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 shrink-0 text-white/80 hover:text-white hover:bg-white/10">
+      <span class="material-symbols-outlined text-[15px]">verified</span>
+      <span>Success / Details</span>
+    </a>
+  </div>
+
+</body>
+
+</html>

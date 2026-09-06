@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html class="h-full bg-background" lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&amp;display=swap"
+        rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed-dim": "#ffb599",
+                        "on-secondary-fixed-variant": "#7d2d05",
+                        "surface-container": "#f1ede7",
+                        "on-primary-fixed": "#231a14",
+                        "tertiary": "#1b1000",
+                        "tertiary-fixed-dim": "#f1be65",
+                        "tertiary-fixed": "#ffdeaa",
+                        "on-primary-fixed-variant": "#50443d",
+                        "surface-dim": "#dddad4",
+                        "surface-tint": "#695c54",
+                        "surface": "#fdf9f3",
+                        "error-container": "#ffdad6",
+                        "tertiary-container": "#352300",
+                        "error": "#ba1a1a",
+                        "on-primary-container": "#998a82",
+                        "on-error": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "secondary-container": "#ff9062",
+                        "primary": "#180f0a",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-fixed": "#271900",
+                        "secondary-fixed": "#ffdbce",
+                        "inverse-primary": "#d4c3ba",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-fixed-dim": "#d4c3ba",
+                        "on-tertiary": "#ffffff",
+                        "inverse-surface": "#31302d",
+                        "secondary": "#9c441c",
+                        "surface-container-low": "#f7f3ed",
+                        "primary-container": "#2e241e",
+                        "on-background": "#1c1c18",
+                        "on-tertiary-container": "#b28633",
+                        "on-surface-variant": "#4e4540",
+                        "on-secondary": "#ffffff",
+                        "surface-variant": "#e6e2dc",
+                        "background": "#fdf9f3",
+                        "primary-fixed": "#f1dfd5",
+                        "on-tertiary-fixed-variant": "#5f4100",
+                        "on-secondary-fixed": "#370e00",
+                        "surface-container-highest": "#e6e2dc",
+                        "surface-container-high": "#ebe8e2",
+                        "on-secondary-container": "#752801",
+                        "inverse-on-surface": "#f4f0ea",
+                        "on-surface": "#1c1c18",
+                        "outline-variant": "#d1c4bd",
+                        "outline": "#80756f",
+                        "surface-bright": "#fdf9f3"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter-desktop": "24px",
+                        "space-2xl": "48px",
+                        "container-max": "1280px",
+                        "space-lg": "24px",
+                        "space-xxs": "4px",
+                        "space-md": "16px",
+                        "touch-min": "48px",
+                        "space-3xl": "64px",
+                        "space-xl": "32px",
+                        "gutter-mobile": "16px",
+                        "space-sm": "12px",
+                        "space-xs": "8px"
+                    },
+                    "fontFamily": {
+                        "sans": ["Plus Jakarta Sans", "sans-serif"],
+                        "body-sm": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "display-lg-mobile": ["Plus Jakarta Sans"],
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "headline-lg-mobile": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"],
+                        "label-lg": ["Plus Jakarta Sans"],
+                        "headline-sm": ["Plus Jakarta Sans"],
+                        "label-sm": ["Plus Jakarta Sans"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        @layer base {
+
+            html,
+            body {
+                height: 100%;
+                margin: 0;
+                padding: 0;
+                background-color: #fdf9f3;
+                font-family: 'Plus Jakarta Sans', sans-serif;
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1ede7;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #d1c4bd;
+            border-radius: 9999px;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-background font-sans text-on-surface antialiased min-h-screen flex selection:bg-secondary-fixed selection:text-on-secondary-fixed">
+    <!-- 1. Fixed Left Sidebar Navigation (256px / w-64) -->
+    <aside
+        class="w-64 fixed inset-y-0 left-0 bg-surface-container-low border-r border-outline-variant/50 flex flex-col justify-between z-30 shadow-sm">
+        <div class="flex flex-col">
+            <!-- Studio Branding & Artisanal Emblem -->
+            <div class="p-5 border-b border-outline-variant/40 flex items-center gap-3">
+                <div
+                    class="w-11 h-11 rounded-2xl bg-secondary-container text-on-secondary-container flex items-center justify-center shadow-sm flex-shrink-0">
+                    <span class="material-symbols-outlined text-[24px]">palette</span>
+                </div>
+                <div class="flex flex-col min-w-0">
+                    <span class="text-xs font-semibold tracking-wider text-secondary uppercase">कला संगम</span>
+                    <span class="font-bold text-primary text-base leading-tight truncate">Kala Sangam Studio</span>
+                </div>
+            </div>
+            <!-- Sync Status Badge in Sidebar -->
+            <div
+                class="px-5 py-3.5 bg-surface-container/60 border-b border-outline-variant/30 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="relative flex h-2.5 w-2.5">
+                        <span
+                            class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-600"></span>
+                    </span>
+                    <span class="text-xs font-medium text-on-surface-variant">Offline Sync Ready</span>
+                </div>
+                <span
+                    class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">Active</span>
+            </div>
+            <!-- Nav Links -->
+            <nav class="p-4 space-y-1.5">
+                <a class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-medium text-sm"
+                    href="#">
+                    <span class="material-symbols-outlined text-[20px]">roofing</span>
+                    <span>Home (आवास)</span>
+                </a>
+                <a class="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-primary text-on-primary font-semibold text-sm shadow-sm"
+                    href="#">
+                    <div class="flex items-center gap-3.5">
+                        <span class="material-symbols-outlined text-[20px]"
+                            style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+                        <span>Catalog (कैटलॉग)</span>
+                    </div>
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-primary-container text-primary-fixed-dim">12</span>
+                </a>
+                <a class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-medium text-sm"
+                    href="#">
+                    <div class="flex items-center gap-3.5">
+                        <span class="material-symbols-outlined text-[20px]">local_shipping</span>
+                        <span>Orders (ऑर्डर्स)</span>
+                    </div>
+                    <span
+                        class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed">3
+                        New</span>
+                </a>
+                <a class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-medium text-sm"
+                    href="details.html">
+                    <span class="material-symbols-outlined text-[20px]">storefront</span>
+                    <span>Profile (प्रोफाइल)</span>
+                </a>
+            </nav>
+        </div>
+        <!-- Bottom Utility & Artisan Profile -->
+        <div class="p-4 border-t border-outline-variant/40 space-y-3">
+            <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant hover:bg-surface-container text-xs font-medium transition-colors"
+                href="#">
+                <span class="material-symbols-outlined text-[18px] text-secondary">support_agent</span>
+                <span>Sahayata Kendra (1800-KALA)</span>
+            </a>
+            <div class="p-2.5 rounded-2xl bg-surface-container flex items-center gap-3">
+                <div
+                    class="w-9 h-9 rounded-full bg-secondary-fixed flex items-center justify-center font-bold text-sm text-on-secondary-fixed">
+                    RK
+                </div>
+                <div class="flex flex-col min-w-0 flex-1">
+                    <span class="text-xs font-bold text-primary truncate">Ramesh Kumar</span>
+                    <span class="text-[11px] text-on-surface-variant truncate">Kala Sangam Shop #84</span>
+                </div>
+                <button aria-label="Account settings" class="text-on-surface-variant hover:text-primary">
+                    <span class="material-symbols-outlined text-[18px]">more_vert</span>
+                </button>
+            </div>
+        </div>
+    </aside>
+    <!-- Main Content Wrapper (offset by left sidebar) -->
+    <div class="flex-1 ml-64 flex flex-col min-h-screen bg-background">
+        <!-- 2. Desktop Top Header -->
+        <header
+            class="h-16 sticky top-0 z-20 bg-surface/90 backdrop-blur-md border-b border-outline-variant/40 px-8 flex items-center justify-between">
+            <!-- Breadcrumbs -->
+            <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
+                <span class="hover:text-primary cursor-pointer">HOME</span>
+                <span>/</span>
+                <span class="hover:text-primary cursor-pointer">CATALOG</span>
+                <span>/</span>
+                <span class="text-secondary font-bold">PUBLISH SUCCESS &amp; MULTI-CHANNEL DISTRIBUTION</span>
+            </div>
+            <!-- Right Header Actions -->
+            <div class="flex items-center gap-4">
+                <!-- Synced & Live Pill -->
+                <div
+                    class="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold shadow-xs">
+                    <span class="relative flex h-2 w-2">
+                        <span
+                            class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
+                    </span>
+                    <span>Synced &amp; Live</span>
+                </div>
+                <!-- Search Bar with Voice Mic -->
+                <div class="relative w-80">
+                    <span
+                        class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span>
+                    <input
+                        class="w-full bg-surface-container-low border border-outline-variant/60 rounded-full pl-9 pr-10 py-1.5 text-xs text-on-surface focus:outline-none focus:border-secondary transition-colors"
+                        placeholder="Search crafts, catalog or speak item..." type="text">
+                    <button
+                        class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-secondary hover:text-secondary-fixed-dim text-[18px]"
+                        title="Voice Search" type="button">mic</button>
+                </div>
+                <!-- Language Toggle -->
+                <button
+                    class="h-9 px-3.5 flex items-center justify-center rounded-full bg-surface-container text-on-surface hover:bg-surface-container-high transition-all text-xs font-bold border border-outline-variant/40"
+                    id="lang-switch-btn" title="Switch Language" type="button">
+                    A / अ
+                </button>
+                <!-- Notification Bell -->
+                <button aria-label="Notifications"
+                    class="w-9 h-9 flex items-center justify-center rounded-full bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors relative"
+                    type="button">
+                    <span class="material-symbols-outlined text-[20px]">notifications</span>
+                    <span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-secondary"></span>
+                </button>
+            </div>
+        </header>
+        <!-- 3. Desktop Dashboard Workbench -->
+        <main class="flex-1 p-8 space-y-6 max-w-7xl w-full mx-auto">
+            <!-- Ambient Celebration Top Banner -->
+            <div
+                class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-secondary-fixed/40 via-surface-container-low to-surface-container p-6 md:p-8 border border-outline-variant/40 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                <!-- Floating decorative sparks -->
+                <div
+                    class="absolute -top-12 -left-12 w-48 h-48 bg-secondary-container/20 rounded-full blur-2xl pointer-events-none">
+                </div>
+                <div
+                    class="absolute -bottom-10 right-24 w-40 h-40 bg-tertiary-fixed/30 rounded-full blur-xl pointer-events-none">
+                </div>
+                <div class="flex items-center gap-5 relative z-10">
+                    <div class="relative">
+                        <div
+                            class="w-16 h-16 rounded-2xl bg-secondary-container flex items-center justify-center shadow-md">
+                            <div class="w-11 h-11 rounded-xl bg-primary flex items-center justify-center">
+                                <span class="material-symbols-outlined text-on-primary text-[28px]"
+                                    style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                            </div>
+                        </div>
+                        <span class="absolute -top-2 -right-2 text-xl select-none animate-bounce">✨</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <div
+                            class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-xs font-semibold w-max mb-1.5 border border-secondary/20">
+                            <span class="material-symbols-outlined text-[14px]"
+                                style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+                            <span>कला संगम प्रमाणित शिल्पकला • Verified Handloom</span>
+                        </div>
+                        <h1 class="text-2xl lg:text-3xl font-bold text-primary tracking-tight">
+                            बधाई हो! Product is Live &amp; Published!
+                        </h1>
+                        <p class="text-sm text-on-surface-variant mt-1">
+                            Your authentic craft is now visible to patrons across India and ready for multi-channel
+                            orders.
+                        </p>
+                    </div>
+                </div>
+                <!-- Audio Voice Helper Pill -->
+                <div class="relative z-10 w-full md:w-auto flex-shrink-0">
+                    <button
+                        class="w-full md:w-auto px-4 py-3 rounded-2xl bg-surface-container-lowest/90 border border-outline-variant/50 shadow-sm hover:shadow-md hover:bg-surface-container-lowest transition-all flex items-center gap-3 text-left"
+                        id="audio-hint-btn" type="button">
+                        <div
+                            class="w-9 h-9 rounded-full bg-secondary text-on-secondary flex items-center justify-center flex-shrink-0">
+                            <span class="material-symbols-outlined text-[20px] animate-pulse">volume_up</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <p class="text-xs text-on-surface font-medium leading-tight">
+                                <span class="font-bold text-secondary">सुनिए:</span> "व्हाट्सएप पर शेयर करके पहला ग्राहक
+                                पाएं..."
+                            </p>
+                            <span class="text-[11px] text-on-surface-variant font-semibold mt-0.5">Click to play voice
+                                guide</span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+            <!-- 2-Column Desktop Grid for Details & Omnichannel Distribution -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- COLUMN 1: Published Product Preview & Quick Stats (5 Cols) -->
+                <div class="lg:col-span-5 flex flex-col gap-6">
+                    <div
+                        class="bg-surface-container-lowest rounded-2xl border border-outline-variant/50 p-6 shadow-sm flex flex-col justify-between h-full">
+                        <div>
+                            <div class="flex items-center justify-between pb-4 border-b border-outline-variant/30 mb-4">
+                                <span class="text-xs font-bold uppercase tracking-wider text-secondary">Published Craft
+                                    Profile</span>
+                                <span
+                                    class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium border border-emerald-200">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                                    In Stock (1 piece ready)
+                                </span>
+                            </div>
+                            <!-- Product Image & Core Details -->
+                            <div class="flex gap-4 items-start">
+                                <div
+                                    class="w-28 h-28 rounded-2xl overflow-hidden bg-surface-container relative shadow-sm flex-shrink-0 border border-outline-variant/40">
+                                    <img alt="Handwoven Blue Pure Silk Saree" class="w-full h-full object-cover"
+                                        data-alt="Close up photography of handcrafted pure royal blue silk saree with intricate golden zari thread motifs, folded neatly on textured raw linen background, soft directional sunlight highlighting delicate weave textures."
+                                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuAlrPAyvNl_t4YKO8w_w-8U9DRhBPBK1zXyAqaEGSTKfIgX9zbFdVqhUz24eNyhzT-VuM5wuhWPS4TD0e650W0LH_Zpq2DGYrdxnIdJZLQBWy8sa4I0ePgxqBXrAITaOFKziX8se_79awuadNxGCAfRP4s5tsSwv_d8MhZMbiXzK4ft7mKRWbTud1DZzH0Kxt8B1sQRlVgDX7pzayDRDxTV-AbsRb-IF1Ryu3Q6xhv9GW2JC3B8yXoX">
+                                    <span
+                                        class="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-primary-container/90 text-on-primary text-[10px] font-bold">
+                                        HD
+                                    </span>
+                                </div>
+                                <div class="flex flex-col flex-1 min-w-0">
+                                    <h2 class="text-lg font-bold text-primary leading-snug">
+                                        Handwoven Blue Pure Silk Saree
+                                    </h2>
+                                    <p class="text-xs text-on-surface-variant mt-0.5">Category: Handloom Textiles •
+                                        Chanderi Weave</p>
+                                    <div class="flex items-baseline gap-2 mt-2">
+                                        <span class="text-2xl font-bold text-secondary">₹1,200</span>
+                                        <span class="text-xs text-on-surface-variant line-through">₹1,800</span>
+                                        <span
+                                            class="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">33%
+                                            OFF</span>
+                                    </div>
+                                    <span class="text-xs text-on-surface-variant font-mono mt-1">Listing ID:
+                                        #KS-8492</span>
+                                </div>
+                            </div>
+                            <!-- Quick Specs & Seller Guarantees Grid -->
+                            <div
+                                class="grid grid-cols-3 gap-2.5 mt-5 bg-surface-container-low rounded-xl p-3 text-center border border-outline-variant/30">
+                                <div class="flex flex-col items-center">
+                                    <span class="text-[11px] font-medium text-on-surface-variant">Shipping</span>
+                                    <span class="text-xs font-bold text-primary mt-0.5">Free Pan-India</span>
+                                </div>
+                                <div class="flex flex-col items-center border-x border-outline-variant/30">
+                                    <span class="text-[11px] font-medium text-on-surface-variant">Dispatch Time</span>
+                                    <span class="text-xs font-bold text-primary mt-0.5">24-48 Hours</span>
+                                </div>
+                                <div class="flex flex-col items-center">
+                                    <span class="text-[11px] font-medium text-on-surface-variant">Commission</span>
+                                    <span class="text-xs font-bold text-emerald-700 mt-0.5">0% Direct</span>
+                                </div>
+                            </div>
+                            <!-- QR & Public Share link -->
+                            <div
+                                class="mt-4 p-3 rounded-xl bg-surface-container/60 flex items-center justify-between gap-3 border border-outline-variant/30">
+                                <div class="flex items-center gap-2.5 truncate">
+                                    <span class="material-symbols-outlined text-secondary text-[20px]">link</span>
+                                    <span
+                                        class="text-xs text-on-surface-variant font-mono truncate">kalasangam.in/s/ks-8492</span>
+                                </div>
+                                <button
+                                    class="px-3 py-1 bg-surface-container-lowest hover:bg-surface text-xs font-semibold rounded-lg border border-outline-variant/40 text-primary shadow-xs"
+                                    onclick="navigator.clipboard?.writeText('https://kalasangam.in/s/ks-8492'); showToast('लिंक कॉपी हो गया (Link copied to clipboard)');"
+                                    type="button">
+                                    Copy
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Secondary Actions: View in Shop Catalog & Add Another -->
+                        <div class="flex flex-col sm:flex-row gap-3 mt-6 pt-4 border-t border-outline-variant/30">
+                            <button
+                                class="flex-1 min-h-[44px] px-4 rounded-xl bg-surface-container text-on-surface font-semibold text-xs flex items-center justify-center gap-2 hover:bg-surface-container-high transition-colors shadow-xs"
+                                type="button" onclick="window.location.href='catalogue.html'">
+                                <span class="material-symbols-outlined text-[18px]">storefront</span>
+                                <span>View Catalog • दुकान में देखें</span>
+                            </button>
+                            <button
+                                class="flex-1 min-h-[44px] px-4 rounded-xl bg-primary text-on-primary font-semibold text-xs flex items-center justify-center gap-2 hover:bg-primary-container transition-colors shadow-sm"
+                                type="button" onclick="window.location.href='capture.html'">
+                                <span class="material-symbols-outlined text-[18px]">add_a_photo</span>
+                                <span>Add Another Craft • नया जोड़ें</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <!-- COLUMN 2: Omnichannel Distribution & Reach (7 Cols) -->
+                <div class="lg:col-span-7 flex flex-col gap-6">
+                    <!-- Card 1: High-Impact WhatsApp Direct Sharing -->
+                    <div
+                        class="bg-surface-container-lowest rounded-2xl border border-outline-variant/50 p-6 shadow-sm flex flex-col gap-4">
+                        <div class="flex items-start justify-between">
+                            <div class="flex items-center gap-3">
+                                <div
+                                    class="w-10 h-10 rounded-xl bg-[#25D366]/15 flex items-center justify-center text-[#1e7e45]">
+                                    <span class="material-symbols-outlined text-[24px]"
+                                        style="font-variation-settings: 'FILL' 1;">chat</span>
+                                </div>
+                                <div>
+                                    <h3 class="text-base font-bold text-primary">Direct WhatsApp Sharing Hub</h3>
+                                    <p class="text-xs text-on-surface-variant">Reach recurring local patrons and village
+                                        artisan collectives</p>
+                                </div>
+                            </div>
+                            <span
+                                class="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800">Fastest
+                                Sales</span>
+                        </div>
+                        <!-- Giant Tactile WhatsApp Share Button -->
+                        <button
+                            class="w-full py-4 px-6 rounded-2xl bg-[#1e7e45] text-white flex items-center justify-between shadow-md hover:bg-[#19693a] active:scale-[0.99] transition-all group"
+                            id="share-whatsapp-btn" type="button">
+                            <div class="flex items-center gap-4">
+                                <div
+                                    class="w-11 h-11 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                                    <span class="material-symbols-outlined text-[24px] text-white"
+                                        style="font-variation-settings: 'FILL' 1;">send</span>
+                                </div>
+                                <div class="flex flex-col text-left">
+                                    <span class="text-base font-bold text-white tracking-wide leading-tight">
+                                        Share to WhatsApp • व्हाट्सएप पर शेयर करें
+                                    </span>
+                                    <span class="text-xs text-white/90 leading-tight mt-0.5">
+                                        Pre-fills photo, price (₹1,200), and order link into chat
+                                    </span>
+                                </div>
+                            </div>
+                            <span
+                                class="material-symbols-outlined text-[24px] text-white/90 group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                        </button>
+                        <!-- Insight stat -->
+                        <div
+                            class="flex items-center justify-center gap-2 py-1 text-xs text-on-surface-variant bg-surface-container-low rounded-xl p-2">
+                            <span class="material-symbols-outlined text-[18px] text-secondary">trending_up</span>
+                            <span>Artisans receive inquiries <strong>3.4x faster</strong> when shared directly in
+                                WhatsApp customer groups.</span>
+                        </div>
+                    </div>
+                    <!-- Card 2: ONDC Multi-Platform Network Hub -->
+                    <div
+                        class="bg-surface-container-lowest rounded-2xl border border-outline-variant/50 p-6 shadow-sm flex flex-col gap-4">
+                        <div class="flex items-start justify-between gap-4">
+                            <div class="flex gap-3.5">
+                                <div
+                                    class="w-11 h-11 rounded-2xl bg-secondary-fixed text-on-secondary-fixed flex items-center justify-center flex-shrink-0 shadow-sm">
+                                    <span class="material-symbols-outlined text-[24px]">hub</span>
+                                </div>
+                                <div class="flex flex-col">
+                                    <div class="flex items-center gap-2.5">
+                                        <h3 class="text-base font-bold text-primary">
+                                            List on Open Network for Digital Commerce (ONDC)
+                                        </h3>
+                                        <span
+                                            class="px-2 py-0.5 rounded-md bg-primary-container text-primary-fixed-dim text-[10px] font-bold uppercase tracking-wider">
+                                            Govt of India
+                                        </span>
+                                    </div>
+                                    <p class="text-xs text-on-surface-variant mt-0.5">
+                                        ओएनडीसी नेटवर्क पर लाइव रखें • Seamless buyer discovery across major consumer
+                                        apps
+                                    </p>
+                                </div>
+                            </div>
+                            <!-- iOS Style Switch -->
+                            <label class="relative inline-flex items-center cursor-pointer flex-shrink-0 mt-1"
+                                for="ondc-toggle">
+                                <input checked="" class="sr-only peer" id="ondc-toggle" type="checkbox">
+                                <div
+                                    class="w-11 h-6 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary">
+                                </div>
+                            </label>
+                        </div>
+                        <p class="text-xs text-on-surface-variant leading-relaxed">
+                            Make your saree discoverable across <strong class="text-primary font-semibold">Paytm,
+                                Mystore, PhonePe Pincode, Magicpin &amp; Tata Neu</strong> automatically with zero added
+                            platform fee. Orders route directly to your studio.
+                        </p>
+                        <!-- Partner Network Badges -->
+                        <div class="flex flex-wrap items-center gap-2 pt-1 border-t border-outline-variant/30">
+                            <span class="text-[11px] font-bold text-on-surface-variant mr-1">Active Connected
+                                Apps:</span>
+                            <span
+                                class="px-3 py-1 rounded-full bg-surface-container text-on-surface text-xs font-semibold border border-outline-variant/40 flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-blue-500"></span> Paytm
+                            </span>
+                            <span
+                                class="px-3 py-1 rounded-full bg-surface-container text-on-surface text-xs font-semibold border border-outline-variant/40 flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-orange-500"></span> Mystore
+                            </span>
+                            <span
+                                class="px-3 py-1 rounded-full bg-surface-container text-on-surface text-xs font-semibold border border-outline-variant/40 flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-purple-600"></span> PhonePe Pincode
+                            </span>
+                            <span
+                                class="px-3 py-1 rounded-full bg-surface-container text-on-surface text-xs font-semibold border border-outline-variant/40 flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Magicpin
+                            </span>
+                            <span
+                                class="px-3 py-1 rounded-full bg-surface-container text-on-surface text-xs font-semibold border border-outline-variant/40 flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-indigo-600"></span> Tata Neu
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- 4-Column Desktop Grid: Recent Catalog & Related Listings -->
+            <div
+                class="bg-surface-container-lowest rounded-2xl border border-outline-variant/50 p-6 shadow-sm space-y-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-secondary text-[22px]">grid_view</span>
+                        <h3 class="text-base font-bold text-primary">Your Active Studio Catalog (12 Crafts)</h3>
+                    </div>
+                    <a class="text-xs font-bold text-secondary hover:underline flex items-center gap-1" href="catalogue.html">
+                        View All Catalog Items <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+                    </a>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                    <!-- Item 1: Handwoven Silk Saree (Current) -->
+                    <div
+                        class="p-3 rounded-xl bg-surface-container-low border-2 border-secondary/40 flex flex-col relative group">
+                        <div class="w-full h-36 rounded-lg overflow-hidden bg-surface-container relative">
+                            <img alt="Handwoven Silk Saree"
+                                class="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAlrPAyvNl_t4YKO8w_w-8U9DRhBPBK1zXyAqaEGSTKfIgX9zbFdVqhUz24eNyhzT-VuM5wuhWPS4TD0e650W0LH_Zpq2DGYrdxnIdJZLQBWy8sa4I0ePgxqBXrAITaOFKziX8se_79awuadNxGCAfRP4s5tsSwv_d8MhZMbiXzK4ft7mKRWbTud1DZzH0Kxt8B1sQRlVgDX7pzayDRDxTV-AbsRb-IF1Ryu3Q6xhv9GW2JC3B8yXoX">
+                            <span
+                                class="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-bold">Just
+                                Published</span>
+                        </div>
+                        <h4 class="text-xs font-bold text-primary mt-2 truncate">Handwoven Pure Silk Saree</h4>
+                        <div class="flex items-center justify-between mt-1 text-xs">
+                            <span class="font-bold text-secondary">₹1,200</span>
+                            <span class="text-on-surface-variant text-[11px]">1 in stock</span>
+                        </div>
+                    </div>
+                    <!-- Item 2: Terracotta Vase -->
+                    <div
+                        class="p-3 rounded-xl bg-surface-container-low border border-outline-variant/30 flex flex-col group">
+                        <div class="w-full h-36 rounded-lg overflow-hidden bg-surface-container relative">
+                            <img alt="Terracotta Vase"
+                                class="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBBXVcOxFxwBEDIK0tQlH9EmtW8RrwrhO2BJsOCdii-dvPo1PaUJgypRxjyuo-cxircM61oBo9W0HM6jwknClyX17OFAO16oN4rTPkj1IvgR63oEfIzIrKYHpNpvVFI-SGcFtQM5yzYimFYBL9nZYvQuvq_l2bwI7A3nSDxruVj45Y84tpK_eDv16o-3Ev3yia0gaBXaFz7f8jIr4tLZXKCvSfhouiSOHCaY9s8I3txO-q_uMSeg6gx">
+                            <span
+                                class="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-surface/90 text-primary text-[10px] font-bold">Pottery</span>
+                        </div>
+                        <h4 class="text-xs font-bold text-primary mt-2 truncate">Hand-carved Terracotta Vase</h4>
+                        <div class="flex items-center justify-between mt-1 text-xs">
+                            <span class="font-bold text-secondary">₹850</span>
+                            <span class="text-on-surface-variant text-[11px]">4 in stock</span>
+                        </div>
+                    </div>
+                    <!-- Item 3: Jute Handbag -->
+                    <div
+                        class="p-3 rounded-xl bg-surface-container-low border border-outline-variant/30 flex flex-col group">
+                        <div class="w-full h-36 rounded-lg overflow-hidden bg-surface-container relative">
+                            <img alt="Jute Tote"
+                                class="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuALVDefdl5uMsFe_V7uX6cplbhUNdecBGdjVi4gZ_WZITmIzbTKGGHmSxgfVfmsFOExt6ZpTB2uFtlPY4dEMcwlv0ICntXAfrwdLk5GG_HdPRs1DrasS2BHL1yEMKeovpkBlgXBoAFSCjWa3vI0uo2uhVu0nkxC7JgYEDNIK2L9AnUywuirLhpvhNiVegfbW5KUI79udVgCoVUKHL_EQ9dpUBVTaeSkK3E1m_yJmb32Pg6INj-JGne0">
+                            <span
+                                class="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-surface/90 text-primary text-[10px] font-bold">Eco
+                                Fiber</span>
+                        </div>
+                        <h4 class="text-xs font-bold text-primary mt-2 truncate">Natural Braided Jute Tote</h4>
+                        <div class="flex items-center justify-between mt-1 text-xs">
+                            <span class="font-bold text-secondary">₹620</span>
+                            <span class="text-on-surface-variant text-[11px]">8 in stock</span>
+                        </div>
+                    </div>
+                    <!-- Item 4: Brass Diya -->
+                    <div
+                        class="p-3 rounded-xl bg-surface-container-low border border-outline-variant/30 flex flex-col group">
+                        <div class="w-full h-36 rounded-lg overflow-hidden bg-surface-container relative">
+                            <img alt="Brass Diya"
+                                class="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUWGiPORBN3hRVYrn_CFLtwfGgkO0QlyHsUyR5-TD7178ndv5oxEdXeXyjaZx4D723W-wVdotWoLKO46mQa-DnlxE8_6ANpKn95PZdMneb0bZQfedUFN25tN0_Bh1imU0KUPWDU6csA_Au0kAnzf_rNbtms38oEOJOws-FZumIrPWorDzcDfxYbF_B_N_-Cs9lxfTJwlKrNsNefaXL41tDwfnE56gagss2LymxGedouotskPBHW5Um">
+                            <span
+                                class="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-surface/90 text-primary text-[10px] font-bold">Metalcraft</span>
+                        </div>
+                        <h4 class="text-xs font-bold text-primary mt-2 truncate">Engraved Peepal Brass Diya</h4>
+                        <div class="flex items-center justify-between mt-1 text-xs">
+                            <span class="font-bold text-secondary">₹1,450</span>
+                            <span class="text-on-surface-variant text-[11px]">2 in stock</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <!-- Interactive Toast Notification Element -->
+    <div class="fixed bottom-6 right-8 bg-inverse-surface text-inverse-on-surface px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 transform translate-y-24 opacity-0 pointer-events-none transition-all duration-300 z-50"
+        id="action-toast">
+        <div class="w-7 h-7 rounded-full bg-secondary flex items-center justify-center text-white flex-shrink-0">
+            <span class="material-symbols-outlined text-[16px]">check</span>
+        </div>
+        <span class="text-xs font-medium" id="toast-message">Store link copied &amp; opening WhatsApp...</span>
+    </div>
+    <script>
+            (function () {
+                const whatsappBtn = document.getElementById('share-whatsapp-btn');
+                const toast = document.getElementById('action-toast');
+                const toastMessage = document.getElementById('toast-message');
+                const audioHintBtn = document.getElementById('audio-hint-btn');
+                const langBtn = document.getElementById('lang-switch-btn');
+                const ondcToggle = document.getElementById('ondc-toggle');
+
+                let toastTimeout;
+
+                window.showToast = function (text) {
+                    if (!toast) return;
+                    toastMessage.textContent = text;
+                    toast.classList.remove('translate-y-24', 'opacity-0', 'pointer-events-none');
+                    toast.classList.add('translate-y-0', 'opacity-100');
+
+                    clearTimeout(toastTimeout);
+                    toastTimeout = setTimeout(() => {
+                        toast.classList.add('translate-y-24', 'opacity-0', 'pointer-events-none');
+                        toast.classList.remove('translate-y-0', 'opacity-100');
+                    }, 3200);
+                };
+
+                if (whatsappBtn) {
+                    whatsappBtn.addEventListener('click', function () {
+                        showToast('लिंक कॉपी हो गया! WhatsApp खुल रहा है... (WhatsApp Opened)');
+                    });
+                }
+
+                if (audioHintBtn) {
+                    audioHintBtn.addEventListener('click', function () {
+                        showToast('ध्वनि संदेश बज रहा है • Playing Hindi voice tutorial');
+                    });
+                }
+
+                if (langBtn) {
+                    langBtn.addEventListener('click', function () {
+                        showToast('भाषा बदली गई • Language preference toggled (Hindi/English)');
+                    });
+                }
+
+                if (ondcToggle) {
+                    ondcToggle.addEventListener('change', function (e) {
+                        if (e.target.checked) {
+                            showToast('ONDC नेटवर्क सक्रिय • Product Live across Paytm & Tata Neu');
+                        } else {
+                            showToast('ONDC नेटवर्क निष्क्रिय • Product Paused on Network');
+                        }
+                    });
+                }
+            })();
+    </script>
+    <div id="snapdom-sandbox" data-snapdom-sandbox="true" aria-hidden="true"
+        style="position: absolute; left: -9999px; top: -9999px; width: 0px; height: 0px; overflow: hidden;"></div>
+
+  <!-- KalaSangam Interactive Prototype Switcher Dock -->
+  <div id="prototype-dock" class="fixed bottom-3 left-1/2 -translate-x-1/2 z-50 bg-[#180f0a]/92 backdrop-blur-md text-white px-3 py-1.5 rounded-full shadow-2xl border border-white/15 flex items-center gap-1 sm:gap-2 text-[11px] sm:text-xs font-semibold max-w-[96vw] overflow-x-auto transition-all hover:bg-[#180f0a]">
+    <div class="flex items-center gap-1 text-white/50 text-[10px] uppercase font-bold tracking-wider px-1.5 hidden md:flex shrink-0">
+      <span class="material-symbols-outlined text-[14px] text-[#ff9062]">view_carousel</span>
+      <span>Screens:</span>
+    </div>
+    <a href="auth.html" class="px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 shrink-0 text-white/80 hover:text-white hover:bg-white/10">
+      <span class="material-symbols-outlined text-[15px]">lock</span>
+      <span>Auth</span>
+    </a>
+    <a href="home.html" class="px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 shrink-0 text-white/80 hover:text-white hover:bg-white/10">
+      <span class="material-symbols-outlined text-[15px]">cottage</span>
+      <span>Home</span>
+    </a>
+    <a href="catalogue.html" class="px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 shrink-0 text-white/80 hover:text-white hover:bg-white/10">
+      <span class="material-symbols-outlined text-[15px]">inventory_2</span>
+      <span>Catalog</span>
+    </a>
+    <a href="orders.html" class="px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 shrink-0 text-white/80 hover:text-white hover:bg-white/10">
+      <span class="material-symbols-outlined text-[15px]">receipt_long</span>
+      <span>Orders</span>
+    </a>
+    <a href="capture.html" class="px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 shrink-0 text-white/80 hover:text-white hover:bg-white/10">
+      <span class="material-symbols-outlined text-[15px]">photo_camera</span>
+      <span>Capture</span>
+    </a>
+    <a href="review.html" class="px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 shrink-0 text-white/80 hover:text-white hover:bg-white/10">
+      <span class="material-symbols-outlined text-[15px]">rate_review</span>
+      <span>Review</span>
+    </a>
+    <a href="details.html" class="px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 shrink-0 bg-[#ff9062] text-[#180f0a] font-bold shadow-xs">
+      <span class="material-symbols-outlined text-[15px]">verified</span>
+      <span>Success / Details</span>
+    </a>
+  </div>
+
+</body>
+
+</html>

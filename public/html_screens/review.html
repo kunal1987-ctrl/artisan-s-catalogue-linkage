@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html class="h-full font-sans" lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Kala Sangam Studio — AI Draft Review &amp; Publish</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&amp;display=swap"
+        rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "inverse-on-surface": "#f4f0ea",
+                        "tertiary-container": "#352300",
+                        "on-error": "#ffffff",
+                        "background": "#fdf9f3",
+                        "on-secondary-fixed": "#370e00",
+                        "surface-container-high": "#ebe8e2",
+                        "surface-container-highest": "#e6e2dc",
+                        "error": "#ba1a1a",
+                        "secondary": "#9c441c",
+                        "surface-dim": "#dddad4",
+                        "primary": "#180f0a",
+                        "inverse-surface": "#31302d",
+                        "on-error-container": "#93000a",
+                        "surface-container": "#f1ede7",
+                        "on-primary-fixed": "#231a14",
+                        "on-primary-fixed-variant": "#50443d",
+                        "primary-container": "#2e241e",
+                        "tertiary": "#1b1000",
+                        "tertiary-fixed": "#ffdeaa",
+                        "surface-bright": "#fdf9f3",
+                        "on-secondary-container": "#752801",
+                        "outline": "#80756f",
+                        "surface-container-low": "#f7f3ed",
+                        "secondary-container": "#ff9062",
+                        "on-primary-container": "#998a82",
+                        "on-tertiary-fixed": "#271900",
+                        "surface-container-lowest": "#ffffff",
+                        "on-background": "#1c1c18",
+                        "error-container": "#ffdad6",
+                        "on-secondary": "#ffffff",
+                        "tertiary-fixed-dim": "#f1be65",
+                        "primary-fixed": "#f1dfd5",
+                        "inverse-primary": "#d4c3ba",
+                        "surface": "#fdf9f3",
+                        "on-tertiary-fixed-variant": "#5f4100",
+                        "surface-variant": "#e6e2dc",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed-variant": "#7d2d05",
+                        "on-surface": "#1c1c18",
+                        "outline-variant": "#d1c4bd",
+                        "secondary-fixed-dim": "#ffb599",
+                        "primary-fixed-dim": "#d4c3ba",
+                        "on-surface-variant": "#4e4540",
+                        "on-primary": "#ffffff",
+                        "secondary-fixed": "#ffdbce",
+                        "on-tertiary-container": "#b28633",
+                        "surface-tint": "#695c54"
+                    },
+                    fontFamily: {
+                        sans: ["'Plus Jakarta Sans'", "sans-serif"]
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        @layer base {
+
+            html,
+            body {
+                height: 100%;
+                margin: 0;
+                padding: 0;
+                font-family: 'Plus Jakarta Sans', sans-serif;
+                background-color: #fdf9f3;
+            }
+
+            body {
+                -webkit-font-smoothing: antialiased;
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f7f3ed;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #d1c4bd;
+            border-radius: 9999px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #80756f;
+        }
+    </style>
+</head>
+
+<body class="bg-surface text-on-surface flex h-full overflow-hidden">
+    <!-- ======================================================== -->
+    <!-- 1. PERSISTENT FIXED LEFT SIDEBAR (exact w-64 = 256px)     -->
+    <!-- ======================================================== -->
+    <aside
+        class="w-64 flex-shrink-0 bg-surface-container-low border-r border-outline-variant/50 flex flex-col justify-between h-full select-none z-30">
+        <!-- Top Branding & Navigation -->
+        <div class="flex flex-col">
+            <!-- Studio Header -->
+            <div class="p-5 border-b border-outline-variant/40">
+                <div class="flex items-center gap-3">
+                    <div
+                        class="w-10 h-10 rounded-xl bg-primary-container text-white flex items-center justify-center shadow-sm">
+                        <span class="material-symbols-outlined text-[22px] text-tertiary-fixed">handyman</span>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <h2 class="text-[16px] font-bold text-primary leading-tight tracking-tight">Kala Sangam</h2>
+                        <p class="text-[12px] text-on-surface-variant font-medium">कला संगम स्टूडियो</p>
+                    </div>
+                </div>
+                <!-- Offline Sync Ready Active Pill -->
+                <div
+                    class="mt-3.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-[11px] font-semibold tracking-wide">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>Offline Sync Ready • Active</span>
+                </div>
+            </div>
+            <!-- Main Navigation Menu -->
+            <nav class="p-3 space-y-1">
+                <!-- Home -->
+                <a class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors group"
+                    href="#">
+                    <div class="flex items-center gap-3">
+                        <span
+                            class="material-symbols-outlined text-[20px] text-on-surface-variant group-hover:text-primary">storefront</span>
+                        <div>
+                            <span class="text-[14px] font-semibold block leading-tight">Home</span>
+                            <span class="text-[11px] text-on-surface-variant/70 block leading-tight">आवास</span>
+                        </div>
+                    </div>
+                </a>
+                <!-- Catalog (Active Context) -->
+                <a class="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-primary-container text-white shadow-sm transition-all group"
+                    href="catalogue.html">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined text-[20px] text-tertiary-fixed">inventory_2</span>
+                        <div>
+                            <span class="text-[14px] font-semibold block leading-tight text-white">Catalog</span>
+                            <span class="text-[11px] text-white/70 block leading-tight">कैटलॉग</span>
+                        </div>
+                    </div>
+                    <span
+                        class="px-2 py-0.5 rounded-full bg-secondary text-[11px] font-bold text-white shadow-xs">12</span>
+                </a>
+                <!-- Orders -->
+                <a class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors group"
+                    href="orders.html">
+                    <div class="flex items-center gap-3">
+                        <span
+                            class="material-symbols-outlined text-[20px] text-on-surface-variant group-hover:text-primary">shopping_bag</span>
+                        <div>
+                            <span class="text-[14px] font-semibold block leading-tight">Orders</span>
+                            <span class="text-[11px] text-on-surface-variant/70 block leading-tight">ऑर्डर्स</span>
+                        </div>
+                    </div>
+                    <span
+                        class="px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-[11px] font-bold">3
+                        New</span>
+                </a>
+                <!-- Profile -->
+                <a class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors group"
+                    href="details.html">
+                    <div class="flex items-center gap-3">
+                        <span
+                            class="material-symbols-outlined text-[20px] text-on-surface-variant group-hover:text-primary">badge</span>
+                        <div>
+                            <span class="text-[14px] font-semibold block leading-tight">Profile</span>
+                            <span class="text-[11px] text-on-surface-variant/70 block leading-tight">प्रोफाइल</span>
+                        </div>
+                    </div>
+                </a>
+            </nav>
+        </div>
+        <!-- Bottom Sidebar Links & Artisan User Profile -->
+        <div class="p-3 border-t border-outline-variant/40 space-y-2">
+            <!-- Sahayata Kendra Help Link -->
+            <a class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors"
+                href="#">
+                <span class="material-symbols-outlined text-[18px] text-secondary">help_outline</span>
+                <span>Sahayata Kendra (सहायता केंद्र)</span>
+            </a>
+            <!-- Artisan Profile Card -->
+            <div
+                class="p-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/40 flex items-center gap-3">
+                <div class="relative">
+                    <div
+                        class="w-9 h-9 rounded-full bg-primary-container text-white flex items-center justify-center font-bold text-[13px]">
+                        RK
+                    </div>
+                    <span
+                        class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white"></span>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <p class="text-[13px] font-bold text-primary truncate leading-tight">Ramesh Kumar</p>
+                    <p class="text-[11px] text-on-surface-variant truncate">Kala Sangam Shop</p>
+                </div>
+                <span class="material-symbols-outlined text-[18px] text-on-surface-variant">expand_more</span>
+            </div>
+        </div>
+    </aside>
+    <!-- ======================================================== -->
+    <!-- 2. MAIN CONTENT AREA (Desktop Top Header + Workbench)    -->
+    <!-- ======================================================== -->
+    <div class="flex-1 flex flex-col h-full overflow-hidden">
+        <!-- Desktop Top Header -->
+        <header
+            class="h-16 px-8 bg-surface-container-lowest border-b border-outline-variant/40 flex items-center justify-between shrink-0 z-20">
+            <!-- Left: Breadcrumbs & Step Indicator -->
+            <div class="flex items-center gap-3">
+                <div
+                    class="flex items-center gap-2 text-[12px] font-bold tracking-wider uppercase text-on-surface-variant">
+                    <a class="hover:text-primary transition-colors" href="home.html">HOME</a>
+                    <span>/</span>
+                    <a class="hover:text-primary transition-colors" href="catalogue.html">CATALOG</a>
+                    <span>/</span>
+                    <span class="text-primary font-bold">AI DRAFT REVIEW &amp; PUBLISH</span>
+                </div>
+                <span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+                <div
+                    class="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-secondary-fixed/50 text-secondary text-[11px] font-bold uppercase tracking-wider">
+                    <span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>
+                    <span>Step 2 of 2: Confirm Listing</span>
+                </div>
+            </div>
+            <!-- Right: Header Actions -->
+            <div class="flex items-center gap-3.5">
+                <!-- Saved Offline Sync Badge -->
+                <div
+                    class="hidden lg:flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-low border border-outline-variant/40 text-on-surface-variant text-[12px] font-medium">
+                    <span class="text-emerald-700 font-bold">✓</span>
+                    <span>Saved Offline</span>
+                </div>
+                <!-- Voice Search Bar -->
+                <div class="relative w-72">
+                    <span
+                        class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant">search</span>
+                    <input
+                        class="w-full h-10 pl-9 pr-9 text-[13px] bg-surface-container-low rounded-full border border-outline-variant/40 placeholder:text-on-surface-variant/60 focus:outline-none focus:ring-2 focus:ring-primary-container focus:bg-white transition-all"
+                        placeholder="Search crafts or speak item name..." type="text">
+                    <button aria-label="Voice search input"
+                        class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-[18px] text-secondary hover:opacity-80 transition-opacity"
+                        type="button">mic</button>
+                </div>
+                <!-- Bilingual Language Toggle -->
+                <button aria-label="Switch Language"
+                    class="h-10 px-3.5 rounded-full bg-surface-container border border-outline-variant/40 text-primary flex items-center justify-center gap-1 font-bold text-[13px] hover:bg-surface-container-high transition-colors shadow-2xs"
+                    type="button">
+                    <span class="material-symbols-outlined text-[16px] text-secondary">translate</span>
+                    <span>A / अ</span>
+                </button>
+                <!-- Notification Bell -->
+                <button aria-label="Notifications"
+                    class="w-10 h-10 rounded-full bg-surface-container-low border border-outline-variant/40 text-on-surface hover:text-primary hover:bg-surface-container flex items-center justify-center transition-colors relative"
+                    type="button">
+                    <span class="material-symbols-outlined text-[20px]">notifications</span>
+                    <span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-secondary"></span>
+                </button>
+            </div>
+        </header>
+        <!-- Main Workspace Two-Column Workbench (Scrollable) -->
+        <main class="flex-1 overflow-y-auto p-6 lg:p-8 bg-surface">
+            <div class="max-w-[1280px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-start pb-12">
+                <!-- ======================================================== -->
+                <!-- LEFT COLUMN (approx 5/12 width or 45%): Visual Studio    -->
+                <!-- ======================================================== -->
+                <section class="lg:col-span-5 flex flex-col gap-4">
+                    <!-- Main Preview Card -->
+                    <div
+                        class="relative w-full rounded-2xl overflow-hidden bg-surface-container-lowest border border-outline-variant/40 shadow-sm group">
+                        <!-- Media Aspect 4:5 -->
+                        <div
+                            class="relative w-full aspect-[4/5] bg-surface-container-low flex items-center justify-center overflow-hidden">
+                            <img class="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
+                                data-alt="Editorial luxury studio portrait of an opulent royal sapphire blue handwoven pure mulberry silk saree, elegantly draped over a warm limestone artisan pedestal. Fine intricate golden zari threads catching soft studio lighting, delicate soft-blush shadows, minimalist serene atelier atmosphere with subtle tactile grain."
+                                id="product-preview-img"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAEq1Hkh8RmlAyVeK5gWu6j_YRSmgysFrP4oUBkyOyD-0L2PxQK2EPYOlD04SdKeyqcpoxMe-trihF63F1YYR0jB8DwGc_8Qj4FoI2OZy3SaWUq9mO9qZZmgAy_RFvRLSeQZPWsO_KnYucJlxSK8nl3V0KXJQSGkbwChhywzR_j7zm9kvIy-L9F8qh8ohekptBKtp2RWXgNgAH5wZtxJmMSbiXiLGP0BvGR-yhNeborvi6b1EC-3_NJ">
+                            <!-- AI Enhanced Studio Badge -->
+                            <div
+                                class="absolute top-3 left-3 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container-lowest/95 backdrop-blur-md shadow-sm border border-outline-variant/30">
+                                <span class="material-symbols-outlined text-[15px] text-tertiary-fixed-dim"
+                                    style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+                                <span class="text-[11px] font-bold text-primary tracking-wider uppercase">✨ AI Enhanced
+                                    Studio</span>
+                            </div>
+                            <!-- Voice Processed Badge -->
+                            <div
+                                class="absolute bottom-3 left-3 flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-container/85 backdrop-blur-md text-white shadow-sm border border-white/10">
+                                <span
+                                    class="material-symbols-outlined text-[14px] text-tertiary-fixed animate-pulse">mic</span>
+                                <span class="text-[11px] font-semibold text-white tracking-wider">🎙️ Generated from
+                                    Voice</span>
+                            </div>
+                            <!-- Floating Image Action Controls -->
+                            <div class="absolute bottom-3 right-3 flex items-center gap-2">
+                                <button aria-label="Zoom Photo"
+                                    class="w-10 h-10 rounded-full bg-surface-container-lowest/95 backdrop-blur-md text-primary flex items-center justify-center shadow-md hover:bg-white hover:scale-105 active:scale-95 transition-all border border-outline-variant/30"
+                                    id="btn-zoom" type="button">
+                                    <span class="material-symbols-outlined text-[19px]">zoom_in</span>
+                                </button>
+                                <button aria-label="Crop Photo"
+                                    class="w-10 h-10 rounded-full bg-surface-container-lowest/95 backdrop-blur-md text-primary flex items-center justify-center shadow-md hover:bg-white hover:scale-105 active:scale-95 transition-all border border-outline-variant/30"
+                                    id="btn-crop" type="button">
+                                    <span class="material-symbols-outlined text-[19px]">crop</span>
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Image Caption Bar -->
+                        <div
+                            class="px-4 py-3 bg-surface-container-low border-t border-outline-variant/30 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[16px] text-secondary">verified</span>
+                                <span class="text-[12px] text-on-surface-variant font-medium">Lighting &amp; drape
+                                    balanced via AI Camera</span>
+                            </div>
+                            <button
+                                class="text-[12px] font-bold text-secondary underline hover:opacity-80 transition-opacity"
+                                type="button">
+                                Original
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Multiple Photo Thumbnails / Gallery Strip -->
+                    <div
+                        class="rounded-2xl p-4 bg-surface-container-lowest border border-outline-variant/40 shadow-sm flex flex-col gap-2.5">
+                        <div class="flex items-center justify-between">
+                            <span
+                                class="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest">Multi-Angle
+                                Views (4)</span>
+                            <button class="text-[12px] font-semibold text-secondary hover:underline" type="button">+
+                                Upload More</button>
+                        </div>
+                        <div class="grid grid-cols-4 gap-2.5">
+                            <!-- Thumbnail 1: Front (Active) -->
+                            <div
+                                class="relative aspect-square rounded-xl overflow-hidden border-2 border-secondary ring-2 ring-secondary/20 cursor-pointer">
+                                <img alt="Front view thumbnail" class="w-full h-full object-cover"
+                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuAEq1Hkh8RmlAyVeK5gWu6j_YRSmgysFrP4oUBkyOyD-0L2PxQK2EPYOlD04SdKeyqcpoxMe-trihF63F1YYR0jB8DwGc_8Qj4FoI2OZy3SaWUq9mO9qZZmgAy_RFvRLSeQZPWsO_KnYucJlxSK8nl3V0KXJQSGkbwChhywzR_j7zm9kvIy-L9F8qh8ohekptBKtp2RWXgNgAH5wZtxJmMSbiXiLGP0BvGR-yhNeborvi6b1EC-3_NJ">
+                                <span
+                                    class="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-primary-container/80 text-[9px] font-bold text-white uppercase">Front</span>
+                            </div>
+                            <!-- Thumbnail 2: Weave Detail -->
+                            <div
+                                class="relative aspect-square rounded-xl overflow-hidden border border-outline-variant/40 bg-surface-container hover:border-secondary cursor-pointer transition-colors group">
+                                <div
+                                    class="w-full h-full flex flex-col items-center justify-center p-2 text-center bg-surface-container-high/60 group-hover:bg-surface-container-high transition-colors">
+                                    <span class="material-symbols-outlined text-[20px] text-secondary">texture</span>
+                                    <span class="text-[10px] font-semibold text-primary mt-1 leading-tight">Weave
+                                        Detail</span>
+                                </div>
+                            </div>
+                            <!-- Thumbnail 3: Pallu Border -->
+                            <div
+                                class="relative aspect-square rounded-xl overflow-hidden border border-outline-variant/40 bg-surface-container hover:border-secondary cursor-pointer transition-colors group">
+                                <div
+                                    class="w-full h-full flex flex-col items-center justify-center p-2 text-center bg-surface-container-high/60 group-hover:bg-surface-container-high transition-colors">
+                                    <span class="material-symbols-outlined text-[20px] text-secondary">pattern</span>
+                                    <span class="text-[10px] font-semibold text-primary mt-1 leading-tight">Pallu
+                                        Border</span>
+                                </div>
+                            </div>
+                            <!-- Thumbnail 4: Guild Mark -->
+                            <div
+                                class="relative aspect-square rounded-xl overflow-hidden border border-outline-variant/40 bg-surface-container hover:border-secondary cursor-pointer transition-colors group">
+                                <div
+                                    class="w-full h-full flex flex-col items-center justify-center p-2 text-center bg-surface-container-high/60 group-hover:bg-surface-container-high transition-colors">
+                                    <span
+                                        class="material-symbols-outlined text-[20px] text-secondary">verified_user</span>
+                                    <span class="text-[10px] font-semibold text-primary mt-1 leading-tight">Silk
+                                        Mark</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <!-- ======================================================== -->
+                <!-- RIGHT COLUMN (approx 7/12 width or 55%): AI Draft Review -->
+                <!-- ======================================================== -->
+                <section class="lg:col-span-7 flex flex-col gap-4">
+                    <!-- Card 1: Product Title & Category -->
+                    <div
+                        class="rounded-2xl p-6 bg-surface-container-lowest border border-outline-variant/40 shadow-sm transition-all hover:border-outline">
+                        <div class="flex items-start justify-between gap-4">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span
+                                        class="px-3 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed text-[11px] font-bold tracking-wider uppercase">TEXTILES
+                                        &amp; SAREES</span>
+                                    <span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+                                    <span
+                                        class="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">Title</span>
+                                </div>
+                                <h1 class="text-[24px] font-bold text-primary tracking-tight leading-snug">
+                                    Handwoven Blue Pure Silk Saree
+                                </h1>
+                                <p class="text-[13px] text-on-surface-variant mt-1">Authentic Varanasi Handloom •
+                                    Mulberry Silk Grade A</p>
+                            </div>
+                            <button aria-label="Edit Title"
+                                class="w-10 h-10 rounded-full bg-surface-container-low text-on-surface hover:bg-surface-container flex items-center justify-center shrink-0 active:scale-90 transition-all border border-outline-variant/40"
+                                type="button">
+                                <span class="material-symbols-outlined text-[18px]">edit</span>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Card 2: AI Suggested Price & Earnings Breakdown -->
+                    <div
+                        class="rounded-2xl p-6 bg-surface-container-lowest border border-outline-variant/40 shadow-sm transition-all hover:border-outline">
+                        <div class="flex items-start justify-between gap-4">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-1.5 mb-1">
+                                    <span class="material-symbols-outlined text-[16px] text-secondary">insights</span>
+                                    <span
+                                        class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">AI
+                                        Suggested Price</span>
+                                </div>
+                                <div class="flex items-baseline gap-2 mt-1">
+                                    <span class="text-[34px] font-bold text-secondary tracking-tight leading-none">₹
+                                        1,200</span>
+                                    <span class="text-[14px] text-on-surface-variant font-medium">/ unit</span>
+                                </div>
+                                <div class="mt-2.5 flex items-center gap-1.5 text-on-surface-variant">
+                                    <span
+                                        class="material-symbols-outlined text-[16px] text-secondary">location_on</span>
+                                    <p class="text-[13px] leading-relaxed">Calibrated against similar silk handlooms in
+                                        <span class="font-bold text-primary">Varanasi</span></p>
+                                </div>
+                            </div>
+                            <button aria-label="Edit Price"
+                                class="w-10 h-10 rounded-full bg-surface-container-low text-on-surface hover:bg-surface-container flex items-center justify-center shrink-0 active:scale-90 transition-all border border-outline-variant/40"
+                                type="button">
+                                <span class="material-symbols-outlined text-[18px]">edit</span>
+                            </button>
+                        </div>
+                        <!-- Artisan Payout Pill Breakdown -->
+                        <div
+                            class="mt-4 pt-3 border-t border-outline-variant/30 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-surface-container-low/70 rounded-xl px-4 py-3">
+                            <div class="flex items-center gap-2">
+                                <span
+                                    class="material-symbols-outlined text-[18px] text-emerald-700">account_balance_wallet</span>
+                                <div>
+                                    <span class="text-[13px] font-bold text-primary block leading-tight">Artisan Payout
+                                        (Est.): ₹ 1,140</span>
+                                    <span class="text-[11px] text-on-surface-variant block leading-tight">0% platform
+                                        listing fee • Direct ONDC settlement</span>
+                                </div>
+                            </div>
+                            <span
+                                class="inline-flex items-center text-[12px] font-bold text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-full w-fit">
+                                95% Net Payout
+                            </span>
+                        </div>
+                    </div>
+                    <!-- Card 3: Story & Craft Specifications -->
+                    <div
+                        class="rounded-2xl p-6 bg-surface-container-lowest border border-outline-variant/40 shadow-sm transition-all hover:border-outline">
+                        <div class="flex items-start justify-between gap-4 mb-3">
+                            <div class="flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-[16px] text-secondary">auto_stories</span>
+                                <span
+                                    class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Story
+                                    &amp; Specifications</span>
+                            </div>
+                            <button aria-label="Edit Description"
+                                class="w-10 h-10 rounded-full bg-surface-container-low text-on-surface hover:bg-surface-container flex items-center justify-center shrink-0 active:scale-90 transition-all border border-outline-variant/40"
+                                type="button">
+                                <span class="material-symbols-outlined text-[18px]">edit</span>
+                            </button>
+                        </div>
+                        <p class="text-[14px] text-on-surface-variant leading-relaxed">
+                            Exquisite handwoven blue saree crafted from pure mulberry silk with fine golden zari border
+                            work. Traditional artisan weave taking over 4 days to complete. Lightweight, breathable, and
+                            wedding-ready.
+                        </p>
+                        <!-- Dynamic Voice Note Transcription Box -->
+                        <div
+                            class="mt-4 p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/30 flex items-start gap-3">
+                            <div
+                                class="w-8 h-8 rounded-full bg-secondary-fixed flex items-center justify-center shrink-0 mt-0.5">
+                                <span
+                                    class="material-symbols-outlined text-[16px] text-on-secondary-fixed">graphic_eq</span>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <span
+                                    class="text-[11px] font-bold text-on-surface-variant block uppercase tracking-wider mb-0.5">EXTRACTED
+                                    FROM VOICE NOTE</span>
+                                <p class="text-[13px] text-primary italic leading-snug">“Traditional warp technique
+                                    passed through 3 generations...”</p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Card 4: Product Tags & Attributes -->
+                    <div
+                        class="rounded-2xl p-6 bg-surface-container-lowest border border-outline-variant/40 shadow-sm transition-all hover:border-outline flex flex-col gap-3">
+                        <div class="flex items-center justify-between">
+                            <span
+                                class="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest">Product
+                                Tags &amp; Attributes</span>
+                            <button class="text-[12px] font-bold text-secondary hover:underline transition-all"
+                                type="button">+ Add Tag</button>
+                        </div>
+                        <div class="flex flex-wrap gap-2.5">
+                            <!-- Handmade Pill -->
+                            <div
+                                class="h-9 px-3.5 rounded-full bg-surface-container-low border border-outline-variant/40 flex items-center gap-1.5 text-primary text-[13px] font-semibold">
+                                <span class="material-symbols-outlined text-[16px] text-secondary">front_hand</span>
+                                <span>Handmade</span>
+                            </div>
+                            <!-- 100% Silk Pill -->
+                            <div
+                                class="h-9 px-3.5 rounded-full bg-surface-container-low border border-outline-variant/40 flex items-center gap-1.5 text-primary text-[13px] font-semibold">
+                                <span class="material-symbols-outlined text-[16px] text-secondary">check_circle</span>
+                                <span>100% Silk</span>
+                            </div>
+                            <!-- Dry Clean Only Pill -->
+                            <div
+                                class="h-9 px-3.5 rounded-full bg-surface-container-low border border-outline-variant/40 flex items-center gap-1.5 text-primary text-[13px] font-semibold">
+                                <span
+                                    class="material-symbols-outlined text-[16px] text-on-surface-variant">dry_cleaning</span>
+                                <span>Dry Clean Only</span>
+                            </div>
+                            <!-- Mulberry Weave Pill -->
+                            <div
+                                class="h-9 px-3.5 rounded-full bg-secondary-fixed/50 border border-secondary/30 flex items-center gap-1.5 text-primary text-[13px] font-semibold">
+                                <span class="material-symbols-outlined text-[16px] text-secondary">local_florist</span>
+                                <span>Mulberry Weave</span>
+                            </div>
+                            <!-- Add Tag Button -->
+                            <button
+                                class="h-9 px-3 rounded-full border border-dashed border-outline text-on-surface-variant hover:text-primary hover:border-primary text-[12px] font-semibold flex items-center gap-1 transition-colors"
+                                type="button">
+                                <span class="material-symbols-outlined text-[15px]">add</span>
+                                <span>Custom Tag</span>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Bottom Action Bar / Workflow Actions -->
+                    <div
+                        class="rounded-2xl p-5 bg-surface-container-lowest border border-outline-variant/40 shadow-sm flex flex-col gap-3 mt-2">
+                        <div class="flex items-center gap-3">
+                            <!-- Retake Photo & Voice Secondary Button -->
+                            <button aria-label="Retake Photo and Voice"
+                                class="h-13 py-3 px-5 rounded-full bg-surface-container-low border border-outline-variant/50 text-primary flex items-center justify-center gap-2 hover:bg-surface-container transition-all shrink-0 font-bold text-[14px]"
+                                id="btn-redo" type="button">
+                                <span class="material-symbols-outlined text-[19px]">replay</span>
+                                <span>Retake Photo &amp; Voice</span>
+                            </button>
+                            <!-- Primary CTA: Publish to Shop -->
+                            <button
+                                class="h-13 py-3 px-6 flex-1 rounded-full bg-primary-container text-white flex items-center justify-center gap-2.5 shadow-md hover:bg-black active:scale-[0.99] transition-all font-bold text-[15px] tracking-wide"
+                                id="btn-publish" type="button">
+                                <span class="text-[17px]">✨</span>
+                                <span>Publish to Shop</span>
+                                <span class="text-[17px]">🚀</span>
+                            </button>
+                        </div>
+                        <!-- Offline Guarantee Subtext -->
+                        <div class="flex items-center justify-center gap-2 text-on-surface-variant text-[12px]">
+                            <span class="material-symbols-outlined text-[15px] text-emerald-700">cloud_done</span>
+                            <span>Stored locally if offline. Syncs automatically later to ONDC network.</span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+    <!-- Interactive Action Script -->
+    <script>
+        (function () {
+            const publishBtn = document.getElementById('btn-publish');
+            const redoBtn = document.getElementById('btn-redo');
+
+            if (publishBtn) {
+                publishBtn.addEventListener('click', function () {
+                    publishBtn.innerHTML = '<span class="material-symbols-outlined text-[20px] animate-spin">progress_activity</span><span>Publishing to Shop...</span>';
+                    setTimeout(() => {
+                        publishBtn.innerHTML = '<span class="material-symbols-outlined text-[20px]">done</span><span>Published Live!</span>';
+                        publishBtn.classList.replace('bg-primary-container', 'bg-emerald-800');
+                    }, 1000);
+                });
+            }
+
+            if (redoBtn) {
+                redoBtn.addEventListener('click', function () {
+                    if (confirm('Do you want to re-record voice details or re-capture the craft image?')) {
+                        window.location.reload();
+                    }
+                });
+            }
+        })();
+    </script>
+
+  <!-- KalaSangam Interactive Prototype Switcher Dock -->
+  <div id="prototype-dock" class="fixed bottom-3 left-1/2 -translate-x-1/2 z-50 bg-[#180f0a]/92 backdrop-blur-md text-white px-3 py-1.5 rounded-full shadow-2xl border border-white/15 flex items-center gap-1 sm:gap-2 text-[11px] sm:text-xs font-semibold max-w-[96vw] overflow-x-auto transition-all hover:bg-[#180f0a]">
+    <div class="flex items-center gap-1 text-white/50 text-[10px] uppercase font-bold tracking-wider px-1.5 hidden md:flex shrink-0">
+      <span class="material-symbols-outlined text-[14px] text-[#ff9062]">view_carousel</span>
+      <span>Screens:</span>
+    </div>
+    <a href="auth.html" class="px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 shrink-0 text-white/80 hover:text-white hover:bg-white/10">
+      <span class="material-symbols-outlined text-[15px]">lock</span>
+      <span>Auth</span>
+    </a>
+    <a href="home.html" class="px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 shrink-0 text-white/80 hover:text-white hover:bg-white/10">
+      <span class="material-symbols-outlined text-[15px]">cottage</span>
+      <span>Home</span>
+    </a>
+    <a href="catalogue.html" class="px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 shrink-0 text-white/80 hover:text-white hover:bg-white/10">
+      <span class="material-symbols-outlined text-[15px]">inventory_2</span>
+      <span>Catalog</span>
+    </a>
+    <a href="orders.html" class="px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 shrink-0 text-white/80 hover:text-white hover:bg-white/10">
+      <span class="material-symbols-outlined text-[15px]">receipt_long</span>
+      <span>Orders</span>
+    </a>
+    <a href="capture.html" class="px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 shrink-0 text-white/80 hover:text-white hover:bg-white/10">
+      <span class="material-symbols-outlined text-[15px]">photo_camera</span>
+      <span>Capture</span>
+    </a>
+    <a href="review.html" class="px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 shrink-0 bg-[#ff9062] text-[#180f0a] font-bold shadow-xs">
+      <span class="material-symbols-outlined text-[15px]">rate_review</span>
+      <span>Review</span>
+    </a>
+    <a href="details.html" class="px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 shrink-0 text-white/80 hover:text-white hover:bg-white/10">
+      <span class="material-symbols-outlined text-[15px]">verified</span>
+      <span>Success / Details</span>
+    </a>
+  </div>
+
+</body>
+
+</html>

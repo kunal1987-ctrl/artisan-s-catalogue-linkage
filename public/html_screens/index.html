@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html class="h-full bg-[#fdf9f3]" lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KalaSangam • Google Stitch Web Screens Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: "#180f0a",
+            secondary: "#9c441c",
+            surface: "#fdf9f3",
+            "surface-container": "#f1ede7",
+            "surface-container-low": "#f7f3ed",
+            "on-surface": "#1c1c18",
+            "on-surface-variant": "#4e4540",
+            "outline-variant": "#d1c4bd"
+          },
+          fontFamily: {
+            sans: ["Plus Jakarta Sans", "sans-serif"]
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-[#fdf9f3] text-on-surface font-sans min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 selection:bg-[#ffdbce]">
+  <div class="max-w-4xl w-full bg-white rounded-3xl p-6 sm:p-10 shadow-xl border border-outline-variant/30 flex flex-col gap-8">
+    
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-outline-variant/20">
+      <div class="flex items-center gap-3.5">
+        <div class="w-12 h-12 rounded-2xl bg-[#180f0a] flex items-center justify-center text-white shadow-md">
+          <span class="material-symbols-outlined text-[28px] text-[#ff9062]">token</span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-2xl font-extrabold tracking-tight text-primary">KalaSangam Studio</h1>
+            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#ff9062]/20 text-secondary border border-secondary/20">7 Web Dashboards</span>
+          </div>
+          <p class="text-xs sm:text-sm text-on-surface-variant mt-0.5 font-medium">Google Stitch Responsive Web Dashboards with Live Client Routing</p>
+        </div>
+      </div>
+      <a href="home.html" class="px-5 py-2.5 rounded-xl bg-primary hover:bg-[#2e241e] text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-sm transition-all">
+        <span>Launch App</span>
+        <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+      </a>
+    </div>
+
+    <!-- Screen Cards Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      
+      <!-- 1. Auth -->
+      <a href="auth.html" class="group p-5 rounded-2xl bg-surface-container-low hover:bg-white border border-outline-variant/30 hover:border-secondary hover:shadow-lg transition-all flex flex-col justify-between">
+        <div>
+          <div class="w-10 h-10 rounded-xl bg-white border border-outline-variant/30 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors mb-3">
+            <span class="material-symbols-outlined text-[20px]">lock</span>
+          </div>
+          <h2 class="font-bold text-base text-primary flex items-center justify-between">
+            <span>1. Auth / Login</span>
+            <span class="text-xs font-semibold text-secondary opacity-0 group-hover:opacity-100 transition-opacity">Open →</span>
+          </h2>
+          <p class="text-xs text-on-surface-variant mt-1.5 line-clamp-2">Mobile OTP, WhatsApp & Google artisan login with bilingual Hindi/English switch.</p>
+        </div>
+        <div class="mt-4 pt-3 border-t border-outline-variant/20 flex items-center justify-between text-[11px] text-on-surface-variant font-medium">
+          <span>auth.html</span>
+          <span class="text-emerald-700 font-bold">● Ready</span>
+        </div>
+      </a>
+
+      <!-- 2. Home -->
+      <a href="home.html" class="group p-5 rounded-2xl bg-surface-container-low hover:bg-white border border-outline-variant/30 hover:border-secondary hover:shadow-lg transition-all flex flex-col justify-between">
+        <div>
+          <div class="w-10 h-10 rounded-xl bg-white border border-outline-variant/30 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors mb-3">
+            <span class="material-symbols-outlined text-[20px]">cottage</span>
+          </div>
+          <h2 class="font-bold text-base text-primary flex items-center justify-between">
+            <span>2. Home Dashboard</span>
+            <span class="text-xs font-semibold text-secondary opacity-0 group-hover:opacity-100 transition-opacity">Open →</span>
+          </h2>
+          <p class="text-xs text-on-surface-variant mt-1.5 line-clamp-2">Daily payouts (₹14,850), live catalog, audio guidance & one-tap camera capture CTA.</p>
+        </div>
+        <div class="mt-4 pt-3 border-t border-outline-variant/20 flex items-center justify-between text-[11px] text-on-surface-variant font-medium">
+          <span>home.html</span>
+          <span class="text-emerald-700 font-bold">● Primary</span>
+        </div>
+      </a>
+
+      <!-- 3. Catalog -->
+      <a href="catalogue.html" class="group p-5 rounded-2xl bg-surface-container-low hover:bg-white border border-outline-variant/30 hover:border-secondary hover:shadow-lg transition-all flex flex-col justify-between">
+        <div>
+          <div class="w-10 h-10 rounded-xl bg-white border border-outline-variant/30 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors mb-3">
+            <span class="material-symbols-outlined text-[20px]">inventory_2</span>
+          </div>
+          <h2 class="font-bold text-base text-primary flex items-center justify-between">
+            <span>3. Product Catalog</span>
+            <span class="text-xs font-semibold text-secondary opacity-0 group-hover:opacity-100 transition-opacity">Open →</span>
+          </h2>
+          <p class="text-xs text-on-surface-variant mt-1.5 line-clamp-2">Complete inventory grid, live/review filters, stock indicators, and quick craft editor.</p>
+        </div>
+        <div class="mt-4 pt-3 border-t border-outline-variant/20 flex items-center justify-between text-[11px] text-on-surface-variant font-medium">
+          <span>catalogue.html</span>
+          <span class="text-emerald-700 font-bold">● Ready</span>
+        </div>
+      </a>
+
+      <!-- 4. Orders -->
+      <a href="orders.html" class="group p-5 rounded-2xl bg-surface-container-low hover:bg-white border border-outline-variant/30 hover:border-secondary hover:shadow-lg transition-all flex flex-col justify-between">
+        <div>
+          <div class="w-10 h-10 rounded-xl bg-white border border-outline-variant/30 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors mb-3">
+            <span class="material-symbols-outlined text-[20px]">receipt_long</span>
+          </div>
+          <h2 class="font-bold text-base text-primary flex items-center justify-between">
+            <span>4. Orders Hub</span>
+            <span class="text-xs font-semibold text-secondary opacity-0 group-hover:opacity-100 transition-opacity">Open →</span>
+          </h2>
+          <p class="text-xs text-on-surface-variant mt-1.5 line-clamp-2">Active buyer orders, delivery statuses, ONDC sync badges & buyer WhatsApp link.</p>
+        </div>
+        <div class="mt-4 pt-3 border-t border-outline-variant/20 flex items-center justify-between text-[11px] text-on-surface-variant font-medium">
+          <span>orders.html</span>
+          <span class="text-emerald-700 font-bold">● Ready</span>
+        </div>
+      </a>
+
+      <!-- 5. Capture -->
+      <a href="capture.html" class="group p-5 rounded-2xl bg-surface-container-low hover:bg-white border border-outline-variant/30 hover:border-secondary hover:shadow-lg transition-all flex flex-col justify-between">
+        <div>
+          <div class="w-10 h-10 rounded-xl bg-white border border-outline-variant/30 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors mb-3">
+            <span class="material-symbols-outlined text-[20px]">photo_camera</span>
+          </div>
+          <h2 class="font-bold text-base text-primary flex items-center justify-between">
+            <span>5. AI Studio Capture</span>
+            <span class="text-xs font-semibold text-secondary opacity-0 group-hover:opacity-100 transition-opacity">Open →</span>
+          </h2>
+          <p class="text-xs text-on-surface-variant mt-1.5 line-clamp-2">Camera viewfinder, dual-mic Hindi voice narration, grid overlays & photo capture.</p>
+        </div>
+        <div class="mt-4 pt-3 border-t border-outline-variant/20 flex items-center justify-between text-[11px] text-on-surface-variant font-medium">
+          <span>capture.html</span>
+          <span class="text-emerald-700 font-bold">● Ready</span>
+        </div>
+      </a>
+
+      <!-- 6. Review -->
+      <a href="review.html" class="group p-5 rounded-2xl bg-surface-container-low hover:bg-white border border-outline-variant/30 hover:border-secondary hover:shadow-lg transition-all flex flex-col justify-between">
+        <div>
+          <div class="w-10 h-10 rounded-xl bg-white border border-outline-variant/30 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors mb-3">
+            <span class="material-symbols-outlined text-[20px]">rate_review</span>
+          </div>
+          <h2 class="font-bold text-base text-primary flex items-center justify-between">
+            <span>6. AI Draft Review</span>
+            <span class="text-xs font-semibold text-secondary opacity-0 group-hover:opacity-100 transition-opacity">Open →</span>
+          </h2>
+          <p class="text-xs text-on-surface-variant mt-1.5 line-clamp-2">AI-generated bilingual title, story, pricing breakdown and instant publish trigger.</p>
+        </div>
+        <div class="mt-4 pt-3 border-t border-outline-variant/20 flex items-center justify-between text-[11px] text-on-surface-variant font-medium">
+          <span>review.html</span>
+          <span class="text-emerald-700 font-bold">● Ready</span>
+        </div>
+      </a>
+
+      <!-- 7. Details / Success -->
+      <a href="details.html" class="group p-5 rounded-2xl bg-surface-container-low hover:bg-white border border-outline-variant/30 hover:border-secondary hover:shadow-lg transition-all flex flex-col justify-between sm:col-span-2 lg:col-span-3">
+        <div>
+          <div class="w-10 h-10 rounded-xl bg-white border border-outline-variant/30 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors mb-3">
+            <span class="material-symbols-outlined text-[20px]">verified</span>
+          </div>
+          <h2 class="font-bold text-base text-primary flex items-center justify-between">
+            <span>7. Published Details & Omnichannel Distribution (Success Screen)</span>
+            <span class="text-xs font-semibold text-secondary opacity-0 group-hover:opacity-100 transition-opacity">Open →</span>
+          </h2>
+          <p class="text-xs text-on-surface-variant mt-1.5">Live store link, QR code, one-click WhatsApp broadcast, and ONDC multi-network synchronization.</p>
+        </div>
+        <div class="mt-4 pt-3 border-t border-outline-variant/20 flex items-center justify-between text-[11px] text-on-surface-variant font-medium">
+          <span>details.html</span>
+          <span class="text-emerald-700 font-bold">● Ready</span>
+        </div>
+      </a>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="pt-4 border-t border-outline-variant/20 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-on-surface-variant">
+      <span>Built with Tailwind CSS, Plus Jakarta Sans & Google Material Symbols</span>
+      <div class="flex items-center gap-4">
+        <a href="home.html" class="text-primary font-bold hover:text-secondary underline">Go to Home Dashboard</a>
+        <span>•</span>
+        <a href="auth.html" class="text-primary font-bold hover:text-secondary underline">Go to Login</a>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #180f0a;
+  --color-primary-container: #2e241e;
+  --color-on-primary: #ffffff;
+  --color-on-primary-container: #998a82;
+  --color-primary-fixed: #f1dfd5;
+  --color-primary-fixed-dim: #d4c3ba;
+  --color-on-primary-fixed: #231a14;
+  --color-on-primary-fixed-variant: #50443d;
+
+  --color-secondary: #9c441c;
+  --color-secondary-container: #ff9062;
+  --color-on-secondary: #ffffff;
+  --color-on-secondary-container: #752801;
+  --color-secondary-fixed: #ffdbce;
+  --color-secondary-fixed-dim: #ffb599;
+  --color-on-secondary-fixed: #370e00;
+  --color-on-secondary-fixed-variant: #7d2d05;
+
+  --color-tertiary: #1b1000;
+  --color-tertiary-container: #352300;
+  --color-on-tertiary: #ffffff;
+  --color-on-tertiary-container: #b28633;
+  --color-tertiary-fixed: #ffdeaa;
+  --color-tertiary-fixed-dim: #f1be65;
+  --color-on-tertiary-fixed: #271900;
+  --color-on-tertiary-fixed-variant: #5f4100;
+
+  --color-surface: #fdf9f3;
+  --color-surface-dim: #dddad4;
+  --color-surface-bright: #fdf9f3;
+  --color-surface-tint: #695c54;
+  --color-surface-variant: #e6e2dc;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f7f3ed;
+  --color-surface-container: #f1ede7;
+  --color-surface-container-high: #ebe8e2;
+  --color-surface-container-highest: #e6e2dc;
+
+  --color-on-surface: #1c1c18;
+  --color-on-surface-variant: #4e4540;
+  --color-outline: #80756f;
+  --color-outline-variant: #d1c4bd;
+  --color-background: #fdf9f3;
+  --color-on-background: #1c1c18;
+
+  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}

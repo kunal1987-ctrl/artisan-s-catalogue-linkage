@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+        name="viewport" />
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-background": "#1c1c18",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed": "#231a14",
+                        "background": "#fdf9f3",
+                        "secondary-fixed": "#ffdbce",
+                        "on-tertiary-container": "#b28633",
+                        "on-tertiary": "#ffffff",
+                        "secondary-container": "#ff9062",
+                        "surface-dim": "#dddad4",
+                        "on-primary-fixed-variant": "#50443d",
+                        "surface-container-low": "#f7f3ed",
+                        "primary-fixed-dim": "#d4c3ba",
+                        "surface-container": "#f1ede7",
+                        "tertiary-container": "#352300",
+                        "on-secondary-container": "#752801",
+                        "secondary-fixed-dim": "#ffb599",
+                        "error": "#ba1a1a",
+                        "primary": "#180f0a",
+                        "secondary": "#9c441c",
+                        "on-primary-container": "#998a82",
+                        "inverse-surface": "#31302d",
+                        "on-surface": "#1c1c18",
+                        "inverse-primary": "#d4c3ba",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed": "#271900",
+                        "surface-bright": "#fdf9f3",
+                        "tertiary-fixed-dim": "#f1be65",
+                        "on-secondary-fixed": "#370e00",
+                        "on-secondary-fixed-variant": "#7d2d05",
+                        "tertiary-fixed": "#ffdeaa",
+                        "on-tertiary-fixed-variant": "#5f4100",
+                        "outline": "#80756f",
+                        "on-primary": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "surface": "#fdf9f3",
+                        "surface-container-high": "#ebe8e2",
+                        "inverse-on-surface": "#f4f0ea",
+                        "surface-container-highest": "#e6e2dc",
+                        "outline-variant": "#d1c4bd",
+                        "surface-tint": "#695c54",
+                        "primary-container": "#2e241e",
+                        "on-surface-variant": "#4e4540",
+                        "primary-fixed": "#f1dfd5",
+                        "tertiary": "#1b1000",
+                        "error-container": "#ffdad6",
+                        "on-error": "#ffffff",
+                        "surface-variant": "#e6e2dc",
+                        "whatsapp": "#25D366"
+                    },
+                    fontFamily: {
+                        sans: ["'Plus Jakarta Sans'", "sans-serif"],
+                        body: ["'Plus Jakarta Sans'", "sans-serif"]
+                    },
+                    spacing: {
+                        "gutter-mobile": "16px",
+                        "touch-min": "48px"
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        @layer base {
+
+            html,
+            body {
+                width: 100%;
+                margin: 0;
+                padding: 0;
+                font-family: 'Plus Jakarta Sans', sans-serif;
+            }
+
+            body {
+                overscroll-behavior-y: none;
+                -webkit-font-smoothing: antialiased;
+            }
+
+            .pb-safe {
+                padding-bottom: env(safe-area-inset-bottom, 0px);
+            }
+
+            .pt-safe {
+                padding-top: env(safe-area-inset-top, 0px);
+            }
+        }
+
+        ::-webkit-scrollbar {
+            display: none;
+        }
+
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-surface text-on-surface flex min-h-full font-sans antialiased selection:bg-secondary/20">
+    <aside
+        class="w-64 shrink-0 min-h-screen bg-surface-container-lowest border-r border-surface-container-high flex flex-col justify-between sticky top-0 z-40 p-4">
+        <div class="flex flex-col gap-6">
+            <div>
+                <div class="flex items-center gap-3 px-2 pt-2 mb-2">
+                    <div class="w-10 h-10 rounded-2xl bg-secondary/10 flex items-center justify-center text-secondary">
+                        <span class="material-symbols-outlined text-[24px]">token</span></div>
+                    <div>
+                        <h1 class="text-base font-extrabold text-primary tracking-tight leading-tight">Kala Sangam</h1>
+                        <p class="text-[11px] font-bold text-secondary uppercase tracking-wider">कला संगम स्टूडियो</p>
+                    </div>
+                </div>
+                <div class="px-2"><span
+                        class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 bg-surface-container px-2.5 py-1 rounded-full border border-surface-container-high"><span
+                            class="material-symbols-outlined text-[14px]">cloud_done</span><span>Offline Sync
+                            Ready</span></span></div>
+            </div>
+            <nav class="flex flex-col gap-1.5"><a
+                    class="h-12 px-3.5 rounded-xl flex items-center gap-3 text-on-surface-variant hover:text-primary hover:bg-surface-container transition-all font-bold text-sm"
+                    href="home.html"><span class="material-symbols-outlined text-[22px]">cottage</span><span
+                        class="flex-1">Home</span><span
+                        class="text-xs text-on-surface-variant font-medium">आवास</span></a><a
+                    class="h-12 px-3.5 rounded-xl flex items-center gap-3 bg-primary text-on-primary font-bold text-sm shadow-xs transition-all"
+                    href="catalogue.html"><span class="material-symbols-outlined text-[22px]">inventory_2</span><span
+                        class="flex-1">Catalog</span><span
+                        class="text-xs text-on-primary/75 font-medium">कैटलॉग</span></a><a
+                    class="h-12 px-3.5 rounded-xl flex items-center gap-3 text-on-surface-variant hover:text-primary hover:bg-surface-container transition-all font-bold text-sm"
+                    href="orders.html"><span class="material-symbols-outlined text-[22px]">receipt_long</span><span
+                        class="flex-1">Orders</span><span
+                        class="px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-xs font-bold">3</span></a><a
+                    class="h-12 px-3.5 rounded-xl flex items-center gap-3 text-on-surface-variant hover:text-primary hover:bg-surface-container transition-all font-bold text-sm"
+                    href="details.html"><span class="material-symbols-outlined text-[22px]">account_circle</span><span
+                        class="flex-1">Profile</span><span
+                        class="text-xs text-on-surface-variant font-medium">प्रोफाइल</span></a></nav>
+        </div>
+        <div class="flex flex-col gap-3 pt-4 border-t border-surface-container"><a
+                class="flex items-center gap-2 text-xs font-bold text-on-surface-variant hover:text-primary px-2 transition-colors"
+                href="#"><span
+                    class="material-symbols-outlined text-[18px] text-secondary">support_agent</span><span>Sahayata
+                    Kendra (Help)</span></a>
+            <div
+                class="p-3 bg-surface-container-low rounded-2xl border border-surface-container flex items-center gap-3">
+                <div
+                    class="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-on-primary font-semibold shrink-0">
+                    <span class="material-symbols-outlined text-[20px]">person</span></div>
+                <div class="flex-1 min-w-0">
+                    <h4 class="text-xs font-bold text-primary truncate">Ramesh Kumar</h4>
+                    <p class="text-[10px] text-on-surface-variant truncate">Kala Sangam Shop</p>
+                </div><span class="w-2.5 h-2.5 rounded-full bg-emerald-700 shrink-0"></span>
+            </div>
+        </div>
+    </aside>
+    <!-- Top Fixed Header -->
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col relative w-full bg-surface min-h-screen p-6">
+        <div class="flex flex-col w-full">
+            <!-- Header Sub-Bar: Simplified Shop Info & Add Product CTA -->
+            <div class="flex flex-col gap-4 mb-6">
+                <div class="flex items-center justify-between gap-4 pb-4 border-b border-surface-container-high">
+                    <div>
+                        <div
+                            class="flex items-center gap-2 text-xs font-bold text-secondary uppercase tracking-wider mb-1">
+                            <span>Catalog</span><span class="text-outline">/</span><span>My Shop Inventory</span></div>
+                        <div class="flex items-center gap-3">
+                            <h2 class="text-24px font-bold text-primary tracking-tight">Handcrafted Collection</h2><span
+                                class="px-3 py-1 bg-secondary-fixed text-on-secondary-fixed rounded-full text-xs font-bold">12
+                                Items Listed</span><span
+                                class="inline-flex items-center gap-1 text-[11px] font-medium text-on-surface-variant bg-surface-container px-2.5 py-1 rounded-full border border-surface-container-high"><span
+                                    class="material-symbols-outlined text-[14px] text-emerald-700">cloud_done</span><span>Saved
+                                    Offline</span></span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="relative w-80"><span
+                                class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px] pointer-events-none">search</span><input
+                                class="w-full h-12 pl-11 pr-10 bg-surface-container-lowest text-on-surface placeholder:text-on-surface-variant text-sm font-medium rounded-xl shadow-xs border border-surface-container-high focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all"
+                                id="productSearchInput" oninput="handleSearch(this.value)"
+                                placeholder="Search crafts, sarees, pottery..." type="text" /><button
+                                aria-label="Voice Search"
+                                class="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg flex items-center justify-center text-secondary hover:bg-surface-container active:scale-90 transition-transform"
+                                onclick="actionToast('Listening for voice search...')" type="button"><span
+                                    class="material-symbols-outlined text-[18px]">mic</span></button></div><button
+                            aria-label="Change Language"
+                            class="h-12 px-4 flex items-center justify-center gap-2 rounded-xl bg-surface-container-lowest text-primary font-bold text-sm hover:bg-surface-container active:scale-95 transition-transform border border-surface-container-high shadow-xs shrink-0"
+                            onclick="toggleLanguage(this)" type="button"><span
+                                class="material-symbols-outlined text-[18px] text-secondary">translate</span><span
+                                class="font-bold tracking-wide" id="langIndicator">A / अ</span></button><button
+                            aria-label="Notifications"
+                            class="w-12 h-12 flex items-center justify-center rounded-xl bg-surface-container-lowest border border-surface-container-high text-on-surface-variant hover:text-primary hover:bg-surface-container active:scale-95 transition-colors relative shadow-xs shrink-0"
+                            type="button"><span class="material-symbols-outlined text-[22px]">notifications</span><span
+                                class="absolute top-3 right-3 w-2 h-2 rounded-full bg-secondary"></span></button><button
+                            class="h-12 px-5 rounded-xl bg-primary text-on-primary font-bold text-sm shadow-md active:scale-95 flex items-center gap-2 hover:bg-primary-container transition-all shrink-0"
+                            onclick="toggleAddModal()" type="button" onclick="window.location.href='capture.html'"><span
+                                class="material-symbols-outlined text-[20px]">add</span><span>+ Add Product (नया शिल्प
+                                जोड़ें)</span></button>
+                    </div>
+                </div>
+                <div
+                    class="bg-surface-container-low border border-surface-container rounded-2xl p-4 shadow-xs flex items-center justify-between gap-6">
+                    <div class="flex-1">
+                        <div
+                            class="flex items-center justify-between text-xs font-semibold text-on-surface-variant mb-2">
+                            <span>Overall Stock Availability</span><span class="font-bold text-primary">83% Active
+                                (Ready for dispatch)</span></div>
+                        <div class="w-full h-2.5 bg-surface-container-highest rounded-full overflow-hidden flex">
+                            <div class="bg-emerald-700 h-full" style="width: 67%;"></div>
+                            <div class="bg-amber-600 h-full" style="width: 17%;"></div>
+                            <div class="bg-error h-full" style="width: 16%;"></div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4 text-xs font-semibold shrink-0"><span
+                            class="flex items-center gap-1.5 bg-surface-container-lowest px-3 py-1.5 rounded-xl border border-surface-container"><span
+                                class="w-2.5 h-2.5 rounded-full bg-emerald-700 inline-block"></span>8 Live</span><span
+                            class="flex items-center gap-1.5 bg-surface-container-lowest px-3 py-1.5 rounded-xl border border-surface-container"><span
+                                class="w-2.5 h-2.5 rounded-full bg-amber-600 inline-block"></span>2 In
+                            Review</span><span
+                            class="flex items-center gap-1.5 bg-surface-container-lowest px-3 py-1.5 rounded-xl border border-surface-container"><span
+                                class="w-2.5 h-2.5 rounded-full bg-error inline-block"></span>2 Sold Out</span></div>
+                </div>
+                <div class="flex items-center justify-between gap-2" id="filterPillsContainer">
+                    <div class="flex items-center gap-2 overflow-x-auto"><button
+                            class="filter-chip active shrink-0 h-10 px-4 rounded-xl text-xs font-bold bg-primary text-on-primary transition-all shadow-xs"
+                            onclick="applyFilter('all', this)" type="button">All (12)</button><button
+                            class="filter-chip shrink-0 h-10 px-4 rounded-xl text-xs font-bold bg-surface-container-lowest border border-surface-container-high text-on-surface-variant transition-all shadow-xs flex items-center gap-2 hover:text-primary"
+                            onclick="applyFilter('live', this)" type="button"><span
+                                class="w-2.5 h-2.5 rounded-full bg-emerald-700"></span>Live (8)</button><button
+                            class="filter-chip shrink-0 h-10 px-4 rounded-xl text-xs font-bold bg-surface-container-lowest border border-surface-container-high text-on-surface-variant transition-all shadow-xs flex items-center gap-2 hover:text-primary"
+                            onclick="applyFilter('draft', this)" type="button"><span
+                                class="w-2.5 h-2.5 rounded-full bg-amber-600"></span>In Review (2)</button><button
+                            class="filter-chip shrink-0 h-10 px-4 rounded-xl text-xs font-bold bg-surface-container-lowest border border-surface-container-high text-on-surface-variant transition-all shadow-xs flex items-center gap-2 hover:text-primary"
+                            onclick="applyFilter('sold_out', this)" type="button"><span
+                                class="w-2.5 h-2.5 rounded-full bg-error"></span>Sold Out (2)</button></div><button
+                        aria-label="Filter Options"
+                        class="h-10 px-4 rounded-xl bg-surface-container-lowest border border-surface-container-high text-on-surface-variant flex items-center gap-2 shadow-xs hover:text-primary transition-all text-xs font-bold"
+                        id="filterModalBtn" onclick="toggleFilterSheet()" type="button"><span
+                            class="material-symbols-outlined text-[18px]">tune</span><span>Filter &amp;
+                            Sort</span></button>
+                </div>
+            </div>
+            <!-- Product Grid (2-column layout with 48x48px 3-dot buttons) -->
+            <div class="pt-1 pb-4">
+                <div class="grid gap-3" id="productsGrid"
+                    style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem;">
+                    <!-- Card 1: Handwoven Silk Saree -->
+                    <div class="product-item flex flex-col bg-surface-container-lowest rounded-2xl p-2 border border-surface-container shadow-xs group relative"
+                        data-category="Textiles"
+                        data-img="https://lh3.googleusercontent.com/aida-public/AB6AXuB-sNNPD7NjjGMS1v2tbVl4yFv8Iu1JhWlZUSvVBfDKp5ZF6QhcVD2Sj6bZWaiqixmiP37vRBG3SX9F3b4uR1n5MGGkrup-cALXMHLo3q5mJKxvO6Nb25E-D5gbpBwccFakVyyk-_RDpwytaljJ-QALr2nS-n5AudvitRZYoapt2ZvvelTIOPpiqcpPk-naPoAd76t5OvZDzT6uu5VR1pT5VNtpORRdvDWNlvYgSEdonfXI4gmBrbBJ"
+                        data-price="₹1,200" data-status="live" data-title="handwoven silk saree">
+                        <div
+                            class="relative aspect-[4/5] w-full rounded-xl overflow-hidden bg-surface-container-low mb-2">
+                            <img alt="Handwoven Silk Saree"
+                                class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-sNNPD7NjjGMS1v2tbVl4yFv8Iu1JhWlZUSvVBfDKp5ZF6QhcVD2Sj6bZWaiqixmiP37vRBG3SX9F3b4uR1n5MGGkrup-cALXMHLo3q5mJKxvO6Nb25E-D5gbpBwccFakVyyk-_RDpwytaljJ-QALr2nS-n5AudvitRZYoapt2ZvvelTIOPpiqcpPk-naPoAd76t5OvZDzT6uu5VR1pT5VNtpORRdvDWNlvYgSEdonfXI4gmBrbBJ" />
+                            <!-- Status Tag -->
+                            <div
+                                class="absolute top-2 left-2 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-md flex items-center gap-1.5 shadow-sm">
+                                <span class="w-2 h-2 rounded-full bg-emerald-700 animate-pulse"></span>
+                                <span class="text-[11px] text-primary font-bold uppercase tracking-wider">Live</span>
+                            </div>
+                            <!-- Menu Dot Button: 48x48px Tap Target with White/90 Shadow -->
+                            <button aria-label="Product Options"
+                                class="absolute top-1.5 right-1.5 w-12 h-12 rounded-full bg-white/90 backdrop-blur-md text-primary flex items-center justify-center shadow-md active:scale-90 hover:bg-white transition-all z-10"
+                                onclick="openActionMenu('Handwoven Silk Saree', '₹1,200', 'live', 'Textiles', 'https://lh3.googleusercontent.com/aida-public/AB6AXuB-sNNPD7NjjGMS1v2tbVl4yFv8Iu1JhWlZUSvVBfDKp5ZF6QhcVD2Sj6bZWaiqixmiP37vRBG3SX9F3b4uR1n5MGGkrup-cALXMHLo3q5mJKxvO6Nb25E-D5gbpBwccFakVyyk-_RDpwytaljJ-QALr2nS-n5AudvitRZYoapt2ZvvelTIOPpiqcpPk-naPoAd76t5OvZDzT6uu5VR1pT5VNtpORRdvDWNlvYgSEdonfXI4gmBrbBJ', true)"
+                                type="button">
+                                <span class="material-symbols-outlined text-[24px]">more_vert</span>
+                            </button>
+                        </div>
+                        <div class="flex flex-col flex-1 px-1 pb-1">
+                            <span
+                                class="text-[11px] font-bold uppercase text-secondary tracking-wider truncate mb-0.5">Textiles</span>
+                            <h3 class="text-sm font-bold text-primary line-clamp-1 mb-1">Handwoven Silk Saree</h3>
+                            <div class="mt-auto flex items-center justify-between pt-1">
+                                <span class="text-base font-extrabold text-primary">✨ ₹1,200</span>
+                                <span class="text-xs font-semibold text-on-surface-variant">Qty: 4</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Card 2: Handcrafted Terracotta Vase -->
+                    <div class="product-item flex flex-col bg-surface-container-lowest rounded-2xl p-2 border border-surface-container shadow-xs group relative"
+                        data-category="Ceramics"
+                        data-img="https://lh3.googleusercontent.com/aida-public/AB6AXuD8gEkbmMy61lt8HNipaEyZvDF0R6p-ND7qw2cjEn5TZ1I4aNy53nnPEyP6HiXzAHRgdm_ed09vPoCnl1sL8dhIZLrqPDv4KXmty4ipc14XLjBMFnBDpRj8Tp826kW8qSIVv90XEcFniXGnN--UJKkOv6Z1BwWZ2wbgGT3jt2qtrJbDQFLBGha72GH9OeMBzvmZduyd2xRG_j1AtZWd8ofVb3w5hKebi8HhvGosoQnjAelg213v4nsH"
+                        data-price="₹450" data-status="live" data-title="handcrafted terracotta vase">
+                        <div
+                            class="relative aspect-[4/5] w-full rounded-xl overflow-hidden bg-surface-container-low mb-2">
+                            <img alt="Handcrafted Terracotta Vase"
+                                class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8gEkbmMy61lt8HNipaEyZvDF0R6p-ND7qw2cjEn5TZ1I4aNy53nnPEyP6HiXzAHRgdm_ed09vPoCnl1sL8dhIZLrqPDv4KXmty4ipc14XLjBMFnBDpRj8Tp826kW8qSIVv90XEcFniXGnN--UJKkOv6Z1BwWZ2wbgGT3jt2qtrJbDQFLBGha72GH9OeMBzvmZduyd2xRG_j1AtZWd8ofVb3w5hKebi8HhvGosoQnjAelg213v4nsH" />
+                            <div
+                                class="absolute top-2 left-2 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-md flex items-center gap-1.5 shadow-sm">
+                                <span class="w-2 h-2 rounded-full bg-emerald-700 animate-pulse"></span>
+                                <span class="text-[11px] text-primary font-bold uppercase tracking-wider">Live</span>
+                            </div>
+                            <button aria-label="Product Options"
+                                class="absolute top-1.5 right-1.5 w-12 h-12 rounded-full bg-white/90 backdrop-blur-md text-primary flex items-center justify-center shadow-md active:scale-90 hover:bg-white transition-all z-10"
+                                onclick="openActionMenu('Handcrafted Terracotta Vase', '₹450', 'live', 'Ceramics', 'https://lh3.googleusercontent.com/aida-public/AB6AXuD8gEkbmMy61lt8HNipaEyZvDF0R6p-ND7qw2cjEn5TZ1I4aNy53nnPEyP6HiXzAHRgdm_ed09vPoCnl1sL8dhIZLrqPDv4KXmty4ipc14XLjBMFnBDpRj8Tp826kW8qSIVv90XEcFniXGnN--UJKkOv6Z1BwWZ2wbgGT3jt2qtrJbDQFLBGha72GH9OeMBzvmZduyd2xRG_j1AtZWd8ofVb3w5hKebi8HhvGosoQnjAelg213v4nsH', true)"
+                                type="button">
+                                <span class="material-symbols-outlined text-[24px]">more_vert</span>
+                            </button>
+                        </div>
+                        <div class="flex flex-col flex-1 px-1 pb-1">
+                            <span
+                                class="text-[11px] font-bold uppercase text-secondary tracking-wider truncate mb-0.5">Ceramics</span>
+                            <h3 class="text-sm font-bold text-primary line-clamp-1 mb-1">Terracotta Vase</h3>
+                            <div class="mt-auto flex items-center justify-between pt-1">
+                                <span class="text-base font-extrabold text-primary">✨ ₹450</span>
+                                <span class="text-xs font-semibold text-on-surface-variant">Qty: 8</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Card 3: Embroidered Jute Tote Bag -->
+                    <div class="product-item flex flex-col bg-surface-container-lowest rounded-2xl p-2 border border-surface-container shadow-xs group relative"
+                        data-category="Accessories"
+                        data-img="https://lh3.googleusercontent.com/aida-public/AB6AXuDukLnU4bbCJbOZFDn_6jsPBmdqKn0r3eCL6M7LKio3tU9vVx7laPhV7YMS0u2u3VEnhOvQFoarfhdEr44HF8cu5Ue78dPL4VecZWcWMZ4ZBUY7Ij25ZyVmRw1QUp8SXgDKWGXmI6Ga7PA9Muw9XeiCxNmHUMQbM6tR8xumpfSzCnLCXtuTl-6yJILr8hkIhG7rVFe8bo3rRjFirA6FjylAkc-cadJG7GgQavy9VRWMS_LHqQees_0A"
+                        data-price="₹350" data-status="draft" data-title="embroidered jute tote bag">
+                        <div
+                            class="relative aspect-[4/5] w-full rounded-xl overflow-hidden bg-surface-container-low mb-2">
+                            <img alt="Embroidered Jute Tote Bag"
+                                class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-90"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDukLnU4bbCJbOZFDn_6jsPBmdqKn0r3eCL6M7LKio3tU9vVx7laPhV7YMS0u2u3VEnhOvQFoarfhdEr44HF8cu5Ue78dPL4VecZWcWMZ4ZBUY7Ij25ZyVmRw1QUp8SXgDKWGXmI6Ga7PA9Muw9XeiCxNmHUMQbM6tR8xumpfSzCnLCXtuTl-6yJILr8hkIhG7rVFe8bo3rRjFirA6FjylAkc-cadJG7GgQavy9VRWMS_LHqQees_0A" />
+                            <div
+                                class="absolute top-2 left-2 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-md flex items-center gap-1.5 shadow-sm">
+                                <span class="w-2 h-2 rounded-full bg-amber-600"></span>
+                                <span class="text-[11px] text-primary font-bold uppercase tracking-wider">In
+                                    Review</span>
+                            </div>
+                            <button aria-label="Product Options"
+                                class="absolute top-1.5 right-1.5 w-12 h-12 rounded-full bg-white/90 backdrop-blur-md text-primary flex items-center justify-center shadow-md active:scale-90 hover:bg-white transition-all z-10"
+                                onclick="openActionMenu('Embroidered Jute Tote Bag', '₹350', 'draft', 'Accessories', 'https://lh3.googleusercontent.com/aida-public/AB6AXuDukLnU4bbCJbOZFDn_6jsPBmdqKn0r3eCL6M7LKio3tU9vVx7laPhV7YMS0u2u3VEnhOvQFoarfhdEr44HF8cu5Ue78dPL4VecZWcWMZ4ZBUY7Ij25ZyVmRw1QUp8SXgDKWGXmI6Ga7PA9Muw9XeiCxNmHUMQbM6tR8xumpfSzCnLCXtuTl-6yJILr8hkIhG7rVFe8bo3rRjFirA6FjylAkc-cadJG7GgQavy9VRWMS_LHqQees_0A', false)"
+                                type="button">
+                                <span class="material-symbols-outlined text-[24px]">more_vert</span>
+                            </button>
+                        </div>
+                        <div class="flex flex-col flex-1 px-1 pb-1">
+                            <span
+                                class="text-[11px] font-bold uppercase text-secondary tracking-wider truncate mb-0.5">Accessories</span>
+                            <h3 class="text-sm font-bold text-primary line-clamp-1 mb-1">Embroidered Jute Tote</h3>
+                            <div class="mt-auto flex items-center justify-between pt-1">
+                                <span class="text-base font-extrabold text-primary">✨ ₹350</span>
+                                <span class="text-xs font-bold text-amber-700">Pending</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Card 4: Brass Hanging Temple Diya -->
+                    <div class="product-item flex flex-col bg-surface-container-lowest rounded-2xl p-2 border border-surface-container shadow-xs group relative"
+                        data-category="Metalcraft"
+                        data-img="https://lh3.googleusercontent.com/aida-public/AB6AXuDlHfIaGDyYI0EAvbGgSI27CpGX-wwPKR744QBj2N5mF8JiWx2pJEHOznBx3d-QTMJ7vwL8abVP2GDeWgoqjrZOXB6G9WbSDMfbSWGXlLSiZU1Q-PDh11pL5VbO-WmzFvbUxJPftFGSV8ArB3R772RiFxmCm1-nwf-qg8p7Fc1-jem9M8p3KpuoF4kRmPSpWYOw_XkuS_4kMmzYH_Lr1CqJ72xPS8g2gMw4SDBvOS-AIa9mLyHIicHJ"
+                        data-price="₹890" data-status="sold_out" data-title="brass hanging temple diya">
+                        <div
+                            class="relative aspect-[4/5] w-full rounded-xl overflow-hidden bg-surface-container-low mb-2">
+                            <img alt="Brass Hanging Temple Diya"
+                                class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 saturate-50 opacity-75"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDlHfIaGDyYI0EAvbGgSI27CpGX-wwPKR744QBj2N5mF8JiWx2pJEHOznBx3d-QTMJ7vwL8abVP2GDeWgoqjrZOXB6G9WbSDMfbSWGXlLSiZU1Q-PDh11pL5VbO-WmzFvbUxJPftFGSV8ArB3R772RiFxmCm1-nwf-qg8p7Fc1-jem9M8p3KpuoF4kRmPSpWYOw_XkuS_4kMmzYH_Lr1CqJ72xPS8g2gMw4SDBvOS-AIa9mLyHIicHJ" />
+                            <div
+                                class="absolute top-2 left-2 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-md flex items-center gap-1.5 shadow-sm">
+                                <span class="w-2 h-2 rounded-full bg-error"></span>
+                                <span class="text-[11px] text-error font-bold uppercase tracking-wider">Sold Out</span>
+                            </div>
+                            <button aria-label="Product Options"
+                                class="absolute top-1.5 right-1.5 w-12 h-12 rounded-full bg-white/90 backdrop-blur-md text-primary flex items-center justify-center shadow-md active:scale-90 hover:bg-white transition-all z-10"
+                                onclick="openActionMenu('Brass Hanging Temple Diya', '₹890', 'sold_out', 'Metalcraft', 'https://lh3.googleusercontent.com/aida-public/AB6AXuDlHfIaGDyYI0EAvbGgSI27CpGX-wwPKR744QBj2N5mF8JiWx2pJEHOznBx3d-QTMJ7vwL8abVP2GDeWgoqjrZOXB6G9WbSDMfbSWGXlLSiZU1Q-PDh11pL5VbO-WmzFvbUxJPftFGSV8ArB3R772RiFxmCm1-nwf-qg8p7Fc1-jem9M8p3KpuoF4kRmPSpWYOw_XkuS_4kMmzYH_Lr1CqJ72xPS8g2gMw4SDBvOS-AIa9mLyHIicHJ', false)"
+                                type="button">
+                                <span class="material-symbols-outlined text-[24px]">more_vert</span>
+                            </button>
+                        </div>
+                        <div class="flex flex-col flex-1 px-1 pb-1">
+                            <span
+                                class="text-[11px] font-bold uppercase text-secondary tracking-wider truncate mb-0.5">Metalcraft</span>
+                            <h3 class="text-sm font-bold text-primary line-clamp-1 mb-1">Brass Temple Diya</h3>
+                            <div class="mt-auto flex items-center justify-between pt-1">
+                                <span class="text-base font-extrabold text-primary opacity-60">✨ ₹890</span>
+                                <span class="text-xs font-bold text-error">0 In Stock</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Card 5: Block-print Cotton Kurta -->
+                    <div class="product-item flex flex-col bg-surface-container-lowest rounded-2xl p-2 border border-surface-container shadow-xs group relative"
+                        data-category="Apparel"
+                        data-img="https://lh3.googleusercontent.com/aida-public/AB6AXuCxOJ0FKTYbbuMdGP2TFkBovi83nJiUcJ9esAv6gvCjf8DY5gmmeeF-yPcG4I1EsSm76xXiCiLZNUCaGj_X0VefIt-9VDN_Hc4hPgKA2A10j92yfkmqMbhWlxTaX89BIeLseNRlL641YrAhqjzPPC8uHDFOBQcCZFL6W7c-LlEicZC4u5RWq6tWpsRptguCMiGZb517GyYZIP2HSkZP4dhUo8p-USLXe6Qn-iKKHY8lcxO3RCq5S1PX"
+                        data-price="₹650" data-status="live" data-title="block-print cotton kurta">
+                        <div
+                            class="relative aspect-[4/5] w-full rounded-xl overflow-hidden bg-surface-container-low mb-2">
+                            <img alt="Block-print Cotton Kurta"
+                                class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCxOJ0FKTYbbuMdGP2TFkBovi83nJiUcJ9esAv6gvCjf8DY5gmmeeF-yPcG4I1EsSm76xXiCiLZNUCaGj_X0VefIt-9VDN_Hc4hPgKA2A10j92yfkmqMbhWlxTaX89BIeLseNRlL641YrAhqjzPPC8uHDFOBQcCZFL6W7c-LlEicZC4u5RWq6tWpsRptguCMiGZb517GyYZIP2HSkZP4dhUo8p-USLXe6Qn-iKKHY8lcxO3RCq5S1PX" />
+                            <div
+                                class="absolute top-2 left-2 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-md flex items-center gap-1.5 shadow-sm">
+                                <span class="w-2 h-2 rounded-full bg-emerald-700 animate-pulse"></span>
+                                <span class="text-[11px] text-primary font-bold uppercase tracking-wider">Live</span>
+                            </div>
+                            <button aria-label="Product Options"
+                                class="absolute top-1.5 right-1.5 w-12 h-12 rounded-full bg-white/90 backdrop-blur-md text-primary flex items-center justify-center shadow-md active:scale-90 hover:bg-white transition-all z-10"
+                                onclick="openActionMenu('Block-print Cotton Kurta', '₹650', 'live', 'Apparel', 'https://lh3.googleusercontent.com/aida-public/AB6AXuCxOJ0FKTYbbuMdGP2TFkBovi83nJiUcJ9esAv6gvCjf8DY5gmmeeF-yPcG4I1EsSm76xXiCiLZNUCaGj_X0VefIt-9VDN_Hc4hPgKA2A10j92yfkmqMbhWlxTaX89BIeLseNRlL641YrAhqjzPPC8uHDFOBQcCZFL6W7c-LlEicZC4u5RWq6tWpsRptguCMiGZb517GyYZIP2HSkZP4dhUo8p-USLXe6Qn-iKKHY8lcxO3RCq5S1PX', true)"
+                                type="button">
+                                <span class="material-symbols-outlined text-[24px]">more_vert</span>
+                            </button>
+                        </div>
+                        <div class="flex flex-col flex-1 px-1 pb-1">
+                            <span
+                                class="text-[11px] font-bold uppercase text-secondary tracking-wider truncate mb-0.5">Apparel</span>
+                            <h3 class="text-sm font-bold text-primary line-clamp-1 mb-1">Block-print Kurta</h3>
+                            <div class="mt-auto flex items-center justify-between pt-1">
+                                <span class="text-base font-extrabold text-primary">✨ ₹650</span>
+                                <span class="text-xs font-semibold text-on-surface-variant">Qty: 12</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Card 6: Carved Sheesham Wood Box -->
+                    <div class="product-item flex flex-col bg-surface-container-lowest rounded-2xl p-2 border border-surface-container shadow-xs group relative"
+                        data-category="Woodcraft"
+                        data-img="https://lh3.googleusercontent.com/aida-public/AB6AXuCp1cvKGoksKi4GTU_zeqkUAQyN_YdiyEV1hiX72ms9PeoKrT3-utw_vtH95S1WqbmkU3G_2jmzW7jFU0sl-ywaXtYbKHF1W9FtgYm5rFNQ5JJT8nE5E-XxN50l4NeudtXowIgi6i0VdgvVivkWC5-FVyY_tbEOuNG3pwcf1Y7wlWRjMVepn3Ul5174sdJyUHdoWXNcrvaVnU57nZN7wnn-4Py6PNboZs8tl2q0BEWf8C-eiRJ-pX80"
+                        data-price="₹550" data-status="live" data-title="carved sheesham wood box">
+                        <div
+                            class="relative aspect-[4/5] w-full rounded-xl overflow-hidden bg-surface-container-low mb-2">
+                            <img alt="Carved Sheesham Wood Box"
+                                class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCp1cvKGoksKi4GTU_zeqkUAQyN_YdiyEV1hiX72ms9PeoKrT3-utw_vtH95S1WqbmkU3G_2jmzW7jFU0sl-ywaXtYbKHF1W9FtgYm5rFNQ5JJT8nE5E-XxN50l4NeudtXowIgi6i0VdgvVivkWC5-FVyY_tbEOuNG3pwcf1Y7wlWRjMVepn3Ul5174sdJyUHdoWXNcrvaVnU57nZN7wnn-4Py6PNboZs8tl2q0BEWf8C-eiRJ-pX80" />
+                            <div
+                                class="absolute top-2 left-2 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-md flex items-center gap-1.5 shadow-sm">
+                                <span class="w-2 h-2 rounded-full bg-emerald-700 animate-pulse"></span>
+                                <span class="text-[11px] text-primary font-bold uppercase tracking-wider">Live</span>
+                            </div>
+                            <button aria-label="Product Options"
+                                class="absolute top-1.5 right-1.5 w-12 h-12 rounded-full bg-white/90 backdrop-blur-md text-primary flex items-center justify-center shadow-md active:scale-90 hover:bg-white transition-all z-10"
+                                onclick="openActionMenu('Carved Sheesham Wood Box', '₹550', 'live', 'Woodcraft', 'https://lh3.googleusercontent.com/aida-public/AB6AXuCp1cvKGoksKi4GTU_zeqkUAQyN_YdiyEV1hiX72ms9PeoKrT3-utw_vtH95S1WqbmkU3G_2jmzW7jFU0sl-ywaXtYbKHF1W9FtgYm5rFNQ5JJT8nE5E-XxN50l4NeudtXowIgi6i0VdgvVivkWC5-FVyY_tbEOuNG3pwcf1Y7wlWRjMVepn3Ul5174sdJyUHdoWXNcrvaVnU57nZN7wnn-4Py6PNboZs8tl2q0BEWf8C-eiRJ-pX80', true)"
+                                type="button">
+                                <span class="material-symbols-outlined text-[24px]">more_vert</span>
+                            </button>
+                        </div>
+                        <div class="flex flex-col flex-1 px-1 pb-1">
+                            <span
+                                class="text-[11px] font-bold uppercase text-secondary tracking-wider truncate mb-0.5">Woodcraft</span>
+                            <h3 class="text-sm font-bold text-primary line-clamp-1 mb-1">Sheesham Wood Box</h3>
+                            <div class="mt-auto flex items-center justify-between pt-1">
+                                <span class="text-base font-extrabold text-primary">✨ ₹550</span>
+                                <span class="text-xs font-semibold text-on-surface-variant">Qty: 6</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Empty State -->
+                <div class="hidden flex-col items-center justify-center py-12 px-4 text-center" id="noResultsState">
+                    <div
+                        class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-secondary mb-3">
+                        <span class="material-symbols-outlined text-[32px]">inventory_2</span>
+                    </div>
+                    <h3 class="text-lg font-bold text-primary mb-1">No Crafts Discovered</h3>
+                    <p class="text-sm text-on-surface-variant max-w-xs mb-4 font-normal">
+                        We couldn't locate items matching your query. Clear search or check your other categories.
+                    </p>
+                    <button
+                        class="h-12 px-6 rounded-full bg-primary text-on-primary font-bold text-sm shadow-sm active:scale-95"
+                        onclick="resetFilters()" type="button" onclick="window.location.href='capture.html'">
+                        Clear All Filters
+                    </button>
+                </div>
+                <!-- My Shop Reorder & Batch Update Banner -->
+                <div
+                    class="mt-4 p-4 bg-surface-container-low border border-surface-container rounded-2xl shadow-xs flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center text-secondary shrink-0">
+                            <span class="material-symbols-outlined text-[22px]">sync_saved_locally</span>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-bold text-primary">Instant Restock Notification</h4>
+                            <p class="text-xs text-on-surface-variant mt-0.5">2 products require urgent replenishment in
+                                My Shop</p>
+                        </div>
+                    </div>
+                    <button aria-label="Restock Details"
+                        class="w-10 h-10 rounded-full bg-surface-container-lowest text-primary flex items-center justify-center shadow-xs hover:scale-105 active:scale-95 transition-transform shrink-0"
+                        type="button">
+                        <span class="material-symbols-outlined text-[20px]">chevron_right</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Product Options Bottom Sheet (Interactive Action Drawer) -->
+        <div class="fixed inset-0 z-50 bg-primary/50 backdrop-blur-xs hidden flex items-end justify-center transition-opacity"
+            id="actionModal" onclick="closeActionMenu(event)">
+            <div class="flex flex-col gap-4 mb-6">
+                <div class="flex items-center justify-between gap-4 pb-4 border-b border-surface-container-high">
+                    <div>
+                        <div
+                            class="flex items-center gap-2 text-xs font-bold text-secondary uppercase tracking-wider mb-1">
+                            <span>Catalog</span><span class="text-outline">/</span><span>My Shop Inventory</span></div>
+                        <div class="flex items-center gap-3">
+                            <h2 class="text-24px font-bold text-primary tracking-tight">Handcrafted Collection</h2><span
+                                class="px-3 py-1 bg-secondary-fixed text-on-secondary-fixed rounded-full text-xs font-bold">12
+                                Items Listed</span><span
+                                class="inline-flex items-center gap-1 text-[11px] font-medium text-on-surface-variant bg-surface-container px-2.5 py-1 rounded-full border border-surface-container-high"><span
+                                    class="material-symbols-outlined text-[14px] text-emerald-700">cloud_done</span><span>Saved
+                                    Offline</span></span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="relative w-80"><span
+                                class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px] pointer-events-none">search</span><input
+                                class="w-full h-12 pl-11 pr-10 bg-surface-container-lowest text-on-surface placeholder:text-on-surface-variant text-sm font-medium rounded-xl shadow-xs border border-surface-container-high focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all"
+                                id="productSearchInput" oninput="handleSearch(this.value)"
+                                placeholder="Search crafts, sarees, pottery..." type="text" /><button
+                                aria-label="Voice Search"
+                                class="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg flex items-center justify-center text-secondary hover:bg-surface-container active:scale-90 transition-transform"
+                                onclick="actionToast('Listening for voice search...')" type="button"><span
+                                    class="material-symbols-outlined text-[18px]">mic</span></button></div><button
+                            aria-label="Change Language"
+                            class="h-12 px-4 flex items-center justify-center gap-2 rounded-xl bg-surface-container-lowest text-primary font-bold text-sm hover:bg-surface-container active:scale-95 transition-transform border border-surface-container-high shadow-xs shrink-0"
+                            onclick="toggleLanguage(this)" type="button"><span
+                                class="material-symbols-outlined text-[18px] text-secondary">translate</span><span
+                                class="font-bold tracking-wide" id="langIndicator">A / अ</span></button><button
+                            aria-label="Notifications"
+                            class="w-12 h-12 flex items-center justify-center rounded-xl bg-surface-container-lowest border border-surface-container-high text-on-surface-variant hover:text-primary hover:bg-surface-container active:scale-95 transition-colors relative shadow-xs shrink-0"
+                            type="button"><span class="material-symbols-outlined text-[22px]">notifications</span><span
+                                class="absolute top-3 right-3 w-2 h-2 rounded-full bg-secondary"></span></button><button
+                            class="h-12 px-5 rounded-xl bg-primary text-on-primary font-bold text-sm shadow-md active:scale-95 flex items-center gap-2 hover:bg-primary-container transition-all shrink-0"
+                            onclick="toggleAddModal()" type="button" onclick="window.location.href='capture.html'"><span
+                                class="material-symbols-outlined text-[20px]">add</span><span>+ Add Product (नया शिल्प
+                                जोड़ें)</span></button>
+                    </div>
+                </div>
+                <div
+                    class="bg-surface-container-low border border-surface-container rounded-2xl p-4 shadow-xs flex items-center justify-between gap-6">
+                    <div class="flex-1">
+                        <div
+                            class="flex items-center justify-between text-xs font-semibold text-on-surface-variant mb-2">
+                            <span>Overall Stock Availability</span><span class="font-bold text-primary">83% Active
+                                (Ready for dispatch)</span></div>
+                        <div class="w-full h-2.5 bg-surface-container-highest rounded-full overflow-hidden flex">
+                            <div class="bg-emerald-700 h-full" style="width: 67%;"></div>
+                            <div class="bg-amber-600 h-full" style="width: 17%;"></div>
+                            <div class="bg-error h-full" style="width: 16%;"></div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4 text-xs font-semibold shrink-0"><span
+                            class="flex items-center gap-1.5 bg-surface-container-lowest px-3 py-1.5 rounded-xl border border-surface-container"><span
+                                class="w-2.5 h-2.5 rounded-full bg-emerald-700 inline-block"></span>8 Live</span><span
+                            class="flex items-center gap-1.5 bg-surface-container-lowest px-3 py-1.5 rounded-xl border border-surface-container"><span
+                                class="w-2.5 h-2.5 rounded-full bg-amber-600 inline-block"></span>2 In
+                            Review</span><span
+                            class="flex items-center gap-1.5 bg-surface-container-lowest px-3 py-1.5 rounded-xl border border-surface-container"><span
+                                class="w-2.5 h-2.5 rounded-full bg-error inline-block"></span>2 Sold Out</span></div>
+                </div>
+                <div class="flex items-center justify-between gap-2" id="filterPillsContainer">
+                    <div class="flex items-center gap-2 overflow-x-auto"><button
+                            class="filter-chip active shrink-0 h-10 px-4 rounded-xl text-xs font-bold bg-primary text-on-primary transition-all shadow-xs"
+                            onclick="applyFilter('all', this)" type="button">All (12)</button><button
+                            class="filter-chip shrink-0 h-10 px-4 rounded-xl text-xs font-bold bg-surface-container-lowest border border-surface-container-high text-on-surface-variant transition-all shadow-xs flex items-center gap-2 hover:text-primary"
+                            onclick="applyFilter('live', this)" type="button"><span
+                                class="w-2.5 h-2.5 rounded-full bg-emerald-700"></span>Live (8)</button><button
+                            class="filter-chip shrink-0 h-10 px-4 rounded-xl text-xs font-bold bg-surface-container-lowest border border-surface-container-high text-on-surface-variant transition-all shadow-xs flex items-center gap-2 hover:text-primary"
+                            onclick="applyFilter('draft', this)" type="button"><span
+                                class="w-2.5 h-2.5 rounded-full bg-amber-600"></span>In Review (2)</button><button
+                            class="filter-chip shrink-0 h-10 px-4 rounded-xl text-xs font-bold bg-surface-container-lowest border border-surface-container-high text-on-surface-variant transition-all shadow-xs flex items-center gap-2 hover:text-primary"
+                            onclick="applyFilter('sold_out', this)" type="button"><span
+                                class="w-2.5 h-2.5 rounded-full bg-error"></span>Sold Out (2)</button></div><button
+                        aria-label="Filter Options"
+                        class="h-10 px-4 rounded-xl bg-surface-container-lowest border border-surface-container-high text-on-surface-variant flex items-center gap-2 shadow-xs hover:text-primary transition-all text-xs font-bold"
+                        id="filterModalBtn" onclick="toggleFilterSheet()" type="button"><span
+                            class="material-symbols-outlined text-[18px]">tune</span><span>Filter &amp;
+                            Sort</span></button>
+                </div>
+            </div>
+        </div>
+        <!-- Filter & Sort Drawer -->
+        <div class="fixed inset-0 z-50 bg-primary/40 backdrop-blur-xs hidden flex items-end justify-center transition-opacity"
+            id="filterSheet" onclick="toggleFilterSheet(event)">
+            <div class="flex flex-col gap-4 mb-6">
+                <div class="flex items-center justify-between gap-4 pb-4 border-b border-surface-container-high">
+                    <div>
+                        <div
+                            class="flex items-center gap-2 text-xs font-bold text-secondary uppercase tracking-wider mb-1">
+                            <span>Catalog</span><span class="text-outline">/</span><span>My Shop Inventory</span></div>
+                        <div class="flex items-center gap-3">
+                            <h2 class="text-24px font-bold text-primary tracking-tight">Handcrafted Collection</h2><span
+                                class="px-3 py-1 bg-secondary-fixed text-on-secondary-fixed rounded-full text-xs font-bold">12
+                                Items Listed</span><span
+                                class="inline-flex items-center gap-1 text-[11px] font-medium text-on-surface-variant bg-surface-container px-2.5 py-1 rounded-full border border-surface-container-high"><span
+                                    class="material-symbols-outlined text-[14px] text-emerald-700">cloud_done</span><span>Saved
+                                    Offline</span></span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="relative w-80"><span
+                                class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px] pointer-events-none">search</span><input
+                                class="w-full h-12 pl-11 pr-10 bg-surface-container-lowest text-on-surface placeholder:text-on-surface-variant text-sm font-medium rounded-xl shadow-xs border border-surface-container-high focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all"
+                                id="productSearchInput" oninput="handleSearch(this.value)"
+                                placeholder="Search crafts, sarees, pottery..." type="text" /><button
+                                aria-label="Voice Search"
+                                class="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg flex items-center justify-center text-secondary hover:bg-surface-container active:scale-90 transition-transform"
+                                onclick="actionToast('Listening for voice search...')" type="button"><span
+                                    class="material-symbols-outlined text-[18px]">mic</span></button></div><button
+                            aria-label="Change Language"
+                            class="h-12 px-4 flex items-center justify-center gap-2 rounded-xl bg-surface-container-lowest text-primary font-bold text-sm hover:bg-surface-container active:scale-95 transition-transform border border-surface-container-high shadow-xs shrink-0"
+                            onclick="toggleLanguage(this)" type="button"><span
+                                class="material-symbols-outlined text-[18px] text-secondary">translate</span><span
+                                class="font-bold tracking-wide" id="langIndicator">A / अ</span></button><button
+                            aria-label="Notifications"
+                            class="w-12 h-12 flex items-center justify-center rounded-xl bg-surface-container-lowest border border-surface-container-high text-on-surface-variant hover:text-primary hover:bg-surface-container active:scale-95 transition-colors relative shadow-xs shrink-0"
+                            type="button"><span class="material-symbols-outlined text-[22px]">notifications</span><span
+                                class="absolute top-3 right-3 w-2 h-2 rounded-full bg-secondary"></span></button><button
+                            class="h-12 px-5 rounded-xl bg-primary text-on-primary font-bold text-sm shadow-md active:scale-95 flex items-center gap-2 hover:bg-primary-container transition-all shrink-0"
+                            onclick="toggleAddModal()" type="button" onclick="window.location.href='capture.html'"><span
+                                class="material-symbols-outlined text-[20px]">add</span><span>+ Add Product (नया शिल्प
+                                जोड़ें)</span></button>
+                    </div>
+                </div>
+                <div
+                    class="bg-surface-container-low border border-surface-container rounded-2xl p-4 shadow-xs flex items-center justify-between gap-6">
+                    <div class="flex-1">
+                        <div
+                            class="flex items-center justify-between text-xs font-semibold text-on-surface-variant mb-2">
+                            <span>Overall Stock Availability</span><span class="font-bold text-primary">83% Active
+                                (Ready for dispatch)</span></div>
+                        <div class="w-full h-2.5 bg-surface-container-highest rounded-full overflow-hidden flex">
+                            <div class="bg-emerald-700 h-full" style="width: 67%;"></div>
+                            <div class="bg-amber-600 h-full" style="width: 17%;"></div>
+                            <div class="bg-error h-full" style="width: 16%;"></div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4 text-xs font-semibold shrink-0"><span
+                            class="flex items-center gap-1.5 bg-surface-container-lowest px-3 py-1.5 rounded-xl border border-surface-container"><span
+                                class="w-2.5 h-2.5 rounded-full bg-emerald-700 inline-block"></span>8 Live</span><span
+                            class="flex items-center gap-1.5 bg-surface-container-lowest px-3 py-1.5 rounded-xl border border-surface-container"><span
+                                class="w-2.5 h-2.5 rounded-full bg-amber-600 inline-block"></span>2 In
+                            Review</span><span
+                            class="flex items-center gap-1.5 bg-surface-container-lowest px-3 py-1.5 rounded-xl border border-surface-container"><span
+                                class="w-2.5 h-2.5 rounded-full bg-error inline-block"></span>2 Sold Out</span></div>
+                </div>
+                <div class="flex items-center justify-between gap-2" id="filterPillsContainer">
+                    <div class="flex items-center gap-2 overflow-x-auto"><button
+                            class="filter-chip active shrink-0 h-10 px-4 rounded-xl text-xs font-bold bg-primary text-on-primary transition-all shadow-xs"
+                            onclick="applyFilter('all', this)" type="button">All (12)</button><button
+                            class="filter-chip shrink-0 h-10 px-4 rounded-xl text-xs font-bold bg-surface-container-lowest border border-surface-container-high text-on-surface-variant transition-all shadow-xs flex items-center gap-2 hover:text-primary"
+                            onclick="applyFilter('live', this)" type="button"><span
+                                class="w-2.5 h-2.5 rounded-full bg-emerald-700"></span>Live (8)</button><button
+                            class="filter-chip shrink-0 h-10 px-4 rounded-xl text-xs font-bold bg-surface-container-lowest border border-surface-container-high text-on-surface-variant transition-all shadow-xs flex items-center gap-2 hover:text-primary"
+                            onclick="applyFilter('draft', this)" type="button"><span
+                                class="w-2.5 h-2.5 rounded-full bg-amber-600"></span>In Review (2)</button><button
+                            class="filter-chip shrink-0 h-10 px-4 rounded-xl text-xs font-bold bg-surface-container-lowest border border-surface-container-high text-on-surface-variant transition-all shadow-xs flex items-center gap-2 hover:text-primary"
+                            onclick="applyFilter('sold_out', this)" type="button"><span
+                                class="w-2.5 h-2.5 rounded-full bg-error"></span>Sold Out (2)</button></div><button
+                        aria-label="Filter Options"
+                        class="h-10 px-4 rounded-xl bg-surface-container-lowest border border-surface-container-high text-on-surface-variant flex items-center gap-2 shadow-xs hover:text-primary transition-all text-xs font-bold"
+                        id="filterModalBtn" onclick="toggleFilterSheet()" type="button"><span
+                            class="material-symbols-outlined text-[18px]">tune</span><span>Filter &amp;
+                            Sort</span></button>
+                </div>
+            </div>
+        </div>
+        <!-- Ephemeral Feedback Pill Notification -->
+        <div class="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-primary text-on-primary px-5 py-2.5 rounded-full text-xs font-bold shadow-xl flex items-center gap-2 pointer-events-none opacity-0 transition-opacity duration-300"
+            id="toastNotification">
+            <span class="material-symbols-outlined text-[18px] text-whatsapp">check_circle</span>
+            <span class="" id="toastMessage">Catalog Updated</span>
+        </div>
+    </main>
+    <!-- Bottom Navigation Bar (48px+ touch targets) -->
+    <script>
+        let activeFilter = 'all';
+        let currentSelectedProduct = 'Handwoven Silk Saree';
+
+        function toggleLanguage(btn) {
+            const indicator = document.getElementById('langIndicator');
+            if (indicator.textContent.includes('अ')) {
+                indicator.textContent = 'अ / A';
+                actionToast('भाषा बदलकर हिंदी कर दी गई है (Hindi)');
+            } else {
+                indicator.textContent = 'A / अ';
+                actionToast('Language switched to English');
+            }
+        }
+
+        function applyFilter(status, buttonElement) {
+            activeFilter = status;
+
+            const chips = document.querySelectorAll('#filterPillsContainer button');
+            chips.forEach(chip => {
+                chip.classList.remove('bg-primary', 'text-on-primary');
+                chip.classList.add('bg-surface-container-lowest', 'text-on-surface-variant', 'border', 'border-surface-container-high');
+            });
+            buttonElement.classList.remove('bg-surface-container-lowest', 'text-on-surface-variant', 'border', 'border-surface-container-high');
+            buttonElement.classList.add('bg-primary', 'text-on-primary');
+
+            filterProducts();
+        }
+
+        function handleSearch(query) {
+            filterProducts();
+        }
+
+        function filterProducts() {
+            const searchTerm = document.getElementById('productSearchInput').value.toLowerCase().trim();
+            const items = document.querySelectorAll('.product-item');
+            let visibleCount = 0;
+
+            items.forEach(item => {
+                const itemStatus = item.getAttribute('data-status');
+                const itemTitle = item.getAttribute('data-title');
+
+                const matchesStatus = (activeFilter === 'all') || (itemStatus === activeFilter);
+                const matchesSearch = itemTitle.includes(searchTerm);
+
+                if (matchesStatus && matchesSearch) {
+                    item.style.display = 'flex';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            const noResults = document.getElementById('noResultsState');
+            if (visibleCount === 0) {
+                noResults.classList.remove('hidden');
+                noResults.classList.add('flex');
+            } else {
+                noResults.classList.add('hidden');
+                noResults.classList.remove('flex');
+            }
+        }
+
+        function resetFilters() {
+            document.getElementById('productSearchInput').value = '';
+            const allChip = document.querySelector('#filterPillsContainer button');
+            applyFilter('all', allChip);
+        }
+
+        function openActionMenu(name, price, status, category, imgUrl, isOndcListed) {
+            currentSelectedProduct = name;
+            document.getElementById('modalProductName').textContent = name;
+            document.getElementById('modalProductPrice').textContent = price;
+            document.getElementById('modalCategoryLabel').textContent = category.toUpperCase();
+
+            const statusPill = document.getElementById('modalStatusPill');
+            if (status === 'live') {
+                statusPill.textContent = '🟢 LIVE';
+                statusPill.className = 'inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800';
+            } else if (status === 'draft') {
+                statusPill.textContent = '🟡 IN REVIEW';
+                statusPill.className = 'inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800';
+            } else {
+                statusPill.textContent = '🔴 SOLD OUT';
+                statusPill.className = 'inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800';
+            }
+
+            if (imgUrl) {
+                document.getElementById('modalProductImg').src = imgUrl;
+            }
+
+            const ondcToggle = document.getElementById('ondcToggle');
+            if (ondcToggle) {
+                ondcToggle.checked = Boolean(isOndcListed);
+            }
+
+            const modal = document.getElementById('actionModal');
+            const panel = document.getElementById('actionModalPanel');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                panel.classList.remove('translate-y-full');
+            }, 10);
+        }
+
+        function closeActionMenu(e) {
+            const modal = document.getElementById('actionModal');
+            const panel = document.getElementById('actionModalPanel');
+            panel.classList.add('translate-y-full');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 250);
+        }
+
+        function shareToWhatsApp() {
+            closeActionMenu();
+            const message = encodeURIComponent(`Namaste! Look at this handcrafted "${currentSelectedProduct}" from My Shop on ONDC.`);
+            actionToast('Opening WhatsApp to share craft...');
+            window.open(`https://api.whatsapp.com/send?text=${message}`, '_blank');
+        }
+
+        function toggleOndcStatus(checkbox) {
+            if (checkbox.checked) {
+                actionToast('Product is now Live on ONDC network!');
+            } else {
+                actionToast('Product delisted from ONDC');
+            }
+        }
+
+        function toggleFilterSheet() {
+            const sheet = document.getElementById('filterSheet');
+            const panel = document.getElementById('filterSheetPanel');
+            if (sheet.classList.contains('hidden')) {
+                sheet.classList.remove('hidden');
+                setTimeout(() => panel.classList.remove('translate-y-full'), 10);
+            } else {
+                panel.classList.add('translate-y-full');
+                setTimeout(() => sheet.classList.add('hidden'), 250);
+            }
+        }
+
+        function actionToast(msg) {
+            const toast = document.getElementById('toastNotification');
+            const toastMsg = document.getElementById('toastMessage');
+            toastMsg.textContent = msg;
+            toast.classList.remove('opacity-0');
+            toast.classList.add('opacity-100');
+            setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0');
+            }, 2400);
+        }
+
+        function toggleAddModal() {
+            actionToast('Opening Add Product Form');
+        }
+    </script>
+
+  <!-- KalaSangam Interactive Prototype Switcher Dock -->
+  <div id="prototype-dock" class="fixed bottom-3 left-1/2 -translate-x-1/2 z-50 bg-[#180f0a]/92 backdrop-blur-md text-white px-3 py-1.5 rounded-full shadow-2xl border border-white/15 flex items-center gap-1 sm:gap-2 text-[11px] sm:text-xs font-semibold max-w-[96vw] overflow-x-auto transition-all hover:bg-[#180f0a]">
+    <div class="flex items-center gap-1 text-white/50 text-[10px] uppercase font-bold tracking-wider px-1.5 hidden md:flex shrink-0">
+      <span class="material-symbols-outlined text-[14px] text-[#ff9062]">view_carousel</span>
+      <span>Screens:</span>
+    </div>
+    <a href="auth.html" class="px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 shrink-0 text-white/80 hover:text-white hover:bg-white/10">
+      <span class="material-symbols-outlined text-[15px]">lock</span>
+      <span>Auth</span>
+    </a>
+    <a href="home.html" class="px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 shrink-0 text-white/80 hover:text-white hover:bg-white/10">
+      <span class="material-symbols-outlined text-[15px]">cottage</span>
+      <span>Home</span>
+    </a>
+    <a href="catalogue.html" class="px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 shrink-0 bg-[#ff9062] text-[#180f0a] font-bold shadow-xs">
+      <span class="material-symbols-outlined text-[15px]">inventory_2</span>
+      <span>Catalog</span>
+    </a>
+    <a href="orders.html" class="px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 shrink-0 text-white/80 hover:text-white hover:bg-white/10">
+      <span class="material-symbols-outlined text-[15px]">receipt_long</span>
+      <span>Orders</span>
+    </a>
+    <a href="capture.html" class="px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 shrink-0 text-white/80 hover:text-white hover:bg-white/10">
+      <span class="material-symbols-outlined text-[15px]">photo_camera</span>
+      <span>Capture</span>
+    </a>
+    <a href="review.html" class="px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 shrink-0 text-white/80 hover:text-white hover:bg-white/10">
+      <span class="material-symbols-outlined text-[15px]">rate_review</span>
+      <span>Review</span>
+    </a>
+    <a href="details.html" class="px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 shrink-0 text-white/80 hover:text-white hover:bg-white/10">
+      <span class="material-symbols-outlined text-[15px]">verified</span>
+      <span>Success / Details</span>
+    </a>
+  </div>
+
+</body>
+
+</html>

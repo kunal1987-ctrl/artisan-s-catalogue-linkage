@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+        name="viewport" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script
+        id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "background": "#fbf9f5", "surface-container-highest": "#e4e2de", "tertiary-fixed-dim": "#e3bfb0", "on-primary-fixed": "#231917", "on-tertiary-fixed": "#2a170e", "tertiary-container": "#331e15", "on-error": "#ffffff", "surface-tint": "#695b58", "inverse-surface": "#30312e", "alabaster": "#FDFCFA", "outline": "#807571", "on-primary-container": "#968783", "on-surface-variant": "#4e4542", "inverse-primary": "#d4c3be", "border-delicate": "#E8E2D9", "tertiary-fixed": "#ffdbcd", "on-secondary": "#ffffff", "on-error-container": "#93000a", "primary-container": "#2b211e", "on-tertiary-container": "#a48377", "error-container": "#ffdad6", "surface-container-high": "#eae8e4", "surface-container-lowest": "#ffffff", "surface-variant": "#e4e2de", "primary": "#140c09", "on-surface": "#1b1c1a", "error": "#ba1a1a", "surface-dim": "#dbdad6", "on-primary": "#ffffff", "on-primary-fixed-variant": "#504441", "soft-blush": "#F5ECE7", "surface-bright": "#fbf9f5", "on-secondary-container": "#78603e", "secondary-container": "#fedeb2", "secondary-fixed-dim": "#e0c298", "on-tertiary": "#ffffff", "muted-gold": "#B39366", "primary-fixed-dim": "#d4c3be", "espresso-deep": "#191312", "tertiary": "#1a0903", "inverse-on-surface": "#f2f0ed", "linen": "#F3EFEA", "outline-variant": "#d2c3c0", "surface-container": "#efeeea", "on-secondary-fixed-variant": "#584323", "surface": "#fbf9f5", "secondary-fixed": "#fedeb2", "on-background": "#1b1c1a", "surface-container-low": "#f5f3ef", "on-secondary-fixed": "#281800", "secondary": "#725b38", "primary-fixed": "#f1dfd9", "on-tertiary-fixed-variant": "#5b4136" }, borderRadius: { "DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px" }, spacing: { "space-md": "1.5rem", "space-3xl": "6rem", "gutter-desktop": "2rem", "space-lg": "2rem", "space-sm": "1rem", "space-3xs": "0.25rem", "container-max": "1280px", "space-2xl": "4.5rem", "space-2xs": "0.5rem", "gutter-mobile": "1rem", "space-section": "8rem", "space-xs": "0.75rem", "space-xl": "3rem" }, fontFamily: { "body-sm": ["Plus Jakarta Sans", "sans-serif"], "body-md": ["Plus Jakarta Sans", "sans-serif"], "headline-lg": ["Plus Jakarta Sans", "sans-serif"], "label-caps": ["Plus Jakarta Sans", "sans-serif"], "body-lg": ["Plus Jakarta Sans", "sans-serif"], "headline-md": ["Plus Jakarta Sans", "sans-serif"], "display-hero-mobile": ["Plus Jakarta Sans", "sans-serif"], "headline-sm": ["Plus Jakarta Sans", "sans-serif"], "label-md": ["Plus Jakarta Sans", "sans-serif"], "title-lg": ["Plus Jakarta Sans", "sans-serif"], "display-hero": ["Plus Jakarta Sans", "sans-serif"], "title-md": ["Plus Jakarta Sans", "sans-serif"], "headline-lg-mobile": ["Plus Jakarta Sans", "sans-serif"] }, fontSize: { "body-sm": ["13px", { "lineHeight": "20px", "fontWeight": "400" }], "body-md": ["15px", { "lineHeight": "24px", "fontWeight": "400" }], "headline-lg": ["44px", { "lineHeight": "52px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "label-caps": ["11px", { "lineHeight": "16px", "letterSpacing": "0.12em", "fontWeight": "600" }], "body-lg": ["17px", { "lineHeight": "28px", "fontWeight": "400" }], "headline-md": ["32px", { "lineHeight": "40px", "fontWeight": "600" }], "display-hero-mobile": ["38px", { "lineHeight": "44px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "headline-sm": ["24px", { "lineHeight": "32px", "fontWeight": "600" }], "label-md": ["14px", { "lineHeight": "20px", "fontWeight": "500" }], "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "600" }], "display-hero": ["64px", { "lineHeight": "72px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "title-md": ["16px", { "lineHeight": "24px", "letterSpacing": "0.01em", "fontWeight": "600" }], "headline-lg-mobile": ["30px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "600" }] } } } };</script>
+    <style>
+        @layer base {
+
+            html,
+            body {
+                width: 100%;
+                margin: 0;
+                padding: 0;
+            }
+
+            body {
+                overscroll-behavior-y: none;
+                -webkit-font-smoothing: antialiased;
+            }
+
+            .pb-safe {
+                padding-bottom: env(safe-area-inset-bottom, 0px);
+            }
+
+            .pt-safe {
+                padding-top: env(safe-area-inset-top, 0px);
+            }
+        }
+
+        ::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body
+    class="bg-[#fdf9f3] text-on-surface flex flex-row min-h-screen selection:bg-soft-blush overflow-x-hidden font-['Plus_Jakarta_Sans',sans-serif]">
+    <aside
+        class="w-64 shrink-0 bg-[#fbf8f2] border-r border-[#e8e2d9] flex flex-col justify-between h-screen sticky top-0 z-40 select-none">
+        <div class="flex flex-col">
+            <div class="p-5 border-b border-[#e8e2d9]/60 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div
+                        class="w-10 h-10 rounded-xl bg-[#2e241e] text-[#fdf9f3] flex items-center justify-center shadow-md">
+                        <span class="material-symbols-outlined text-[22px] text-[#ff9062]">palette</span></div>
+                    <div>
+                        <h2 class="font-bold text-[15px] leading-tight text-[#180f0a] tracking-tight">Kala Sangam</h2>
+                        <p class="text-[11px] font-medium text-[#80756f]">कला संगम स्टूडियो</p>
+                    </div>
+                </div><span class="flex h-2 w-2 relative"><span
+                        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span><span
+                        class="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span></span>
+            </div>
+            <div class="px-4 py-2 mt-2">
+                <div
+                    class="flex items-center gap-2 bg-[#f1ede7] px-3 py-1.5 rounded-full text-[11px] font-medium text-[#4e4540]">
+                    <span class="material-symbols-outlined text-[14px] text-emerald-700">cloud_sync</span><span>Offline
+                        Sync Ready</span><span class="w-1 h-1 rounded-full bg-[#80756f]"></span><span
+                        class="text-emerald-700 font-semibold">Active</span></div>
+            </div>
+            <nav class="px-3 py-4 space-y-1"><a
+                    class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-[#4e4540] hover:bg-[#ebe8e2] hover:text-[#180f0a] transition-colors text-[13px] font-medium"
+                    href="#">
+                    <div class="flex items-center gap-3"><span
+                            class="material-symbols-outlined text-[19px]">home</span><span>Home (आवास)</span></div>
+                </a><a
+                    class="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-[#2e241e] text-[#fdf9f3] shadow-sm text-[13px] font-semibold"
+                    href="catalogue.html">
+                    <div class="flex items-center gap-3"><span
+                            class="material-symbols-outlined text-[19px] text-[#ff9062]">view_in_ar</span><span>AI
+                            Studio (कैटलॉग)</span></div><span
+                        class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-[#ff9062] text-[#2e241e]">12
+                        Active</span>
+                </a><a
+                    class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-[#4e4540] hover:bg-[#ebe8e2] hover:text-[#180f0a] transition-colors text-[13px] font-medium"
+                    href="orders.html">
+                    <div class="flex items-center gap-3"><span
+                            class="material-symbols-outlined text-[19px]">shopping_bag</span><span>Orders
+                            (ऑर्डर्स)</span></div><span
+                        class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-[#ebe8e2] text-[#4e4540]">3 New</span>
+                </a><a
+                    class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-[#4e4540] hover:bg-[#ebe8e2] hover:text-[#180f0a] transition-colors text-[13px] font-medium"
+                    href="details.html">
+                    <div class="flex items-center gap-3"><span
+                            class="material-symbols-outlined text-[19px]">person</span><span>Profile (प्रोफाइल)</span>
+                    </div>
+                </a></nav>
+        </div>
+        <div class="p-4 border-t border-[#e8e2d9]/60 space-y-3"><a
+                class="flex items-center gap-3 px-3 py-2 rounded-xl text-[#4e4540] hover:bg-[#ebe8e2] transition-colors text-[13px] font-medium"
+                href="#"><span
+                    class="material-symbols-outlined text-[18px] text-[#80756f]">support_agent</span><span>सहायता केंद्र
+                    (Help)</span></a>
+            <div class="flex items-center justify-between p-2.5 rounded-2xl bg-[#f1ede7] border border-[#e8e2d9]/80">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <div
+                        class="w-9 h-9 rounded-xl bg-[#2e241e] text-white flex items-center justify-center font-bold text-[13px] shrink-0">
+                        RK</div>
+                    <div class="min-w-0">
+                        <p class="text-[12px] font-bold text-[#180f0a] truncate leading-tight">Ramesh Kumar</p>
+                        <p class="text-[10px] text-[#80756f] truncate">Kala Sangam Shop</p>
+                    </div>
+                </div><span class="w-2 h-2 rounded-full bg-emerald-600 shrink-0 ml-1"></span>
+            </div>
+        </div>
+    </aside>
+    <main class="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto bg-[#fdf9f3]">
+        <header
+            class="sticky top-0 z-30 h-16 bg-[#fdf9f3]/90 backdrop-blur-md border-b border-[#e8e2d9] px-8 flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="flex items-center gap-2 text-[12px] font-semibold text-[#80756f]"><span>HOME</span><span
+                        class="text-[10px]">/</span><span>CATALOG</span><span class="text-[10px]">/</span><span
+                        class="text-[#9c441c]">SMART AI CAPTURE</span></div>
+                <div class="h-4 w-[1px] bg-[#e8e2d9] mx-1"></div><span
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#ffdbce] text-[#752801] tracking-wide">STEP
+                    1 OF 2: CAPTURE &amp; RECORD</span>
+                <div
+                    class="flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                    <span class="material-symbols-outlined text-[13px]">cloud_done</span><span>Saved Offline</span>
+                </div>
+            </div>
+            <div class="flex items-center gap-3 shrink-0">
+                <div class="relative flex items-center"><span
+                        class="material-symbols-outlined absolute left-3 text-[18px] text-[#80756f]">search</span><input
+                        class="w-72 h-10 pl-9 pr-9 bg-[#f1ede7] border border-[#e8e2d9] rounded-full text-[13px] text-[#180f0a] placeholder-[#80756f] focus:outline-none focus:border-[#9c441c]"
+                        placeholder="Search crafts, catalog or speak item name..." type="text" /><button
+                        class="absolute right-2.5 w-6 h-6 rounded-full text-[#80756f] hover:text-[#9c441c] flex items-center justify-center"
+                        type="button"><span class="material-symbols-outlined text-[16px]">mic</span></button></div>
+                <button
+                    class="h-10 px-4 rounded-full bg-[#f1ede7] hover:bg-[#ebe8e2] text-[#180f0a] text-[13px] font-bold flex items-center gap-1.5 border border-[#e8e2d9] transition-colors shadow-sm"
+                    id="lang-toggle-btn" onclick="toggleAppLanguage()" type="button"><span
+                        class="material-symbols-outlined text-[17px] text-[#9c441c]">translate</span><span
+                        id="lang-btn-label">A / अ</span></button><button
+                    class="w-10 h-10 rounded-full bg-[#f1ede7] hover:bg-[#ebe8e2] border border-[#e8e2d9] flex items-center justify-center relative text-[#4e4540]"
+                    type="button"><span class="material-symbols-outlined text-[20px]">notifications</span><span
+                        class="w-2 h-2 rounded-full bg-[#9c441c] absolute top-2 right-2"></span></button>
+            </div>
+        </header>
+        <div class="p-8 max-w-[1520px] mx-auto w-full grid grid-cols-12 gap-8">
+            <div class="col-span-12 xl:col-span-7 flex flex-col gap-4">
+                <div
+                    class="relative w-full aspect-[16/11] bg-[#191312] rounded-3xl overflow-hidden shadow-2xl flex flex-col justify-between p-6 border border-[#2e241e]">
+                    <div class="absolute inset-0 bg-cover bg-center opacity-95 scale-[1.01] transform transition-transform duration-700"
+                        id="camera-preview"
+                        style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBV3-xCzN9TdTuHufN2Eugbk_EZBDJA_VggGkHJFBe14GOnP9jvtR6Ee9vNq-Aw1XP7TDBVxytmQRP9igWfX9KFvxyeutdk5zYrrX_dgvibmIohF6cCEOqXwbxZiarLCs_p9eDtD_QU3cljge8SkKKNWcep6mY5_T-xCnBJj2niY32GH3Pk3XlykQMu8lqIg701PTDGB7sn-cna7dpzkjeV1gVX7Ke_l5Q6i0XTqcNXl1n8Gjv10NB9');">
+                    </div>
+                    <div
+                        class="absolute inset-0 bg-gradient-to-b from-[#191312]/60 via-transparent to-[#191312]/75 pointer-events-none">
+                    </div>
+                    <div class="relative z-10 flex items-center justify-between w-full">
+                        <div
+                            class="flex items-center gap-2 bg-[#191312]/60 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/10">
+                            <span class="w-2.5 h-2.5 rounded-full bg-[#ff9062] animate-ping"></span><span
+                                class="text-[11px] font-bold tracking-widest text-[#fdf9f3] uppercase">LIVE VIEW</span>
+                        </div>
+                        <div class="flex items-center gap-2"><button
+                                class="w-11 h-11 rounded-full bg-[#191312]/60 backdrop-blur-md text-[#fdf9f3] hover:text-[#ff9062] flex items-center justify-center transition-all border border-white/10"
+                                id="flash-btn" onclick="toggleFlash()" type="button"><span
+                                    class="material-symbols-outlined text-[20px]"
+                                    id="flash-icon">flash_off</span></button><button
+                                class="w-11 h-11 rounded-full bg-[#191312]/60 backdrop-blur-md text-[#fdf9f3] hover:text-[#ff9062] flex items-center justify-center transition-all border border-white/10"
+                                id="grid-btn" onclick="toggleGrid()" type="button"><span
+                                    class="material-symbols-outlined text-[20px]">grid_3x3</span></button><button
+                                class="w-11 h-11 rounded-full bg-[#191312]/60 backdrop-blur-md text-[#fdf9f3] hover:text-[#ff9062] flex items-center justify-center transition-all border border-white/10"
+                                type="button"><span
+                                    class="material-symbols-outlined text-[20px]">cameraswitch</span></button></div>
+                    </div>
+                    <div class="relative z-10 my-auto w-full max-w-xl mx-auto flex flex-col items-center">
+                        <div class="relative w-full aspect-[4/3] rounded-2xl flex items-center justify-center p-4"><svg
+                                class="absolute inset-0 w-full h-full pointer-events-none" preserveaspectratio="none"
+                                viewbox="0 0 100 100">
+                                <path d="M 0 14 L 0 0 L 14 0" fill="none" stroke="#FDFCFA" stroke-linecap="round"
+                                    stroke-width="2.5"></path>
+                                <path d="M 86 0 L 100 0 L 100 14" fill="none" stroke="#FDFCFA" stroke-linecap="round"
+                                    stroke-width="2.5"></path>
+                                <path d="M 0 86 L 0 100 L 14 100" fill="none" stroke="#FDFCFA" stroke-linecap="round"
+                                    stroke-width="2.5"></path>
+                                <path d="M 86 100 L 100 100 L 100 86" fill="none" stroke="#FDFCFA"
+                                    stroke-linecap="round" stroke-width="2.5"></path>
+                            </svg>
+                            <div
+                                class="absolute -top-3.5 left-6 flex items-center gap-2 bg-[#191312]/90 text-[#fdf9f3] px-3.5 py-1.5 rounded-full shadow-lg backdrop-blur-md border border-white/10">
+                                <span
+                                    class="material-symbols-outlined text-[#ff9062] text-[16px]">auto_awesome</span><span
+                                    class="text-[12px] font-semibold tracking-wide" id="badge-detected">Handwoven Saree
+                                    Detected</span><span class="w-1.5 h-1.5 rounded-full bg-[#ff9062]"></span><span
+                                    class="text-[11px] font-bold text-[#ff9062]">98% Match</span></div>
+                            <div
+                                class="flex flex-col items-center gap-2 bg-[#191312]/50 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10 text-center">
+                                <span
+                                    class="material-symbols-outlined text-white/90 text-[28px]">center_focus_weak</span>
+                                <p class="text-[13px] text-white/90 font-medium tracking-wide" id="frame-instruction">
+                                    Keep heirloom edges within frame</p>
+                            </div>
+                            <div
+                                class="absolute -bottom-3.5 right-6 flex items-center gap-2 bg-[#fdf9f3]/95 backdrop-blur-md text-[#180f0a] px-3.5 py-1.5 rounded-full shadow-md border border-[#e8e2d9]">
+                                <span class="material-symbols-outlined text-[#9c441c] text-[15px]">wb_sunny</span><span
+                                    class="text-[11px] font-bold tracking-tight">Optimal Lighting • Steady Frame</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div
+                        class="relative z-10 flex items-center justify-between bg-[#191312]/70 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10">
+                        <div class="flex items-center gap-3"><button
+                                class="flex items-center gap-2 text-xs font-semibold text-[#fdf9f3] bg-[#2e241e] hover:bg-[#3d3028] px-3.5 py-2 rounded-xl border border-white/10 transition-colors"
+                                type="button"><span
+                                    class="material-symbols-outlined text-[16px] text-[#ff9062]">photo_camera</span><span>Snap
+                                    Hi-Res Photo</span></button><button
+                                class="flex items-center gap-2 text-xs font-semibold text-[#fdf9f3] bg-[#2e241e] hover:bg-[#3d3028] px-3.5 py-2 rounded-xl border border-white/10 transition-colors"
+                                type="button"><span
+                                    class="material-symbols-outlined text-[16px]">upload_file</span><span>Upload
+                                    Photo</span></button></div>
+                        <div class="flex items-center gap-2 text-[12px] text-white/80"><span
+                                class="material-symbols-outlined text-[16px] text-emerald-400">auto_fix_high</span><span>Multi-angle
+                                calibration active</span></div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="flex items-center gap-3 p-3.5 rounded-2xl bg-[#f1ede7] border border-[#e8e2d9]"><span
+                            class="material-symbols-outlined text-[20px] text-[#9c441c]">crop_free</span>
+                        <div>
+                            <p class="text-[11px] font-bold text-[#180f0a]">Macro Border Focus</p>
+                            <p class="text-[10px] text-[#80756f]">Captures fine zari weave</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 p-3.5 rounded-2xl bg-[#f1ede7] border border-[#e8e2d9]"><span
+                            class="material-symbols-outlined text-[20px] text-[#9c441c]">palette</span>
+                        <div>
+                            <p class="text-[11px] font-bold text-[#180f0a]">True Color Calibration</p>
+                            <p class="text-[10px] text-[#80756f]">Varanasi Indigo verified</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 p-3.5 rounded-2xl bg-[#f1ede7] border border-[#e8e2d9]"><span
+                            class="material-symbols-outlined text-[20px] text-[#9c441c]">verified</span>
+                        <div>
+                            <p class="text-[11px] font-bold text-[#180f0a]">Handloom Authenticity</p>
+                            <p class="text-[10px] text-[#80756f]">Passed AI fiber check</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-span-12 xl:col-span-5 flex flex-col">
+                <div
+                    class="bg-[#191312] text-[#fdf9f3] rounded-3xl p-7 flex flex-col justify-between border border-[#2e241e] shadow-2xl h-full">
+                    <div class="flex flex-col">
+                        <div class="flex items-center justify-between pb-4 border-b border-white/10">
+                            <div class="flex items-center gap-2">
+                                <div class="w-3 h-3 rounded-full bg-[#ff9062] animate-pulse"></div>
+                                <h2 class="text-[16px] font-bold text-white tracking-tight">AI Studio Cataloger</h2>
+                            </div><span
+                                class="px-3 py-1 rounded-full bg-[#2e241e] text-[11px] font-semibold text-[#ff9062] border border-[#ff9062]/30">Hindi,
+                                Gujarati, Tamil +9</span>
+                        </div>
+                        <div class="w-full h-10 px-2 flex items-center justify-center gap-1.5 my-5 overflow-hidden">
+                            <div class="w-1.5 rounded-full bg-[#ff9062]/40 h-3 waveform-bar"></div>
+                            <div class="w-1.5 rounded-full bg-[#ff9062]/60 h-6 waveform-bar"></div>
+                            <div class="w-1.5 rounded-full bg-[#ff9062] h-8 waveform-bar"></div>
+                            <div class="w-1.5 rounded-full bg-white h-10 waveform-bar"></div>
+                            <div class="w-1.5 rounded-full bg-[#ff9062] h-7 waveform-bar"></div>
+                            <div class="w-1.5 rounded-full bg-[#ff9062]/70 h-9 waveform-bar"></div>
+                            <div class="w-1.5 rounded-full bg-white h-11 waveform-bar"></div>
+                            <div class="w-1.5 rounded-full bg-[#ff9062] h-6 waveform-bar"></div>
+                            <div class="w-1.5 rounded-full bg-[#ff9062]/60 h-4 waveform-bar"></div>
+                            <div class="w-1.5 rounded-full bg-[#ff9062]/30 h-2 waveform-bar"></div>
+                        </div>
+                        <div class="relative my-3 flex items-center justify-center">
+                            <div class="absolute w-28 h-28 rounded-full bg-[#ff9062]/15 animate-ping duration-1000"
+                                id="pulse-ring-2"></div>
+                            <div class="absolute w-24 h-24 rounded-full bg-[#ff9062]/25 animate-pulse"
+                                id="pulse-ring-1"></div><button
+                                aria-label="Hold to speak item description in your native language"
+                                class="relative z-10 w-20 h-20 rounded-full bg-[#9c441c] hover:bg-[#b04d20] text-white shadow-2xl flex items-center justify-center transform active:scale-95 transition-all duration-200 focus:outline-none border-2 border-[#ff9062]/40"
+                                id="mic-trigger" onmousedown="startRecording()" onmouseup="stopRecording()"
+                                ontouchend="stopRecording()" ontouchstart="startRecording()" type="button"><span
+                                    class="material-symbols-outlined text-[36px] text-white"
+                                    id="mic-icon">mic</span></button>
+                        </div>
+                        <div class="text-center px-4 mt-2">
+                            <h3 class="text-[17px] font-bold text-white mb-1 tracking-normal" id="recording-status">Hold
+                                to describe your craft or speak naturally</h3>
+                            <p class="text-[13px] text-[#d4c3ba] leading-relaxed italic" id="prompt-example">“Handwoven
+                                blue silk saree, pure zari border, took 4 days to weave in Varanasi”</p>
+                        </div>
+                        <div class="flex flex-wrap items-center justify-center gap-2 mt-5"><button
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#2e241e] hover:bg-[#3d3028] text-[#d4c3ba] text-[11px] font-bold border border-white/10 transition-colors"
+                                type="button"><span
+                                    class="material-symbols-outlined text-[13px] text-[#ff9062]">history_edu</span><span>Mention
+                                    Heritage</span></button><button
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#2e241e] hover:bg-[#3d3028] text-[#d4c3ba] text-[11px] font-bold border border-white/10 transition-colors"
+                                type="button"><span
+                                    class="material-symbols-outlined text-[13px] text-[#ff9062]">texture</span><span>Material
+                                    &amp; Weave Care</span></button><button
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#2e241e] hover:bg-[#3d3028] text-[#d4c3ba] text-[11px] font-bold border border-white/10 transition-colors"
+                                type="button"><span
+                                    class="material-symbols-outlined text-[13px] text-[#ff9062]">schedule</span><span>Days
+                                    to Craft</span></button><button
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#2e241e] hover:bg-[#3d3028] text-[#d4c3ba] text-[11px] font-bold border border-white/10 transition-colors"
+                                type="button"><span
+                                    class="material-symbols-outlined text-[13px] text-[#ff9062]">payments</span><span>Expected
+                                    Price</span></button></div>
+                        <div class="mt-6 p-4 rounded-2xl bg-[#2e241e]/80 border border-white/10 flex flex-col gap-1.5">
+                            <div class="flex items-center justify-between text-[11px] font-bold text-[#ff9062]">
+                                <span>LIVE TRANSCRIPTION PREVIEW</span><span
+                                    class="text-[10px] text-white/50">Auto-detected: Hindi (हिन्दी)</span></div>
+                            <p class="text-[13px] text-white/90 leading-relaxed font-normal">“शुद्ध रेशम साड़ी, 4 दिन की
+                                बुनाई, पारंपरिक बनारसी ज़री काम, उत्सव एवं शादी परिधान हेतु उपयुक्त...”</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-3 mt-6 pt-2"><button aria-label="Review AI Draft"
+                            class="w-full h-14 rounded-2xl bg-[#ff9062] hover:bg-[#ff804a] text-[#180f0a] font-bold text-[16px] tracking-wide flex items-center justify-center gap-2 shadow-xl active:scale-95 transition-all duration-150"
+                            id="review-btn" onclick="simulateReview()" type="button"><span id="review-btn-text">Review
+                                AI Draft</span><span class="material-symbols-outlined text-[22px]"
+                                id="review-btn-icon">arrow_forward</span></button>
+                        <div class="flex items-center justify-center gap-2 text-[#d4c3ba] text-[12px]"><span
+                                class="material-symbols-outlined text-[15px] text-[#ff9062]">graphic_eq</span><span
+                                id="review-subtext">Zero typing needed • AI generates title, description, tags &amp;
+                                ONDC pricing</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+  <!-- KalaSangam Interactive Prototype Switcher Dock -->
+  <div id="prototype-dock" class="fixed bottom-3 left-1/2 -translate-x-1/2 z-50 bg-[#180f0a]/92 backdrop-blur-md text-white px-3 py-1.5 rounded-full shadow-2xl border border-white/15 flex items-center gap-1 sm:gap-2 text-[11px] sm:text-xs font-semibold max-w-[96vw] overflow-x-auto transition-all hover:bg-[#180f0a]">
+    <div class="flex items-center gap-1 text-white/50 text-[10px] uppercase font-bold tracking-wider px-1.5 hidden md:flex shrink-0">
+      <span class="material-symbols-outlined text-[14px] text-[#ff9062]">view_carousel</span>
+      <span>Screens:</span>
+    </div>
+    <a href="auth.html" class="px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 shrink-0 text-white/80 hover:text-white hover:bg-white/10">
+      <span class="material-symbols-outlined text-[15px]">lock</span>
+      <span>Auth</span>
+    </a>
+    <a href="home.html" class="px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 shrink-0 text-white/80 hover:text-white hover:bg-white/10">
+      <span class="material-symbols-outlined text-[15px]">cottage</span>
+      <span>Home</span>
+    </a>
+    <a href="catalogue.html" class="px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 shrink-0 text-white/80 hover:text-white hover:bg-white/10">
+      <span class="material-symbols-outlined text-[15px]">inventory_2</span>
+      <span>Catalog</span>
+    </a>
+    <a href="orders.html" class="px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 shrink-0 text-white/80 hover:text-white hover:bg-white/10">
+      <span class="material-symbols-outlined text-[15px]">receipt_long</span>
+      <span>Orders</span>
+    </a>
+    <a href="capture.html" class="px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 shrink-0 bg-[#ff9062] text-[#180f0a] font-bold shadow-xs">
+      <span class="material-symbols-outlined text-[15px]">photo_camera</span>
+      <span>Capture</span>
+    </a>
+    <a href="review.html" class="px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 shrink-0 text-white/80 hover:text-white hover:bg-white/10">
+      <span class="material-symbols-outlined text-[15px]">rate_review</span>
+      <span>Review</span>
+    </a>
+    <a href="details.html" class="px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 shrink-0 text-white/80 hover:text-white hover:bg-white/10">
+      <span class="material-symbols-outlined text-[15px]">verified</span>
+      <span>Success / Details</span>
+    </a>
+  </div>
+
+</body>
+
+</html>

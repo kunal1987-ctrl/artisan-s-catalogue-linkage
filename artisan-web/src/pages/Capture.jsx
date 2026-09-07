@@ -641,81 +641,93 @@ export default function Capture() {
 
       <main className="flex-1 flex flex-col relative w-full min-h-screen bg-[#fdf9f3] overflow-y-auto">
         {/* Top Header */}
-        <header className="sticky top-0 z-20 bg-[#fdf9f3]/95 backdrop-blur-md border-b border-[#e8e2d9] px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-[#80756f]">
-              <span
+        <header className="sticky top-0 z-20 bg-[#fdf9f3]/95 backdrop-blur-md border-b border-[#e8e2d9] w-full">
+          <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div 
                 onClick={() => navigate('/home')}
-                className="cursor-pointer hover:text-primary transition-colors"
+                className="flex items-center gap-2 cursor-pointer group"
+                title="Go to Home"
               >
-                {language === 'hi' ? 'आवास' : 'HOME'}
-              </span>
-              <span className="text-[10px]">/</span>
-              <span
-                onClick={() => navigate('/catalog')}
-                className="cursor-pointer hover:text-primary transition-colors"
-              >
-                {language === 'hi' ? 'कैटलॉग' : 'CATALOG'}
-              </span>
-              <span className="text-[10px]">/</span>
-              <span className="text-[#9c441c] font-black">
-                {language === 'hi' ? 'स्मार्ट एआई कैप्चर' : 'SMART AI CAPTURE'}
+                <div className="w-8 h-8 rounded-lg bg-[#2e241e] text-[#ffdeaa] flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+                  <span className="material-symbols-outlined text-[18px]">token</span>
+                </div>
+                <span className="font-bold text-sm text-[#180f0a] tracking-tight hidden sm:inline">Kala Sangam</span>
+              </div>
+              <div className="h-4 w-[1px] bg-[#e8e2d9] mx-0.5 hidden sm:block" />
+              <div className="flex items-center gap-1.5 text-xs font-bold text-[#80756f]">
+                <span
+                  onClick={() => navigate('/home')}
+                  className="cursor-pointer hover:text-primary transition-colors"
+                >
+                  {language === 'hi' ? 'आवास' : 'HOME'}
+                </span>
+                <span className="text-[10px]">/</span>
+                <span
+                  onClick={() => navigate('/catalog')}
+                  className="cursor-pointer hover:text-primary transition-colors"
+                >
+                  {language === 'hi' ? 'कैटलॉग' : 'CATALOG'}
+                </span>
+                <span className="text-[10px]">/</span>
+                <span className="text-[#9c441c] font-black">
+                  {language === 'hi' ? 'स्मार्ट एआई कैप्चर' : 'SMART AI CAPTURE'}
+                </span>
+              </div>
+              <span className="hidden md:inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#ffdbce] text-[#752801] tracking-wide">
+                {language === 'hi' ? 'चरण 1: फोटो एवं विवरण' : 'STEP 1 OF 2'}
               </span>
             </div>
-            <div className="h-4 w-[1px] bg-[#e8e2d9] mx-1"></div>
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#ffdbce] text-[#752801] tracking-wide">
-              {language === 'hi' ? 'चरण 1: फोटो एवं विवरण' : 'STEP 1 OF 2: PHOTO & DETAILS'}
-            </span>
-          </div>
 
-          <div className="flex items-center gap-2.5 shrink-0">
-            {/* Authenticated Artisan Badge */}
-            {isVerified ? (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-900 font-bold text-[11px] shadow-xs">
-                <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
-                <span>🟢 {artisanProfile.phone || user?.phone || '+91 99999 99999'} [✓ Verified]</span>
-              </span>
-            ) : (
-              <button
-                type="button"
-                onClick={() => openAuthModal()}
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-stone-950 text-[11px] font-bold cursor-pointer transition-all active:scale-95 animate-pulse shadow-xs"
-              >
-                <span className="material-symbols-outlined text-[14px]">login</span>
-                <span>📲 {language === 'hi' ? 'फ़ोन सत्यापन' : 'Login with OTP'}</span>
-              </button>
-            )}
-
-            {/* Language Toggle */}
-            <button
-              onClick={toggleLanguage}
-              className="h-10 px-4 rounded-full bg-[#f1ede7] hover:bg-[#ebe8e2] text-[#180f0a] text-[13px] font-bold flex items-center gap-1.5 border border-[#e8e2d9] transition-colors shadow-sm cursor-pointer active:scale-95"
-              title={language === 'hi' ? 'Switch to English' : 'हिन्दी में बदलें'}
-              type="button"
-            >
-              <span className="material-symbols-outlined text-[17px] text-[#9c441c]">translate</span>
-              <span>{language === 'hi' ? 'अ (हिन्दी)' : 'A (English)'}</span>
-            </button>
-
-            {/* Notification Bell */}
-            <button
-              onClick={toggleNotifications}
-              className="w-10 h-10 rounded-full bg-[#f1ede7] hover:bg-[#ebe8e2] border border-[#e8e2d9] flex items-center justify-center relative text-[#4e4540] cursor-pointer active:scale-95"
-              title="Notifications"
-              type="button"
-            >
-              <span className="material-symbols-outlined text-[20px]">notifications</span>
-              {unreadCount > 0 && (
-                <span className="w-2.5 h-2.5 rounded-full bg-[#9c441c] absolute top-2 right-2 ring-2 ring-[#fdf9f3] animate-pulse"></span>
+            <div className="flex items-center gap-2.5 shrink-0">
+              {/* Authenticated Artisan Badge */}
+              {isVerified ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-900 font-bold text-[11px] shadow-xs">
+                  <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
+                  <span>🟢 {artisanProfile.phone || user?.phone || '+91 99999 99999'} [✓ Verified]</span>
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => openAuthModal()}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-stone-950 text-[11px] font-bold cursor-pointer transition-all active:scale-95 animate-pulse shadow-xs"
+                >
+                  <span className="material-symbols-outlined text-[14px]">login</span>
+                  <span>📲 {language === 'hi' ? 'फ़ोन सत्यापन' : 'Login with OTP'}</span>
+                </button>
               )}
-            </button>
+
+              {/* Language Toggle */}
+              <button
+                onClick={toggleLanguage}
+                className="h-10 px-4 rounded-full bg-[#f1ede7] hover:bg-[#ebe8e2] text-[#180f0a] text-[13px] font-bold flex items-center gap-1.5 border border-[#e8e2d9] transition-colors shadow-sm cursor-pointer active:scale-95"
+                title={language === 'hi' ? 'Switch to English' : 'हिन्दी में बदलें'}
+                type="button"
+              >
+                <span className="material-symbols-outlined text-[17px] text-[#9c441c]">translate</span>
+                <span>{language === 'hi' ? 'अ (हिन्दी)' : 'A (English)'}</span>
+              </button>
+
+              {/* Notification Bell */}
+              <button
+                onClick={toggleNotifications}
+                className="w-10 h-10 rounded-full bg-[#f1ede7] hover:bg-[#ebe8e2] border border-[#e8e2d9] flex items-center justify-center relative text-[#4e4540] cursor-pointer active:scale-95 transition-colors"
+                title="Notifications"
+                type="button"
+              >
+                <span className="material-symbols-outlined text-[20px]">notifications</span>
+                {unreadCount > 0 && (
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#9c441c] absolute top-2 right-2 ring-2 ring-[#fdf9f3] animate-pulse"></span>
+                )}
+              </button>
+            </div>
           </div>
         </header>
 
-        {/* Main 2-Column Responsive Workspace */}
-        <div className="p-4 sm:p-6 lg:p-8 max-w-[1520px] mx-auto w-full grid grid-cols-12 gap-6 lg:gap-8">
+        {/* Main Split-Screen Desktop Workspace */}
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col lg:flex-row gap-8 items-start">
           {/* ──────────────────────────────── LEFT: CAMERA & VIEWFINDER ──────────────────────────────── */}
-          <div className="col-span-12 xl:col-span-7 flex flex-col gap-4">
+          <div className="w-full lg:w-1/2 flex flex-col gap-4">
             <div className="relative w-full aspect-[16/11] bg-[#191312] rounded-3xl overflow-hidden shadow-2xl flex flex-col justify-between p-4 sm:p-6 border border-[#2e241e]">
               {/* Alignment Grid Overlay */}
               {gridOn && (
@@ -943,7 +955,7 @@ export default function Capture() {
           </div>
 
           {/* ──────────────────────────────── RIGHT: VOICE + DESCRIPTION + AI PIPELINE ──────────────────────────────── */}
-          <div className="col-span-12 xl:col-span-5 flex flex-col">
+          <div className="w-full lg:w-1/2 flex flex-col">
             <div className="bg-[#191312] text-[#fdf9f3] rounded-3xl p-6 sm:p-7 flex flex-col justify-between border border-[#2e241e] shadow-2xl h-full">
               <div className="flex flex-col">
                 <div className="flex items-center justify-between pb-4 border-b border-white/10">

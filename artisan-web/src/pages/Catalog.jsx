@@ -340,8 +340,8 @@ export default function Catalog() {
 
   return (
     <div className="w-full">
-      <main className="flex-1 flex flex-col relative w-full bg-surface min-h-screen p-4 sm:p-6 lg:p-8">
-        <div className="flex flex-col w-full max-w-7xl mx-auto">
+      <main className="flex-1 flex flex-col relative w-full bg-surface min-h-screen">
+        <div className="flex flex-col w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           
           {/* Header & Search */}
           <div className="flex flex-col gap-4 mb-6">
@@ -558,11 +558,12 @@ export default function Catalog() {
           {/* Product Cards Grid */}
           <div className="pt-1 pb-4">
             {filteredProducts.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="productsGrid">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="productsGrid">
                 {filteredProducts.map((p) => (
                   <div
                     key={p.id}
-                    className="product-item flex flex-col bg-surface-container-lowest rounded-2xl p-2.5 border border-surface-container shadow-xs group relative hover:shadow-md transition-all"
+                    onClick={() => setSelectedProduct(p)}
+                    className="product-item flex flex-col bg-surface-container-lowest rounded-2xl p-3 border border-surface-container shadow-xs group relative hover:shadow-xl hover:border-secondary/40 transition-all cursor-pointer"
                   >
                     <div className="relative aspect-[4/5] w-full rounded-xl overflow-hidden bg-surface-container-low mb-2">
                       <img

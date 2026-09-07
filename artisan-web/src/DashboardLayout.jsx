@@ -141,13 +141,40 @@ export default function DashboardLayout() {
       {/* Main Routed Area */}
       <main className="flex-1 flex flex-col min-w-0 min-h-screen bg-[#fdf9f3] pb-20 lg:pb-0 overflow-y-auto">
         {/* Global Auth Status Top Bar */}
-        <header className="bg-[#180f0a] text-white px-4 sm:px-6 py-2 flex items-center justify-between border-b border-black/20 text-xs sticky top-0 z-30 shadow-sm flex-wrap gap-2">
-          <div className="flex items-center gap-2 flex-wrap">
+        <header className="bg-[#180f0a] text-white px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between border-b border-black/20 text-xs sticky top-0 z-30 shadow-sm w-full gap-4">
+          <div className="flex items-center gap-3">
+            {/* Logo on far left */}
+            <div 
+              onClick={() => navigate('/home')} 
+              className="flex items-center gap-2.5 cursor-pointer group"
+              title="Kala Sangam Home"
+            >
+              <div className="w-8 h-8 rounded-lg bg-[#2e241e] border border-white/10 flex items-center justify-center text-[#ffdeaa] shadow-xs group-hover:scale-105 transition-transform">
+                <span className="material-symbols-outlined text-[18px]">token</span>
+              </div>
+              <div className="flex flex-col lg:hidden">
+                <span className="font-bold text-sm text-white tracking-tight leading-tight">Kala Sangam</span>
+                <span className="text-[10px] text-white/60">कला संगम</span>
+              </div>
+            </div>
+
+            {/* Path / Institutional indicator */}
+            <div className="hidden sm:flex items-center gap-2 text-white/70 text-xs font-semibold">
+              <span className="h-4 w-[1px] bg-white/20 hidden lg:block" />
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/10 text-[11px] font-bold text-white">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>GeM & ONDC Dual Linkage</span>
+              </span>
+            </div>
+          </div>
+
+          {/* Far Right: Auth Controls & Language Toggle */}
+          <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
             {isVerified ? (
               <>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/90 border border-emerald-500/50 text-emerald-300 font-bold text-[11px] shadow-xs">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                  <span>🟢 {artisanProfile.phone || user?.phone || '+91 99999 99999'} • {artisanProfile.name || 'रामेश कुम्हार'} [✓ Verified]</span>
+                  <span>🟢 {artisanProfile.phone || user?.phone || '+91 99999 99999'} [✓ Verified]</span>
                 </span>
                 <button
                   onClick={signOut}
@@ -156,29 +183,19 @@ export default function DashboardLayout() {
                   type="button"
                 >
                   <span className="material-symbols-outlined text-[13px]">logout</span>
-                  <span>लॉग आउट (Logout)</span>
+                  <span className="hidden sm:inline">Logout</span>
                 </button>
               </>
             ) : (
-              <>
-                <button
-                  onClick={() => openAuthModal()}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-[11px] shadow-md transition-all cursor-pointer active:scale-95 animate-pulse"
-                  type="button"
-                >
-                  <span className="material-symbols-outlined text-[14px]">verified_user</span>
-                  <span>📲 फ़ोन सत्यापन (Login with Phone OTP)</span>
-                </button>
-                <span className="hidden sm:inline-block text-white/50 text-[11px]">
-                  | Guest Mode • Verify Phone to Publish to GeM & ONDC
-                </span>
-              </>
+              <button
+                onClick={() => openAuthModal()}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-[11px] shadow-md transition-all cursor-pointer active:scale-95 animate-pulse"
+                type="button"
+              >
+                <span className="material-symbols-outlined text-[14px]">verified_user</span>
+                <span>📲 फ़ोन सत्यापन (Login with OTP)</span>
+              </button>
             )}
-            <span className="hidden sm:inline-block text-white/50 text-[11px]">
-              | Supabase Auth JWT Active • Institutional GeM & ONDC
-            </span>
-          </div>
-          <div className="flex items-center gap-2.5">
             <span className="text-[11px] text-[#ffdeaa] font-medium hidden md:inline">
               {artisanStudio}
             </span>

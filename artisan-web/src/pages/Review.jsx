@@ -199,204 +199,195 @@ export default function Review() {
   const wholesaleDiscountPct = Math.round(((price - wholesalePrice) / (price || 1)) * 100);
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface font-sans">
-      {/* Top Return Header with Auth Indicator */}
-      <div className="bg-[#180f0a] text-white px-6 py-3 flex items-center justify-between sticky top-0 z-40 shadow-md flex-wrap gap-2">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate('/capture')}
-            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
-          >
-            <span className="material-symbols-outlined text-[18px]">arrow_back</span>
-          </button>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-sm block leading-tight">Review & Finalize AI Craft Draft</span>
-              {isPhoneVerified ? (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-500/50 text-emerald-300 text-[10px] font-bold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                  <span>🟢 {artisanProfile?.phone || user?.phone || '+91 99999 99999'} [✓ Verified]</span>
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => openAuthModal()}
-                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500 hover:bg-amber-400 text-stone-950 text-[10px] font-bold cursor-pointer transition-all active:scale-95 animate-pulse"
-                >
-                  <span className="material-symbols-outlined text-[13px]">login</span>
-                  <span>⚠️ असत्यापित कारीगर (Click to Verify Phone)</span>
-                </button>
-              )}
+    <div className="min-h-screen bg-[#fdf9f3] text-on-surface font-sans flex flex-col">
+      {/* Top Full-Width Navigation Bar */}
+      <header className="sticky top-0 z-40 bg-[#180f0a] text-white border-b border-white/10 shadow-md w-full">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
+          {/* Far Left: Back button & Breadcrumb / Logo */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate('/capture')}
+              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors cursor-pointer"
+              title="Back to Capture"
+              type="button"
+            >
+              <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+            </button>
+            <div 
+              onClick={() => navigate('/home')}
+              className="flex items-center gap-2 cursor-pointer group"
+              title="Go to Home"
+            >
+              <div className="w-8 h-8 rounded-lg bg-[#2e241e] text-[#ffdeaa] flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+                <span className="material-symbols-outlined text-[18px]">token</span>
+              </div>
+              <span className="font-bold text-sm text-white tracking-tight hidden sm:inline">Kala Sangam</span>
             </div>
-            <span className="text-[11px] text-white/60 block leading-tight">AI-Driven Dual Market Linkage • ONDC & GeM</span>
+            <div className="h-4 w-[1px] bg-white/20 mx-0.5 hidden sm:block" />
+            <div className="flex items-center gap-1.5 text-xs font-bold text-white/70">
+              <span
+                onClick={() => navigate('/home')}
+                className="cursor-pointer hover:text-white transition-colors"
+              >
+                HOME
+              </span>
+              <span className="text-[10px]">/</span>
+              <span
+                onClick={() => navigate('/catalog')}
+                className="cursor-pointer hover:text-white transition-colors"
+              >
+                CATALOG
+              </span>
+              <span className="text-[10px]">/</span>
+              <span className="text-[#ff9062] font-black">
+                REVIEW & DRAFT
+              </span>
+            </div>
+          </div>
+
+          {/* Center: Language Switcher Tabs */}
+          <div className="hidden md:flex items-center">
+            <div className="flex rounded-full bg-white/10 border border-white/15 p-0.5">
+              <button
+                onClick={() => setActiveLangTab('bilingual')}
+                className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                  activeLangTab === 'bilingual'
+                    ? 'bg-[#ff9062] text-[#180f0a] shadow-sm'
+                    : 'text-white/70 hover:text-white'
+                }`}
+                type="button"
+              >
+                Bilingual (दोनों)
+              </button>
+              <button
+                onClick={() => setActiveLangTab('en')}
+                className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                  activeLangTab === 'en'
+                    ? 'bg-[#ff9062] text-[#180f0a] shadow-sm'
+                    : 'text-white/70 hover:text-white'
+                }`}
+                type="button"
+              >
+                English
+              </button>
+              <button
+                onClick={() => setActiveLangTab('hi')}
+                className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                  activeLangTab === 'hi'
+                    ? 'bg-[#ff9062] text-[#180f0a] shadow-sm'
+                    : 'text-white/70 hover:text-white'
+                }`}
+                type="button"
+              >
+                हिन्दी
+              </button>
+            </div>
+          </div>
+
+          {/* Far Right: Auth Status Badge & Publish Button */}
+          <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+            {isPhoneVerified ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-950 border border-emerald-500/50 text-emerald-300 text-[11px] font-bold shadow-xs">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>🟢 {artisanProfile?.phone || user?.phone || '+91 99999 99999'} [✓ Verified]</span>
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => openAuthModal()}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-stone-950 text-[11px] font-bold cursor-pointer transition-all active:scale-95 animate-pulse shadow-xs"
+              >
+                <span className="material-symbols-outlined text-[14px]">login</span>
+                <span>📲 फ़ोन सत्यापन (Verify Phone)</span>
+              </button>
+            )}
+
+            <button
+              onClick={handlePublish}
+              disabled={isPublishing}
+              className={`px-4 py-2 rounded-full font-bold text-xs flex items-center gap-2 shadow-lg transition-all cursor-pointer ${
+                isPublishing
+                  ? 'bg-[#ff9062]/50 text-[#180f0a]/50 cursor-wait'
+                  : 'bg-[#ff9062] text-[#180f0a] hover:bg-[#ff804a] active:scale-95'
+              }`}
+              type="button"
+            >
+              {isPublishing ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-[#180f0a] border-t-transparent rounded-full animate-spin" />
+                  <span>Publishing...</span>
+                </>
+              ) : (
+                <>
+                  <span>Publish to ONDC & GeM</span>
+                  <span className="material-symbols-outlined text-[16px]">rocket_launch</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
-        <button
-          onClick={handlePublish}
-          disabled={isPublishing}
-          className={`px-5 py-2 rounded-full font-bold text-xs flex items-center gap-2 shadow-lg transition-all ${
-            isPublishing
-              ? 'bg-[#ff9062]/50 text-[#180f0a]/50 cursor-wait'
-              : 'bg-[#ff9062] text-[#180f0a] hover:bg-[#ff804a] active:scale-95'
-          }`}
-        >
-          {isPublishing ? (
-            <>
-              <div className="w-4 h-4 border-2 border-[#180f0a] border-t-transparent rounded-full animate-spin" />
-              <span>Publishing to Networks...</span>
-            </>
-          ) : (
-            <>
-              <span>Publish to ONDC & GeM Network</span>
-              <span className="material-symbols-outlined text-[16px]">rocket_launch</span>
-            </>
-          )}
-        </button>
-      </div>
+      </header>
 
       {/* AI Data Banner */}
       {hasAiData && (
-        <div className="bg-emerald-50 border-b border-emerald-200 px-8 py-2.5 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[18px] text-emerald-700">auto_awesome</span>
-            <span className="text-[13px] font-semibold text-emerald-900">
-              AI Market Linkage Active: Bilingual descriptions generated via Gemini Vision & Groq Whisper. GeM readiness certified.
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-200/80 text-emerald-900">
-              <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
-              GeM Ready • MOQ 50
-            </span>
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800">
-              ONDC D2C Ready
-            </span>
+        <div className="bg-emerald-50 border-b border-emerald-200 w-full">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-[18px] text-emerald-700">auto_awesome</span>
+              <span className="text-[13px] font-semibold text-emerald-900">
+                AI Market Linkage Active: Bilingual descriptions generated via Gemini Vision & Groq Whisper. GeM readiness certified.
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-200/80 text-emerald-900">
+                <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
+                GeM Ready • MOQ {moq}
+              </span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800">
+                ONDC D2C Ready
+              </span>
+            </div>
           </div>
         </div>
       )}
 
-      <div className="flex min-h-[calc(100vh-52px)]">
-        {/* ── Sidebar ── */}
-        <aside className="w-64 flex-shrink-0 bg-surface-container-low border-r border-outline-variant/50 flex flex-col justify-between h-full select-none z-30 hidden lg:flex">
-          <div className="flex flex-col">
-            <div className="p-5 border-b border-outline-variant/40">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary-container text-white flex items-center justify-center shadow-sm">
-                  <span className="material-symbols-outlined text-[22px] text-tertiary-fixed">handyman</span>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h2 className="text-[16px] font-bold text-primary leading-tight tracking-tight">Kala Sangam</h2>
-                  <p className="text-[12px] text-on-surface-variant font-medium">कला संगम स्टूडियो</p>
-                </div>
-              </div>
-              <div className="mt-3.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-[11px] font-semibold tracking-wide">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span>GeM & ONDC Linkage Ready</span>
-              </div>
-            </div>
-            <nav className="p-3 space-y-1">
-              <a onClick={() => navigate('/home')} className="flex items-center px-3.5 py-2.5 rounded-xl text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors group cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-[20px] text-on-surface-variant group-hover:text-primary">storefront</span>
-                  <div>
-                    <span className="text-[14px] font-semibold block leading-tight">Home</span>
-                    <span className="text-[11px] text-on-surface-variant/70 block leading-tight">आवास</span>
-                  </div>
-                </div>
-              </a>
-              <a onClick={() => navigate('/catalog')} className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-primary-container text-white shadow-sm transition-all group cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-[20px] text-tertiary-fixed">inventory_2</span>
-                  <div>
-                    <span className="text-[14px] font-semibold block leading-tight text-white">Catalog</span>
-                    <span className="text-[11px] text-white/70 block leading-tight">कैटलॉग</span>
-                  </div>
-                </div>
-                <span className="px-2 py-0.5 rounded-full bg-secondary text-[11px] font-bold text-white shadow-xs">12</span>
-              </a>
-              <a onClick={() => navigate('/orders')} className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors group cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-[20px] text-on-surface-variant group-hover:text-primary">shopping_bag</span>
-                  <div>
-                    <span className="text-[14px] font-semibold block leading-tight">Orders</span>
-                    <span className="text-[11px] text-on-surface-variant/70 block leading-tight">ऑर्डर्स</span>
-                  </div>
-                </div>
-                <span className="px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-[11px] font-bold">3 New</span>
-              </a>
-            </nav>
-          </div>
-          <div className="p-3 border-t border-outline-variant/40 space-y-2">
-            <div className="p-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/40 flex items-center gap-3">
-              <div className="relative">
-                <div className="w-9 h-9 rounded-full bg-primary-container text-white flex items-center justify-center font-bold text-[13px]">RK</div>
-                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white"></span>
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[13px] font-bold text-primary truncate leading-tight">Ramesh Kumar</p>
-                <p className="text-[11px] text-on-surface-variant truncate">Kala Sangam Shop</p>
-              </div>
-            </div>
-          </div>
-        </aside>
+      {/* Mobile language tabs fallback */}
+      <div className="md:hidden flex justify-center py-2 px-4 bg-surface-container-low border-b border-outline-variant/30">
+        <div className="flex rounded-full bg-surface-container border border-outline-variant/40 p-0.5">
+          <button
+            onClick={() => setActiveLangTab('bilingual')}
+            className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+              activeLangTab === 'bilingual' ? 'bg-primary text-white shadow-sm' : 'text-on-surface-variant'
+            }`}
+            type="button"
+          >
+            Bilingual
+          </button>
+          <button
+            onClick={() => setActiveLangTab('en')}
+            className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+              activeLangTab === 'en' ? 'bg-primary text-white shadow-sm' : 'text-on-surface-variant'
+            }`}
+            type="button"
+          >
+            English
+          </button>
+          <button
+            onClick={() => setActiveLangTab('hi')}
+            className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+              activeLangTab === 'hi' ? 'bg-primary text-white shadow-sm' : 'text-on-surface-variant'
+            }`}
+            type="button"
+          >
+            हिन्दी
+          </button>
+        </div>
+      </div>
 
-        {/* ── Main Content ── */}
-        <div className="flex-1 flex flex-col h-full overflow-hidden">
-          <header className="h-16 px-8 bg-surface-container-lowest border-b border-outline-variant/40 flex items-center justify-between shrink-0 z-20">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 text-[12px] font-bold tracking-wider uppercase text-on-surface-variant">
-                <a className="hover:text-primary transition-colors cursor-pointer" onClick={() => navigate('/home')}>HOME</a>
-                <span>/</span>
-                <a className="hover:text-primary transition-colors cursor-pointer" onClick={() => navigate('/catalog')}>CATALOG</a>
-                <span>/</span>
-                <span className="text-primary font-bold">MARKET LINKAGE & AI DRAFT</span>
-              </div>
-              <span className="w-1 h-1 rounded-full bg-outline-variant"></span>
-              <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-secondary-fixed/50 text-secondary text-[11px] font-bold uppercase tracking-wider">
-                <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>
-                <span>Dual-Channel Linkage</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="flex rounded-full bg-surface-container border border-outline-variant/40 p-0.5">
-                <button
-                  onClick={() => setActiveLangTab('bilingual')}
-                  className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
-                    activeLangTab === 'bilingual'
-                      ? 'bg-primary text-white shadow-sm'
-                      : 'text-on-surface-variant hover:text-primary'
-                  }`}
-                >
-                  Bilingual (दोनों)
-                </button>
-                <button
-                  onClick={() => setActiveLangTab('en')}
-                  className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
-                    activeLangTab === 'en'
-                      ? 'bg-primary text-white shadow-sm'
-                      : 'text-on-surface-variant hover:text-primary'
-                  }`}
-                >
-                  English
-                </button>
-                <button
-                  onClick={() => setActiveLangTab('hi')}
-                  className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
-                    activeLangTab === 'hi'
-                      ? 'bg-primary text-white shadow-sm'
-                      : 'text-on-surface-variant hover:text-primary'
-                  }`}
-                >
-                  हिन्दी
-                </button>
-              </div>
-            </div>
-          </header>
-
-          <main className="flex-1 overflow-y-auto p-6 lg:p-8 bg-surface">
-            <div className="max-w-[1280px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-start pb-12">
-              {/* ── Left Column: Studio Photo Preview & Linkage Badges ── */}
-              <section className="lg:col-span-5 flex flex-col gap-4">
+      {/* Main Split-Screen Desktop Workspace */}
+      <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col lg:flex-row gap-8 items-start">
+        {/* ── Left Column: Studio Photo Preview & Linkage Badges ── */}
+        <section className="w-full lg:w-1/2 flex flex-col gap-5">
                 <div className="relative w-full rounded-2xl overflow-hidden bg-white border border-outline-variant/40 shadow-sm group">
                   <div className="relative w-full aspect-square bg-[#FFFFFF] flex items-center justify-center overflow-hidden p-3">
                     <img
@@ -456,7 +447,7 @@ export default function Review() {
               </section>
 
               {/* ── Right Column: Editable Fields & Institutional B2B Section ── */}
-              <section className="lg:col-span-7 flex flex-col gap-5">
+              <section className="w-full lg:w-1/2 flex flex-col gap-5">
                 {/* Error Banner */}
                 {publishError && (
                   <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-[13px] font-medium flex items-center gap-2">
@@ -1029,10 +1020,7 @@ export default function Review() {
                   </div>
                 </div>
               </section>
-            </div>
-          </main>
-        </div>
-      </div>
+      </main>
     </div>
   );
 }

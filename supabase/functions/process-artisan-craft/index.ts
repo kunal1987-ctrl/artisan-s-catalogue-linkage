@@ -474,8 +474,8 @@ Deno.serve(async (req: Request) => {
     console.log(`[Step 2] Analyzing craft image & transcript via Gemini for user ${user.id}...`);
 
     const candidateModels = [
-      "gemini-2.5-flash",
       "gemini-1.5-flash",
+      "gemini-2.5-flash",
       "gemini-flash-latest",
     ];
 
@@ -487,10 +487,17 @@ Deno.serve(async (req: Request) => {
         systemInstruction: {
           parts: [
             {
-              text: `You are an expert Indian handicraft cataloger, Government e-Marketplace (GeM) specialist, and fair-trade pricing analyst for rural Indian artisans.
-Analyze the craft image and the artisan's regional voice transcript (Hindi/English).
-Generate a structured, dual-market catalog profile supporting both Direct-to-Consumer (ONDC) and Institutional/B2B (GeM) procurement.
-Return ONLY a valid JSON object matching the requested schema. No markdown, no code blocks.`,
+              text: `You are an expert Indian handicrafts appraiser and pricing algorithm.
+
+PRIMARY TRUTH: You must base the product category, material, and baseline price on the provided IMAGE. The audio transcript is SECONDARY context (e.g., origin location or labor time).
+
+FRAUD PREVENTION: If the audio transcript claims materials or qualities that contradict the visual evidence (e.g., claiming gold when it is painted brass), you MUST ignore the audio claim and price it based on the visual reality.
+
+MARKET ANCHORING: Calculate the \`price\` and \`bulk_price\` by anchoring to standard, real-world Indian retail market rates for the visually identified item.
+
+Return the output in the strict JSON schema provided.
+
+Generate a structured, dual-market catalog profile supporting both Direct-to-Consumer (ONDC) and Institutional/B2B (GeM) procurement. Return ONLY a valid JSON object matching the requested schema. No markdown, no code blocks.`,
             },
           ],
         },
@@ -500,12 +507,20 @@ Return ONLY a valid JSON object matching the requested schema. No markdown, no c
               {
                 text: `Artisan voice transcript: "${transcript}"
 
-Analyze this handcrafted item. Return ONLY a valid JSON object matching this exact schema:
+Analyze this handcrafted item following these strict rules:
+1. PRIMARY TRUTH: You must base the product category, material, and baseline price on the provided IMAGE. The audio transcript is SECONDARY context (e.g., origin location or labor time).
+2. FRAUD PREVENTION: If the audio transcript claims materials or qualities that contradict the visual evidence (e.g., claiming gold when it is painted brass), you MUST ignore the audio claim and price it based on the visual reality.
+3. MARKET ANCHORING: Calculate the \`price\` and \`bulk_price\` by anchoring to standard, real-world Indian retail market rates for the visually identified item.
+4. Return the output in the strict JSON schema provided.
+
+Return ONLY a valid JSON object matching this exact schema:
 {
   "title": "string",
   "title_hi": "string (Devanagari script)",
   "description": "string (2-3 sentences, SEO-friendly)",
   "description_hi": "string (Devanagari, 2-3 sentences)",
+  "price": number,
+  "bulk_price": number,
   "suggested_retail_price_inr": number,
   "suggested_wholesale_price_inr": number,
   "pricing_reasoning": "string",
@@ -611,11 +626,23 @@ Analyze this handcrafted item. Return ONLY a valid JSON object matching this exa
       };
     } else {
       // Normalize schema fields from Gemini response
-      if (!productData.estimated_price_inr && productData.suggested_retail_price_inr) {
-        productData.estimated_price_inr = productData.suggested_retail_price_inr;
+      if (!productData.price && productData.suggested_retail_price_inr) {
+        productData.price = productData.suggested_retail_price_inr;
       }
-      if (!productData.bulk_price_inr && productData.suggested_wholesale_price_inr) {
-        productData.bulk_price_inr = productData.suggested_wholesale_price_inr;
+      if (!productData.suggested_retail_price_inr && productData.price) {
+        productData.suggested_retail_price_inr = productData.price;
+      }
+      if (!productData.estimated_price_inr) {
+        productData.estimated_price_inr = productData.price || productData.suggested_retail_price_inr;
+      }
+      if (!productData.bulk_price && productData.suggested_wholesale_price_inr) {
+        productData.bulk_price = productData.suggested_wholesale_price_inr;
+      }
+      if (!productData.suggested_wholesale_price_inr && productData.bulk_price) {
+        productData.suggested_wholesale_price_inr = productData.bulk_price;
+      }
+      if (!productData.bulk_price_inr) {
+        productData.bulk_price_inr = productData.bulk_price || productData.suggested_wholesale_price_inr;
       }
       if (!productData.moq) productData.moq = 50;
       if (!productData.unspsc_code) productData.unspsc_code = "60121002";

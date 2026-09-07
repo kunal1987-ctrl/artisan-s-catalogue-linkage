@@ -343,117 +343,137 @@ export default function Catalog() {
       <main className="flex-1 flex flex-col relative w-full bg-surface min-h-screen">
         <div className="flex flex-col w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           
-          {/* Header & Search */}
-          <div className="flex flex-col gap-4 mb-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-surface-container-high">
-              <div>
-                <div className="flex items-center gap-2 text-xs font-bold text-secondary uppercase tracking-wider mb-1">
-                  <span>{language === 'hi' ? 'कैटलॉग' : 'Catalog'}</span>
-                  <span className="text-outline">/</span>
-                  <span>{language === 'hi' ? 'दुकान इन्वेंटरी' : 'My Shop Inventory'}</span>
-                </div>
-                <div className="flex items-center gap-3 flex-wrap">
-                  <h2 className="text-2xl font-bold text-primary tracking-tight">
-                    {language === 'hi' ? 'मेरी सूची (My Catalog)' : 'My Catalog / मेरी सूची'}
-                  </h2>
-                  <span className="px-3 py-1 bg-secondary-fixed text-on-secondary-fixed rounded-full text-xs font-bold">
-                    {language === 'hi' ? `${products.length} उत्पाद सूचीबद्ध` : `${products.length} Items Listed`}
-                  </span>
-                </div>
-              </div>
+          {/* Top Administrative Toolbar (Breathing Room) */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <h2 className="text-2xl font-bold text-gray-800">My Catalog / मेरी सूची</h2>
 
-              <div className="flex items-center gap-2 flex-wrap">
-                <div className="relative w-full sm:w-72">
-                  <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px] pointer-events-none">
-                    search
-                  </span>
-                  <input
-                    className="w-full h-12 pl-11 pr-10 bg-surface-container-lowest text-on-surface placeholder:text-on-surface-variant text-sm font-medium rounded-xl shadow-xs border border-surface-container-high focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all"
-                    id="productSearchInput"
-                    placeholder={language === 'hi' ? 'शिल्प, साड़ी, मिट्टी के बर्तन खोजें...' : 'Search crafts, sarees, pottery...'}
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
+            {/* Export Protocols ▾ Dropdown (Subtle Secondary Button) */}
+            <div className="relative">
+              <button
+                id="export-protocols-btn"
+                aria-label="Export Protocols"
+                onClick={() => setExportMenuOpen((prev) => !prev)}
+                className="h-10 px-4 rounded-xl bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 shadow-sm font-semibold text-xs active:scale-95 flex items-center gap-2 transition-all shrink-0 cursor-pointer"
+                type="button"
+              >
+                <span className="material-symbols-outlined text-[17px] text-gray-600">download</span>
+                <span>{language === 'hi' ? 'प्रोटोकॉल निर्यात ▾' : 'Export Protocols ▾'}</span>
+              </button>
+
+              {exportMenuOpen && (
+                <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-200 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
                   <button
-                    aria-label="Voice Search"
-                    className="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg flex items-center justify-center text-secondary hover:bg-surface-container active:scale-90 transition-transform cursor-pointer"
-                    onClick={handleVoiceSearch}
+                    id="export-ondc-btn"
+                    onClick={() => { handleExportCatalog('ondc'); setExportMenuOpen(false); }}
+                    disabled={!!exportingFormat}
+                    className="w-full px-4 py-3 text-left text-sm font-semibold text-gray-800 hover:bg-gray-50 flex items-center gap-3 transition-colors disabled:opacity-50 cursor-pointer"
                     type="button"
                   >
-                    <span className="material-symbols-outlined text-[18px]">mic</span>
-                  </button>
-                </div>
-
-                {/* Export Protocols Dropdown */}
-                <div className="relative">
-                  <button
-                    id="export-protocols-btn"
-                    aria-label="Export Protocols"
-                    onClick={() => setExportMenuOpen((prev) => !prev)}
-                    className="h-11 px-4 rounded-xl bg-secondary text-on-secondary font-bold text-xs shadow-md active:scale-95 flex items-center gap-1.5 hover:opacity-90 transition-all shrink-0 cursor-pointer"
-                    type="button"
-                  >
-                    <span className="material-symbols-outlined text-[17px]">download</span>
-                    <span>{language === 'hi' ? 'प्रोटोकॉल निर्यात' : 'Export Protocols'}</span>
-                    <span className="material-symbols-outlined text-[14px]">expand_more</span>
-                  </button>
-
-                  {exportMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-64 bg-surface-container-lowest rounded-xl shadow-xl border border-surface-container-high z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
-                      <button
-                        id="export-ondc-btn"
-                        onClick={() => { handleExportCatalog('ondc'); setExportMenuOpen(false); }}
-                        disabled={!!exportingFormat}
-                        className="w-full px-4 py-3 text-left text-sm font-semibold text-on-surface hover:bg-surface-container flex items-center gap-3 transition-colors disabled:opacity-50 cursor-pointer"
-                        type="button"
-                      >
-                        <span className="material-symbols-outlined text-[18px] text-secondary">hub</span>
-                        <div>
-                          <span className="block text-[13px] font-bold">{exportingFormat === 'ondc' ? (language === 'hi' ? 'डाउनलोड हो रहा है...' : 'Downloading...') : '📥 ONDC Beckn (JSON)'}</span>
-                          <span className="block text-[11px] text-on-surface-variant">artisan-ondc-catalog.json</span>
-                        </div>
-                      </button>
-                      <button
-                        id="export-gem-btn"
-                        onClick={() => { handleExportCatalog('gem'); setExportMenuOpen(false); }}
-                        disabled={!!exportingFormat}
-                        className="w-full px-4 py-3 text-left text-sm font-semibold text-on-surface hover:bg-surface-container flex items-center gap-3 border-t border-surface-container-high transition-colors disabled:opacity-50 cursor-pointer"
-                        type="button"
-                      >
-                        <span className="material-symbols-outlined text-[18px] text-amber-600">account_balance</span>
-                        <div>
-                          <span className="block text-[13px] font-bold">{exportingFormat === 'gem' ? (language === 'hi' ? 'डाउनलोड हो रहा है...' : 'Downloading...') : '🏛️ GeM Batch (JSON)'}</span>
-                          <span className="block text-[11px] text-on-surface-variant">gem-procurement-batch.json</span>
-                        </div>
-                      </button>
-                      <button
-                        id="export-gem-csv-btn"
-                        onClick={() => { handleExportCatalog('csv'); setExportMenuOpen(false); }}
-                        disabled={!!exportingFormat}
-                        className="w-full px-4 py-3 text-left text-sm font-semibold text-on-surface hover:bg-surface-container flex items-center gap-3 border-t border-surface-container-high transition-colors disabled:opacity-50 cursor-pointer"
-                        type="button"
-                      >
-                        <span className="material-symbols-outlined text-[18px] text-emerald-700">table_view</span>
-                        <div>
-                          <span className="block text-[13px] font-bold">{exportingFormat === 'csv' || exportingFormat === 'gem_csv' ? (language === 'hi' ? 'डाउनलोड हो रहा है...' : 'Downloading...') : '📊 GeM Sheet (CSV)'}</span>
-                          <span className="block text-[11px] text-on-surface-variant">gem-bulk-import.csv</span>
-                        </div>
-                      </button>
+                    <span className="material-symbols-outlined text-[18px] text-indigo-600">hub</span>
+                    <div>
+                      <span className="block text-[13px] font-bold">{exportingFormat === 'ondc' ? (language === 'hi' ? 'डाउनलोड हो रहा है...' : 'Downloading...') : '📥 ONDC Beckn (JSON)'}</span>
+                      <span className="block text-[11px] text-gray-500">artisan-ondc-catalog.json</span>
                     </div>
-                  )}
-
+                  </button>
                   <button
-                    onClick={() => navigate('/capture')}
-                    className="h-11 px-4 rounded-xl bg-primary text-on-primary font-bold text-sm shadow-md active:scale-95 flex items-center gap-1.5 hover:bg-primary-container transition-all shrink-0 cursor-pointer"
+                    id="export-gem-btn"
+                    onClick={() => { handleExportCatalog('gem'); setExportMenuOpen(false); }}
+                    disabled={!!exportingFormat}
+                    className="w-full px-4 py-3 text-left text-sm font-semibold text-gray-800 hover:bg-gray-50 flex items-center gap-3 border-t border-gray-100 transition-colors disabled:opacity-50 cursor-pointer"
                     type="button"
                   >
-                    <span className="material-symbols-outlined text-[18px]">add</span>
-                    <span className="hidden md:inline">{language === 'hi' ? '+ नया शिल्प' : '+ Add Product'}</span>
-                    <span className="md:hidden">+</span>
+                    <span className="material-symbols-outlined text-[18px] text-amber-600">account_balance</span>
+                    <div>
+                      <span className="block text-[13px] font-bold">{exportingFormat === 'gem' ? (language === 'hi' ? 'डाउनलोड हो रहा है...' : 'Downloading...') : '🏛️ GeM Batch (JSON)'}</span>
+                      <span className="block text-[11px] text-gray-500">gem-procurement-batch.json</span>
+                    </div>
+                  </button>
+                  <button
+                    id="export-gem-csv-btn"
+                    onClick={() => { handleExportCatalog('csv'); setExportMenuOpen(false); }}
+                    disabled={!!exportingFormat}
+                    className="w-full px-4 py-3 text-left text-sm font-semibold text-gray-800 hover:bg-gray-50 flex items-center gap-3 border-t border-gray-100 transition-colors disabled:opacity-50 cursor-pointer"
+                    type="button"
+                  >
+                    <span className="material-symbols-outlined text-[18px] text-emerald-700">table_view</span>
+                    <div>
+                      <span className="block text-[13px] font-bold">{exportingFormat === 'csv' || exportingFormat === 'gem_csv' ? (language === 'hi' ? 'डाउनलोड हो रहा है...' : 'Downloading...') : '📊 GeM Sheet (CSV)'}</span>
+                      <span className="block text-[11px] text-gray-500">gem-bulk-import.csv</span>
+                    </div>
                   </button>
                 </div>
+              )}
+            </div>
+          </div>
+
+          {/* Redesigned "Instant AI Cataloger" Hero Card */}
+          <div className="bg-gradient-to-r from-indigo-600 to-violet-600 rounded-2xl p-6 text-white shadow-lg mb-8 relative overflow-hidden">
+            <div className="absolute -right-12 -bottom-12 w-56 h-56 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+            <div className="absolute right-1/3 -top-12 w-48 h-48 rounded-full bg-violet-400/20 blur-xl pointer-events-none" />
+
+            <div className="relative z-10">
+              <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+                नया उत्पाद जोड़ें (Add New Craft) ✨
+              </h3>
+              <p className="text-white/90 text-sm sm:text-base mt-2 max-w-2xl leading-relaxed">
+                फोटो खींचें और अपनी भाषा में बोलें। AI 10 सेकंड में कैटलॉग बना देगा। (Just point, speak, and let AI do the rest.)
+              </p>
+
+              <div className="flex items-center gap-2.5 flex-wrap mt-3">
+                <span className="bg-white/20 text-white rounded-full px-3 py-1 text-xs backdrop-blur-sm font-medium flex items-center gap-1.5">
+                  <span>🎙️</span>
+                  <span>हिंदी, Guj, Tam Supported</span>
+                </span>
+                <span className="bg-white/20 text-white rounded-full px-3 py-1 text-xs backdrop-blur-sm font-medium flex items-center gap-1.5">
+                  <span>⚡</span>
+                  <span>10s Auto-Pricing</span>
+                </span>
               </div>
+
+              <button
+                onClick={() => navigate('/capture')}
+                className="bg-white text-indigo-600 font-bold text-lg px-6 py-4 rounded-xl shadow-md hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 w-full sm:w-auto mt-6 cursor-pointer"
+                type="button"
+              >
+                <span>📸 + 🎙️ Start Camera (कैमरा खोलें)</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Search Bar & Inventory Summary */}
+          <div className="flex flex-col gap-4 mb-6">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="relative w-full sm:w-96">
+                <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px] pointer-events-none">
+                  search
+                </span>
+                <input
+                  className="w-full h-12 pl-11 pr-10 bg-surface-container-lowest text-on-surface placeholder:text-on-surface-variant text-sm font-medium rounded-xl shadow-xs border border-surface-container-high focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all"
+                  id="productSearchInput"
+                  placeholder={language === 'hi' ? 'शिल्प, साड़ी, मिट्टी के बर्तन खोजें...' : 'Search crafts, sarees, pottery...'}
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <button
+                  aria-label="Voice Search"
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg flex items-center justify-center text-secondary hover:bg-surface-container active:scale-90 transition-transform cursor-pointer"
+                  onClick={handleVoiceSearch}
+                  type="button"
+                >
+                  <span className="material-symbols-outlined text-[18px]">mic</span>
+                </button>
+              </div>
+
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="text-xs font-bold text-secondary hover:underline cursor-pointer"
+                  type="button"
+                >
+                  {language === 'hi' ? 'खोज साफ़ करें' : 'Clear Search'}
+                </button>
+              )}
             </div>
 
             {/* Inventory Status Bar */}
@@ -552,7 +572,7 @@ export default function Catalog() {
           </div>
 
           {/* Product Cards Grid */}
-          <div className="pt-1 pb-4">
+          <div className="pt-1 pb-4 mt-8">
             {filteredProducts.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="productsGrid">
                 {filteredProducts.map((p) => (

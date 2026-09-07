@@ -1,3 +1,4 @@
+// @ts-ignore
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 declare const Deno: {
@@ -7,23 +8,25 @@ declare const Deno: {
   };
 };
 
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
     const { image_base64, mime_type = "image/jpeg" } = await req.json();
     
-    if (!image_base64) {
-      throw new Error("Missing image_base64 in request body");
+    if (!image_base64 || typeof image_base64 !== "string") {
+      throw new Error("Missing or invalid image_base64 in request body");
     }
+
+    const cleanImageBase64 = image_base64.replace(/^data:image\/[a-zA-Z0-9+.-]+;base64,/, "");
 
     const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
     if (!geminiApiKey) {
@@ -44,7 +47,7 @@ Deno.serve(async (req) => {
               {
                 inlineData: {
                   mimeType: mime_type,
-                  data: image_base64
+                  data: cleanImageBase64
                 }
               }
             ]
@@ -56,23 +59,34 @@ Deno.serve(async (req) => {
       })
     });
 
-    const result = await response.json();
+    const result: any = await response.json();
     
     if (!response.ok) {
-        throw new Error(result.error?.message || "Error calling Gemini API");
+      throw new Error(result?.error?.message || "Error calling Gemini API");
     }
 
-    const textResult = result.candidates[0].content.parts[0].text;
+    let textResult = result?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    textResult = textResult
+      .replace(/^```json\s*/i, "")
+      .replace(/^```\s*/i, "")
+      .replace(/\s*```$/i, "")
+      .trim();
+
+    if (!textResult) {
+      throw new Error("No text response received from Gemini API");
+    }
+
     const productData = JSON.parse(textResult);
 
     return new Response(
       JSON.stringify(productData),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    )
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },
+    );
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 },
-    )
+    );
   }
-})
+});

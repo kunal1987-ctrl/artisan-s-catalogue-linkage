@@ -1,303 +1,448 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../supabaseClient';
+
+// ─── Realistic mock order templates for GeM / ONDC simulation ───
+const ORDER_TEMPLATES = [
+  {
+    buyer_name: 'Ministry of Tribal Affairs',
+    order_type: 'gem',
+    quantity: 150,
+    unit_price_inr: 450,
+    product_title: 'Handcrafted Terracotta Decorative Pot',
+    channel: 'GeM PO',
+    city: 'New Delhi',
+  },
+  {
+    buyer_name: 'Priya Sharma',
+    order_type: 'ondc',
+    quantity: 1,
+    unit_price_inr: 1200,
+    product_title: 'Handwoven Blue Pure Silk Saree',
+    channel: 'ONDC via Mystore',
+    city: 'Lucknow, UP',
+  },
+  {
+    buyer_name: 'KVIC Bulk Procurement',
+    order_type: 'gem',
+    quantity: 80,
+    unit_price_inr: 280,
+    product_title: 'Banarasi Handwoven Silk Saree (Wholesale)',
+    channel: 'GeM PO',
+    city: 'Mumbai, MH',
+  },
+  {
+    buyer_name: 'Rohit Verma',
+    order_type: 'ondc',
+    quantity: 2,
+    unit_price_inr: 900,
+    product_title: 'Handcrafted Brass Puja Diya',
+    channel: 'ONDC via Paytm',
+    city: 'Varanasi, UP',
+  },
+];
+
+function speakOrder(order) {
+  try {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const qty = order.quantity || 1;
+    const price = order.total_price_inr || order.unit_price_inr || 0;
+    const channel = order.channel || order.order_type?.toUpperCase() || 'ONDC';
+    const buyer = order.buyer_name || 'एक ग्राहक';
+    const text = `नया आर्डर आया है! ${channel} से ${buyer} ने ${qty} नग मांगे हैं। कुल कीमत ₹${price}। जल्दी से पैक करें।`;
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'hi-IN';
+    utterance.rate = 0.9;
+    utterance.pitch = 1.1;
+    window.speechSynthesis.speak(utterance);
+  } catch (e) {
+    console.warn('[speakOrder] TTS failed:', e);
+  }
+}
+
+function formatTimeAgo(isoDate) {
+  if (!isoDate) return 'just now';
+  const diff = Math.floor((Date.now() - new Date(isoDate).getTime()) / 1000);
+  if (diff < 60) return `${diff}s ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  return `${Math.floor(diff / 3600)}h ago`;
+}
+
+function OrderCard({ order, onAccept }) {
+  const isGem = order.order_type === 'gem';
+  const channelLabel = order.channel || (isGem ? 'GeM PO' : 'ONDC');
+  const navigate = useNavigate();
+
+  return (
+    <article
+      className="order-card bg-surface-container-lowest rounded-3xl p-5 shadow-sm border border-border-delicate flex flex-col justify-between gap-4 transition-all duration-500 hover:shadow-md animate-in fade-in slide-in-from-top-4"
+      id={`order-${order.id}`}
+    >
+      <div className="flex flex-col gap-4">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex flex-col">
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-bold text-on-surface">
+                #{String(order.id || 'NEW').slice(0, 8).toUpperCase()}
+              </span>
+              <span className="text-on-surface-variant">•</span>
+              <span className="text-xs text-on-surface-variant">{formatTimeAgo(order.created_at)}</span>
+            </div>
+            <span className={`text-xs font-bold ${isGem ? 'text-amber-700' : 'text-secondary'}`}>
+              {isGem ? '🏛️ Institutional GeM Order' : '⚡ ONDC Network Live'}
+            </span>
+          </div>
+
+          <span
+            className={`inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-full font-bold ${
+              isGem
+                ? 'bg-amber-100 text-amber-800'
+                : 'bg-surface-container-high text-primary'
+            }`}
+          >
+            <span
+              className="material-symbols-outlined text-[16px]"
+              style={{ fontVariationSettings: "'FILL' 1" }}
+            >
+              {isGem ? 'account_balance' : 'hub'}
+            </span>
+            {channelLabel}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-3.5 bg-surface-container-low p-3.5 rounded-2xl">
+          <div className="w-[76px] h-[76px] rounded-xl bg-surface-container-high flex items-center justify-center shrink-0 text-on-surface-variant">
+            <span className="material-symbols-outlined text-[32px]">inventory_2</span>
+          </div>
+          <div className="flex flex-col flex-1 min-w-0">
+            <h2 className="text-sm font-bold text-on-surface truncate">
+              {order.product_title || order.notes || 'Artisan Craft Product'}
+            </h2>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="text-xs text-on-surface-variant font-medium">
+                Qty: {order.quantity} {order.quantity > 1 ? 'Units' : 'Unit'}
+              </span>
+              <span className="text-xs text-on-surface-variant">•</span>
+              <span className="text-base font-extrabold text-on-surface">
+                ₹{(order.total_price_inr || order.unit_price_inr || 0).toLocaleString('en-IN')}
+              </span>
+            </div>
+            <span className="inline-flex items-center gap-1 text-[#1A3824] text-xs font-bold mt-1">
+              <span
+                className="material-symbols-outlined text-[16px] text-[#25D366]"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                check_circle
+              </span>
+              Paid Online • भुगतान हुआ
+            </span>
+          </div>
+        </div>
+
+        {order.city && (
+          <div className="flex items-center gap-2 px-1 text-on-surface-variant text-xs">
+            <span className="material-symbols-outlined text-[20px] text-on-surface-variant shrink-0">
+              local_shipping
+            </span>
+            <p className="truncate">
+              Ship to: <strong className="text-on-surface">{order.city}</strong>
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-2 pt-2 border-t border-border-delicate/40">
+        <button
+          aria-label={`Accept and pack order ${order.id}`}
+          className="action-btn w-full min-h-[52px] h-[52px] rounded-full bg-primary-container hover:bg-black text-on-primary text-sm font-bold flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all cursor-pointer"
+          type="button"
+          onClick={() => { onAccept(order.id); navigate('/success'); }}
+        >
+          <span className="material-symbols-outlined text-[22px]">inventory_2</span>
+          <span>Accept &amp; Pack • स्वीकारें</span>
+        </button>
+        <div className="flex items-center justify-between px-1">
+          <button
+            aria-label="Download or view packaging slip"
+            className="min-h-[48px] h-[48px] px-3 rounded-full text-secondary hover:text-primary font-bold text-xs flex items-center gap-1.5 active:bg-surface-container transition-colors cursor-pointer"
+            type="button"
+            onClick={() => navigate('/success')}
+          >
+            <span className="material-symbols-outlined text-[20px]">receipt_long</span>
+            View Slip • पर्ची देखें
+          </button>
+          <span className="text-[11px] text-outline font-medium">Auto-dispatch enabled</span>
+        </div>
+      </div>
+    </article>
+  );
+}
 
 export default function Orders() {
   const navigate = useNavigate();
+  const [orders, setOrders] = useState([]);
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [toastMsg, setToastMsg] = useState('');
+  const [realtimeConnected, setRealtimeConnected] = useState(false);
+  const channelRef = useRef(null);
+  const templateIndexRef = useRef(0);
+
+  const showToast = (msg) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(''), 4000);
+  };
+
+  // Static demo orders always shown
+  const STATIC_ORDERS = [
+    {
+      id: 'ks-8921-static',
+      buyer_name: 'Priya Sharma',
+      order_type: 'ondc',
+      channel: 'ONDC via Mystore',
+      product_title: 'Handwoven Blue Pure Silk Saree',
+      quantity: 1,
+      unit_price_inr: 1200,
+      total_price_inr: 1200,
+      city: 'Lucknow, UP',
+      created_at: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'ks-8919-static',
+      buyer_name: 'Rohit Verma',
+      order_type: 'ondc',
+      channel: 'WhatsApp Direct',
+      product_title: 'Handcrafted Brass Puja Diya',
+      quantity: 2,
+      unit_price_inr: 450,
+      total_price_inr: 900,
+      city: 'Varanasi, UP',
+      created_at: new Date(Date.now() - 35 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'ks-8915-static',
+      buyer_name: 'Meena Devi',
+      order_type: 'ondc',
+      channel: 'ONDC via Paytm',
+      product_title: 'Handmade Terracotta Pitcher',
+      quantity: 1,
+      unit_price_inr: 200,
+      total_price_inr: 200,
+      city: 'Varanasi, UP',
+      created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    },
+  ];
+
+  // Set up Supabase Realtime subscription on public.orders
+  useEffect(() => {
+    const channel = supabase
+      .channel('orders-realtime')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'orders' },
+        (payload) => {
+          console.log('[Realtime] New order received:', payload.new);
+          const newOrder = { ...payload.new, channel: payload.new.order_type === 'gem' ? 'GeM PO' : 'ONDC Network' };
+          setOrders((prev) => [newOrder, ...prev]);
+          showToast(`⚡ नया आर्डर आया! ${newOrder.buyer_name || 'Customer'} — ₹${newOrder.total_price_inr || newOrder.unit_price_inr || 0}`);
+          speakOrder(newOrder);
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          setRealtimeConnected(true);
+          console.log('[Realtime] Subscribed to orders channel.');
+        } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+          setRealtimeConnected(false);
+        }
+      });
+
+    channelRef.current = channel;
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // Simulate an incoming GeM / ONDC Purchase Order
+  const handleSimulateOrder = async () => {
+    setIsSimulating(true);
+    try {
+      const template = ORDER_TEMPLATES[templateIndexRef.current % ORDER_TEMPLATES.length];
+      templateIndexRef.current += 1;
+
+      const total = template.quantity * template.unit_price_inr;
+      const orderPayload = {
+        buyer_name: template.buyer_name,
+        order_type: template.order_type,
+        quantity: template.quantity,
+        unit_price_inr: template.unit_price_inr,
+        total_price_inr: total,
+        status: 'pending',
+        notes: template.product_title,
+      };
+
+      const { data, error } = await supabase.from('orders').insert([orderPayload]).select().single();
+
+      if (error) {
+        // Realtime insert failed — simulate locally for demo
+        console.warn('[Simulate] Supabase insert failed, using local simulation:', error.message);
+        const localOrder = {
+          id: `sim-${Date.now()}`,
+          ...orderPayload,
+          channel: template.channel,
+          city: template.city,
+          product_title: template.product_title,
+          created_at: new Date().toISOString(),
+        };
+        setOrders((prev) => [localOrder, ...prev]);
+        showToast(`⚡ ${template.channel} — नया आर्डर! ₹${total.toLocaleString('en-IN')}`);
+        speakOrder({ ...localOrder });
+      } else {
+        showToast(`✅ GeM/ONDC PO inserted — Realtime will fire! ₹${total.toLocaleString('en-IN')}`);
+      }
+    } catch (err) {
+      console.error('[Simulate] Error:', err);
+      showToast('Simulation failed. Please retry.');
+    } finally {
+      setIsSimulating(false);
+    }
+  };
+
+  const handleAcceptOrder = (orderId) => {
+    setOrders((prev) => prev.filter((o) => o.id !== orderId));
+  };
+
+  const allOrders = [...orders, ...STATIC_ORDERS];
 
   return (
     <div className="w-full">
       <main className="flex-1 w-full bg-background min-h-screen p-4 sm:p-6 lg:p-10 flex flex-col gap-6">
-
         <div className="flex flex-col gap-6 max-w-7xl mx-auto w-full">
 
-            {/* Top Bar Navigation */}
-            <div className="flex items-center justify-between gap-4 pb-4 border-b border-border-delicate/60">
-                <div className="flex items-center gap-3">
-                    <button aria-label="Go back to Home"
-                        className="min-w-[48px] min-h-[48px] w-[48px] h-[48px] rounded-full bg-surface-container-low hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors"
-                        type="button" onClick={() => navigate('/home')}>
-                        <span className="material-symbols-outlined text-[24px]">arrow_back</span>
-                    </button>
-                    <div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-secondary tracking-wider uppercase">Order Processing</span>
-                            <span className="w-1.5 h-1.5 rounded-full bg-secondary"></span>
-                            <span className="text-xs text-outline font-medium">ONDC Network Live</span>
-                        </div>
-                        <h1 className="text-xl sm:text-2xl font-extrabold text-espresso-deep tracking-tight">
-                            आर्डर इनबॉक्स (New Orders)
-                        </h1>
-                    </div>
-                </div>
-
-                {/* Filter and Actions */}
-                <div className="flex items-center gap-2.5">
-                    <button aria-label="Filter Orders"
-                        className="min-h-[44px] px-3 sm:px-4 rounded-full bg-surface-container-low hover:bg-surface-container text-on-surface font-bold text-xs flex items-center gap-2 border border-border-delicate/80 transition-colors"
-                        type="button">
-                        <span className="material-symbols-outlined text-[18px] text-secondary">tune</span>
-                        <span className="hidden sm:inline">Filter</span>
-                    </button>
-                    <button aria-label="Refresh Orders"
-                        className="min-w-[44px] min-h-[44px] w-[44px] h-[44px] rounded-full bg-surface-container-low hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors"
-                        type="button">
-                        <span className="material-symbols-outlined text-[20px]">refresh</span>
-                    </button>
-                </div>
-            </div>
-
-            {/* Quick Status / Voice Banner */}
-            <section aria-label="Status notice"
-                className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-tertiary-fixed/30 border border-tertiary-fixed/80 rounded-3xl p-4 sm:p-5">
-                <div className="flex items-center gap-3.5">
-                    <div
-                        className="w-12 h-12 rounded-2xl bg-tertiary-fixed flex items-center justify-center text-on-tertiary-fixed shrink-0 shadow-sm">
-                        <span className="material-symbols-outlined text-[26px]">notifications_active</span>
-                    </div>
-                    <div className="flex flex-col">
-                        <p className="text-sm lg:text-base text-on-tertiary-fixed font-bold leading-snug">
-                            3 नए आर्डर तैयार हैं! (3 New Orders Ready)
-                        </p>
-                        <p className="text-xs lg:text-sm text-on-tertiary-fixed-variant leading-tight">
-                            Tap 'Accept & Pack' to dispatch today before courier pickup.
-                        </p>
-                    </div>
-                </div>
-                
-                <button aria-label="बोलकर सुनें - Listen to Hindi instructions"
-                    className="min-w-[48px] min-h-[48px] w-[48px] h-[48px] rounded-full bg-primary-container text-on-primary flex items-center justify-center shrink-0 active:scale-90 hover:scale-105 transition-all shadow-md"
-                    id="voice-listen-btn" type="button">
-                    <span className="material-symbols-outlined text-[24px]">volume_up</span>
-                </button>
-            </section>
-
-            {/* Orders Cards Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6" id="orders-list">
-
-                {/* Order 1: KS-8921 */}
-                <article
-                    className="order-card bg-surface-container-lowest rounded-3xl p-5 shadow-sm border border-border-delicate flex flex-col justify-between gap-4 transition-all duration-500 hover:shadow-md"
-                    id="order-ks-8921">
-                    <div className="flex flex-col gap-4">
-                        <div className="flex items-start justify-between gap-2">
-                            <div className="flex flex-col">
-                                <div className="flex items-center gap-1.5">
-                                    <span className="text-sm font-bold text-on-surface">#KS-8921</span>
-                                    <span className="text-on-surface-variant">•</span>
-                                    <span className="text-xs text-on-surface-variant">10m ago</span>
-                                </div>
-                                <span className="text-xs text-secondary font-bold">Requires accept today</span>
-                            </div>
-                            
-                            <span
-                                className="inline-flex items-center gap-1 bg-surface-container-high text-primary text-xs px-3 py-1.5 rounded-full font-bold">
-                                <span className="material-symbols-outlined text-[16px] text-primary"
-                                    style={{ fontVariationSettings: '\'FILL\' 1' }}>hub</span>
-                                ONDC via Mystore
-                            </span>
-                        </div>
-
-                        <div className="flex items-center gap-3.5 bg-surface-container-low p-3.5 rounded-2xl">
-                            <img className="w-[76px] h-[76px] rounded-xl object-cover shrink-0 shadow-sm"
-                                alt="Handwoven Blue Pure Silk Saree" height="76"
-                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAhQyBCcHXxppvzIjiac0wXbDfq62WaB0pTHDam0UqgMIt80v8bTscpCYepAYhHzwyqdSDVwKBNGDU9Lh-0pgmb6R_Xsdf2mYuyI5v7xHSnUvaB5oyD0DKaxQR9MG1xRqs4oJnxr4fOtRfF0qz1JxSpe60gPE0oIJiv6Qr1AYzi90D-zTBtf49gaWbwbab-kE-5l2lN0FBHVhzoCrgX4nfYwPD_5qcNZV6HV33lWUnDsCVeVxBWDZ5M"
-                                width="76" />
-                            <div className="flex flex-col flex-1 min-w-0">
-                                <h2 className="text-sm font-bold text-on-surface truncate">Handwoven Blue Pure Silk Saree</h2>
-                                <div className="flex items-center gap-2 mt-0.5">
-                                    <span className="text-xs text-on-surface-variant font-medium">Qty: 1 Unit</span>
-                                    <span className="text-xs text-on-surface-variant">•</span>
-                                    <span className="text-base font-extrabold text-on-surface">₹1,200</span>
-                                </div>
-                                <span className="inline-flex items-center gap-1 text-[#1A3824] text-xs font-bold mt-1">
-                                    <span className="material-symbols-outlined text-[16px] text-[#25D366]"
-                                        style={{ fontVariationSettings: '\'FILL\' 1' }}>check_circle</span>
-                                    Paid Online • भुगतान हुआ
-                                </span>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 px-1 text-on-surface-variant text-xs">
-                            <span className="material-symbols-outlined text-[20px] text-on-surface-variant shrink-0">local_shipping</span>
-                            <p className="truncate">Ship to: <strong className="text-on-surface">Lucknow, UP</strong> (ONDC Pickup Agent)</p>
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col gap-2 pt-2 border-t border-border-delicate/40">
-                        <button aria-label="Accept and pack order KS-8921"
-                            className="action-btn w-full min-h-[52px] h-[52px] rounded-full bg-primary-container hover:bg-black text-on-primary text-sm font-bold flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all cursor-pointer"
-                            type="button" onClick={() => navigate('/success')}>
-                            <span className="material-symbols-outlined text-[22px]">inventory_2</span>
-                            <span>Accept & Pack • स्वीकारें</span>
-                        </button>
-                        <div className="flex items-center justify-between px-1">
-                            <button aria-label="Download or view packaging slip"
-                                className="min-h-[48px] h-[48px] px-3 rounded-full text-secondary hover:text-primary font-bold text-xs flex items-center gap-1.5 active:bg-surface-container transition-colors cursor-pointer"
-                                type="button" onClick={() => navigate('/success')}>
-                                <span className="material-symbols-outlined text-[20px]">receipt_long</span>
-                                View Slip • पर्ची देखें
-                            </button>
-                            <span className="text-[11px] text-outline font-medium">Auto-dispatch enabled</span>
-                        </div>
-                    </div>
-                </article>
-
-                {/* Order 2: KS-8919 */}
-                <article
-                    className="order-card bg-surface-container-lowest rounded-3xl p-5 shadow-sm border border-border-delicate flex flex-col justify-between gap-4 transition-all duration-500 hover:shadow-md"
-                    id="order-ks-8919">
-                    <div className="flex flex-col gap-4">
-                        <div className="flex items-start justify-between gap-2">
-                            <div className="flex flex-col">
-                                <div className="flex items-center gap-1.5">
-                                    <span className="text-sm font-bold text-on-surface">#KS-8919</span>
-                                    <span className="text-on-surface-variant">•</span>
-                                    <span className="text-xs text-on-surface-variant">35m ago</span>
-                                </div>
-                                <span className="text-xs text-[#752801] font-bold">Direct Customer • 0% Fee</span>
-                            </div>
-                            
-                            <span
-                                className="inline-flex items-center gap-1 bg-[#25D366]/15 text-[#1A3824] text-xs px-3 py-1.5 rounded-full font-bold">
-                                <span className="material-symbols-outlined text-[16px] text-[#25D366]"
-                                    style={{ fontVariationSettings: '\'FILL\' 1' }}>chat</span>
-                                WhatsApp Direct
-                            </span>
-                        </div>
-
-                        <div className="flex items-center gap-3.5 bg-surface-container-low p-3.5 rounded-2xl">
-                            <img className="w-[76px] h-[76px] rounded-xl object-cover shrink-0 shadow-sm"
-                                alt="Handcrafted Brass Puja Diya" height="76"
-                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuADLHGnD6b5Mm5Kw6N6ujayRO4j8q3V_3lPPR6jofXW8d6UpwFr5ROvLMj56XzD8ReYxRehGbr2PQeYAe6ypCJ_6nk1eBFMY6s0aQREkKO7tE1mFg6EQzsJ3_1CuY__0M3Cc_R3gDrtdl2831xaH86wDkZt_ZPSSo_gI8oiNrmjWotyxr4Lt_om_Uin7S3GW-j2bvNEcaYqzwKGYuGrvgbXyF_Mr0htSeCB1AhU9_zyueMDCUW5wsWP"
-                                width="76" />
-                            <div className="flex flex-col flex-1 min-w-0">
-                                <h2 className="text-sm font-bold text-on-surface truncate">Handcrafted Brass Puja Diya</h2>
-                                <div className="flex items-center gap-2 mt-0.5">
-                                    <span className="text-xs text-on-surface-variant font-medium">Qty: 2 Units</span>
-                                    <span className="text-xs text-on-surface-variant">•</span>
-                                    <span className="text-base font-extrabold text-on-surface">₹900</span>
-                                </div>
-                                <span className="inline-flex items-center gap-1 text-secondary text-xs font-bold mt-1">
-                                    <span className="material-symbols-outlined text-[16px]">payments</span>
-                                    Cash on Delivery (COD)
-                                </span>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center justify-between bg-surface-container p-2.5 rounded-2xl border border-border-delicate/40">
-                            <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
-                                <span className="material-symbols-outlined text-secondary text-[22px] shrink-0"
-                                    style={{ fontVariationSettings: '\'FILL\' 1' }}>graphic_eq</span>
-                                <p className="text-xs text-on-surface truncate italic font-medium">"Please pack safely for Diwali"</p>
-                            </div>
-                            <button aria-label="Play buyer voice message"
-                                className="min-h-[48px] h-[48px] px-3.5 rounded-full bg-surface-container-highest hover:bg-border-delicate text-on-surface text-xs font-bold flex items-center gap-1 active:scale-95 transition-all shrink-0 cursor-pointer"
-                                type="button">
-                                <span className="material-symbols-outlined text-[18px]">play_arrow</span>
-                                0:12
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col gap-2 pt-2 border-t border-border-delicate/40">
-                        <button aria-label="Accept and pack order KS-8919"
-                            className="action-btn w-full min-h-[52px] h-[52px] rounded-full bg-primary-container hover:bg-black text-on-primary text-sm font-bold flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all cursor-pointer"
-                            type="button" onClick={() => navigate('/success')}>
-                            <span className="material-symbols-outlined text-[22px]">inventory_2</span>
-                            <span>Accept & Pack • स्वीकारें</span>
-                        </button>
-                        
-                        <a aria-label="Message Buyer on WhatsApp"
-                            className="w-full min-h-[48px] h-[48px] rounded-full bg-[#25D366] hover:bg-emerald-600 text-white font-bold flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all text-xs"
-                            href="https://wa.me/" rel="noopener noreferrer" target="_blank">
-                            <span className="material-symbols-outlined text-[20px]"
-                                style={{ fontVariationSettings: '\'FILL\' 1' }}>chat</span>
-                            <span>Message Buyer • ग्राहक को मैसेज करें</span>
-                        </a>
-                    </div>
-                </article>
-
-                {/* Order 3: KS-8915 */}
-                <article
-                    className="order-card bg-surface-container-lowest rounded-3xl p-5 shadow-sm border border-border-delicate flex flex-col justify-between gap-4 transition-all duration-500 hover:shadow-md"
-                    id="order-ks-8915">
-                    <div className="flex flex-col gap-4">
-                        <div className="flex items-start justify-between gap-2">
-                            <div className="flex flex-col">
-                                <div className="flex items-center gap-1.5">
-                                    <span className="text-sm font-bold text-on-surface">#KS-8915</span>
-                                    <span className="text-on-surface-variant">•</span>
-                                    <span className="text-xs text-on-surface-variant">2 hours ago</span>
-                                </div>
-                                <span className="text-xs text-on-surface-variant">ONDC Pickup Agent</span>
-                            </div>
-                            
-                            <span
-                                className="inline-flex items-center gap-1 bg-surface-container-high text-primary text-xs px-3 py-1.5 rounded-full font-bold">
-                                <span className="material-symbols-outlined text-[16px] text-primary"
-                                    style={{ fontVariationSettings: '\'FILL\' 1' }}>storefront</span>
-                                ONDC via Paytm
-                            </span>
-                        </div>
-
-                        <div className="flex items-center gap-3.5 bg-surface-container-low p-3.5 rounded-2xl">
-                            <img className="w-[76px] h-[76px] rounded-xl object-cover shrink-0 shadow-sm"
-                                alt="Handmade Terracotta Pitcher" height="76"
-                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBIV_cz3e1s9PecVuCoGvMdgmVr148ixCtI8BtKEU7mdqCNcwrLRU5CKHEU1i-wQ7J1_mMLxTz_WcLs43UwJEptHZiuftIiXk1bgpQcNFt1oZ3J5vgnuoOACpsBbWUMbgpyeZRA9ILNCkINyizTmNUDUwDz_oksdIc_GVmWmnA0ofIdZuVjYVeygDD9wIglXqPy1XQ4eM48-E2szZRpH5-1rZ0Upwzn8d6POJGUKlaFuHz19Yi2WFd1"
-                                width="76" />
-                            <div className="flex flex-col flex-1 min-w-0">
-                                <h2 className="text-sm font-bold text-on-surface truncate">Handmade Terracotta Pitcher</h2>
-                                <div className="flex items-center gap-2 mt-0.5">
-                                    <span className="text-xs text-on-surface-variant font-medium">Qty: 1 Unit</span>
-                                    <span className="text-xs text-on-surface-variant">•</span>
-                                    <span className="text-base font-extrabold text-on-surface">₹200</span>
-                                </div>
-                                <span className="inline-flex items-center gap-1 text-[#1A3824] text-xs font-bold mt-1">
-                                    <span className="material-symbols-outlined text-[16px] text-[#25D366]"
-                                        style={{ fontVariationSettings: '\'FILL\' 1' }}>check_circle</span>
-                                    Paid Online • प्रीपेड
-                                </span>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 px-1 text-on-surface-variant text-xs">
-                            <span className="material-symbols-outlined text-[20px] text-on-surface-variant shrink-0">location_on</span>
-                            <p className="truncate">Ship to: <strong className="text-on-surface">Varanasi, UP</strong></p>
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col gap-2 pt-2 border-t border-border-delicate/40">
-                        <button aria-label="Accept and pack order KS-8915"
-                            className="action-btn w-full min-h-[52px] h-[52px] rounded-full bg-primary-container hover:bg-black text-on-primary text-sm font-bold flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all cursor-pointer"
-                            type="button" onClick={() => navigate('/success')}>
-                            <span className="material-symbols-outlined text-[22px]">inventory_2</span>
-                            <span>Accept & Pack • स्वीकारें</span>
-                        </button>
-                        <div className="flex items-center justify-between px-1">
-                            <button aria-label="Download or view packaging slip"
-                                className="min-h-[48px] h-[48px] px-3 rounded-full text-secondary hover:text-primary font-bold text-xs flex items-center gap-1.5 active:bg-surface-container transition-colors cursor-pointer"
-                                type="button" onClick={() => navigate('/success')}>
-                                <span className="material-symbols-outlined text-[20px]">receipt_long</span>
-                                View Slip • पर्ची देखें
-                            </button>
-                            <span className="text-[11px] text-outline font-medium">Standard Logistics</span>
-                        </div>
-                    </div>
-                </article>
-
-            </div>
-
-            {/* Bottom Info Banner */}
-            <div className="text-center py-6 flex flex-col items-center justify-center gap-1.5 text-on-surface-variant border-t border-border-delicate/40 mt-4">
+          {/* Top Bar Navigation */}
+          <div className="flex items-center justify-between gap-4 pb-4 border-b border-border-delicate/60">
+            <div className="flex items-center gap-3">
+              <button
+                aria-label="Go back to Home"
+                className="min-w-[48px] min-h-[48px] w-[48px] h-[48px] rounded-full bg-surface-container-low hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors"
+                type="button"
+                onClick={() => navigate('/home')}
+              >
+                <span className="material-symbols-outlined text-[24px]">arrow_back</span>
+              </button>
+              <div>
                 <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-secondary text-[24px]">verified</span>
-                    <p className="text-xs font-bold text-on-surface">100% Guaranteed Payouts via ONDC Settlements</p>
+                  <span className="text-xs font-bold text-secondary tracking-wider uppercase">Order Processing</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                  <span className={`text-xs font-medium flex items-center gap-1 ${realtimeConnected ? 'text-emerald-600' : 'text-outline'}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full inline-block ${realtimeConnected ? 'bg-emerald-500 animate-pulse' : 'bg-outline'}`}></span>
+                    {realtimeConnected ? 'ONDC Realtime Live' : 'ONDC Network'}
+                  </span>
                 </div>
-                <p className="text-[11px] text-outline">सभी लेन-देन भारत सरकार द्वारा मान्यता प्राप्त ONDC नेटवर्क के तहत सुरक्षित हैं</p>
+                <h1 className="text-xl sm:text-2xl font-extrabold text-espresso-deep tracking-tight">
+                  आर्डर इनबॉक्स (New Orders)
+                </h1>
+              </div>
             </div>
 
+            {/* Header Actions */}
+            <div className="flex items-center gap-2.5 flex-wrap justify-end">
+              {/* ⚡ Simulate Incoming GeM / ONDC PO */}
+              <button
+                id="simulate-order-btn"
+                aria-label="Simulate Incoming GeM or ONDC Purchase Order"
+                className="min-h-[44px] px-4 rounded-full bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs flex items-center gap-2 shadow-md active:scale-95 transition-all cursor-pointer disabled:opacity-60"
+                type="button"
+                onClick={handleSimulateOrder}
+                disabled={isSimulating}
+              >
+                <span className="material-symbols-outlined text-[18px]">
+                  {isSimulating ? 'hourglass_top' : 'bolt'}
+                </span>
+                <span className="hidden sm:inline">
+                  {isSimulating ? 'Inserting...' : '⚡ Simulate GeM / ONDC PO'}
+                </span>
+                <span className="sm:hidden">⚡ Simulate</span>
+              </button>
+
+              <button
+                aria-label="Filter Orders"
+                className="min-h-[44px] px-3 sm:px-4 rounded-full bg-surface-container-low hover:bg-surface-container text-on-surface font-bold text-xs flex items-center gap-2 border border-border-delicate/80 transition-colors"
+                type="button"
+              >
+                <span className="material-symbols-outlined text-[18px] text-secondary">tune</span>
+                <span className="hidden sm:inline">Filter</span>
+              </button>
+              <button
+                aria-label="Refresh Orders"
+                className="min-w-[44px] min-h-[44px] w-[44px] h-[44px] rounded-full bg-surface-container-low hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors"
+                type="button"
+              >
+                <span className="material-symbols-outlined text-[20px]">refresh</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Status / Voice Banner */}
+          <section
+            aria-label="Status notice"
+            className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-tertiary-fixed/30 border border-tertiary-fixed/80 rounded-3xl p-4 sm:p-5"
+          >
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-tertiary-fixed flex items-center justify-center text-on-tertiary-fixed shrink-0 shadow-sm">
+                <span className="material-symbols-outlined text-[26px]">notifications_active</span>
+              </div>
+              <div className="flex flex-col">
+                <p className="text-sm lg:text-base text-on-tertiary-fixed font-bold leading-snug">
+                  {allOrders.length} नए आर्डर तैयार हैं! ({allOrders.length} New Orders Ready)
+                </p>
+                <p className="text-xs lg:text-sm text-on-tertiary-fixed-variant leading-tight">
+                  Tap 'Accept &amp; Pack' to dispatch today before courier pickup.
+                </p>
+              </div>
+            </div>
+
+            <button
+              aria-label="बोलकर सुनें - Listen to Hindi instructions"
+              className="min-w-[48px] min-h-[48px] w-[48px] h-[48px] rounded-full bg-primary-container text-on-primary flex items-center justify-center shrink-0 active:scale-90 hover:scale-105 transition-all shadow-md"
+              id="voice-listen-btn"
+              type="button"
+              onClick={() => {
+                if (allOrders.length > 0) speakOrder(allOrders[0]);
+              }}
+            >
+              <span className="material-symbols-outlined text-[24px]">volume_up</span>
+            </button>
+          </section>
+
+          {/* Orders Cards Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6" id="orders-list">
+            {allOrders.map((order) => (
+              <OrderCard key={order.id} order={order} onAccept={handleAcceptOrder} />
+            ))}
+          </div>
+
+          {/* Bottom Info Banner */}
+          <div className="text-center py-6 flex flex-col items-center justify-center gap-1.5 text-on-surface-variant border-t border-border-delicate/40 mt-4">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-secondary text-[24px]">verified</span>
+              <p className="text-xs font-bold text-on-surface">100% Guaranteed Payouts via ONDC Settlements</p>
+            </div>
+            <p className="text-[11px] text-outline">
+              सभी लेन-देन भारत सरकार द्वारा मान्यता प्राप्त ONDC नेटवर्क के तहत सुरक्षित हैं
+            </p>
+          </div>
         </div>
       </main>
+
+      {/* Live Toast Notification */}
+      {toastMsg && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-primary text-on-primary px-5 py-3 rounded-full text-xs font-bold shadow-xl flex items-center gap-2 transition-all max-w-sm text-center">
+          <span className="material-symbols-outlined text-[18px] text-emerald-400">bolt</span>
+          <span>{toastMsg}</span>
+        </div>
+      )}
     </div>
   );
 }

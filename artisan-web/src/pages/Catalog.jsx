@@ -59,6 +59,8 @@ const INITIAL_PRODUCTS = [
   }
 ];
 
+const EXPORT_CATALOG_URL = 'https://jrkrdlalnqswvwabktce.supabase.co/functions/v1/export-catalog';
+
 export default function Catalog() {
   const navigate = useNavigate();
   const [products, setProducts] = useState(INITIAL_PRODUCTS);
@@ -66,6 +68,7 @@ export default function Catalog() {
   const [activeFilter, setActiveFilter] = useState('all'); // all | live | draft | sold_out
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [toastMsg, setToastMsg] = useState('');
+  const [exportingFormat, setExportingFormat] = useState(null); // 'ondc' | 'gem' | null
 
   // Fetch real products from Supabase
   useEffect(() => {
@@ -102,7 +105,54 @@ export default function Catalog() {
 
   const showToast = (msg) => {
     setToastMsg(msg);
-    setTimeout(() => setToastMsg(''), 3000);
+    setTimeout(() => setToastMsg(''), 4000);
+  };
+
+  const handleExportCatalog = async (format) => {
+    setExportingFormat(format);
+    try {
+      const res = await fetch(`${EXPORT_CATALOG_URL}?format=${format}`, {
+        method: 'GET',
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      if (format === 'gem_csv') {
+        // CSV download
+        const text = await res.text();
+        const blob = new Blob([text], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `gem-procurement-batch-${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('✅ GeM Procurement Sheet downloaded as CSV!');
+      } else {
+        // JSON download
+        const json = await res.json();
+        const blob = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = format === 'gem'
+          ? `gem-catalog-${new Date().toISOString().slice(0, 10)}.json`
+          : `ondc-beckn-catalog-${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast(format === 'gem'
+          ? '✅ GeM Tender Batch JSON downloaded!'
+          : '✅ ONDC Beckn Feed JSON downloaded!');
+      }
+    } catch (err) {
+      console.error(`[Export ${format}]`, err);
+      showToast(`❌ Export failed: ${err.message}`);
+    } finally {
+      setExportingFormat(null);
+    }
   };
 
   const handleVoiceSearch = () => {
@@ -168,8 +218,8 @@ export default function Catalog() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
-                <div className="relative w-full sm:w-80">
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="relative w-full sm:w-72">
                   <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px] pointer-events-none">
                     search
                   </span>
@@ -191,14 +241,91 @@ export default function Catalog() {
                   </button>
                 </div>
 
-                <button
-                  onClick={() => navigate('/capture')}
-                  className="h-12 px-5 rounded-xl bg-primary text-on-primary font-bold text-sm shadow-md active:scale-95 flex items-center gap-2 hover:bg-primary-container transition-all shrink-0 cursor-pointer"
-                  type="button"
-                >
-                  <span className="material-symbols-outlined text-[20px]">add</span>
-                  <span>+ Add Product (नया शिल्प जोड़ें)</span>
-                </button>
+                {/* Export Action Bar */}
+                <div className="flex items-center gap-2 flex-wrap">
+
+                  {/* 1. ONDC Beckn Feed (JSON) */}
+                  <div className="flex flex-col items-center gap-0.5 group relative">
+                    <button
+                      id="export-ondc-btn"
+                      aria-label="Download ONDC Beckn Feed JSON"
+                      onClick={() => handleExportCatalog('ondc')}
+                      disabled={!!exportingFormat}
+                      className="h-11 px-3.5 rounded-xl bg-secondary text-on-secondary font-bold text-xs shadow-md active:scale-95 flex items-center gap-1.5 hover:opacity-90 transition-all shrink-0 cursor-pointer disabled:opacity-50"
+                      type="button"
+                      title="For ONDC network buyer gateways (Paytm, Mystore, Craftsvilla)"
+                    >
+                      <span className="material-symbols-outlined text-[17px]">
+                        {exportingFormat === 'ondc' ? 'hourglass_top' : 'download'}
+                      </span>
+                      <span className="hidden xl:inline">
+                        {exportingFormat === 'ondc' ? 'Fetching...' : '📥 ONDC Beckn Feed'}
+                      </span>
+                      <span className="xl:hidden">📥</span>
+                    </button>
+                    <span className="hidden xl:block text-[10px] text-on-surface-variant text-center leading-tight max-w-[130px] truncate">
+                      For ONDC buyer gateways
+                    </span>
+                  </div>
+
+                  {/* 2. GeM Tender Batch (JSON) */}
+                  <div className="flex flex-col items-center gap-0.5">
+                    <button
+                      id="export-gem-btn"
+                      aria-label="Export GeM Tender Batch JSON"
+                      onClick={() => handleExportCatalog('gem')}
+                      disabled={!!exportingFormat}
+                      className="h-11 px-3.5 rounded-xl bg-amber-600 text-white font-bold text-xs shadow-md active:scale-95 flex items-center gap-1.5 hover:opacity-90 transition-all shrink-0 cursor-pointer disabled:opacity-50"
+                      type="button"
+                      title="For GeM automated API ingestion & PSU procurement tenders"
+                    >
+                      <span className="material-symbols-outlined text-[17px]">
+                        {exportingFormat === 'gem' ? 'hourglass_top' : 'account_balance'}
+                      </span>
+                      <span className="hidden xl:inline">
+                        {exportingFormat === 'gem' ? 'Fetching...' : '🏛️ GeM Tender JSON'}
+                      </span>
+                      <span className="xl:hidden">🏛️</span>
+                    </button>
+                    <span className="hidden xl:block text-[10px] text-on-surface-variant text-center leading-tight max-w-[130px] truncate">
+                      PSU procurement tenders
+                    </span>
+                  </div>
+
+                  {/* 3. GeM Procurement Sheet (CSV / Excel) */}
+                  <div className="flex flex-col items-center gap-0.5">
+                    <button
+                      id="export-gem-csv-btn"
+                      aria-label="Download GeM Procurement Sheet CSV"
+                      onClick={() => handleExportCatalog('gem_csv')}
+                      disabled={!!exportingFormat}
+                      className="h-11 px-3.5 rounded-xl bg-emerald-700 text-white font-bold text-xs shadow-md active:scale-95 flex items-center gap-1.5 hover:opacity-90 transition-all shrink-0 cursor-pointer disabled:opacity-50"
+                      type="button"
+                      title="Standard CSV upload for Government e-Marketplace vendor portal"
+                    >
+                      <span className="material-symbols-outlined text-[17px]">
+                        {exportingFormat === 'gem_csv' ? 'hourglass_top' : 'table_view'}
+                      </span>
+                      <span className="hidden xl:inline">
+                        {exportingFormat === 'gem_csv' ? 'Fetching...' : '📊 GeM CSV / Excel'}
+                      </span>
+                      <span className="xl:hidden">📊</span>
+                    </button>
+                    <span className="hidden xl:block text-[10px] text-on-surface-variant text-center leading-tight max-w-[130px] truncate">
+                      GeM vendor portal upload
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={() => navigate('/capture')}
+                    className="h-11 px-4 rounded-xl bg-primary text-on-primary font-bold text-sm shadow-md active:scale-95 flex items-center gap-1.5 hover:bg-primary-container transition-all shrink-0 cursor-pointer"
+                    type="button"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">add</span>
+                    <span className="hidden md:inline">+ Add Product</span>
+                    <span className="md:hidden">+</span>
+                  </button>
+                </div>
               </div>
             </div>
 

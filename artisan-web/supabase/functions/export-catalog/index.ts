@@ -261,6 +261,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    const url = new URL(req.url);
     const rawFormat = (url.searchParams.get("format") || "ondc").toLowerCase();
     const format = rawFormat === "csv" ? "gem_csv" : rawFormat;
 

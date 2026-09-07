@@ -337,11 +337,20 @@ export default function AuthModal() {
                     </button>
                   </div>
                 </div>
-                <p className="text-[11px] text-stone-500 mt-1.5">
-                  {language === 'hi'
-                    ? 'हम आपके मोबाइल पर 6-अंकों का एसएमएस ओटीपी भेजेंगे।'
-                    : 'We will send a 6-digit SMS OTP via Supabase Auth.'}
-                </p>
+                <div className="flex items-center justify-between text-[11px] text-stone-500 mt-1.5 flex-wrap gap-1">
+                  <span>
+                    {language === 'hi'
+                      ? 'हम आपके मोबाइल पर 6-अंकों का एसएमएस ओटीपी भेजेंगे।'
+                      : 'We will send a 6-digit SMS OTP via Supabase Auth.'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setPhoneNumber('9999999999')}
+                    className="text-[#9c441c] font-bold hover:underline cursor-pointer"
+                  >
+                    ⚡ Auto-fill: 99999 99999
+                  </button>
+                </div>
               </div>
 
               <button

@@ -179,7 +179,8 @@ const CRAFT_SUGGESTION_CHIPS = [
 
 export default function Capture() {
   const navigate = useNavigate();
-  const { language, toggleLanguage, toggleNotifications, unreadCount } = useAuth();
+  const { user, artisanProfile, openAuthModal, language, toggleLanguage, toggleNotifications, unreadCount } = useAuth();
+  const isVerified = Boolean(artisanProfile?.verified || user?.is_phone_verified);
 
   // ── Dual Capture Refs ──
   const cameraInputRef = useRef(null);
@@ -582,7 +583,24 @@ export default function Capture() {
             </span>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2.5 shrink-0">
+            {/* Authenticated Artisan Badge */}
+            {isVerified ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-900 font-bold text-[11px] shadow-xs">
+                <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
+                <span>🟢 {artisanProfile.phone || user?.phone || '+91 99999 99999'} [✓ Verified]</span>
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => openAuthModal()}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-stone-950 text-[11px] font-bold cursor-pointer transition-all active:scale-95 animate-pulse shadow-xs"
+              >
+                <span className="material-symbols-outlined text-[14px]">login</span>
+                <span>📲 {language === 'hi' ? 'फ़ोन सत्यापन' : 'Login with OTP'}</span>
+              </button>
+            )}
+
             {/* Language Toggle */}
             <button
               onClick={toggleLanguage}
@@ -614,6 +632,21 @@ export default function Capture() {
           {/* ──────────────────────────────── LEFT: CAMERA & VIEWFINDER ──────────────────────────────── */}
           <div className="col-span-12 xl:col-span-7 flex flex-col gap-4">
             <div className="relative w-full aspect-[16/11] bg-[#191312] rounded-3xl overflow-hidden shadow-2xl flex flex-col justify-between p-4 sm:p-6 border border-[#2e241e]">
+              {/* Alignment Grid Overlay */}
+              {gridOn && (
+                <div className="absolute inset-0 pointer-events-none z-10 grid grid-cols-3 grid-rows-3 opacity-30">
+                  <div className="border-r border-b border-white/30" />
+                  <div className="border-r border-b border-white/30" />
+                  <div className="border-b border-white/30" />
+                  <div className="border-r border-b border-white/30" />
+                  <div className="border-r border-b border-white/30" />
+                  <div className="border-b border-white/30" />
+                  <div className="border-r border-white/30" />
+                  <div className="border-r border-white/30" />
+                  <div className="" />
+                </div>
+              )}
+
               {/* Background Display / Selected Craft */}
               {displayImage ? (
                 <div className="absolute inset-0 flex items-center justify-center bg-[#191312]">

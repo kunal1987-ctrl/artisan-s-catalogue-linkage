@@ -224,7 +224,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { audioBase64, imageBase64 } = await req.json();
+    const { audioBase64, imageBase64, customTranscript } = await req.json();
 
     const groqApiKey = Deno.env.get("GROQ_API_KEY");
     const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
@@ -299,6 +299,9 @@ Deno.serve(async (req: Request) => {
         }
         transcript = FALLBACK_TRANSCRIPT;
       }
+    } else if (customTranscript && typeof customTranscript === "string" && customTranscript.trim().length > 0) {
+      console.log(`[Step 1] Using provided artisan description for user ${user.id}:`, customTranscript);
+      transcript = customTranscript.trim();
     } else {
       console.log("[Step 1] No audio provided. Using visual craft analysis.");
       transcript = "Handcrafted artisan item. Analyze visual craft features.";

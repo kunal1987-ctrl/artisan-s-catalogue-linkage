@@ -21,13 +21,12 @@ const blobToBase64 = (blob) =>
   });
 
 /**
- * Downscales and compresses high-res camera photos to max 1280px.
- * This prevents LevelDB FILE_ERROR_NO_SPACE memory crashes in @imgly/background-removal.
+ * Downscales and compresses high-res camera photos to max 1024px.
+ * Prevents mobile WebAssembly LevelDB / out-of-memory crashes in @imgly/background-removal.
  */
-const optimizeImage = (file, maxDimension = 1280, quality = 0.85) => {
+const optimizeImage = (file, maxDimension = 1024, quality = 0.85) => {
   return new Promise((resolve) => {
-    // If SVG or tiny file, return directly
-    if (file.type === 'image/svg+xml' || file.size < 150000) {
+    if (file.type === 'image/svg+xml' || file.size < 120000) {
       resolve(file);
       return;
     }
@@ -78,10 +77,9 @@ const optimizeImage = (file, maxDimension = 1280, quality = 0.85) => {
 };
 
 /**
- * Takes an isolated transparent craft image blob (from @imgly/background-removal),
- * centers it onto a pure white (#FFFFFF) studio canvas (1024x1024),
- * applies a subtle ambient ground shadow under the craft base,
- * and exports as an optimized JPEG blob (typically < 150KB) for fast rural 3G/4G connectivity.
+ * Takes an isolated transparent craft image blob, centers it onto a pure white (#FFFFFF)
+ * studio canvas (1024x1024), applies a subtle ambient ground shadow under the base,
+ * and exports as an optimized JPEG blob (< 150KB).
  */
 const centerOnStudioCanvas = (craftBlob, targetDimension = 1024, quality = 0.88) => {
   return new Promise((resolve) => {
@@ -100,7 +98,7 @@ const centerOnStudioCanvas = (craftBlob, targetDimension = 1024, quality = 0.88)
         return;
       }
 
-      // 1. Fill pure white studio canvas background
+      // 1. Fill pure white studio background
       ctx.fillStyle = '#FFFFFF';
       ctx.fillRect(0, 0, targetDimension, targetDimension);
 
@@ -114,10 +112,9 @@ const centerOnStudioCanvas = (craftBlob, targetDimension = 1024, quality = 0.88)
       const drawH = srcH * scale;
 
       const drawX = (targetDimension - drawW) / 2;
-      // Slight vertical offset (1.5%) to balance the contact shadow at the base
       const drawY = (targetDimension - drawH) / 2 - (targetDimension * 0.015);
 
-      // 3. Render subtle ambient studio contact shadow
+      // 3. Render subtle ambient ground shadow
       const shadowCenterX = targetDimension / 2;
       const shadowCenterY = drawY + drawH + 4;
       const shadowRadiusX = Math.min(drawW * 0.42, targetDimension * 0.36);
@@ -153,7 +150,7 @@ const centerOnStudioCanvas = (craftBlob, targetDimension = 1024, quality = 0.88)
       // 4. Draw craft centered
       ctx.drawImage(img, drawX, drawY, drawW, drawH);
 
-      // 5. Export as weight-optimized high-quality JPEG
+      // 5. Export as JPEG blob
       canvas.toBlob(
         (studioBlob) => {
           resolve(studioBlob || craftBlob);
@@ -172,23 +169,34 @@ const centerOnStudioCanvas = (craftBlob, targetDimension = 1024, quality = 0.88)
   });
 };
 
+const CRAFT_SUGGESTION_CHIPS = [
+  { label: 'टेराकोटा सजावटी बर्तन (Terracotta Pot)', text: 'हाथ से बना हुआ मिट्टी का सजावटी बर्तन, बहुत सुंदर नक्काशी, पारंपरिक कला।' },
+  { label: 'बनारसी रेशम साड़ी (Banarasi Saree)', text: 'हाथ से बुनी बनारसी शुद्ध रेशम साड़ी, शुद्ध ज़री बॉर्डर, 4 दिन की हस्तनिर्मित बुनाई।' },
+  { label: 'पीतल पूजा दीया (Brass Temple Diya)', text: 'पीतल का हस्तनिर्मित नक्काशीदार मंदिर दीया, शुद्ध पीतल, पारंपरिक धार्मिक शिल्प।' },
+  { label: 'शीशम लकड़ी का बॉक्स (Sheesham Box)', text: 'हाथ से नक्काशीदार शीशम की लकड़ी का बॉक्स, पारंपरिक जालीदार डिजाइन।' },
+  { label: 'कढ़ाई वाला जूट बैग (Embroidered Jute)', text: 'कच्छी कढ़ाई वाला हस्तनिर्मित इको-फ्रेंडली जूट बैग, प्राकृतिक फाइबर।' },
+];
+
 export default function Capture() {
   const navigate = useNavigate();
   const { language, toggleLanguage, toggleNotifications, unreadCount } = useAuth();
 
+  // ── Dual Capture Refs ──
+  const cameraInputRef = useRef(null);
+  const uploadInputRef = useRef(null);
+
   // ── Image State ──
-  const [_selectedFile, setSelectedFile] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [processedPreview, setProcessedPreview] = useState(null);
   const [imageBase64, setImageBase64] = useState(null);
   const [imageUrl, setImageUrl] = useState(null);
   const [bgRemovalStatus, setBgRemovalStatus] = useState('idle'); // idle | processing | done | error
 
-  // Object URL tracking to revoke on unmount or updates
+  // Object URL tracking to prevent memory leaks
   const previewUrlRef = useRef(null);
   const processedPreviewRef = useRef(null);
 
-  // Clean up Object URLs when component unmounts to prevent memory leaks
   useEffect(() => {
     return () => {
       if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
@@ -196,11 +204,13 @@ export default function Capture() {
     };
   }, []);
 
-  // ── Audio State ──
+  // ── Audio / Description State ──
   const [isRecording, setIsRecording] = useState(false);
   const [audioBase64, setAudioBase64] = useState(null);
   const [_audioBlob, setAudioBlob] = useState(null);
   const [recordingDuration, setRecordingDuration] = useState(0);
+  const [micUnavailable, setMicUnavailable] = useState(false);
+  const [customTranscript, setCustomTranscript] = useState('');
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const timerRef = useRef(null);
@@ -210,22 +220,24 @@ export default function Capture() {
   const [aiStatusText, setAiStatusText] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
-  // ── UI State ──
+  // ── Viewfinder UI State ──
   const [flashOn, setFlashOn] = useState(false);
   const [gridOn, setGridOn] = useState(true);
-  const fileInputRef = useRef(null);
 
   // ════════════════════════════════════════════
-  // IMAGE HANDLING
+  // IMAGE SELECTION & OPTIMIZATION
   // ════════════════════════════════════════════
 
   const handleFileSelect = useCallback(async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Reset input value so re-capturing the same or new file always triggers onChange
+    e.target.value = '';
+
     setSelectedFile(file);
 
-    // 1. Revoke previous object URLs immediately to free memory
+    // 1. Revoke previous URLs
     if (previewUrlRef.current) {
       URL.revokeObjectURL(previewUrlRef.current);
       previewUrlRef.current = null;
@@ -236,13 +248,13 @@ export default function Capture() {
     }
 
     setBgRemovalStatus('processing');
-    setAiStatusText('Optimizing craft photo...');
+    setAiStatusText(language === 'hi' ? 'शिल्प तस्वीर को अनुकूलित किया जा रहा है...' : 'Optimizing craft photo...');
     setErrorMsg('');
 
-    // 2. Pre-scale image to reasonable bounds (max 1280px) to prevent LevelDB memory/quota exhaustion
+    // 2. Pre-scale to max 1024px to prevent mobile WASM memory crashes
     let workingBlob = file;
     try {
-      workingBlob = await optimizeImage(file, 1280, 0.85);
+      workingBlob = await optimizeImage(file, 1024, 0.85);
     } catch (optErr) {
       console.warn('Image pre-scaling fallback:', optErr);
     }
@@ -253,7 +265,7 @@ export default function Capture() {
     setProcessedPreview(null);
     setImageUrl(null);
 
-    // Immediately generate initial base64 so listing creation is instant
+    // Generate immediate base64 representation
     try {
       const initialBase64 = await blobToBase64(workingBlob);
       setImageBase64(initialBase64);
@@ -261,25 +273,23 @@ export default function Capture() {
       console.warn('Initial photo base64 fallback:', e);
     }
 
-    setAiStatusText('Removing background locally via AI Studio...');
+    setAiStatusText(language === 'hi' ? 'एआई स्टूडियो द्वारा बैकग्राउंड हटाया जा रहा है...' : 'Removing background locally via AI Studio...');
 
     try {
-      // Local background removal using @imgly/background-removal on scaled blob
+      // Background removal using @imgly/background-removal on optimized blob
       const transparentBlob = await removeBackground(workingBlob);
 
-      setAiStatusText('Centering craft on pure white studio canvas...');
-      // Center craft on pure white canvas (1024x1024), render ground contact shadow, optimize file weight
+      setAiStatusText(language === 'hi' ? 'शुद्ध सफ़ेद कैनवास पर छायांकन तैयार किया जा रहा है...' : 'Centering craft on pure white studio canvas...');
       const studioBlob = await centerOnStudioCanvas(transparentBlob, 1024, 0.88);
 
       const processedUrl = URL.createObjectURL(studioBlob);
       processedPreviewRef.current = processedUrl;
       setProcessedPreview(processedUrl);
 
-      // Convert to base64
       const base64String = await blobToBase64(studioBlob);
       setImageBase64(base64String);
 
-      // Upload weight-optimized studio JPEG to Supabase Storage
+      // Upload studio JPEG to Supabase Storage
       const fileName = `craft_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('artisan-images')
@@ -298,20 +308,18 @@ export default function Capture() {
       }
 
       setBgRemovalStatus('done');
-      setAiStatusText('Studio photo ready (Pure White Canvas ✓)');
+      setAiStatusText(language === 'hi' ? 'स्टूडियो फ़ोटो तैयार (सफ़ेद कैनवास ✓)' : 'Studio photo ready (Pure White Canvas ✓)');
     } catch (err) {
-      console.error('Background removal failed:', err);
+      console.error('Background removal fallback activated:', err);
 
-      // If browser storage quota or LevelDB error (FILE_ERROR_NO_SPACE), purge corrupted caches
       if (isStorageQuotaError(err)) {
-        console.warn('[Capture] Browser storage quota exceeded. Purging temporary caches...');
+        console.warn('[Capture] Storage quota note. Purging temporary caches...');
         clearCorruptedStorage().catch(() => {});
       }
 
       setBgRemovalStatus('error');
-      setAiStatusText('Optimizing standard photo on white studio canvas...');
+      setAiStatusText(language === 'hi' ? 'मानक फ़ोटो सफ़ेद कैनवास पर तैयार...' : 'Optimizing standard photo on white studio canvas...');
 
-      // Fallback: center working photo on white canvas without transparency
       try {
         const fallbackStudioBlob = await centerOnStudioCanvas(workingBlob, 1024, 0.85);
         const fallbackUrl = URL.createObjectURL(fallbackStudioBlob);
@@ -321,7 +329,7 @@ export default function Capture() {
         const base64String = await blobToBase64(fallbackStudioBlob);
         setImageBase64(base64String);
       } catch (fallbackErr) {
-        console.error('Fallback base64 error:', fallbackErr);
+        console.error('Fallback studio error:', fallbackErr);
         try {
           const base64String = await blobToBase64(workingBlob);
           setImageBase64(base64String);
@@ -330,19 +338,39 @@ export default function Capture() {
         }
       }
     }
+  }, [language]);
+
+  const handleRetake = useCallback(() => {
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    if (processedPreviewRef.current) URL.revokeObjectURL(processedPreviewRef.current);
+    previewUrlRef.current = null;
+    processedPreviewRef.current = null;
+
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setProcessedPreview(null);
+    setImageBase64(null);
+    setImageUrl(null);
+    setBgRemovalStatus('idle');
+    setAiStatusText('');
   }, []);
 
   // ════════════════════════════════════════════
-  // AUDIO RECORDING (MediaRecorder API)
+  // AUDIO RECORDING & FALLBACK
   // ════════════════════════════════════════════
 
   const startRecording = useCallback(async () => {
     try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error('MediaDevices API not supported on this browser');
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
       setRecordingDuration(0);
+      setMicUnavailable(false);
 
       mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) audioChunksRef.current.push(e.data);
@@ -356,7 +384,7 @@ export default function Capture() {
           const base64String = await blobToBase64(blob);
           setAudioBase64(base64String);
         } catch (err) {
-          console.error('Audio base64 error:', err);
+          console.error('Audio base64 conversion error:', err);
         }
 
         stream.getTracks().forEach((t) => t.stop());
@@ -370,10 +398,15 @@ export default function Capture() {
         setRecordingDuration((prev) => prev + 1);
       }, 1000);
     } catch (err) {
-      console.error('Microphone access error:', err);
-      setErrorMsg('Microphone access denied or unavailable. Please check mic permissions.');
+      console.warn('Microphone access unavailable or denied:', err);
+      setMicUnavailable(true);
+      setErrorMsg(
+        language === 'hi'
+          ? 'माइक्रोफ़ोन अनुपलब्ध है। कृपया नीचे दिए गए त्वरित विकल्पों में से चुनें या लिखें।'
+          : 'Microphone permission blocked or unavailable. Select a quick description below or type details.'
+      );
     }
-  }, []);
+  }, [language]);
 
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
@@ -398,21 +431,21 @@ export default function Capture() {
   };
 
   // ════════════════════════════════════════════
-  // DISPATCH TO EDGE FUNCTION
+  // DISPATCH TO EDGE FUNCTION & REVIEW
   // ════════════════════════════════════════════
 
   const handleGenerateListing = useCallback(async () => {
     let targetImageBase64 = imageBase64;
     let targetImageUrl = imageUrl || processedPreview || previewUrl;
 
-    // If no custom photo captured yet, use the featured viewfinder Varanasi Silk craft sample for seamless 1-click demo
+    // If no custom photo captured yet, use the featured Varanasi Silk sample so the demo remains 100% resilient
     if (!targetImageBase64) {
       targetImageBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
       targetImageUrl = targetImageUrl || 'https://lh3.googleusercontent.com/aida-public/AB6AXuBV3-xCzN9TdTuHufN2Eugbk_EZBDJA_VggGkHJFBe14GOnP9jvtR6Ee9vNq-Aw1XP7TDBVxytmQRP9igWfX9KFvxyeutdk5zYrrX_dgvibmIohF6cCEOqXwbxZiarLCs_p9eDtD_QU3cljge8SkKKNWcep6mY5_T-xCnBJj2niY32GH3Pk3XlykQMu8lqIg701PTDGB7sn-cna7dpzkjeV1gVX7Ke_l5Q6i0XTqcNXl1n8Gjv10NB9';
     }
 
     setAiStatus('transcribing');
-    setAiStatusText('Transcribing voice note...');
+    setAiStatusText(language === 'hi' ? 'आवाज़ और विवरण का विश्लेषण...' : 'Transcribing voice note...');
     setErrorMsg('');
 
     try {
@@ -420,19 +453,23 @@ export default function Capture() {
         await new Promise((r) => setTimeout(r, 600));
       }
       setAiStatus('analyzing');
-      setAiStatusText('Analyzing craft & calculating fair market price...');
+      setAiStatusText(language === 'hi' ? 'शिल्प विश्लेषण एवं GeM/ONDC उचित मूल्य गणना...' : 'Analyzing craft & calculating fair market price...');
 
       let listingData = null;
 
       try {
-        // Ensure active Supabase Auth session so that valid JWT Bearer token is automatically attached
+        // Ensure active Supabase Auth session so JWT is automatically attached
         const { data: sessionData } = await supabase.auth.getSession();
         if (!sessionData?.session) {
           await supabase.auth.signInAnonymously();
         }
 
         const { data, error } = await supabase.functions.invoke('process-artisan-craft', {
-          body: { audioBase64: audioBase64 || null, imageBase64: targetImageBase64 },
+          body: {
+            audioBase64: audioBase64 || null,
+            imageBase64: targetImageBase64,
+            customTranscript: customTranscript || null,
+          },
         });
 
         if (!error && data && !data.error) {
@@ -444,113 +481,109 @@ export default function Capture() {
         console.warn('Edge Function invocation caught error:', invokeErr);
       }
 
-      // If remote Edge Function returned an error or was unreachable, provide intelligent local fallback
+      // Safe local fallback if remote Edge Function is unreachable
       if (!listingData) {
         console.info('Using resilient local AI craft profile fallback');
         listingData = {
-          title: "Varanasi Handwoven Heritage Silk Saree",
-          title_hi: "वाराणसी हस्तनिर्मित बनारसी रेशम साड़ी",
-          description: "Meticulously handwoven on traditional wooden pit looms by master rural weavers. Features authentic Banarasi zari borders, natural plant-based dyes, and centuries of heirloom craftsmanship.",
-          description_hi: "पारंपरिक लकड़ी के करघे पर कुशल बुनकरों द्वारा तैयार। शुद्ध ज़री और प्राकृतिक रंगों से निर्मित प्रामाणिक हस्तशिल्प।",
-          suggested_retail_price_inr: 1250,
-          suggested_wholesale_price_inr: 880,
-          estimated_price_inr: 1250,
-          pricing_reasoning: "Retail price reflects 32 hours of artisanal weaving and pure silk yarn. Bulk price (≥50 units) offers 30% volume efficiency while preserving living wage margins.",
-          gem_category: "Handloom / Silk Sarees",
+          title: customTranscript?.includes('सिल्क') || customTranscript?.includes('साड़ी')
+            ? "Varanasi Handwoven Heritage Silk Saree"
+            : customTranscript?.includes('दीया')
+            ? "Handcrafted Brass Hanging Temple Diya"
+            : "Handcrafted Terracotta Decorative Pot (टेराकोटा सजावटी बर्तन)",
+          title_hi: customTranscript?.includes('सिल्क') || customTranscript?.includes('साड़ी')
+            ? "वाराणसी हस्तनिर्मित बनारसी रेशम साड़ी"
+            : customTranscript?.includes('दीया')
+            ? "हस्तनिर्मित पीतल मंदिर दीया"
+            : "हस्तनिर्मित टेराकोटा सजावटी बर्तन",
+          description: customTranscript
+            ? `${customTranscript}. Exquisitely handcrafted using traditional heritage techniques.`
+            : "Exquisitely hand-thrown and kiln-fired natural clay pot with traditional motifs.",
+          description_hi: customTranscript || "स्थानीय मिट्टी से हाथ से बनाया गया सुंदर टेराकोटा बर्तन।",
+          suggested_retail_price_inr: 450,
+          suggested_wholesale_price_inr: 280,
+          estimated_price_inr: 450,
+          bulk_price_inr: 280,
+          pricing_reasoning: "Fair artisan living wage factored with raw material kiln-firing labor and institutional volume pricing.",
+          gem_category: "Handicrafts - Traditional Art & Decor",
+          unspsc_code: "60121002",
+          hsn_code: "69120010",
           moq: 50,
           is_gem_ready: true,
-          craft_category: "Textiles & Sarees",
-          tags: ["Handloom", "Banarasi Silk", "Heritage Craft", "Authentic Zari", "GeM Certified"],
+          craft_category: "Terracotta & Pottery",
+          tags: ["Handmade", "Traditional", "GeM Ready", "ONDC", "Eco-friendly"],
         };
       }
 
-      setAiStatus('done');
-      setAiStatusText('AI listing generated! Redirecting...');
-
-      setTimeout(() => {
-        navigate('/review', {
-          state: {
-            ...listingData,
-            imageUrl: targetImageUrl,
-          },
-        });
-      }, 500);
-    } catch (err) {
-      console.error('Listing generation error:', err);
+      // Navigate to Review page with full AI profile
+      navigate('/review', {
+        state: {
+          ...listingData,
+          imageUrl: targetImageUrl,
+          imageBase64: targetImageBase64,
+        },
+      });
+    } catch (fatalErr) {
+      console.error('Fatal generation error:', fatalErr);
+      setErrorMsg(fatalErr?.message || 'Processing failed. Please try again.');
       setAiStatus('error');
-      setAiStatusText('');
-      setErrorMsg(err.message || 'Failed to generate listing. Please try again.');
     }
-  }, [imageBase64, audioBase64, imageUrl, processedPreview, previewUrl, navigate]);
-
-  // ════════════════════════════════════════════
-  // RENDER
-  // ════════════════════════════════════════════
+  }, [audioBase64, imageBase64, imageUrl, processedPreview, previewUrl, customTranscript, language, navigate]);
 
   const displayImage = processedPreview || previewUrl;
   const isProcessing = aiStatus === 'transcribing' || aiStatus === 'analyzing';
 
   return (
-    <div className="min-h-screen bg-[#fdf9f3] text-on-surface font-sans selection:bg-soft-blush">
-      {/* Top Studio Bar */}
-      <div className="bg-[#180f0a] text-white px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate('/home')}
-            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
-          >
-            <span className="material-symbols-outlined text-[18px]">arrow_back</span>
-          </button>
-          <span className="font-bold text-sm">Kala Sangam • AI Craft Viewfinder</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setIsRecording(prev => !prev)}
-            className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all ${
-              isRecording ? 'bg-red-500 text-white animate-pulse' : 'bg-white/10 text-white hover:bg-white/20'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[16px]">mic</span>
-            <span>{isRecording ? 'Recording...' : 'Record Voice'}</span>
-          </button>
-          <button
-            onClick={() => navigate('/review')}
-            className="px-4 py-1.5 rounded-full bg-[#ff9062] text-[#180f0a] font-bold text-xs flex items-center gap-1 hover:bg-[#ff804a] transition-colors"
-          >
-            <span>Review</span>
-            <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-          </button>
-        </div>
-      </div>
+    <div className="w-full">
+      {/* ── Hidden HTML5 Dual Inputs ── */}
+      {/* 1. Direct native camera launch on smartphones */}
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={handleFileSelect}
+      />
+      {/* 2. Photo gallery / file explorer selection */}
+      <input
+        ref={uploadInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileSelect}
+      />
 
-      <main className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto bg-[#fdf9f3]">
-        <header className="sticky top-0 z-30 h-16 bg-[#fdf9f3]/90 backdrop-blur-md border-b border-[#e8e2d9] px-8 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="flex items-center gap-2 text-[12px] font-semibold text-[#80756f]">
-              <span>HOME</span>
+      <main className="flex-1 flex flex-col relative w-full min-h-screen bg-[#fdf9f3] overflow-y-auto">
+        {/* Top Header */}
+        <header className="sticky top-0 z-20 bg-[#fdf9f3]/95 backdrop-blur-md border-b border-[#e8e2d9] px-6 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-[#80756f]">
+              <span
+                onClick={() => navigate('/home')}
+                className="cursor-pointer hover:text-primary transition-colors"
+              >
+                {language === 'hi' ? 'आवास' : 'HOME'}
+              </span>
               <span className="text-[10px]">/</span>
-              <span>CATALOG</span>
+              <span
+                onClick={() => navigate('/catalog')}
+                className="cursor-pointer hover:text-primary transition-colors"
+              >
+                {language === 'hi' ? 'कैटलॉग' : 'CATALOG'}
+              </span>
               <span className="text-[10px]">/</span>
-              <span className="text-[#9c441c]">SMART AI CAPTURE</span>
+              <span className="text-[#9c441c] font-black">
+                {language === 'hi' ? 'स्मार्ट एआई कैप्चर' : 'SMART AI CAPTURE'}
+              </span>
             </div>
             <div className="h-4 w-[1px] bg-[#e8e2d9] mx-1"></div>
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#ffdbce] text-[#752801] tracking-wide">
-              STEP 1 OF 2: CAPTURE & RECORD
+              {language === 'hi' ? 'चरण 1: फोटो एवं विवरण' : 'STEP 1 OF 2: PHOTO & DETAILS'}
             </span>
-            <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
-              <span className="material-symbols-outlined text-[13px]">cloud_done</span>
-              <span>Saved Offline</span>
-            </div>
           </div>
+
           <div className="flex items-center gap-3 shrink-0">
-            <div className="relative flex items-center">
-              <span className="material-symbols-outlined absolute left-3 text-[18px] text-[#80756f]">search</span>
-              <input
-                className="w-72 h-10 pl-9 pr-9 bg-[#f1ede7] border border-[#e8e2d9] rounded-full text-[13px] text-[#180f0a] placeholder-[#80756f] focus:outline-none focus:border-[#9c441c]"
-                placeholder="Search crafts, catalog or speak item name..."
-                type="text"
-              />
-            </div>
+            {/* Language Toggle */}
             <button
               onClick={toggleLanguage}
               className="h-10 px-4 rounded-full bg-[#f1ede7] hover:bg-[#ebe8e2] text-[#180f0a] text-[13px] font-bold flex items-center gap-1.5 border border-[#e8e2d9] transition-colors shadow-sm cursor-pointer active:scale-95"
@@ -560,6 +593,8 @@ export default function Capture() {
               <span className="material-symbols-outlined text-[17px] text-[#9c441c]">translate</span>
               <span>{language === 'hi' ? 'अ (हिन्दी)' : 'A (English)'}</span>
             </button>
+
+            {/* Notification Bell */}
             <button
               onClick={toggleNotifications}
               className="w-10 h-10 rounded-full bg-[#f1ede7] hover:bg-[#ebe8e2] border border-[#e8e2d9] flex items-center justify-center relative text-[#4e4540] cursor-pointer active:scale-95"
@@ -574,206 +609,251 @@ export default function Capture() {
           </div>
         </header>
 
-        <div className="p-8 max-w-[1520px] mx-auto w-full grid grid-cols-12 gap-8">
-          {/* ──────────────────────────────── LEFT: CAMERA / IMAGE ──────────────────────────────── */}
+        {/* Main 2-Column Responsive Workspace */}
+        <div className="p-4 sm:p-6 lg:p-8 max-w-[1520px] mx-auto w-full grid grid-cols-12 gap-6 lg:gap-8">
+          {/* ──────────────────────────────── LEFT: CAMERA & VIEWFINDER ──────────────────────────────── */}
           <div className="col-span-12 xl:col-span-7 flex flex-col gap-4">
-            <div className="relative w-full aspect-[16/11] bg-[#191312] rounded-3xl overflow-hidden shadow-2xl flex flex-col justify-between p-6 border border-[#2e241e]">
-              {/* Background / Preview */}
+            <div className="relative w-full aspect-[16/11] bg-[#191312] rounded-3xl overflow-hidden shadow-2xl flex flex-col justify-between p-4 sm:p-6 border border-[#2e241e]">
+              {/* Background Display / Selected Craft */}
               {displayImage ? (
-                <img
-                  src={displayImage}
-                  alt="Craft preview"
-                  className="absolute inset-0 w-full h-full object-contain bg-[#191312]"
-                />
+                <div className="absolute inset-0 flex items-center justify-center bg-[#191312]">
+                  <img
+                    src={displayImage}
+                    alt="Craft capture"
+                    className="w-full h-full object-contain"
+                  />
+                  {/* AI Scanning laser line across craft edges */}
+                  <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#ff9062] to-transparent shadow-[0_0_15px_#ff9062] animate-scan pointer-events-none z-20" />
+                </div>
               ) : (
-                <div className="absolute inset-0 bg-cover bg-center opacity-95 scale-[1.01] transform transition-transform duration-700"
-                  style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuBV3-xCzN9TdTuHufN2Eugbk_EZBDJA_VggGkHJFBe14GOnP9jvtR6Ee9vNq-Aw1XP7TDBVxytmQRP9igWfX9KFvxyeutdk5zYrrX_dgvibmIohF6cCEOqXwbxZiarLCs_p9eDtD_QU3cljge8SkKKNWcep6mY5_T-xCnBJj2niY32GH3Pk3XlykQMu8lqIg701PTDGB7sn-cna7dpzkjeV1gVX7Ke_l5Q6i0XTqcNXl1n8Gjv10NB9')" }}
-                />
-              )}
-              <div className="absolute inset-0 bg-gradient-to-b from-[#191312]/60 via-transparent to-[#191312]/75 pointer-events-none" />
+                <div
+                  onClick={() => cameraInputRef.current?.click()}
+                  className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer group bg-gradient-to-b from-[#201815] to-[#140d0a] hover:from-[#261d19] transition-all"
+                >
+                  {/* Interactive targeting reticle */}
+                  <div className="relative w-3/4 aspect-[4/3] max-w-md border border-white/10 rounded-2xl flex flex-col items-center justify-center p-6 text-center group-hover:border-[#ff9062]/50 transition-colors">
+                    {/* SVG Corner Brackets */}
+                    <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none" viewBox="0 0 100 100">
+                      <path d="M 0 16 L 0 0 L 16 0" fill="none" stroke="#ff9062" strokeLinecap="round" strokeWidth="3" />
+                      <path d="M 84 0 L 100 0 L 100 16" fill="none" stroke="#ff9062" strokeLinecap="round" strokeWidth="3" />
+                      <path d="M 0 84 L 0 100 L 16 100" fill="none" stroke="#ff9062" strokeLinecap="round" strokeWidth="3" />
+                      <path d="M 84 100 L 100 100 L 100 84" fill="none" stroke="#ff9062" strokeLinecap="round" strokeWidth="3" />
+                    </svg>
 
-              {/* Top Controls */}
-              <div className="relative z-10 flex items-center justify-between w-full">
-                <div className="flex items-center gap-2 bg-[#191312]/60 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/10">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#ff9062] animate-ping"></span>
+                    <div className="w-16 h-16 rounded-full bg-[#ff9062]/10 border border-[#ff9062]/30 flex items-center justify-center text-[#ff9062] mb-3 group-hover:scale-110 group-hover:bg-[#ff9062]/20 transition-all shadow-lg">
+                      <span className="material-symbols-outlined text-[32px]">photo_camera</span>
+                    </div>
+
+                    <h4 className="text-white font-bold text-base sm:text-lg mb-1 leading-tight">
+                      {language === 'hi' ? 'कैमरा खोलें या गैलरी से तस्वीर चुनें' : 'Open Camera or Select Photo'}
+                    </h4>
+                    <p className="text-[#d4c3ba] text-xs max-w-xs leading-relaxed">
+                      {language === 'hi'
+                        ? 'शिल्प को फ्रेम के बीच में रखें • चारों कोने फ्रेम के अंदर'
+                        : 'Tap anywhere to launch rear camera (Keep craft centered within frame)'}
+                    </p>
+
+                    <div className="mt-4 flex items-center gap-2 flex-wrap justify-center">
+                      <span className="px-3 py-1 rounded-full bg-white/10 text-white text-[11px] font-bold border border-white/10 flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[14px] text-[#ff9062]">photo_camera</span>
+                        <span>{language === 'hi' ? 'कैमरा' : 'Camera'}</span>
+                      </span>
+                      <span className="px-3 py-1 rounded-full bg-white/10 text-white text-[11px] font-bold border border-white/10 flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[14px] text-[#ff9062]">upload_file</span>
+                        <span>{language === 'hi' ? 'गैलरी' : 'Upload'}</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Top Viewfinder Bar */}
+              <div className="relative z-20 flex items-center justify-between w-full">
+                <div className="flex items-center gap-2 bg-[#191312]/70 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/10">
+                  <span className={`w-2.5 h-2.5 rounded-full ${displayImage ? 'bg-emerald-400' : 'bg-[#ff9062] animate-ping'}`} />
                   <span className="text-[11px] font-bold tracking-widest text-[#fdf9f3] uppercase">
-                    {bgRemovalStatus === 'processing' ? 'PROCESSING...' : 'LIVE VIEW'}
+                    {bgRemovalStatus === 'processing'
+                      ? (language === 'hi' ? 'प्रोसेसिंग...' : 'PROCESSING AI...')
+                      : displayImage
+                      ? (language === 'hi' ? 'शिल्प फोटो लोड' : 'CRAFT CAPTURED')
+                      : (language === 'hi' ? 'व्यूफाइंडर लाइव' : 'VIEWFINDER LIVE')}
                   </span>
                 </div>
+
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => setFlashOn(prev => !prev)}
-                    className={`w-11 h-11 rounded-full backdrop-blur-md flex items-center justify-center transition-all border border-white/10 ${
-                      flashOn ? 'bg-[#ff9062] text-[#180f0a]' : 'bg-[#191312]/60 text-[#fdf9f3] hover:text-[#ff9062]'
+                    onClick={() => setFlashOn((prev) => !prev)}
+                    className={`w-10 h-10 rounded-full backdrop-blur-md flex items-center justify-center transition-all border border-white/10 cursor-pointer ${
+                      flashOn ? 'bg-[#ff9062] text-[#180f0a]' : 'bg-[#191312]/70 text-[#fdf9f3] hover:text-[#ff9062]'
                     }`}
                     type="button"
+                    title="Toggle Flash"
                   >
                     <span className="material-symbols-outlined text-[20px]">{flashOn ? 'flash_on' : 'flash_off'}</span>
                   </button>
                   <button
-                    onClick={() => setGridOn(prev => !prev)}
-                    className={`w-11 h-11 rounded-full backdrop-blur-md flex items-center justify-center transition-all border border-white/10 ${
-                      gridOn ? 'bg-[#ff9062] text-[#180f0a]' : 'bg-[#191312]/60 text-[#fdf9f3] hover:text-[#ff9062]'
+                    onClick={() => setGridOn((prev) => !prev)}
+                    className={`w-10 h-10 rounded-full backdrop-blur-md flex items-center justify-center transition-all border border-white/10 cursor-pointer ${
+                      gridOn ? 'bg-[#ff9062] text-[#180f0a]' : 'bg-[#191312]/70 text-[#fdf9f3] hover:text-[#ff9062]'
                     }`}
                     type="button"
+                    title="Toggle Alignment Grid"
                   >
                     <span className="material-symbols-outlined text-[20px]">grid_3x3</span>
                   </button>
-                  <button
-                    className="w-11 h-11 rounded-full bg-[#191312]/60 backdrop-blur-md text-[#fdf9f3] hover:text-[#ff9062] flex items-center justify-center transition-all border border-white/10"
-                    type="button"
-                  >
-                    <span className="material-symbols-outlined text-[20px]">cameraswitch</span>
-                  </button>
                 </div>
               </div>
 
-              {/* Center Frame Guide */}
-              <div className="relative z-10 my-auto w-full max-w-xl mx-auto flex flex-col items-center">
-                <div className="relative w-full aspect-[4/3] rounded-2xl flex items-center justify-center p-4">
-                  <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none" viewBox="0 0 100 100">
-                    <path d="M 0 14 L 0 0 L 14 0" fill="none" stroke="#FDFCFA" strokeLinecap="round" strokeWidth="2.5" />
-                    <path d="M 86 0 L 100 0 L 100 14" fill="none" stroke="#FDFCFA" strokeLinecap="round" strokeWidth="2.5" />
-                    <path d="M 0 86 L 0 100 L 14 100" fill="none" stroke="#FDFCFA" strokeLinecap="round" strokeWidth="2.5" />
-                    <path d="M 86 100 L 100 100 L 100 86" fill="none" stroke="#FDFCFA" strokeLinecap="round" strokeWidth="2.5" />
-                  </svg>
+              {/* Center Overlay Badges */}
+              {displayImage && (
+                <div className="relative z-20 my-auto flex flex-col items-center pointer-events-none">
                   {bgRemovalStatus === 'processing' && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#191312]/70 backdrop-blur-sm rounded-2xl z-20">
-                      <div className="w-12 h-12 border-4 border-[#ff9062] border-t-transparent rounded-full animate-spin" />
-                      <p className="text-white text-sm font-semibold mt-4 animate-pulse">Removing background locally...</p>
+                    <div className="bg-[#191312]/80 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-[#ff9062]/40 flex items-center gap-2.5 shadow-xl">
+                      <div className="w-5 h-5 border-2 border-[#ff9062] border-t-transparent rounded-full animate-spin" />
+                      <span className="text-xs font-bold text-[#ffdeaa] animate-pulse">
+                        {language === 'hi' ? 'एआई बैकग्राउंड रिमूवल सक्रिय...' : 'AI Edge Detection & Studio Background Removal in progress...'}
+                      </span>
                     </div>
                   )}
                   {bgRemovalStatus === 'done' && (
-                    <div className="absolute -top-3.5 left-6 flex items-center gap-2 bg-emerald-600/95 text-white px-3.5 py-1.5 rounded-full shadow-lg backdrop-blur-md border border-white/10">
-                      <span className="material-symbols-outlined text-[16px]">check_circle</span>
-                      <span className="text-[12px] font-semibold tracking-wide">Pure White Studio Canvas • Optimized ✓</span>
+                    <div className="bg-emerald-950/90 text-emerald-300 px-4 py-1.5 rounded-full border border-emerald-500/40 text-xs font-bold shadow-lg flex items-center gap-2 backdrop-blur-md">
+                      <span className="material-symbols-outlined text-[16px] text-emerald-400">check_circle</span>
+                      <span>{language === 'hi' ? 'स्टूडियो कैनवास तैयार (सफ़ेद बैकग्राउंड ✓)' : 'Studio Canvas Ready (Pure White #FFFFFF ✓)'}</span>
                     </div>
                   )}
-                  {bgRemovalStatus === 'idle' && !displayImage && (
-                    <div className="flex flex-col items-center gap-2 bg-[#191312]/50 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10 text-center">
-                      <span className="material-symbols-outlined text-white/90 text-[28px]">center_focus_weak</span>
-                      <p className="text-[13px] text-white/90 font-medium tracking-wide">Keep heirloom edges within frame</p>
-                    </div>
-                  )}
-                  <div className="absolute -bottom-3.5 right-6 flex items-center gap-2 bg-[#fdf9f3]/95 backdrop-blur-md text-[#180f0a] px-3.5 py-1.5 rounded-full shadow-md border border-[#e8e2d9]">
-                    <span className="material-symbols-outlined text-[#9c441c] text-[15px]">wb_sunny</span>
-                    <span className="text-[11px] font-bold tracking-tight">Optimal Lighting • Steady Frame</span>
-                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* Bottom Camera Actions */}
-              <div className="relative z-10 flex items-center justify-between bg-[#191312]/70 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10">
-                <div className="flex items-center gap-3">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    className="hidden"
-                    onChange={handleFileSelect}
-                  />
+              {/* Bottom Camera Action Bar */}
+              <div className="relative z-20 flex items-center justify-between bg-[#191312]/80 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/10 flex-wrap gap-2">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  {/* Button 1: Launch Native Rear Camera directly */}
                   <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex items-center gap-2 text-xs font-semibold text-[#fdf9f3] bg-[#2e241e] hover:bg-[#3d3028] px-3.5 py-2 rounded-xl border border-white/10 transition-colors"
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="flex items-center gap-2 text-xs font-bold text-[#180f0a] bg-[#ff9062] hover:bg-[#ff804a] px-3.5 py-2 rounded-xl transition-all cursor-pointer active:scale-95 shadow-md"
                     type="button"
                   >
-                    <span className="material-symbols-outlined text-[16px] text-[#ff9062]">photo_camera</span>
-                    <span>Snap Hi-Res Photo</span>
+                    <span className="material-symbols-outlined text-[18px]">photo_camera</span>
+                    <span>{language === 'hi' ? 'कैमरा से फोटो लें' : 'Snap Photo (Camera)'}</span>
                   </button>
+
+                  {/* Button 2: Launch Gallery / File Explorer */}
                   <button
-                    onClick={() => {
-                      const input = document.createElement('input');
-                      input.type = 'file';
-                      input.accept = 'image/*';
-                      input.onchange = handleFileSelect;
-                      input.click();
-                    }}
-                    className="flex items-center gap-2 text-xs font-semibold text-[#fdf9f3] bg-[#2e241e] hover:bg-[#3d3028] px-3.5 py-2 rounded-xl border border-white/10 transition-colors"
+                    onClick={() => uploadInputRef.current?.click()}
+                    className="flex items-center gap-2 text-xs font-bold text-[#fdf9f3] bg-[#2e241e] hover:bg-[#3d3028] px-3.5 py-2 rounded-xl border border-white/15 transition-all cursor-pointer active:scale-95"
                     type="button"
                   >
-                    <span className="material-symbols-outlined text-[16px]">upload_file</span>
-                    <span>Upload Photo</span>
+                    <span className="material-symbols-outlined text-[18px] text-[#ff9062]">photo_library</span>
+                    <span>{language === 'hi' ? 'गैलरी से चुनें' : 'Upload Photo (Gallery)'}</span>
                   </button>
+
+                  {/* Button 3: Retake Photo if already captured */}
+                  {displayImage && (
+                    <button
+                      onClick={handleRetake}
+                      className="flex items-center gap-1.5 text-xs font-bold text-red-300 bg-red-950/60 hover:bg-red-900/60 px-3 py-2 rounded-xl border border-red-500/40 transition-all cursor-pointer active:scale-95"
+                      type="button"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">replay</span>
+                      <span>{language === 'hi' ? 'दोबारा फोटो लें' : 'Retake'}</span>
+                    </button>
+                  )}
                 </div>
-                <div className="flex items-center gap-2 text-[12px] text-white/80">
-                  <span className="material-symbols-outlined text-[16px] text-emerald-400">auto_fix_high</span>
-                  <span>Multi-angle calibration active</span>
+
+                <div className="flex items-center gap-1.5 text-[11px] text-white/70">
+                  <span className="material-symbols-outlined text-[15px] text-emerald-400">verified</span>
+                  <span>{language === 'hi' ? '1024px मोबाइल ऑप्टिमाइजेशन सक्रिय' : '1024px Mobile Safe WASM'}</span>
                 </div>
               </div>
             </div>
 
-            {/* Feature Cards */}
-            <div className="grid grid-cols-3 gap-3">
+            {/* Feature Helper Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-[#f1ede7] border border-[#e8e2d9]">
                 <span className="material-symbols-outlined text-[20px] text-[#9c441c]">crop_free</span>
                 <div>
-                  <p className="text-[11px] font-bold text-[#180f0a]">Macro Border Focus</p>
-                  <p className="text-[10px] text-[#80756f]">Captures fine zari weave</p>
+                  <p className="text-[11px] font-bold text-[#180f0a]">
+                    {language === 'hi' ? 'स्वचालित किनारा पहचान' : 'Macro Edge Focus'}
+                  </p>
+                  <p className="text-[10px] text-[#80756f]">
+                    {language === 'hi' ? 'शिल्प की बारीक नक्काशी' : 'Captures intricate borders'}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-[#f1ede7] border border-[#e8e2d9]">
                 <span className="material-symbols-outlined text-[20px] text-[#9c441c]">palette</span>
                 <div>
-                  <p className="text-[11px] font-bold text-[#180f0a]">True Color Calibration</p>
-                  <p className="text-[10px] text-[#80756f]">Varanasi Indigo verified</p>
+                  <p className="text-[11px] font-bold text-[#180f0a]">
+                    {language === 'hi' ? 'सफ़ेद स्टूडियो कैनवास' : 'Pure White Canvas'}
+                  </p>
+                  <p className="text-[10px] text-[#80756f]">
+                    {language === 'hi' ? 'GeM व ONDC मानक अनुरूप' : 'GeM & ONDC compliant'}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-[#f1ede7] border border-[#e8e2d9]">
                 <span className="material-symbols-outlined text-[20px] text-[#9c441c]">verified</span>
                 <div>
-                  <p className="text-[11px] font-bold text-[#180f0a]">Handloom Authenticity</p>
-                  <p className="text-[10px] text-[#80756f]">Passed AI fiber check</p>
+                  <p className="text-[11px] font-bold text-[#180f0a]">
+                    {language === 'hi' ? '100% प्रामाणिक स्वदेशी' : 'Make In India'}
+                  </p>
+                  <p className="text-[10px] text-[#80756f]">
+                    {language === 'hi' ? 'शिल्पकार सीधा बाज़ार' : 'Artisan direct linkage'}
+                  </p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* ──────────────────────────────── RIGHT: VOICE + AI ──────────────────────────────── */}
+          {/* ──────────────────────────────── RIGHT: VOICE + DESCRIPTION + AI PIPELINE ──────────────────────────────── */}
           <div className="col-span-12 xl:col-span-5 flex flex-col">
-            <div className="bg-[#191312] text-[#fdf9f3] rounded-3xl p-7 flex flex-col justify-between border border-[#2e241e] shadow-2xl h-full">
+            <div className="bg-[#191312] text-[#fdf9f3] rounded-3xl p-6 sm:p-7 flex flex-col justify-between border border-[#2e241e] shadow-2xl h-full">
               <div className="flex flex-col">
                 <div className="flex items-center justify-between pb-4 border-b border-white/10">
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-[#ff9062] animate-pulse"></div>
-                    <h2 className="text-[16px] font-bold text-white tracking-tight">AI Studio Cataloger</h2>
+                    <div className="w-3 h-3 rounded-full bg-[#ff9062] animate-pulse" />
+                    <h2 className="text-[16px] font-bold text-white tracking-tight">
+                      {language === 'hi' ? 'शिल्प विवरण व वॉयस रिकॉर्ड' : 'Voice Note & Craft Details'}
+                    </h2>
                   </div>
                   <span className="px-3 py-1 rounded-full bg-[#2e241e] text-[11px] font-semibold text-[#ff9062] border border-[#ff9062]/30">
-                    Hindi, Gujarati, Tamil +9
+                    Hindi, English + 9
                   </span>
                 </div>
 
-                {/* Waveform visualization */}
-                <div className="w-full h-10 px-2 flex items-center justify-center gap-1.5 my-5 overflow-hidden">
-                  {[3,6,8,10,7,9,11,6,4,2].map((h, i) => (
+                {/* Animated Waveform indicator */}
+                <div className="w-full h-10 px-2 flex items-center justify-center gap-1.5 my-4 overflow-hidden">
+                  {[4, 8, 12, 16, 9, 14, 18, 10, 6, 3, 7, 12, 5].map((h, i) => (
                     <div
                       key={i}
                       className={`w-1.5 rounded-full transition-all duration-300 ${
                         isRecording ? 'animate-pulse' : ''
                       } ${i % 3 === 0 ? 'bg-[#ff9062]/40' : i % 3 === 1 ? 'bg-[#ff9062]' : 'bg-white'}`}
-                      style={{ height: isRecording ? `${h + ((i * 5) % 9) + 4}px` : `${h}px` }}
+                      style={{
+                        height: isRecording ? `${Math.min(32, h + ((i * 7) % 15) + 6)}px` : `${Math.max(4, h * 0.5)}px`,
+                      }}
                     />
                   ))}
                 </div>
 
-                {/* Mic Button */}
-                <div className="relative my-3 flex items-center justify-center">
+                {/* Microphone Button with visual feedback */}
+                <div className="relative my-2 flex items-center justify-center">
                   {isRecording && (
                     <>
-                      <div className="absolute w-28 h-28 rounded-full bg-[#ff9062]/15 animate-ping duration-1000" />
-                      <div className="absolute w-24 h-24 rounded-full bg-[#ff9062]/25 animate-pulse" />
+                      <div className="absolute w-28 h-28 rounded-full bg-red-600/20 animate-ping duration-1000" />
+                      <div className="absolute w-24 h-24 rounded-full bg-red-600/30 animate-pulse" />
                     </>
                   )}
                   <button
-                    aria-label="Speak item description in your native language"
+                    aria-label="Speak craft details"
+                    onClick={toggleRecording}
                     className={`relative z-10 w-20 h-20 rounded-full shadow-2xl flex items-center justify-center transform active:scale-95 transition-all duration-200 focus:outline-none border-2 cursor-pointer ${
                       isRecording
-                        ? 'bg-red-600 border-red-400/40 text-white'
+                        ? 'bg-red-600 border-red-400 text-white animate-pulse'
                         : audioBase64
-                        ? 'bg-emerald-600 border-emerald-400/40 text-white'
+                        ? 'bg-emerald-600 border-emerald-400 text-white'
                         : 'bg-[#9c441c] hover:bg-[#b04d20] border-[#ff9062]/40 text-white'
                     }`}
-                    onClick={toggleRecording}
                     type="button"
                   >
                     <span className="material-symbols-outlined text-[36px] text-white">
@@ -782,102 +862,116 @@ export default function Capture() {
                   </button>
                 </div>
 
-                {/* Recording Status */}
+                {/* Recording Status / Timer */}
                 <div className="text-center px-4 mt-2">
-                  <h3 className="text-[17px] font-bold text-white mb-1 tracking-normal">
+                  <h3 className="text-[16px] font-bold text-white mb-1">
                     {isRecording
-                      ? `Recording... ${formatDuration(recordingDuration)}`
+                      ? (language === 'hi' ? `रिकॉर्डिंग चालू... ${formatDuration(recordingDuration)}` : `Recording... ${formatDuration(recordingDuration)}`)
                       : audioBase64
-                      ? `Voice note recorded ✓ (${formatDuration(recordingDuration)})`
-                      : 'Hold to describe your craft or speak naturally'}
+                      ? (language === 'hi' ? `वॉयस नोट सहेजा गया ✓ (${formatDuration(recordingDuration)})` : `Voice note recorded ✓ (${formatDuration(recordingDuration)})`)
+                      : (language === 'hi' ? 'बोलकर शिल्प की विशेषताएं बताएं' : 'Tap mic and describe your craft naturally')}
                   </h3>
-                  <p className="text-[13px] text-[#d4c3ba] leading-relaxed italic">
+                  <p className="text-[12px] text-[#d4c3ba] leading-relaxed italic">
                     {isRecording
-                      ? 'Speak naturally in your language...'
-                      : '"Handwoven blue silk saree, pure zari border, took 4 days to weave in Varanasi"'}
+                      ? (language === 'hi' ? 'अपनी भाषा में बोलें (सामग्री, बनाने का समय, उचित मूल्य)...' : 'Speak naturally (materials, crafting time, expected price)...')
+                      : (language === 'hi' ? '"हाथ से बनी टेराकोटा हांडी, स्थानीय मिट्टी से निर्मित, कीमत लगभग ₹450"' : '"Handmade terracotta clay pot, natural alluvial kiln-fired, price ₹450"')}
                   </p>
                 </div>
 
-                {/* Prompt chips */}
-                <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
-                  {['history_edu|Mention Heritage', 'texture|Material & Weave Care', 'schedule|Days to Craft', 'payments|Expected Price'].map((chip) => {
-                    const [icon, label] = chip.split('|');
-                    return (
+                {/* ── Fallback Text & 1-Tap Craft Chips ── */}
+                <div className="mt-5 pt-4 border-t border-white/10 flex flex-col gap-2.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-[#ffdeaa] flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[15px]">edit_note</span>
+                      <span>{language === 'hi' ? 'त्वरित शिल्प विवरण चुनें या टाइप करें' : 'Quick Craft Presets or Type Note'}</span>
+                    </span>
+                    {micUnavailable && (
+                      <span className="text-[10px] text-amber-300 font-semibold bg-amber-950/60 px-2 py-0.5 rounded-md border border-amber-500/30">
+                        {language === 'hi' ? 'माइक अनुपलब्ध' : 'Mic blocked'}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* 1-Tap Chips */}
+                  <div className="flex flex-wrap gap-1.5">
+                    {CRAFT_SUGGESTION_CHIPS.map((chip, idx) => (
                       <button
-                        key={icon}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#2e241e] hover:bg-[#3d3028] text-[#d4c3ba] text-[11px] font-bold border border-white/10 transition-colors"
+                        key={idx}
+                        onClick={() => setCustomTranscript(chip.text)}
+                        className={`text-[11px] px-2.5 py-1 rounded-lg border transition-all cursor-pointer text-left ${
+                          customTranscript === chip.text
+                            ? 'bg-[#ff9062] text-[#180f0a] font-bold border-[#ff9062]'
+                            : 'bg-[#2e241e] text-[#d4c3ba] hover:text-white border-white/10 hover:border-white/20'
+                        }`}
                         type="button"
                       >
-                        <span className="material-symbols-outlined text-[13px] text-[#ff9062]">{icon}</span>
-                        <span>{label}</span>
+                        {chip.label}
                       </button>
-                    );
-                  })}
+                    ))}
+                  </div>
+
+                  {/* Custom Description Text Input */}
+                  <textarea
+                    rows={2}
+                    value={customTranscript}
+                    onChange={(e) => setCustomTranscript(e.target.value)}
+                    placeholder={
+                      language === 'hi'
+                        ? 'या शिल्प का विवरण यहाँ लिखें (जैसे: सामग्री, आकार, निर्माण का समय)...'
+                        : 'Or type custom craft details (materials, dimensions, labor hours)...'
+                    }
+                    className="w-full mt-1 bg-[#2e241e] border border-white/15 rounded-xl p-2.5 text-xs text-white placeholder-white/40 focus:outline-none focus:border-[#ff9062] transition-colors resize-none"
+                  />
                 </div>
-
-                {/* Live Transcription Preview */}
-                {audioBase64 && (
-                  <div className="mt-6 p-4 rounded-2xl bg-[#2e241e]/80 border border-white/10 flex flex-col gap-1.5">
-                    <div className="flex items-center justify-between text-[11px] font-bold text-[#ff9062]">
-                      <span>VOICE NOTE RECORDED</span>
-                      <span className="text-[10px] text-white/50">Ready for AI transcription</span>
-                    </div>
-                    <p className="text-[13px] text-white/90 leading-relaxed font-normal">
-                      Voice note will be transcribed via Groq Whisper when you generate the listing.
-                    </p>
-                  </div>
-                )}
-
-                {!audioBase64 && (
-                  <div className="mt-6 p-4 rounded-2xl bg-[#2e241e]/80 border border-white/10 flex flex-col gap-1.5">
-                    <div className="flex items-center justify-between text-[11px] font-bold text-[#ff9062]">
-                      <span>LIVE TRANSCRIPTION PREVIEW</span>
-                      <span className="text-[10px] text-white/50">Auto-detected: Hindi (हिन्दी)</span>
-                    </div>
-                    <p className="text-[13px] text-white/90 leading-relaxed font-normal">
-                      "शुद्ध रेशम साड़ी, 4 दिन की बुनाई, पारंपरिक बनारसी ज़री काम, उत्सव एवं शादी परिधान हेतु उपयुक्त..."
-                    </p>
-                  </div>
-                )}
               </div>
 
-              {/* ── Generate Button ── */}
+              {/* ── Generate Action Button & Indicator ── */}
               <div className="flex flex-col gap-3 mt-6 pt-2">
                 {/* Error Message */}
                 {errorMsg && (
-                  <div className="p-3 rounded-xl bg-red-900/30 border border-red-500/30 text-red-300 text-[13px] font-medium flex items-center gap-2">
+                  <div className="p-3 rounded-xl bg-red-900/40 border border-red-500/40 text-red-200 text-xs font-medium flex items-center gap-2">
                     <span className="material-symbols-outlined text-[18px]">error</span>
                     <span>{errorMsg}</span>
                   </div>
                 )}
 
-                {/* AI Status Indicator */}
+                {/* AI Progress Indicator */}
                 {isProcessing && (
-                  <div className="p-4 rounded-xl bg-[#2e241e] border border-[#ff9062]/30 flex items-center gap-3">
-                    <div className="w-6 h-6 border-2 border-[#ff9062] border-t-transparent rounded-full animate-spin" />
-                    <span className="text-[14px] font-semibold text-[#ff9062] animate-pulse">{aiStatusText}</span>
+                  <div className="p-3.5 rounded-xl bg-[#2e241e] border border-[#ff9062]/40 flex items-center gap-3">
+                    <div className="w-5 h-5 border-2 border-[#ff9062] border-t-transparent rounded-full animate-spin" />
+                    <span className="text-xs font-semibold text-[#ff9062] animate-pulse">{aiStatusText}</span>
                   </div>
                 )}
 
+                {/* Primary Button */}
                 <button
-                  aria-label="Generate AI Listing"
-                  className={`w-full h-14 rounded-2xl font-bold text-[16px] tracking-wide flex items-center justify-center gap-2 shadow-xl active:scale-95 transition-all duration-150 ${
+                  aria-label="Process with AI"
+                  disabled={isProcessing}
+                  onClick={handleGenerateListing}
+                  className={`w-full h-14 rounded-2xl font-bold text-base tracking-wide flex items-center justify-center gap-2 shadow-xl active:scale-95 transition-all cursor-pointer ${
                     isProcessing
                       ? 'bg-[#ff9062]/60 text-[#180f0a]/60 cursor-wait'
                       : 'bg-[#ff9062] hover:bg-[#ff804a] text-[#180f0a]'
                   }`}
-                  disabled={isProcessing}
-                  onClick={handleGenerateListing}
                   type="button"
                 >
-                  <span>{isProcessing ? 'Generating...' : 'Generate AI Listing'}</span>
+                  <span>
+                    {isProcessing
+                      ? (language === 'hi' ? 'कैटलॉग बन रहा है...' : 'Generating Listing...')
+                      : (language === 'hi' ? 'एआई कैटलॉग बनाएं (आगे बढ़ें)' : 'Process with AI / आगे बढ़ें')}
+                  </span>
                   <span className="material-symbols-outlined text-[22px]">
                     {isProcessing ? 'hourglass_top' : 'auto_awesome'}
                   </span>
                 </button>
-                <div className="flex items-center justify-center gap-2 text-[#d4c3ba] text-[12px] text-center px-2">
-                  <span className="material-symbols-outlined text-[15px] text-[#ff9062]">graphic_eq</span>
-                  <span>Zero typing • AI generates bilingual titles, B2B wholesale pricing & GeM linkage</span>
+
+                <div className="flex items-center justify-center gap-1.5 text-[#d4c3ba] text-[11px] text-center px-2">
+                  <span className="material-symbols-outlined text-[14px] text-[#ff9062]">bolt</span>
+                  <span>
+                    {language === 'hi'
+                      ? 'शून्य टाइपिंग • द्विभाषी शीर्षक, GeM कोड और B2B थोक मूल्य 10 सेकंड में'
+                      : 'Zero typing • Instant bilingual title, GeM UNSPSC codes & B2B bulk pricing'}
+                  </span>
                 </div>
               </div>
             </div>

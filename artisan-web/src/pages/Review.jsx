@@ -219,7 +219,7 @@ export default function Review() {
               title="Go to Home"
             >
               <div className="w-8 h-8 rounded-lg bg-[#2e241e] text-[#ffdeaa] flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                <span className="material-symbols-outlined text-[18px]">token</span>
+                <span className="material-symbols-outlined text-[18px]">palette</span>
               </div>
               <span className="font-bold text-sm text-white tracking-tight hidden sm:inline">Kala Sangam</span>
             </div>
@@ -250,9 +250,9 @@ export default function Review() {
             <LanguageToggle variant="dark" />
 
             {isPhoneVerified ? (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-950 border border-emerald-500/50 text-emerald-300 text-[11px] font-bold shadow-xs">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950 border border-emerald-500/50 text-emerald-300 text-[11px] font-bold shadow-2xs">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>🟢 {artisanProfile?.phone || user?.phone || '+91 99999 99999'} [✓ Verified]</span>
+                <span>{language === 'hi' ? 'सत्यापित' : 'Verified'}</span>
               </span>
             ) : (
               <button

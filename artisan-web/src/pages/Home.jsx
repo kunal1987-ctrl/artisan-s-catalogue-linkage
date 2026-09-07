@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import LanguageToggle from '../components/LanguageToggle';
 
 export default function Home() {
   const navigate = useNavigate();
-  const { language, toggleNotifications, unreadCount, showToast } = useAuth();
+  const { language, showToast } = useAuth();
 
   // Metric Card Interactive States
   const [showInsightsModal, setShowInsightsModal] = useState(false);
@@ -28,8 +27,8 @@ export default function Home() {
     <div className="w-full">
       <main className="flex-1 flex flex-col relative w-full min-h-screen bg-[#fdf9f3] overflow-y-auto">
         <div className="flex flex-col w-full px-gutter-mobile pb-space-lg">
-            <header
-                className="sticky top-0 z-30 bg-[#fdf9f3]/90 backdrop-blur-xl border-b border-[#d1c4bd]/40 px-8 py-4 flex items-center justify-between">
+            <div
+                className="border-b border-[#d1c4bd]/40 px-4 sm:px-8 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                     <div className="flex flex-col">
                         <div
@@ -51,7 +50,7 @@ export default function Home() {
                 </div>
                 
                 <div className="flex items-center gap-3">
-                    <div className="relative w-80">
+                    <div className="relative w-full sm:w-80">
                         <span
                             className="material-symbols-outlined absolute left-3.5 top-2.5 text-[19px] text-[#80756f]">search</span>
                         <input
@@ -63,20 +62,8 @@ export default function Home() {
                             <span className="material-symbols-outlined text-[16px]">mic</span>
                         </button>
                     </div>
-                    <LanguageToggle variant="light" />
-                    <button aria-label="Notifications"
-                        onClick={toggleNotifications}
-                        className="w-10 h-10 flex items-center justify-center rounded-full bg-[#f1ede7] text-on-surface-variant hover:text-primary transition-colors border border-[#d1c4bd]/50 relative cursor-pointer active:scale-95"
-                        title="Notifications"
-                        type="button">
-                        <span className="material-symbols-outlined text-[21px]">notifications</span>
-                        {unreadCount > 0 && (
-                          <span
-                              className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-[#9c441c] ring-2 ring-[#fdf9f3] animate-pulse"></span>
-                        )}
-                    </button>
                 </div>
-            </header>
+            </div>
             <div className="px-8 py-6 flex flex-col gap-6 max-w-7xl mx-auto w-full">
                 
                 {/* Hero AI Studio Banner */}

@@ -675,7 +675,7 @@ export default function Capture() {
                 title="Go to Home"
               >
                 <div className="w-8 h-8 rounded-lg bg-[#2e241e] text-[#ffdeaa] flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                  <span className="material-symbols-outlined text-[18px]">token</span>
+                  <span className="material-symbols-outlined text-[18px]">photo_camera</span>
                 </div>
                 <span className="font-bold text-sm text-[#180f0a] tracking-tight hidden sm:inline">Kala Sangam</span>
               </div>
@@ -707,9 +707,9 @@ export default function Capture() {
             <div className="flex items-center gap-2.5 shrink-0">
               {/* Authenticated Artisan Badge */}
               {isVerified ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-900 font-bold text-[11px] shadow-xs">
-                  <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
-                  <span>🟢 {artisanProfile.phone || user?.phone || '+91 99999 99999'} [✓ Verified]</span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold text-[11px] shadow-2xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span>{language === 'hi' ? 'सत्यापित शिल्पकार' : 'Verified Artisan'}</span>
                 </span>
               ) : (
                 <button

@@ -40,7 +40,7 @@ export default function DashboardLayout() {
               className="flex items-center gap-3 cursor-pointer group"
             >
               <div className="w-10 h-10 rounded-xl bg-[#2e241e] flex items-center justify-center text-[#ffdeaa] shadow-md group-hover:scale-105 transition-transform">
-                <span className="material-symbols-outlined text-[24px]">token</span>
+                <span className="material-symbols-outlined text-[24px]">storefront</span>
               </div>
               <div className="flex flex-col">
                 <span className="font-bold text-[17px] text-primary tracking-tight leading-tight">Kala Sangam</span>
@@ -148,81 +148,60 @@ export default function DashboardLayout() {
 
       {/* Main Routed Area */}
       <main className="flex-1 flex flex-col min-w-0 min-h-screen bg-[#fdf9f3] pb-20 lg:pb-0 overflow-y-auto">
-        {/* Global Auth Status Top Bar */}
-        <header className="bg-[#180f0a] text-white px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between border-b border-black/20 text-xs sticky top-0 z-30 shadow-sm w-full gap-4">
-          <div className="flex items-center gap-3">
-            {/* Logo on far left */}
-            <div 
-              onClick={() => navigate('/home')} 
-              className="flex items-center gap-2.5 cursor-pointer group"
-              title="Kala Sangam Home"
-            >
-              <div className="w-8 h-8 rounded-lg bg-[#2e241e] border border-white/10 flex items-center justify-center text-[#ffdeaa] shadow-xs group-hover:scale-105 transition-transform">
-                <span className="material-symbols-outlined text-[18px]">token</span>
-              </div>
-              <div className="flex flex-col lg:hidden">
-                <span className="font-bold text-sm text-white tracking-tight leading-tight">Kala Sangam</span>
-                <span className="text-[10px] text-white/60">{language === 'hi' ? 'कला संगम' : 'Artisan Hub'}</span>
-              </div>
-            </div>
-
-            {/* Path / Institutional indicator */}
-            <div className="hidden sm:flex items-center gap-2 text-white/70 text-xs font-semibold">
-              <span className="h-4 w-[1px] bg-white/20 hidden lg:block" />
-              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/10 text-[11px] font-bold text-white">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>{language === 'hi' ? 'GeM एवं ONDC लिंकेज' : 'GeM & ONDC Dual Linkage'}</span>
-              </span>
-            </div>
+        {/* Minimalist Mobile-First Sticky Top Navigation */}
+        <header className="sticky top-0 z-50 w-full bg-white border-b border-gray-200 shadow-sm px-4 py-3 flex justify-between items-center">
+          {/* Left-Side: Branding */}
+          <div 
+            onClick={() => navigate('/home')} 
+            className="flex items-center gap-2 cursor-pointer group"
+            title="कला संगम (ArtisanHub)"
+          >
+            <h1 className="text-lg font-bold text-gray-800 group-hover:text-primary transition-colors">
+              कला संगम (ArtisanHub)
+            </h1>
           </div>
 
-          {/* Far Right: Auth Controls & Language Toggle */}
-          <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+          {/* Right-Side: Essential Controls Only */}
+          <div className="flex items-center gap-3 sm:gap-4">
+            {/* Language Toggle */}
+            <LanguageToggle variant="light" />
+
+            {/* Notifications */}
+            <button
+              onClick={toggleNotifications}
+              className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 flex items-center justify-center relative transition-all cursor-pointer active:scale-95 border border-gray-200"
+              title={language === 'hi' ? 'सूचनाएं' : 'Notifications'}
+              aria-label="Notifications"
+              type="button"
+            >
+              <span className="material-symbols-outlined text-[20px]">notifications</span>
+              {unreadCount > 0 && (
+                <span className="w-2 h-2 rounded-full bg-[#9c441c] absolute top-1.5 right-1.5 ring-1 ring-white animate-pulse" />
+              )}
+            </button>
+
+            {/* Profile / Logout */}
             {isVerified ? (
-              <>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/90 border border-emerald-500/50 text-emerald-300 font-bold text-[11px] shadow-xs">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                  <span>🟢 {artisanProfile.phone || user?.phone || '+91 99999 99999'} [{language === 'hi' ? '✓ सत्यापित' : '✓ Verified'}]</span>
-                </span>
-                <button
-                  onClick={signOut}
-                  className="px-2.5 py-1 rounded-full bg-red-950/60 hover:bg-red-900 border border-red-500/40 text-red-300 hover:text-white font-bold text-[11px] flex items-center gap-1 transition-all cursor-pointer shadow-xs active:scale-95"
-                  title={language === 'hi' ? 'लॉगआउट' : 'Logout'}
-                  type="button"
-                >
-                  <span className="material-symbols-outlined text-[13px]">logout</span>
-                  <span className="hidden sm:inline">{language === 'hi' ? 'लॉगआउट' : 'Logout'}</span>
-                </button>
-              </>
+              <button
+                onClick={signOut}
+                className="w-9 h-9 rounded-full bg-gray-100 hover:bg-red-50 text-gray-700 hover:text-red-600 flex items-center justify-center transition-all cursor-pointer active:scale-95 border border-gray-200"
+                title={language === 'hi' ? 'लॉगआउट' : 'Sign Out'}
+                aria-label="Sign Out"
+                type="button"
+              >
+                <span className="material-symbols-outlined text-[20px]">logout</span>
+              </button>
             ) : (
               <button
                 onClick={() => openAuthModal()}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-[11px] shadow-md transition-all cursor-pointer active:scale-95 animate-pulse"
+                className="w-9 h-9 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-800 flex items-center justify-center transition-all cursor-pointer active:scale-95 border border-amber-200"
+                title={language === 'hi' ? 'लॉगिन' : 'Sign In'}
+                aria-label="Sign In"
                 type="button"
               >
-                <span className="material-symbols-outlined text-[14px]">verified_user</span>
-                <span>{language === 'hi' ? '📲 फ़ोन लॉगिन' : '📲 Phone Login'}</span>
+                <span className="material-symbols-outlined text-[20px]">account_circle</span>
               </button>
             )}
-            <span className="text-[11px] text-[#ffdeaa] font-medium hidden md:inline">
-              {artisanStudio}
-            </span>
-
-            {/* Sleek Language Switcher Component */}
-            <LanguageToggle variant="dark" />
-
-            {/* Notifications Bell Button */}
-            <button
-              onClick={toggleNotifications}
-              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white flex items-center justify-center relative transition-all cursor-pointer active:scale-95"
-              title="Notifications"
-              type="button"
-            >
-              <span className="material-symbols-outlined text-[18px]">notifications</span>
-              {unreadCount > 0 && (
-                <span className="w-2 h-2 rounded-full bg-[#ff9062] absolute top-1 right-1 ring-1 ring-[#180f0a]" />
-              )}
-            </button>
           </div>
         </header>
 

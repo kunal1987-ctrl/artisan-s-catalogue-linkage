@@ -91,6 +91,16 @@ export default function Catalog() {
     }
   }, [location.state]);
 
+  // Open edit / view modal if navigated with editProductId
+  useEffect(() => {
+    if (location.state?.editProductId && products.length > 0) {
+      const match = products.find((p) => p.id === location.state.editProductId);
+      if (match) {
+        setSelectedProduct(match);
+      }
+    }
+  }, [location.state?.editProductId, products]);
+
   // Fetch real products from Supabase
   useEffect(() => {
     async function loadSupabaseProducts() {

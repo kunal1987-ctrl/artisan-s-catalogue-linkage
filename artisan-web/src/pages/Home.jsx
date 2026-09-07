@@ -13,6 +13,43 @@ export default function Home() {
   const [toastMsg, setToastMsg] = useState('');
   const [dismissTip, setDismissTip] = useState(false);
 
+  const previewProducts = [
+    {
+      id: 'a1b2c3d4-0003-4000-8000-000000000003',
+      title: 'Blue Silk Saree',
+      title_hi: 'नीली रेशम साड़ी',
+      category: 'Handloom Silk',
+      category_hi: 'हथकरघा रेशम',
+      price: 850,
+      views: 24,
+      stock: 4,
+      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBk9yCjVvfLitGlye3MvbbghbLdOw34rsaFmL_-TeVnqt2K_BMKv8YneeoJJurCu7if5401uhFx9DmOiUOkxUxrDGXw5H6DNUEIuxp0oDtmIkXeu0zNyclZ2p8kf6ZINO-0JD6Ef_tXAIP5dn4aziAqSn7UsagQpjPAWIq26dfUpyOJRk7jss9kk47-2CywEmKQXa-MrzfAGlG_PQn6GvYgEmwwS9dMsOPVP-TVBElrd_6mCkYUo1mI',
+    },
+    {
+      id: 'a1b2c3d4-0001-4000-8000-000000000001',
+      title: 'Handmade Clay Pot',
+      title_hi: 'हस्तनिर्मित मिट्टी का बर्तन',
+      category: 'Clay Pottery',
+      category_hi: 'मिट्टी कला',
+      price: 200,
+      views: 12,
+      stock: 8,
+      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuARaNY8d8OBAZkfszvKSrgvwkJU0jQJSlOAkSNdpZ0kzdy3e1Mq2nJJBMmkxo6N0wqudg4yQ_D6Nso1ZqeTBKPWlbyPVKIEV4pBs1BUZiRU7PlKRlIpKdvoiajh0c4O6ltESOJaA60KX1zZL3RN2ul-kVMpAPHmXvisLiObSJcyuvKRfJzAi8pmg3H6gzTnbY2xHZnWoeAjCznUZWdSDZyEAkddac-bTraUc2jg-xpZDRtvJKT6mKe2',
+    },
+    {
+      id: 'a1b2c3d4-0002-4000-8000-000000000002',
+      title: 'Brass Puja Diya',
+      title_hi: 'पीतल पूजा दीया',
+      category: 'Brass Metalwork',
+      category_hi: 'पीतल धातु शिल्प',
+      price: 450,
+      views: 9,
+      stock: stockQty,
+      isLowStock: stockQty <= 2,
+      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAXbDk5LUiUiH6EZVNqec37nEVwf59ppq2I5vbTrZUIgkOfHuqm10xwlrKrLI2HLwiqoQy3J3L5fTfxPXwRI3z8ZqUoaMoJdzLhQ76IU2D2xfOfzgBYXi57q6EOqIeBgvnQCBRM70-X1hQQIB2l06C-hruYJY9mgh_2IT8ZO48-E7z-OqrpSUCnQPfrV0Bq5Uof6gC7W_110-GxxyRqN5d-0gRL_Lqazm9M6AjVKfKRwHZ5_iyFoFxz',
+    },
+  ];
+
   const handleUpdateStock = () => {
     setShowRestockModal(false);
     const msg = language === 'hi'
@@ -275,117 +312,71 @@ export default function Home() {
                 
                 {/* Product Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                    {/* Item 1 */}
-                    <div className="rounded-2xl bg-[#f7f3ed] border border-[#d1c4bd]/40 overflow-hidden shadow-sm flex flex-col group hover:shadow-md transition-all">
-                        <div className="relative w-full aspect-[4/5] bg-[#ebe8e2] overflow-hidden">
-                            <img alt="Blue Silk Saree"
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBk9yCjVvfLitGlye3MvbbghbLdOw34rsaFmL_-TeVnqt2K_BMKv8YneeoJJurCu7if5401uhFx9DmOiUOkxUxrDGXw5H6DNUEIuxp0oDtmIkXeu0zNyclZ2p8kf6ZINO-0JD6Ef_tXAIP5dn4aziAqSn7UsagQpjPAWIq26dfUpyOJRk7jss9kk47-2CywEmKQXa-MrzfAGlG_PQn6GvYgEmwwS9dMsOPVP-TVBElrd_6mCkYUo1mI" />
-                            <div className="absolute top-3 left-3">
-                                <span className="px-2.5 py-1 rounded-full bg-[#fdf9f3]/90 text-primary backdrop-blur-md font-bold text-[11px] shadow-sm">
-                                    {language === 'hi' ? 'स्टॉक में (4)' : 'In Stock (4)'}
-                                </span>
+                    {previewProducts.map((product) => {
+                        const isLow = product.isLowStock;
+                        return (
+                            <div
+                                key={product.id}
+                                onClick={() => navigate('/catalog', { state: { editProductId: product.id } })}
+                                className="rounded-2xl bg-[#f7f3ed] border border-[#d1c4bd]/40 overflow-hidden shadow-sm flex flex-col group cursor-pointer hover:shadow-lg transition-all active:scale-[0.99]"
+                            >
+                                <div className="relative w-full aspect-[4/5] bg-[#ebe8e2] overflow-hidden">
+                                    <img
+                                        alt={product.title}
+                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                        src={product.image}
+                                    />
+                                    <div className="absolute top-3 left-3">
+                                        <span
+                                            className={`px-2.5 py-1 rounded-full backdrop-blur-md font-bold text-[11px] shadow-sm ${
+                                                isLow ? 'bg-[#ba1a1a] text-white' : 'bg-[#fdf9f3]/90 text-primary'
+                                            }`}
+                                        >
+                                            {isLow
+                                                ? (language === 'hi' ? `अल्प स्टॉक (${product.stock})` : `Low Stock (${product.stock})`)
+                                                : (language === 'hi' ? `स्टॉक में (${product.stock})` : `In Stock (${product.stock})`)}
+                                        </span>
+                                    </div>
+                                    <button
+                                        aria-label={language === 'hi' ? 'कैटलॉग में देखें' : 'View in catalog'}
+                                        title={language === 'hi' ? 'कैटलॉग में देखें' : 'View in catalog'}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            navigate('/catalog', { state: { editProductId: product.id } });
+                                        }}
+                                        className="absolute top-3 right-3 w-9 h-9 rounded-full bg-[#fdf9f3]/90 text-primary backdrop-blur-md flex items-center justify-center shadow-md hover:bg-white group-hover:bg-[#9c441c] group-hover:text-white transition-all cursor-pointer"
+                                        type="button"
+                                    >
+                                        <span className="material-symbols-outlined text-[18px]">open_in_new</span>
+                                    </button>
+                                </div>
+                                <div className="p-4 flex flex-col gap-1 flex-1 justify-between">
+                                    <div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[11px] font-bold text-secondary uppercase tracking-wider block">
+                                                {language === 'hi' ? product.category_hi : product.category}
+                                            </span>
+                                            <span className="text-[11px] font-bold text-[#9c441c] flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
+                                                <span>{language === 'hi' ? 'देखें' : 'View'}</span>
+                                                <span>→</span>
+                                            </span>
+                                        </div>
+                                        <h4 className="text-[16px] font-bold text-primary truncate mt-0.5 group-hover:text-[#9c441c] transition-colors">
+                                            {language === 'hi' ? product.title_hi : product.title}
+                                        </h4>
+                                    </div>
+                                    <div className="flex items-baseline justify-between pt-3 border-t border-[#d1c4bd]/30 mt-2">
+                                        <span className="text-[18px] font-bold text-primary flex items-center gap-1">
+                                            ✨ ₹{product.price}
+                                        </span>
+                                        <span className="text-[12px] text-on-surface-variant font-medium flex items-center gap-1">
+                                            <span className="material-symbols-outlined text-[14px]">visibility</span> {product.views} {language === 'hi' ? 'दृश्य' : 'views'}
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
-                            <button aria-label="Product options"
-                                onClick={() => navigate('/catalog')}
-                                className="absolute top-3 right-3 w-9 h-9 rounded-full bg-[#fdf9f3]/90 text-primary backdrop-blur-md flex items-center justify-center shadow-md hover:bg-white transition-all cursor-pointer"
-                                type="button">
-                                <span className="material-symbols-outlined text-[20px]">more_vert</span>
-                            </button>
-                        </div>
-                        <div className="p-4 flex flex-col gap-1 flex-1 justify-between">
-                            <div>
-                                <span className="text-[11px] font-bold text-secondary uppercase tracking-wider block">
-                                    {language === 'hi' ? 'हथकरघा रेशम' : 'Handloom Silk'}
-                                </span>
-                                <h4 className="text-[16px] font-bold text-primary truncate mt-0.5">
-                                    {language === 'hi' ? 'नीली रेशम साड़ी' : 'Blue Silk Saree'}
-                                </h4>
-                            </div>
-                            <div className="flex items-baseline justify-between pt-3 border-t border-[#d1c4bd]/30">
-                                <span className="text-[18px] font-bold text-primary flex items-center gap-1">✨ ₹850</span>
-                                <span className="text-[12px] text-on-surface-variant font-medium flex items-center gap-1">
-                                    <span className="material-symbols-outlined text-[14px]">visibility</span> 24 {language === 'hi' ? 'दृश्य' : 'views'}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    {/* Item 2 */}
-                    <div className="rounded-2xl bg-[#f7f3ed] border border-[#d1c4bd]/40 overflow-hidden shadow-sm flex flex-col group hover:shadow-md transition-all">
-                        <div className="relative w-full aspect-[4/5] bg-[#ebe8e2] overflow-hidden">
-                            <img alt="Handmade Clay Pot"
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuARaNY8d8OBAZkfszvKSrgvwkJU0jQJSlOAkSNdpZ0kzdy3e1Mq2nJJBMmkxo6N0wqudg4yQ_D6Nso1ZqeTBKPWlbyPVKIEV4pBs1BUZiRU7PlKRlIpKdvoiajh0c4O6ltESOJaA60KX1zZL3RN2ul-kVMpAPHmXvisLiObSJcyuvKRfJzAi8pmg3H6gzTnbY2xHZnWoeAjCznUZWdSDZyEAkddac-bTraUc2jg-xpZDRtvJKT6mKe2" />
-                            <div className="absolute top-3 left-3">
-                                <span className="px-2.5 py-1 rounded-full bg-[#fdf9f3]/90 text-primary backdrop-blur-md font-bold text-[11px] shadow-sm">
-                                    {language === 'hi' ? 'स्टॉक में (8)' : 'In Stock (8)'}
-                                </span>
-                            </div>
-                            <button aria-label="Product options"
-                                onClick={() => navigate('/catalog')}
-                                className="absolute top-3 right-3 w-9 h-9 rounded-full bg-[#fdf9f3]/90 text-primary backdrop-blur-md flex items-center justify-center shadow-md hover:bg-white transition-all cursor-pointer"
-                                type="button">
-                                <span className="material-symbols-outlined text-[20px]">more_vert</span>
-                            </button>
-                        </div>
-                        <div className="p-4 flex flex-col gap-1 flex-1 justify-between">
-                            <div>
-                                <span className="text-[11px] font-bold text-secondary uppercase tracking-wider block">
-                                    {language === 'hi' ? 'मिट्टी कला' : 'Clay Pottery'}
-                                </span>
-                                <h4 className="text-[16px] font-bold text-primary truncate mt-0.5">
-                                    {language === 'hi' ? 'हस्तनिर्मित मिट्टी का बर्तन' : 'Handmade Clay Pot'}
-                                </h4>
-                            </div>
-                            <div className="flex items-baseline justify-between pt-3 border-t border-[#d1c4bd]/30">
-                                <span className="text-[18px] font-bold text-primary flex items-center gap-1">✨ ₹200</span>
-                                <span className="text-[12px] text-on-surface-variant font-medium flex items-center gap-1">
-                                    <span className="material-symbols-outlined text-[14px]">visibility</span> 12 {language === 'hi' ? 'दृश्य' : 'views'}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    {/* Item 3 */}
-                    <div className="rounded-2xl bg-[#f7f3ed] border border-[#d1c4bd]/40 overflow-hidden shadow-sm flex flex-col group hover:shadow-md transition-all">
-                        <div className="relative w-full aspect-[4/5] bg-[#ebe8e2] overflow-hidden">
-                            <img alt="Brass Puja Diya"
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXbDk5LUiUiH6EZVNqec37nEVwf59ppq2I5vbTrZUIgkOfHuqm10xwlrKrLI2HLwiqoQy3J3L5fTfxPXwRI3z8ZqUoaMoJdzLhQ76IU2D2xfOfzgBYXi57q6EOqIeBgvnQCBRM70-X1hQQIB2l06C-hruYJY9mgh_2IT8ZO48-E7z-OqrpSUCnQPfrV0Bq5Uof6gC7W_110-GxxyRqN5d-0gRL_Lqazm9M6AjVKfKRwHZ5_iyFoFxz" />
-                            <div className="absolute top-3 left-3">
-                                <span className={`px-2.5 py-1 rounded-full backdrop-blur-md font-bold text-[11px] shadow-sm ${
-                                    stockQty <= 2 ? 'bg-[#ba1a1a] text-white' : 'bg-[#fdf9f3]/90 text-primary'
-                                }`}>
-                                    {stockQty <= 2
-                                        ? (language === 'hi' ? `अल्प स्टॉक (${stockQty})` : `Low Stock (${stockQty})`)
-                                        : (language === 'hi' ? `स्टॉक में (${stockQty})` : `In Stock (${stockQty})`)}
-                                </span>
-                            </div>
-                            <button aria-label="Product options"
-                                onClick={() => setShowRestockModal(true)}
-                                className="absolute top-3 right-3 w-9 h-9 rounded-full bg-[#fdf9f3]/90 text-primary backdrop-blur-md flex items-center justify-center shadow-md hover:bg-white transition-all cursor-pointer"
-                                type="button">
-                                <span className="material-symbols-outlined text-[20px]">edit</span>
-                            </button>
-                        </div>
-                        <div className="p-4 flex flex-col gap-1 flex-1 justify-between">
-                            <div>
-                                <span className="text-[11px] font-bold text-secondary uppercase tracking-wider block">
-                                    {language === 'hi' ? 'पीतल धातु शिल्प' : 'Brass Metalwork'}
-                                </span>
-                                <h4 className="text-[16px] font-bold text-primary truncate mt-0.5">
-                                    {language === 'hi' ? 'पीतल पूजा दीया' : 'Brass Puja Diya'}
-                                </h4>
-                            </div>
-                            <div className="flex items-baseline justify-between pt-3 border-t border-[#d1c4bd]/30">
-                                <span className="text-[18px] font-bold text-primary flex items-center gap-1">✨ ₹450</span>
-                                <span className="text-[12px] text-on-surface-variant font-medium flex items-center gap-1">
-                                    <span className="material-symbols-outlined text-[14px]">visibility</span> 9 {language === 'hi' ? 'दृश्य' : 'views'}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
+                        );
+                    })}
 
                     {/* Add New Craft Quick Action */}
                     <div

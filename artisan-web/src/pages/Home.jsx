@@ -1,8 +1,10 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export default function Home() {
   const navigate = useNavigate();
+  const { language, toggleLanguage, toggleNotifications, unreadCount } = useAuth();
 
   return (
     <div className="w-full">
@@ -14,18 +16,19 @@ export default function Home() {
                     <div className="flex flex-col">
                         <div
                             className="flex items-center gap-2 text-[12px] font-semibold text-secondary uppercase tracking-wider">
-                            <span>Home</span>
+                            <span>{language === 'hi' ? 'आवास' : 'Home'}</span>
                             <span>/</span>
-                            <span>Artisan Dashboard</span>
+                            <span>{language === 'hi' ? 'शिल्पकार डैशबोर्ड' : 'Artisan Dashboard'}</span>
                         </div>
                         <h2 className="text-[24px] font-bold text-primary flex items-center gap-2">
-                            Namaste, Ramesh!
+                            {language === 'hi' ? 'नमस्ते, रामेश!' : 'Namaste, Ramesh!'}
                             <span className="text-[14px] font-medium text-on-surface-variant font-normal">कला संगम शॉप</span>
                         </h2>
                     </div>
                     <span
                         className="text-[12px] font-semibold text-[#50443d] bg-[#ebe8e2] px-3 py-1 rounded-full inline-flex items-center gap-1.5 border border-[#d1c4bd]/40">
-                        <span className="material-symbols-outlined text-[15px] text-green-700">check_circle</span> Saved Offline
+                        <span className="material-symbols-outlined text-[15px] text-green-700">check_circle</span>
+                        <span>{language === 'hi' ? 'ऑफ़लाइन सुरक्षित' : 'Saved Offline'}</span>
                     </span>
                 </div>
                 
@@ -35,24 +38,31 @@ export default function Home() {
                             className="material-symbols-outlined absolute left-3.5 top-2.5 text-[19px] text-[#80756f]">search</span>
                         <input
                             className="w-full pl-10 pr-10 py-2 rounded-full bg-[#f1ede7] border border-[#d1c4bd]/60 text-[13px] text-primary placeholder-[#80756f] focus:outline-none focus:ring-2 focus:ring-secondary/40 transition-all"
-                            placeholder="Search crafts or speak item name..." type="text" />
+                            placeholder={language === 'hi' ? 'शिल्प खोजें या बोलकर बताएं...' : 'Search crafts or speak item name...'} type="text" />
                         <button aria-label="Voice search"
-                            className="absolute right-2.5 top-1.5 w-7 h-7 rounded-full bg-[#e6e2dc] text-primary flex items-center justify-center hover:bg-[#d4c3ba] transition-colors"
+                            className="absolute right-2.5 top-1.5 w-7 h-7 rounded-full bg-[#e6e2dc] text-primary flex items-center justify-center hover:bg-[#d4c3ba] transition-colors cursor-pointer"
                             type="button">
                             <span className="material-symbols-outlined text-[16px]">mic</span>
                         </button>
                     </div>
                     <button aria-label="Switch Language"
-                        className="min-h-[40px] px-3.5 py-1.5 rounded-full bg-[#f1ede7] border border-[#d1c4bd] text-primary font-bold text-[14px] flex items-center gap-1.5 shadow-sm active:scale-95 transition-transform hover:bg-[#ebe8e2]"
+                        onClick={toggleLanguage}
+                        className="min-h-[40px] px-3.5 py-1.5 rounded-full bg-[#f1ede7] border border-[#d1c4bd] text-primary font-bold text-[14px] flex items-center gap-1.5 shadow-sm active:scale-95 transition-transform hover:bg-[#ebe8e2] cursor-pointer"
+                        title={language === 'hi' ? 'Switch to English' : 'हिन्दी में बदलें'}
                         type="button">
-                        <span>A</span><span className="text-secondary font-semibold">/</span><span>अ</span>
+                        <span className="material-symbols-outlined text-[16px] text-[#9c441c]">translate</span>
+                        <span>{language === 'hi' ? 'अ (हिन्दी)' : 'A (English)'}</span>
                     </button>
                     <button aria-label="Notifications"
-                        className="w-10 h-10 flex items-center justify-center rounded-full bg-[#f1ede7] text-on-surface-variant hover:text-primary transition-colors border border-[#d1c4bd]/50 relative"
+                        onClick={toggleNotifications}
+                        className="w-10 h-10 flex items-center justify-center rounded-full bg-[#f1ede7] text-on-surface-variant hover:text-primary transition-colors border border-[#d1c4bd]/50 relative cursor-pointer active:scale-95"
+                        title="Notifications"
                         type="button">
                         <span className="material-symbols-outlined text-[21px]">notifications</span>
-                        <span
-                            className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-600 ring-2 ring-[#fdf9f3]"></span>
+                        {unreadCount > 0 && (
+                          <span
+                              className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-[#9c441c] ring-2 ring-[#fdf9f3] animate-pulse"></span>
+                        )}
                     </button>
                 </div>
             </header>

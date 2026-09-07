@@ -1,11 +1,20 @@
 import React from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
+import NotificationBar from './components/NotificationBar';
 
 export default function DashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, artisanName, artisanStudio } = useAuth();
+  const {
+    user,
+    artisanName,
+    artisanStudio,
+    language,
+    toggleLanguage,
+    toggleNotifications,
+    unreadCount,
+  } = useAuth();
 
   const navItems = [
     { to: '/home', label: 'Home (आवास)', icon: 'cottage' },
@@ -133,12 +142,39 @@ export default function DashboardLayout() {
               | Supabase Auth JWT Active • Institutional GeM & ONDC
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <span className="text-[11px] text-[#ffdeaa] font-medium hidden md:inline">
               {artisanStudio}
             </span>
+
+            {/* Language Toggle Button */}
+            <button
+              onClick={toggleLanguage}
+              className="px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-[#ffdeaa] font-bold text-[11px] flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95"
+              title={language === 'hi' ? 'Switch to English' : 'हिन्दी में बदलें'}
+              type="button"
+            >
+              <span className="material-symbols-outlined text-[15px] text-[#ff9062]">translate</span>
+              <span>{language === 'hi' ? '🇮🇳 हिन्दी' : '🌐 EN'}</span>
+            </button>
+
+            {/* Notifications Bell Button */}
+            <button
+              onClick={toggleNotifications}
+              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white flex items-center justify-center relative transition-all cursor-pointer active:scale-95"
+              title="Notifications"
+              type="button"
+            >
+              <span className="material-symbols-outlined text-[18px]">notifications</span>
+              {unreadCount > 0 && (
+                <span className="w-2 h-2 rounded-full bg-[#ff9062] absolute top-1 right-1 ring-1 ring-[#180f0a]" />
+              )}
+            </button>
           </div>
         </header>
+
+        {/* Global Notification Drawer & Toast Bar */}
+        <NotificationBar />
 
         <Outlet />
       </main>

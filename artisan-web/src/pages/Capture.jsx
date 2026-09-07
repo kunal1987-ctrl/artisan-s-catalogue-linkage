@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { removeBackground } from '@imgly/background-removal';
 import { supabase } from '../supabaseClient';
+import { useAuth } from '../context/AuthContext';
 import { clearCorruptedStorage, isStorageQuotaError } from '../utils/storageCleanup';
 
 const blobToBase64 = (blob) =>
@@ -173,6 +174,7 @@ const centerOnStudioCanvas = (craftBlob, targetDimension = 1024, quality = 0.88)
 
 export default function Capture() {
   const navigate = useNavigate();
+  const { language, toggleLanguage, toggleNotifications, unreadCount } = useAuth();
 
   // ── Image State ──
   const [_selectedFile, setSelectedFile] = useState(null);
@@ -550,18 +552,24 @@ export default function Capture() {
               />
             </div>
             <button
-              className="h-10 px-4 rounded-full bg-[#f1ede7] hover:bg-[#ebe8e2] text-[#180f0a] text-[13px] font-bold flex items-center gap-1.5 border border-[#e8e2d9] transition-colors shadow-sm"
+              onClick={toggleLanguage}
+              className="h-10 px-4 rounded-full bg-[#f1ede7] hover:bg-[#ebe8e2] text-[#180f0a] text-[13px] font-bold flex items-center gap-1.5 border border-[#e8e2d9] transition-colors shadow-sm cursor-pointer active:scale-95"
+              title={language === 'hi' ? 'Switch to English' : 'हिन्दी में बदलें'}
               type="button"
             >
               <span className="material-symbols-outlined text-[17px] text-[#9c441c]">translate</span>
-              <span>A / अ</span>
+              <span>{language === 'hi' ? 'अ (हिन्दी)' : 'A (English)'}</span>
             </button>
             <button
-              className="w-10 h-10 rounded-full bg-[#f1ede7] hover:bg-[#ebe8e2] border border-[#e8e2d9] flex items-center justify-center relative text-[#4e4540]"
+              onClick={toggleNotifications}
+              className="w-10 h-10 rounded-full bg-[#f1ede7] hover:bg-[#ebe8e2] border border-[#e8e2d9] flex items-center justify-center relative text-[#4e4540] cursor-pointer active:scale-95"
+              title="Notifications"
               type="button"
             >
               <span className="material-symbols-outlined text-[20px]">notifications</span>
-              <span className="w-2 h-2 rounded-full bg-[#9c441c] absolute top-2 right-2"></span>
+              {unreadCount > 0 && (
+                <span className="w-2.5 h-2.5 rounded-full bg-[#9c441c] absolute top-2 right-2 ring-2 ring-[#fdf9f3] animate-pulse"></span>
+              )}
             </button>
           </div>
         </header>

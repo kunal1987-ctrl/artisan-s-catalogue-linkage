@@ -587,11 +587,14 @@ export default function Capture() {
             ? `${customTranscript}. Exquisitely handcrafted using traditional heritage techniques.`
             : "Exquisitely hand-thrown and kiln-fired natural clay pot with traditional motifs.",
           description_hi: customTranscript || "स्थानीय मिट्टी से हाथ से बनाया गया सुंदर टेराकोटा बर्तन।",
+          artisan_expected_price: 380,
+          price: 450,
+          bulk_price: 280,
           suggested_retail_price_inr: 450,
           suggested_wholesale_price_inr: 280,
           estimated_price_inr: 450,
           bulk_price_inr: 280,
-          pricing_reasoning: "Fair artisan living wage factored with raw material kiln-firing labor and institutional volume pricing.",
+          pricing_reasoning: "Fair artisan living wage factored with artisan expected base price (+18% fair markup) and institutional volume pricing.",
           gem_category: "Handicrafts - Traditional Art & Decor",
           unspsc_code: "60121002",
           hsn_code: "69120010",
@@ -990,6 +993,11 @@ export default function Capture() {
                   })}
                 </div>
 
+                {/* Clean, Mobile-Friendly Recording Helper Text Block */}
+                <div className="bg-blue-50 text-blue-800 rounded-lg p-3 text-xs sm:text-sm text-center mb-4 shadow-sm border border-blue-200/60 leading-relaxed">
+                  💡 <strong>सुझाव (Hint):</strong> माइक दबाएं और बताएं—यह क्या है, कैसे बना है, और आपकी अपेक्षित कीमत (₹) क्या है? (Tell us what this is, how it's made, and your expected price).
+                </div>
+
                 {/* Microphone Button with visual feedback */}
                 <div className="relative my-2 flex items-center justify-center">
                   {isRecording && (
@@ -1000,7 +1008,8 @@ export default function Capture() {
                   )}
                   <button
                     id="record-mic-btn"
-                    aria-label="Speak craft details"
+                    aria-label="Record Audio (माइक दबाकर बोलें)"
+                    title="Record Audio (माइक दबाकर बोलें)"
                     disabled={isLoading}
                     onClick={() => {
                       if (!isLoading) toggleRecording();

@@ -30,12 +30,15 @@ const JUDGE_INSURANCE_PAYLOAD = {
     "Exquisitely hand-thrown and kiln-fired natural clay pot featuring traditional folk motifs. Made with locally sourced eco-friendly alluvial clay, offering high thermal resilience and authentic rustic aesthetics.",
   description_hi:
     "स्थानीय मिट्टी से हाथ से बनाया गया सुंदर टेराकोटा बर्तन। पारंपरिक लोक कला के नक्काशीदार डिजाइन के साथ पर्यावरण-अनुकूल और टिकाऊ।",
+  artisan_expected_price: 380,
+  price: 450,
+  bulk_price: 280,
   suggested_retail_price_inr: 450,
   suggested_wholesale_price_inr: 280,
   estimated_price_inr: 450,
   bulk_price_inr: 280,
   pricing_reasoning:
-    "Retail price reflects 6 hours of artisanal hand-throwing and kiln-firing labor. Bulk price (≥50 units) applies 38% volume discount while preserving artisan's fair daily wage.",
+    "Retail price reflects artisan's expected baseline rate with a fair 18-20% retail markup and 6 hours of artisanal hand-throwing labor. Bulk price (≥50 units) applies volume discount while preserving artisan's fair daily wage.",
   gem_category: "Handicrafts - Terracotta Pottery and Planters",
   unspsc_code: "60121002",
   hsn_code: "69120010",
@@ -493,6 +496,8 @@ PRIMARY TRUTH: You must base the product category, material, and baseline price 
 
 FRAUD PREVENTION: If the audio transcript claims materials or qualities that contradict the visual evidence (e.g., claiming gold when it is painted brass), you MUST ignore the audio claim and price it based on the visual reality.
 
+PRICE EXTRACTION: The audio transcript will likely contain the artisan's expected base price in Hindi or English. Extract this spoken number as the \`artisan_expected_price\`. If found, ensure the final retail \`price\` applies a fair markup (e.g., +20%) to their spoken baseline, provided it does not wildly exceed your visual market appraisal. If no price is spoken, fall back strictly to visual market anchoring.
+
 MARKET ANCHORING: Calculate the \`price\` and \`bulk_price\` by anchoring to standard, real-world Indian retail market rates for the visually identified item.
 
 Return the output in the strict JSON schema provided.
@@ -510,8 +515,9 @@ Generate a structured, dual-market catalog profile supporting both Direct-to-Con
 Analyze this handcrafted item following these strict rules:
 1. PRIMARY TRUTH: You must base the product category, material, and baseline price on the provided IMAGE. The audio transcript is SECONDARY context (e.g., origin location or labor time).
 2. FRAUD PREVENTION: If the audio transcript claims materials or qualities that contradict the visual evidence (e.g., claiming gold when it is painted brass), you MUST ignore the audio claim and price it based on the visual reality.
-3. MARKET ANCHORING: Calculate the \`price\` and \`bulk_price\` by anchoring to standard, real-world Indian retail market rates for the visually identified item.
-4. Return the output in the strict JSON schema provided.
+3. PRICE EXTRACTION: The audio transcript will likely contain the artisan's expected base price in Hindi or English. Extract this spoken number as the \`artisan_expected_price\`. If found, ensure the final retail \`price\` applies a fair markup (e.g., +20%) to their spoken baseline, provided it does not wildly exceed your visual market appraisal. If no price is spoken, fall back strictly to visual market anchoring.
+4. MARKET ANCHORING: Calculate the \`price\` and \`bulk_price\` by anchoring to standard, real-world Indian retail market rates for the visually identified item.
+5. Return the output in the strict JSON schema provided.
 
 Return ONLY a valid JSON object matching this exact schema:
 {
@@ -519,6 +525,7 @@ Return ONLY a valid JSON object matching this exact schema:
   "title_hi": "string (Devanagari script)",
   "description": "string (2-3 sentences, SEO-friendly)",
   "description_hi": "string (Devanagari, 2-3 sentences)",
+  "artisan_expected_price": number,
   "price": number,
   "bulk_price": number,
   "suggested_retail_price_inr": number,
@@ -626,6 +633,9 @@ Return ONLY a valid JSON object matching this exact schema:
       };
     } else {
       // Normalize schema fields from Gemini response
+      if (productData.artisan_expected_price !== undefined && productData.artisan_expected_price !== null) {
+        productData.artisan_expected_price = Number(productData.artisan_expected_price) || null;
+      }
       if (!productData.price && productData.suggested_retail_price_inr) {
         productData.price = productData.suggested_retail_price_inr;
       }

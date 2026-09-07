@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import WebhookSimulator from '../components/WebhookSimulator';
 import InstitutionalTenderCard, { ACTIVE_INSTITUTIONAL_TENDERS } from '../components/InstitutionalTenderCard';
 
 // ─── Realistic institutional purchase order templates for GeM / ONDC simulation ───
@@ -55,6 +54,22 @@ const ORDER_TEMPLATES = [
     city: 'New Delhi',
     payment_mode: 'GeM PFMS Verified Institutional Escrow (Auto-settlement on Dispatch)',
     notes: 'Institutional Diplomatic Gift Procurement Batch',
+  },
+  {
+    order_id: 'ONDC-RET-2026-4401',
+    buyer_name: 'FabIndia Craft Direct (ONDC Buyer App)',
+    channel: 'ONDC',
+    order_type: 'ondc',
+    item_title: 'Handcrafted Blue Pottery Ceramic Coasters (Set of 6)',
+    quantity: 10,
+    unit_price_inr: 450,
+    total_amount: 4500,
+    total_price_inr: 4500,
+    status: 'pending',
+    shipping_address: 'Indiranagar 100ft Road, Bengaluru, Karnataka - 560038',
+    city: 'Bengaluru',
+    payment_mode: 'ONDC Protocol Settlement via UPI',
+    notes: 'Beckn B2C Retail Order fulfillment',
   },
 ];
 
@@ -442,20 +457,30 @@ export default function Orders() {
   };
 
   // 5. Simulate an incoming GeM / ONDC Purchase Order
-  const handleSimulateOrder = async () => {
+  const handleSimulateOrder = async (targetType) => {
     setIsSimulating(true);
     try {
-      const template = ORDER_TEMPLATES[templateIndexRef.current % ORDER_TEMPLATES.length];
+      let filteredTemplates = ORDER_TEMPLATES;
+      if (targetType) {
+        const matching = ORDER_TEMPLATES.filter(
+          (t) =>
+            t.order_type?.toLowerCase() === targetType.toLowerCase() ||
+            t.channel?.toLowerCase().includes(targetType.toLowerCase())
+        );
+        if (matching.length > 0) filteredTemplates = matching;
+      }
+      const template = filteredTemplates[templateIndexRef.current % filteredTemplates.length];
       templateIndexRef.current += 1;
 
       const authUser = (await supabase.auth.getUser()).data?.user || user;
       const authUserId = authUser?.id || user?.id || null;
       const userPhone = artisanProfile?.phone || authUser?.phone || user?.phone || null;
       const total = template.total_amount || (template.quantity * template.unit_price_inr);
-      const generatedOrderId = `${template.order_type === 'gem' ? 'GEM-PO' : 'ONDC-PO'}-${Date.now().toString().slice(-4)}`;
+      const uniqueSuffix = Date.now().toString().slice(-4);
+      const generatedOrderId = `${template.order_type === 'gem' ? 'GEM-PO' : 'ONDC-PO'}-${uniqueSuffix}`;
 
       const orderPayload = {
-        order_id: template.order_id || generatedOrderId,
+        order_id: template.order_id ? `${template.order_id}-${uniqueSuffix}` : generatedOrderId,
         buyer_name: template.buyer_name,
         channel: template.channel,
         order_type: template.order_type,
@@ -488,47 +513,13 @@ export default function Orders() {
         showToast(`⚡ ${template.channel} — नया आर्डर! ₹${total.toLocaleString('en-IN')}`);
         speakOrder({ ...localOrder });
       } else {
-        showToast(`✅ GeM/ONDC PO inserted — Realtime will fire! ₹${total.toLocaleString('en-IN')}`);
+        showToast(`✅ ${template.channel} PO inserted — Realtime will fire! ₹${total.toLocaleString('en-IN')}`);
       }
     } catch (err) {
       console.error('[Simulate] Error:', err);
       showToast('Simulation failed. Please retry.');
     } finally {
       setIsSimulating(false);
-    }
-  };
-
-  // 6. Handle Live Webhook Simulator Injection (ONDC Retail or GeM PO)
-  const handleSimulateWebhookOrder = (simulatedOrder, channelType) => {
-    const mapped = mapOrderRecord(simulatedOrder);
-    setOrders((prev) => [mapped, ...prev.filter((o) => o.id !== mapped.id && o.order_id !== mapped.order_id)]);
-    showToast(
-      language === 'hi'
-        ? `⚡ ${channelType === 'gem' ? 'GeM सरकारी थोक खरीद' : 'ONDC रिटेल नेटवर्क'} नया ऑर्डर प्राप्त! — ₹${(mapped.total_amount || 0).toLocaleString('en-IN')}`
-        : `⚡ New ${channelType === 'gem' ? 'GeM Institutional PO' : 'ONDC Retail Webhook'} Received! — ₹${(mapped.total_amount || 0).toLocaleString('en-IN')}`
-    );
-    speakOrder(mapped);
-
-    // Persist to Supabase if database connection is available
-    try {
-      supabase.from('orders').insert([{
-        order_id: mapped.order_id,
-        buyer_name: mapped.buyer_name,
-        channel: mapped.channel,
-        order_type: mapped.order_type,
-        item_title: mapped.item_title,
-        quantity: mapped.quantity,
-        unit_price_inr: mapped.unit_price_inr,
-        total_amount: mapped.total_amount,
-        total_price_inr: mapped.total_price_inr,
-        status: 'pending',
-        shipping_address: mapped.shipping_address,
-        payment_mode: mapped.payment_mode,
-        notes: mapped.notes,
-        city: mapped.city,
-      }]).then(() => {});
-    } catch (e) {
-      console.warn('[WebhookSimulator] Background DB insert fallback:', e);
     }
   };
 
@@ -637,43 +628,6 @@ export default function Orders() {
                 <h1 className="text-xl sm:text-2xl font-extrabold text-espresso-deep tracking-tight mt-0.5">
                   {language === 'hi' ? 'आर्डर इनबॉक्स' : 'Order Inbox'}
                 </h1>
-
-                {/* Horizontal touch-friendly filter pills */}
-                <div className="flex items-center gap-2 overflow-x-auto py-2 scrollbar-none mt-2">
-                  <button
-                    type="button"
-                    onClick={() => setActiveFilter('ALL')}
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-all shrink-0 active:scale-95 ${
-                      activeFilter === 'ALL'
-                        ? 'bg-emerald-600 text-white shadow-xs'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
-                  >
-                    All / सभी
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveFilter('GEM')}
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-all shrink-0 active:scale-95 ${
-                      activeFilter === 'GEM'
-                        ? 'bg-emerald-600 text-white shadow-xs'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
-                  >
-                    GeM Orders / सरकारी
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveFilter('ONDC')}
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-all shrink-0 active:scale-95 ${
-                      activeFilter === 'ONDC'
-                        ? 'bg-emerald-600 text-white shadow-xs'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
-                  >
-                    ONDC Orders / रिटेल
-                  </button>
-                </div>
               </div>
             </div>
 
@@ -690,8 +644,63 @@ export default function Orders() {
             </div>
           </div>
 
-          {/* ── LIVE ONDC & GEM WEBHOOK PROTOCOL SIMULATOR ── */}
-          <WebhookSimulator onSimulateOrder={handleSimulateWebhookOrder} isSimulating={isSimulating} />
+          {/* Order Channel Filters & Compact Demo Simulation Triggers */}
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+            {/* Left side: Order Filter Chips */}
+            <div className="flex items-center gap-2 overflow-x-auto py-1 scrollbar-none">
+              <button
+                type="button"
+                onClick={() => setActiveFilter('ALL')}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-all shrink-0 active:scale-95 ${
+                  activeFilter === 'ALL'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                All / सभी
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveFilter('GEM')}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-all shrink-0 active:scale-95 ${
+                  activeFilter === 'GEM'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                GeM Orders / सरकारी
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveFilter('ONDC')}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-all shrink-0 active:scale-95 ${
+                  activeFilter === 'ONDC'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                ONDC Orders / रिटेल
+              </button>
+            </div>
+
+            {/* Right side: Compact Demo Triggers */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleSimulateOrder('GEM')}
+                className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 active:scale-95 transition-all shadow-sm cursor-pointer"
+              >
+                + Sim GeM
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSimulateOrder('ONDC')}
+                className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-indigo-300 bg-indigo-50 text-indigo-800 hover:bg-indigo-100 active:scale-95 transition-all shadow-sm cursor-pointer"
+              >
+                + Sim ONDC
+              </button>
+            </div>
+          </div>
 
           {/* ── ACTIVE GEM INSTITUTIONAL PROCUREMENT TENDERS ── */}
           <section className="bg-[#fcfaf7] border border-[#d1c4bd]/60 rounded-3xl p-5 sm:p-6 shadow-xs flex flex-col gap-4">

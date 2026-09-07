@@ -75,6 +75,7 @@ export default function Catalog() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [toastMsg, setToastMsg] = useState('');
   const [exportingFormat, setExportingFormat] = useState(null); // 'ondc' | 'gem' | 'gem_csv' | null
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
 
   const showToast = (msg) => {
     setToastMsg(msg);
@@ -390,80 +391,63 @@ export default function Catalog() {
                   </button>
                 </div>
 
-                {/* Export Action Bar */}
-                <div className="flex items-center gap-2 flex-wrap">
+                {/* Export Protocols Dropdown */}
+                <div className="relative">
+                  <button
+                    id="export-protocols-btn"
+                    aria-label="Export Protocols"
+                    onClick={() => setExportMenuOpen((prev) => !prev)}
+                    className="h-11 px-4 rounded-xl bg-secondary text-on-secondary font-bold text-xs shadow-md active:scale-95 flex items-center gap-1.5 hover:opacity-90 transition-all shrink-0 cursor-pointer"
+                    type="button"
+                  >
+                    <span className="material-symbols-outlined text-[17px]">download</span>
+                    <span>Export Protocols</span>
+                    <span className="material-symbols-outlined text-[14px]">expand_more</span>
+                  </button>
 
-                  {/* 1. ONDC Beckn (JSON) */}
-                  <div className="flex flex-col items-center gap-0.5 group relative">
-                    <button
-                      id="export-ondc-btn"
-                      aria-label="ONDC Beckn (JSON)"
-                      onClick={() => handleExportCatalog('ondc')}
-                      disabled={!!exportingFormat}
-                      className="h-11 px-3.5 rounded-xl bg-secondary text-on-secondary font-bold text-xs shadow-md active:scale-95 flex items-center gap-1.5 hover:opacity-90 transition-all shrink-0 cursor-pointer disabled:opacity-50"
-                      type="button"
-                      title="Download artisan-ondc-catalog.json for ONDC buyer network"
-                    >
-                      <span className="material-symbols-outlined text-[17px]">
-                        {exportingFormat === 'ondc' ? 'hourglass_top' : 'download'}
-                      </span>
-                      <span className="hidden xl:inline">
-                        {exportingFormat === 'ondc' ? 'Fetching...' : '📥 ONDC Beckn (JSON)'}
-                      </span>
-                      <span className="xl:hidden">📥</span>
-                    </button>
-                    <span className="hidden xl:block text-[10px] text-on-surface-variant text-center leading-tight max-w-[130px] truncate">
-                      artisan-ondc-catalog.json
-                    </span>
-                  </div>
-
-                  {/* 2. GeM Batch (JSON) */}
-                  <div className="flex flex-col items-center gap-0.5">
-                    <button
-                      id="export-gem-btn"
-                      aria-label="GeM Batch (JSON)"
-                      onClick={() => handleExportCatalog('gem')}
-                      disabled={!!exportingFormat}
-                      className="h-11 px-3.5 rounded-xl bg-amber-600 text-white font-bold text-xs shadow-md active:scale-95 flex items-center gap-1.5 hover:opacity-90 transition-all shrink-0 cursor-pointer disabled:opacity-50"
-                      type="button"
-                      title="Download gem-procurement-batch.json for PSU procurement tenders"
-                    >
-                      <span className="material-symbols-outlined text-[17px]">
-                        {exportingFormat === 'gem' ? 'hourglass_top' : 'account_balance'}
-                      </span>
-                      <span className="hidden xl:inline">
-                        {exportingFormat === 'gem' ? 'Fetching...' : '🏛️ GeM Batch (JSON)'}
-                      </span>
-                      <span className="xl:hidden">🏛️</span>
-                    </button>
-                    <span className="hidden xl:block text-[10px] text-on-surface-variant text-center leading-tight max-w-[130px] truncate">
-                      gem-procurement-batch.json
-                    </span>
-                  </div>
-
-                  {/* 3. GeM Sheet (CSV) */}
-                  <div className="flex flex-col items-center gap-0.5">
-                    <button
-                      id="export-gem-csv-btn"
-                      aria-label="GeM Sheet (CSV)"
-                      onClick={() => handleExportCatalog('csv')}
-                      disabled={!!exportingFormat}
-                      className="h-11 px-3.5 rounded-xl bg-emerald-700 text-white font-bold text-xs shadow-md active:scale-95 flex items-center gap-1.5 hover:opacity-90 transition-all shrink-0 cursor-pointer disabled:opacity-50"
-                      type="button"
-                      title="Download gem-bulk-import.csv for Government e-Marketplace vendor portal"
-                    >
-                      <span className="material-symbols-outlined text-[17px]">
-                        {exportingFormat === 'csv' || exportingFormat === 'gem_csv' ? 'hourglass_top' : 'table_view'}
-                      </span>
-                      <span className="hidden xl:inline">
-                        {exportingFormat === 'csv' || exportingFormat === 'gem_csv' ? 'Fetching...' : '📊 GeM Sheet (CSV)'}
-                      </span>
-                      <span className="xl:hidden">📊</span>
-                    </button>
-                    <span className="hidden xl:block text-[10px] text-on-surface-variant text-center leading-tight max-w-[130px] truncate">
-                      gem-bulk-import.csv
-                    </span>
-                  </div>
+                  {exportMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-64 bg-surface-container-lowest rounded-xl shadow-xl border border-surface-container-high z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+                      <button
+                        id="export-ondc-btn"
+                        onClick={() => { handleExportCatalog('ondc'); setExportMenuOpen(false); }}
+                        disabled={!!exportingFormat}
+                        className="w-full px-4 py-3 text-left text-sm font-semibold text-on-surface hover:bg-surface-container flex items-center gap-3 transition-colors disabled:opacity-50 cursor-pointer"
+                        type="button"
+                      >
+                        <span className="material-symbols-outlined text-[18px] text-secondary">hub</span>
+                        <div>
+                          <span className="block text-[13px] font-bold">{exportingFormat === 'ondc' ? 'Downloading...' : '📥 ONDC Beckn (JSON)'}</span>
+                          <span className="block text-[11px] text-on-surface-variant">artisan-ondc-catalog.json</span>
+                        </div>
+                      </button>
+                      <button
+                        id="export-gem-btn"
+                        onClick={() => { handleExportCatalog('gem'); setExportMenuOpen(false); }}
+                        disabled={!!exportingFormat}
+                        className="w-full px-4 py-3 text-left text-sm font-semibold text-on-surface hover:bg-surface-container flex items-center gap-3 border-t border-surface-container-high transition-colors disabled:opacity-50 cursor-pointer"
+                        type="button"
+                      >
+                        <span className="material-symbols-outlined text-[18px] text-amber-600">account_balance</span>
+                        <div>
+                          <span className="block text-[13px] font-bold">{exportingFormat === 'gem' ? 'Downloading...' : '🏛️ GeM Batch (JSON)'}</span>
+                          <span className="block text-[11px] text-on-surface-variant">gem-procurement-batch.json</span>
+                        </div>
+                      </button>
+                      <button
+                        id="export-gem-csv-btn"
+                        onClick={() => { handleExportCatalog('csv'); setExportMenuOpen(false); }}
+                        disabled={!!exportingFormat}
+                        className="w-full px-4 py-3 text-left text-sm font-semibold text-on-surface hover:bg-surface-container flex items-center gap-3 border-t border-surface-container-high transition-colors disabled:opacity-50 cursor-pointer"
+                        type="button"
+                      >
+                        <span className="material-symbols-outlined text-[18px] text-emerald-700">table_view</span>
+                        <div>
+                          <span className="block text-[13px] font-bold">{exportingFormat === 'csv' || exportingFormat === 'gem_csv' ? 'Downloading...' : '📊 GeM Sheet (CSV)'}</span>
+                          <span className="block text-[11px] text-on-surface-variant">gem-bulk-import.csv</span>
+                        </div>
+                      </button>
+                    </div>
+                  )}
 
                   <button
                     onClick={() => navigate('/capture')}

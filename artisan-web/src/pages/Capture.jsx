@@ -596,17 +596,7 @@ export default function Capture() {
 
   return (
     <div className="w-full">
-      {/* ── Hidden HTML5 Dual Inputs ── */}
-      {/* 1. Direct native camera launch on smartphones */}
-      <input
-        ref={cameraInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-        onChange={handleFileSelect}
-      />
-      {/* 2. Photo gallery / file explorer selection */}
+      {/* ── Unified Hidden File Input (Camera or Gallery) ── */}
       <input
         ref={uploadInputRef}
         type="file"
@@ -730,7 +720,7 @@ export default function Capture() {
                 </div>
               ) : (
                 <div
-                  onClick={() => cameraInputRef.current?.click()}
+                  onClick={() => uploadInputRef.current?.click()}
                   className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer group bg-gradient-to-b from-[#201815] to-[#140d0a] hover:from-[#261d19] transition-all"
                 >
                   {/* Interactive targeting reticle */}
@@ -830,27 +820,17 @@ export default function Capture() {
               {/* Bottom Camera Action Bar */}
               <div className="relative z-20 flex items-center justify-between bg-[#191312]/80 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/10 flex-wrap gap-2">
                 <div className="flex items-center gap-2.5 flex-wrap">
-                  {/* Button 1: Launch Native Rear Camera directly */}
-                  <button
-                    onClick={() => cameraInputRef.current?.click()}
-                    className="flex items-center gap-2 text-xs font-bold text-[#180f0a] bg-[#ff9062] hover:bg-[#ff804a] px-3.5 py-2 rounded-xl transition-all cursor-pointer active:scale-95 shadow-md"
-                    type="button"
-                  >
-                    <span className="material-symbols-outlined text-[18px]">photo_camera</span>
-                    <span>{language === 'hi' ? 'कैमरा से फोटो लें' : 'Snap Photo (Camera)'}</span>
-                  </button>
-
-                  {/* Button 2: Launch Gallery / File Explorer */}
+                  {/* Unified Capture / Select Button */}
                   <button
                     onClick={() => uploadInputRef.current?.click()}
-                    className="flex items-center gap-2 text-xs font-bold text-[#fdf9f3] bg-[#2e241e] hover:bg-[#3d3028] px-3.5 py-2 rounded-xl border border-white/15 transition-all cursor-pointer active:scale-95"
+                    className="flex items-center gap-2 text-sm font-bold text-[#180f0a] bg-[#ff9062] hover:bg-[#ff804a] px-5 py-3 rounded-xl transition-all cursor-pointer active:scale-95 shadow-lg"
                     type="button"
                   >
-                    <span className="material-symbols-outlined text-[18px] text-[#ff9062]">photo_library</span>
-                    <span>{language === 'hi' ? 'गैलरी से चुनें' : 'Upload Photo (Gallery)'}</span>
+                    <span className="material-symbols-outlined text-[20px]">photo_camera</span>
+                    <span>{language === 'hi' ? 'तस्वीर लें / फोटो चुनें' : 'Capture or Select Craft'}</span>
                   </button>
 
-                  {/* Button 3: Retake Photo if already captured */}
+                  {/* Retake Photo if already captured */}
                   {displayImage && (
                     <button
                       onClick={handleRetake}

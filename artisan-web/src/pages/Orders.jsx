@@ -190,7 +190,7 @@ function OrderCard({ order, onAcceptPO, onDispatchPO }) {
               >
                 {isGem ? 'account_balance' : 'hub'}
               </span>
-              {channelLabel}
+              {isGem ? '🏛️ सरकारी खरीद (Govt Order)' : '⚡ ONDC नेटवर्क'}
             </span>
           </div>
         </div>
@@ -219,7 +219,7 @@ function OrderCard({ order, onAcceptPO, onDispatchPO }) {
               >
                 check_circle
               </span>
-              <span>{order.payment_mode || 'Paid Online • भुगतान हुआ'}</span>
+              <span>🛡️ सुरक्षित भुगतान (Payment Secured)</span>
             </span>
           </div>
         </div>
@@ -525,23 +525,6 @@ export default function Orders() {
 
             {/* Header Actions */}
             <div className="flex items-center gap-2.5 flex-wrap justify-end">
-              {/* ⚡ Simulate Incoming GeM / ONDC PO */}
-              <button
-                id="simulate-order-btn"
-                aria-label="Simulate Incoming GeM or ONDC Purchase Order"
-                className="min-h-[44px] px-4 rounded-full bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs flex items-center gap-2 shadow-md active:scale-95 transition-all cursor-pointer disabled:opacity-60"
-                type="button"
-                onClick={handleSimulateOrder}
-                disabled={isSimulating}
-              >
-                <span className="material-symbols-outlined text-[18px]">
-                  {isSimulating ? 'hourglass_top' : 'bolt'}
-                </span>
-                <span className="hidden sm:inline">
-                  {isSimulating ? 'Inserting...' : '⚡ Simulate GeM / ONDC PO'}
-                </span>
-                <span className="sm:hidden">⚡ Simulate</span>
-              </button>
 
               <button
                 aria-label="Filter Orders"
@@ -626,6 +609,21 @@ export default function Orders() {
           <span>{toastMsg}</span>
         </div>
       )}
+
+      {/* Floating Demo Mode Pill */}
+      <button
+        id="simulate-order-btn"
+        aria-label="Demo Mode: Trigger PO"
+        className="fixed bottom-4 right-4 z-50 bg-gray-800 text-white px-4 py-2 rounded-full shadow-lg opacity-50 hover:opacity-100 text-xs font-bold flex items-center gap-2 transition-all cursor-pointer active:scale-95 disabled:opacity-30"
+        type="button"
+        onClick={handleSimulateOrder}
+        disabled={isSimulating}
+      >
+        <span className="material-symbols-outlined text-[16px]">
+          {isSimulating ? 'hourglass_top' : 'bolt'}
+        </span>
+        <span>{isSimulating ? 'Inserting...' : 'Demo Mode: Trigger PO ⚡'}</span>
+      </button>
     </div>
   );
 }

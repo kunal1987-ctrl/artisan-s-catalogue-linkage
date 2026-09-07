@@ -604,6 +604,24 @@ export default function Review() {
                       </p>
                     </div>
 
+                    {/* HSN & UNSPSC Read-Only AI Badges */}
+                    <div className="sm:col-span-2 flex flex-wrap gap-3">
+                      <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-950/60 border border-emerald-500/30">
+                        <span className="material-symbols-outlined text-[16px] text-emerald-400">verified</span>
+                        <span className="text-[13px] font-bold text-emerald-300">
+                          HSN: {aiData.hsn_code || '69120010'}
+                        </span>
+                        <span className="text-[11px] text-emerald-400/80 font-medium">(Verified by AI)</span>
+                      </div>
+                      <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-950/60 border border-blue-500/30">
+                        <span className="material-symbols-outlined text-[16px] text-blue-400">verified</span>
+                        <span className="text-[13px] font-bold text-blue-300">
+                          UNSPSC: {aiData.unspsc_code || '60121002'}
+                        </span>
+                        <span className="text-[11px] text-blue-400/80 font-medium">(Auto-Assigned)</span>
+                      </div>
+                    </div>
+
                     {/* Wholesale Price */}
                     <div className="p-4 rounded-xl bg-[#101820]/90 border border-[#2b3e50] flex flex-col justify-between">
                       <div className="flex items-center justify-between mb-1">

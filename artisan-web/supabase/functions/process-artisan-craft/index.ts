@@ -311,7 +311,7 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  const { audioBase64, imageBase64, customTranscript } = requestPayload || {};
+  const { audioBase64, imageBase64, customTranscript, language } = requestPayload || {};
 
   if (imageBase64) {
     if (typeof imageBase64 !== "string") {
@@ -432,6 +432,9 @@ Deno.serve(async (req: Request) => {
         const formData = new FormData();
         formData.append("file", audioBlob, "audio.webm");
         formData.append("model", "whisper-large-v3");
+        if (language && typeof language === "string" && language.trim().length > 0) {
+          formData.append("language", language.trim());
+        }
 
         const whisperRes = await fetchWithTimeout(
           "https://api.groq.com/openai/v1/audio/transcriptions",

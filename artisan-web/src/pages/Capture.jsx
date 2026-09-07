@@ -4,6 +4,7 @@ import { removeBackground } from '@imgly/background-removal';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import LanguageToggle from '../components/LanguageToggle';
+import LanguageSelectorModal, { getDialectBadgeText } from '../components/LanguageSelectorModal';
 import { clearCorruptedStorage, isStorageQuotaError } from '../utils/storageCleanup';
 
 const blobToBase64 = (blob) =>
@@ -244,6 +245,10 @@ export default function Capture() {
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
   const animFrameRef = useRef(null);
+
+  // ── Regional Dialect / Voice Transcription State ──
+  const [isLangModalOpen, setIsLangModalOpen] = useState(false);
+  const [transcriptionLang, setTranscriptionLang] = useState('hi');
 
   // ── AI Processing State ──
   const [aiStatus, setAiStatus] = useState('idle'); // idle | transcribing | analyzing | done | error
@@ -564,6 +569,7 @@ export default function Capture() {
             audioBase64: audioBase64 || null,
             imageBase64: targetImageBase64,
             customTranscript: customTranscript || null,
+            language: transcriptionLang,
           },
           headers: activeToken ? { Authorization: `Bearer ${activeToken}` } : {},
         });
@@ -923,9 +929,16 @@ export default function Capture() {
                       {language === 'hi' ? 'शिल्प विवरण व वॉयस रिकॉर्ड' : 'Voice Note & Craft Details'}
                     </h2>
                   </div>
-                  <span className="px-3 py-1 rounded-full bg-[#2e241e] text-[11px] font-semibold text-[#ff9062] border border-[#ff9062]/30">
-                    Hindi, English + 9
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsLangModalOpen(true)}
+                    title={language === 'hi' ? 'बोलने की भाषा बदलें' : 'Select spoken dialect'}
+                    aria-label={language === 'hi' ? 'बोलने की भाषा बदलें' : 'Select spoken dialect'}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#2e241e] hover:bg-[#3d2b24] text-[11px] font-semibold text-[#ff9062] border border-[#ff9062]/30 hover:border-[#ff9062]/60 cursor-pointer hover:opacity-80 active:scale-95 transition-all shadow-xs"
+                  >
+                    <span>{getDialectBadgeText(transcriptionLang)}</span>
+                    <span className="text-[10px] text-[#ff9062]/80 leading-none">▾</span>
+                  </button>
                 </div>
 
                 {/* Animated Waveform indicator with dynamic audio level feedback */}
@@ -1144,6 +1157,14 @@ export default function Capture() {
             </div>
           </div>
         </div>
+      {/* Regional Dialect Selector Modal */}
+      <LanguageSelectorModal
+        isOpen={isLangModalOpen}
+        onClose={() => setIsLangModalOpen(false)}
+        selectedLang={transcriptionLang}
+        onSelectLang={(code) => setTranscriptionLang(code)}
+        uiLanguage={language}
+      />
       </main>
     </div>
   );

@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { LanguageProvider } from './context/LanguageContext.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import AuthModal from './components/AuthModal.jsx';
 
@@ -14,8 +15,9 @@ import Success from './pages/Success.jsx';
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
+    <LanguageProvider>
+      <AuthProvider>
+        <BrowserRouter>
         <AuthModal />
         <Routes>
           {/* Fullscreen Root Flow */}
@@ -38,5 +40,6 @@ export default function App() {
         </Routes>
       </BrowserRouter>
     </AuthProvider>
+  </LanguageProvider>
   );
 }

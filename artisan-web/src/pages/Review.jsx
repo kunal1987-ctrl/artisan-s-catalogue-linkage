@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
+import LanguageToggle from '../components/LanguageToggle';
 
 const GEM_CATEGORIES = [
   'Handloom / Silk Sarees',
@@ -20,7 +21,7 @@ const GEM_CATEGORIES = [
 export default function Review() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, artisanProfile, openAuthModal, showToast } = useAuth();
+  const { user, artisanProfile, openAuthModal, showToast, language } = useAuth();
 
   // Read AI data passed from Capture.jsx
   const aiData = location.state || {};
@@ -66,7 +67,6 @@ export default function Review() {
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishError, setPublishError] = useState('');
   const [newTag, setNewTag] = useState('');
-  const [activeLangTab, setActiveLangTab] = useState('bilingual'); // 'bilingual' | 'en' | 'hi'
   const [editingField, setEditingField] = useState(null); // 'title' | 'titleHi' | 'price' | 'wholesalePrice' | 'moq' | 'reasoning' | 'description' | 'descriptionHi' | null
 
   const hasAiData = !!location.state;
@@ -174,7 +174,7 @@ export default function Review() {
   const handlePublish = async () => {
     // Check if artisan phone is verified before publishing
     if (!isPhoneVerified) {
-      showToast('कृपया पहले मोबाइल नंबर सत्यापित करें (Please verify phone with OTP before publishing)');
+      showToast(language === 'hi' ? 'कृपया पहले मोबाइल नंबर सत्यापित करें' : 'Please verify phone with OTP before publishing');
       openAuthModal(() => {
         proceedWithPublish();
       });
@@ -229,63 +229,26 @@ export default function Review() {
                 onClick={() => navigate('/home')}
                 className="cursor-pointer hover:text-white transition-colors"
               >
-                HOME
+                {language === 'hi' ? 'आवास' : 'HOME'}
               </span>
               <span className="text-[10px]">/</span>
               <span
                 onClick={() => navigate('/catalog')}
                 className="cursor-pointer hover:text-white transition-colors"
               >
-                CATALOG
+                {language === 'hi' ? 'कैटलॉग' : 'CATALOG'}
               </span>
               <span className="text-[10px]">/</span>
               <span className="text-[#ff9062] font-black">
-                REVIEW & DRAFT
+                {language === 'hi' ? 'समीक्षा एवं ड्राफ्ट' : 'REVIEW & DRAFT'}
               </span>
             </div>
           </div>
 
-          {/* Center: Language Switcher Tabs */}
-          <div className="hidden md:flex items-center">
-            <div className="flex rounded-full bg-white/10 border border-white/15 p-0.5">
-              <button
-                onClick={() => setActiveLangTab('bilingual')}
-                className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                  activeLangTab === 'bilingual'
-                    ? 'bg-[#ff9062] text-[#180f0a] shadow-sm'
-                    : 'text-white/70 hover:text-white'
-                }`}
-                type="button"
-              >
-                Bilingual (दोनों)
-              </button>
-              <button
-                onClick={() => setActiveLangTab('en')}
-                className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                  activeLangTab === 'en'
-                    ? 'bg-[#ff9062] text-[#180f0a] shadow-sm'
-                    : 'text-white/70 hover:text-white'
-                }`}
-                type="button"
-              >
-                English
-              </button>
-              <button
-                onClick={() => setActiveLangTab('hi')}
-                className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                  activeLangTab === 'hi'
-                    ? 'bg-[#ff9062] text-[#180f0a] shadow-sm'
-                    : 'text-white/70 hover:text-white'
-                }`}
-                type="button"
-              >
-                हिन्दी
-              </button>
-            </div>
-          </div>
-
-          {/* Far Right: Auth Status Badge & Publish Button */}
+          {/* Far Right: Language Switcher, Auth Status & Publish Button */}
           <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+            <LanguageToggle variant="dark" />
+
             {isPhoneVerified ? (
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-950 border border-emerald-500/50 text-emerald-300 text-[11px] font-bold shadow-xs">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -298,7 +261,7 @@ export default function Review() {
                 className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-stone-950 text-[11px] font-bold cursor-pointer transition-all active:scale-95 animate-pulse shadow-xs"
               >
                 <span className="material-symbols-outlined text-[14px]">login</span>
-                <span>📲 फ़ोन सत्यापन (Verify Phone)</span>
+                <span>📲 {language === 'hi' ? 'फ़ोन सत्यापन करें' : 'Verify Phone'}</span>
               </button>
             )}
 
@@ -315,11 +278,11 @@ export default function Review() {
               {isPublishing ? (
                 <>
                   <div className="w-4 h-4 border-2 border-[#180f0a] border-t-transparent rounded-full animate-spin" />
-                  <span>Publishing...</span>
+                  <span>{language === 'hi' ? 'प्रकाशित हो रहा है...' : 'Publishing...'}</span>
                 </>
               ) : (
                 <>
-                  <span>Publish to ONDC & GeM</span>
+                  <span>{language === 'hi' ? 'GeM व ONDC पर प्रकाशित करें' : 'Publish to ONDC & GeM'}</span>
                   <span className="material-symbols-outlined text-[16px]">rocket_launch</span>
                 </>
               )}
@@ -335,7 +298,9 @@ export default function Review() {
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-[18px] text-emerald-700">auto_awesome</span>
               <span className="text-[13px] font-semibold text-emerald-900">
-                AI Market Linkage Active: Bilingual descriptions generated via Gemini Vision & Groq Whisper. GeM readiness certified.
+                {language === 'hi'
+                  ? 'एआई लिंकेज सक्रिय: जेमिनी व व्हिस्पर द्वारा विवरण तैयार। GeM अनुरूपता प्रमाणित।'
+                  : 'AI Market Linkage Active: Descriptions generated via Gemini Vision & Groq Whisper. GeM readiness certified.'}
               </span>
             </div>
             <div className="flex items-center gap-1.5">
@@ -350,39 +315,6 @@ export default function Review() {
           </div>
         </div>
       )}
-
-      {/* Mobile language tabs fallback */}
-      <div className="md:hidden flex justify-center py-2 px-4 bg-surface-container-low border-b border-outline-variant/30">
-        <div className="flex rounded-full bg-surface-container border border-outline-variant/40 p-0.5">
-          <button
-            onClick={() => setActiveLangTab('bilingual')}
-            className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
-              activeLangTab === 'bilingual' ? 'bg-primary text-white shadow-sm' : 'text-on-surface-variant'
-            }`}
-            type="button"
-          >
-            Bilingual
-          </button>
-          <button
-            onClick={() => setActiveLangTab('en')}
-            className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
-              activeLangTab === 'en' ? 'bg-primary text-white shadow-sm' : 'text-on-surface-variant'
-            }`}
-            type="button"
-          >
-            English
-          </button>
-          <button
-            onClick={() => setActiveLangTab('hi')}
-            className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
-              activeLangTab === 'hi' ? 'bg-primary text-white shadow-sm' : 'text-on-surface-variant'
-            }`}
-            type="button"
-          >
-            हिन्दी
-          </button>
-        </div>
-      </div>
 
       {/* Main Split-Screen Desktop Workspace */}
       <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col lg:flex-row gap-8 items-start">
@@ -456,7 +388,7 @@ export default function Review() {
                   </div>
                 )}
 
-                {/* ── 1. BILINGUAL TITLES ── */}
+                {/* ── 1. PRODUCT TITLE ── */}
                 <div className="rounded-2xl p-6 bg-surface-container-lowest border border-outline-variant/40 shadow-sm transition-all hover:border-outline">
                   <div className="flex items-center justify-between gap-4 mb-3">
                     <div className="flex items-center gap-2">
@@ -464,25 +396,56 @@ export default function Review() {
                         {category}
                       </span>
                       <span className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
-                        Bilingual Product Titles
+                        {language === 'hi' ? 'शिल्प का शीर्षक' : 'Product Title'}
                       </span>
                     </div>
                     <span className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
                       <span className="material-symbols-outlined text-[14px]">translate</span>
-                      Auto-Translated
+                      {language === 'hi' ? 'सत्यापित' : 'Auto-Verified'}
                     </span>
                   </div>
 
-                  {/* English Title */}
-                  {(activeLangTab === 'bilingual' || activeLangTab === 'en') && (
-                    <div className="mb-4">
+                  {language === 'hi' ? (
+                    <div>
                       <div className="flex items-center justify-between mb-1.5">
                         <label className="text-[11px] font-bold text-[#80756f] uppercase tracking-wider">
-                          English Title (ONDC & GeM Portal)
+                          हिन्दी शीर्षक
+                        </label>
+                        <button
+                          onClick={() => setEditingField(editingField === 'titleHi' ? null : 'titleHi')}
+                          className="text-[11px] text-secondary font-bold hover:underline flex items-center gap-0.5 cursor-pointer"
+                          type="button"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">
+                            {editingField === 'titleHi' ? 'check' : 'edit'}
+                          </span>
+                          <span>{editingField === 'titleHi' ? 'पूर्ण' : 'संपादित करें'}</span>
+                        </button>
+                      </div>
+                      {editingField === 'titleHi' ? (
+                        <input
+                          autoFocus
+                          className="text-[18px] font-bold text-primary tracking-tight leading-snug w-full bg-surface-container-low border border-primary rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-container font-hindi"
+                          value={titleHi}
+                          onChange={(e) => setTitleHi(e.target.value)}
+                          onBlur={() => setEditingField(null)}
+                          onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
+                        />
+                      ) : (
+                        <h1 className="text-[20px] font-bold text-primary tracking-tight leading-snug font-hindi text-stone-800">
+                          {titleHi}
+                        </h1>
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-[11px] font-bold text-[#80756f] uppercase tracking-wider">
+                          Product Title
                         </label>
                         <button
                           onClick={() => setEditingField(editingField === 'title' ? null : 'title')}
-                          className="text-[11px] text-secondary font-bold hover:underline flex items-center gap-0.5"
+                          className="text-[11px] text-secondary font-bold hover:underline flex items-center gap-0.5 cursor-pointer"
                           type="button"
                         >
                           <span className="material-symbols-outlined text-[14px]">
@@ -502,42 +465,6 @@ export default function Review() {
                         />
                       ) : (
                         <h1 className="text-[20px] font-bold text-primary tracking-tight leading-snug">{title}</h1>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Hindi Title */}
-                  {(activeLangTab === 'bilingual' || activeLangTab === 'hi') && (
-                    <div className="pt-3 border-t border-outline-variant/30">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <label className="text-[11px] font-bold text-[#80756f] uppercase tracking-wider flex items-center gap-1.5">
-                          <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 text-[10px] font-bold">हिन्दी</span>
-                          <span>हिन्दी शीर्षक (देवनागरी लिपि)</span>
-                        </label>
-                        <button
-                          onClick={() => setEditingField(editingField === 'titleHi' ? null : 'titleHi')}
-                          className="text-[11px] text-secondary font-bold hover:underline flex items-center gap-0.5"
-                          type="button"
-                        >
-                          <span className="material-symbols-outlined text-[14px]">
-                            {editingField === 'titleHi' ? 'check' : 'edit'}
-                          </span>
-                          <span>{editingField === 'titleHi' ? 'Done' : 'Edit'}</span>
-                        </button>
-                      </div>
-                      {editingField === 'titleHi' ? (
-                        <input
-                          autoFocus
-                          className="text-[18px] font-bold text-primary tracking-tight leading-snug w-full bg-surface-container-low border border-primary rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-container font-hindi"
-                          value={titleHi}
-                          onChange={(e) => setTitleHi(e.target.value)}
-                          onBlur={() => setEditingField(null)}
-                          onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
-                        />
-                      ) : (
-                        <h2 className="text-[19px] font-bold text-primary tracking-tight leading-snug font-hindi text-stone-800">
-                          {titleHi}
-                        </h2>
                       )}
                     </div>
                   )}
@@ -847,27 +774,57 @@ export default function Review() {
                   </select>
                 </div>
 
-                {/* ── 5. BILINGUAL STORY & SPECIFICATIONS ── */}
+                {/* ── 5. CRAFT STORY & SPECIFICATIONS ── */}
                 <div className="rounded-2xl p-6 bg-surface-container-lowest border border-outline-variant/40 shadow-sm transition-all hover:border-outline">
-                  <div className="flex items-center justify-between gap-4 mb-3">
+                  <div className="flex items-center justify-between pb-3 border-b border-outline-variant/30 mb-4">
                     <div className="flex items-center gap-1.5">
                       <span className="material-symbols-outlined text-[16px] text-secondary">auto_stories</span>
                       <span className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
-                        Bilingual Craft Story & SEO Specifications
+                        {language === 'hi' ? 'शिल्प का विवरण' : 'Craft Story & Specifications'}
                       </span>
                     </div>
                   </div>
 
-                  {/* English Description */}
-                  {(activeLangTab === 'bilingual' || activeLangTab === 'en') && (
-                    <div className="mb-4">
+                  {language === 'hi' ? (
+                    <div>
                       <div className="flex items-center justify-between mb-1.5">
                         <label className="text-[11px] font-bold text-[#80756f] uppercase tracking-wider">
-                          English SEO Description
+                          शिल्प का विवरण
+                        </label>
+                        <button
+                          onClick={() => setEditingField(editingField === 'descriptionHi' ? null : 'descriptionHi')}
+                          className="text-[11px] text-secondary font-bold hover:underline flex items-center gap-0.5 cursor-pointer"
+                          type="button"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">
+                            {editingField === 'descriptionHi' ? 'check' : 'edit'}
+                          </span>
+                          <span>{editingField === 'descriptionHi' ? 'पूर्ण' : 'संपादित करें'}</span>
+                        </button>
+                      </div>
+                      {editingField === 'descriptionHi' ? (
+                        <textarea
+                          autoFocus
+                          className="w-full text-[14px] text-stone-800 leading-relaxed bg-surface-container-low border border-primary rounded-xl px-4 py-3 min-h-[110px] focus:outline-none focus:ring-2 focus:ring-primary-container resize-y font-hindi"
+                          value={descriptionHi}
+                          onChange={(e) => setDescriptionHi(e.target.value)}
+                          onBlur={() => setEditingField(null)}
+                        />
+                      ) : (
+                        <p className="text-[14px] text-stone-800 leading-relaxed font-hindi bg-surface-container-low/40 p-3.5 rounded-xl">
+                          {descriptionHi}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-[11px] font-bold text-[#80756f] uppercase tracking-wider">
+                          Product Description
                         </label>
                         <button
                           onClick={() => setEditingField(editingField === 'description' ? null : 'description')}
-                          className="text-[11px] text-secondary font-bold hover:underline flex items-center gap-0.5"
+                          className="text-[11px] text-secondary font-bold hover:underline flex items-center gap-0.5 cursor-pointer"
                           type="button"
                         >
                           <span className="material-symbols-outlined text-[14px]">
@@ -887,41 +844,6 @@ export default function Review() {
                       ) : (
                         <p className="text-[14px] text-on-surface-variant leading-relaxed bg-surface-container-low/40 p-3.5 rounded-xl">
                           {description}
-                        </p>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Hindi Description */}
-                  {(activeLangTab === 'bilingual' || activeLangTab === 'hi') && (
-                    <div className="pt-3 border-t border-outline-variant/30">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <label className="text-[11px] font-bold text-[#80756f] uppercase tracking-wider flex items-center gap-1.5">
-                          <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 text-[10px] font-bold">हिन्दी</span>
-                          <span>शिल्प का विवरण (देवनागरी लिपि)</span>
-                        </label>
-                        <button
-                          onClick={() => setEditingField(editingField === 'descriptionHi' ? null : 'descriptionHi')}
-                          className="text-[11px] text-secondary font-bold hover:underline flex items-center gap-0.5"
-                          type="button"
-                        >
-                          <span className="material-symbols-outlined text-[14px]">
-                            {editingField === 'descriptionHi' ? 'check' : 'edit'}
-                          </span>
-                          <span>{editingField === 'descriptionHi' ? 'Done' : 'Edit'}</span>
-                        </button>
-                      </div>
-                      {editingField === 'descriptionHi' ? (
-                        <textarea
-                          autoFocus
-                          className="w-full text-[14px] text-stone-800 leading-relaxed bg-surface-container-low border border-primary rounded-xl px-4 py-3 min-h-[110px] focus:outline-none focus:ring-2 focus:ring-primary-container resize-y font-hindi"
-                          value={descriptionHi}
-                          onChange={(e) => setDescriptionHi(e.target.value)}
-                          onBlur={() => setEditingField(null)}
-                        />
-                      ) : (
-                        <p className="text-[14px] text-stone-800 leading-relaxed font-hindi bg-surface-container-low/40 p-3.5 rounded-xl">
-                          {descriptionHi}
                         </p>
                       )}
                     </div>

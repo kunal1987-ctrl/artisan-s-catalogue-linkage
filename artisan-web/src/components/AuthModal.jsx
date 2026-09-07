@@ -369,7 +369,7 @@ export default function AuthModal() {
                   </>
                 ) : (
                   <>
-                    <span>{language === 'hi' ? 'ओटीपी भेजें (Send OTP)' : 'Send OTP / ओटीपी भेजें'}</span>
+                    <span>{language === 'hi' ? 'ओटीपी भेजें' : 'Send OTP'}</span>
                     <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
                   </>
                 )}
@@ -400,7 +400,7 @@ export default function AuthModal() {
                   }}
                   className="text-xs font-bold text-[#9c441c] hover:underline"
                 >
-                  {language === 'hi' ? 'बदलें (Edit)' : 'Edit'}
+                  {language === 'hi' ? 'बदलें' : 'Edit'}
                 </button>
               </div>
 
@@ -482,9 +482,7 @@ export default function AuthModal() {
                   <>
                     <span className="material-symbols-outlined text-[18px]">verified</span>
                     <span>
-                      {language === 'hi' 
-                        ? 'सत्यापित करें (Verify & Login)' 
-                        : 'सत्यापित करें (Verify & Login)'}
+                      {language === 'hi' ? 'सत्यापित करें' : 'Verify & Login'}
                     </span>
                   </>
                 )}

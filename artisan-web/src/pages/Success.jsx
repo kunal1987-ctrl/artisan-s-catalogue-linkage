@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function Success() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { language } = useLanguage();
   const product = location.state || {};
 
   const title = product.title || 'Handwoven Blue Pure Silk Saree';
@@ -31,7 +33,7 @@ export default function Success() {
     if (navigator.clipboard) {
       navigator.clipboard.writeText('https://kalasangam.in/s/ks-8492');
     }
-    triggerToast('लिंक कॉपी हो गया (Link copied to clipboard)');
+    triggerToast(language === 'hi' ? 'लिंक कॉपी हो गया' : 'Link copied to clipboard');
   };
 
   const shareWhatsApp = () => {
@@ -106,7 +108,7 @@ export default function Success() {
                 className="w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-medium text-sm text-left"
               >
                 <span className="material-symbols-outlined text-[20px]">roofing</span>
-                <span>Home (आवास)</span>
+                <span>{language === 'hi' ? 'आवास' : 'Home'}</span>
               </button>
               <button
                 onClick={() => navigate('/catalog')}
@@ -116,7 +118,7 @@ export default function Success() {
                   <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                     inventory_2
                   </span>
-                  <span>Catalog (कैटलॉग)</span>
+                  <span>{language === 'hi' ? 'कैटलॉग' : 'Catalog'}</span>
                 </div>
                 <span className="text-xs px-2 py-0.5 rounded-full bg-primary-container text-primary-fixed-dim">13</span>
               </button>
@@ -126,10 +128,10 @@ export default function Success() {
               >
                 <div className="flex items-center gap-3.5">
                   <span className="material-symbols-outlined text-[20px]">shopping_bag</span>
-                  <span>Orders (ऑर्डर्स)</span>
+                  <span>{language === 'hi' ? 'ऑर्डर्स' : 'Orders'}</span>
                 </div>
                 <span className="text-xs px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed font-bold">
-                  3 New
+                  {language === 'hi' ? '3 नए' : '3 New'}
                 </span>
               </button>
             </nav>
@@ -174,13 +176,15 @@ export default function Success() {
                   <span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                     auto_awesome
                   </span>
-                  <span>कला संगम प्रमाणित शिल्पकला • Multi-Channel Live</span>
+                  <span>{language === 'hi' ? 'कला संगम प्रमाणित शिल्पकला • लाइव' : 'Kala Sangam Certified Craft • Multi-Channel Live'}</span>
                 </div>
                 <h1 className="text-2xl lg:text-3xl font-bold text-primary tracking-tight">
-                  बधाई हो! Product is Live & Published!
+                  {language === 'hi' ? 'बधाई हो! उत्पाद लाइव एवं प्रकाशित हो चुका है!' : 'Congratulations! Product is Live & Published!'}
                 </h1>
                 <p className="text-sm text-on-surface-variant mt-1">
-                  Your craft is now mapped to both <strong className="text-primary font-semibold">ONDC Consumer Network</strong> and <strong className="text-emerald-800 font-semibold">Government e-Marketplace (GeM)</strong>.
+                  {language === 'hi' 
+                    ? 'आपका शिल्प अब ONDC उपभोक्ता नेटवर्क और सरकारी ई-मार्केटप्लेस (GeM) दोनों से जुड़ चुका है।'
+                    : 'Your craft is now mapped to both ONDC Consumer Network and Government e-Marketplace (GeM).'}
                 </p>
               </div>
             </div>
@@ -196,10 +200,15 @@ export default function Success() {
                 </div>
                 <div className="flex flex-col">
                   <p className="text-xs text-on-surface font-medium leading-tight">
-                    <span className="font-bold text-secondary">सुनिए:</span> "व्हाट्सएप व GeM पर लिस्टिंग सफल हुई..."
+                    <span className="font-bold text-secondary">
+                      {language === 'hi' ? 'सुनिए:' : 'Listen:'}
+                    </span>{' '}
+                    {language === 'hi'
+                      ? '"व्हाट्सएप व GeM पर लिस्टिंग सफल हुई..."'
+                      : '"Listing published to WhatsApp & GeM..."'}
                   </p>
                   <span className="text-[11px] text-on-surface-variant font-semibold mt-0.5">
-                    Click to play voice guide
+                    {language === 'hi' ? 'मार्गदर्शन सुनने के लिए क्लिक करें' : 'Click to play voice guide'}
                   </span>
                 </div>
               </button>
@@ -213,11 +222,11 @@ export default function Success() {
                 <div>
                   <div className="flex items-center justify-between pb-4 border-b border-outline-variant/30 mb-4">
                     <span className="text-xs font-bold uppercase tracking-wider text-secondary">
-                      Published Craft Profile
+                      {language === 'hi' ? 'प्रकाशित शिल्प प्रोफाइल' : 'Published Craft Profile'}
                     </span>
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium border border-emerald-200">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
-                      Dual-Channel Active
+                      {language === 'hi' ? 'दोहरा चैनल सक्रिय' : 'Dual-Channel Active'}
                     </span>
                   </div>
 
@@ -229,10 +238,11 @@ export default function Success() {
                       </span>
                     </div>
                     <div className="flex flex-col flex-1 min-w-0">
-                      <h2 className="text-lg font-bold text-primary leading-snug">{title}</h2>
-                      {titleHi && <p className="text-xs font-semibold text-stone-700 mt-0.5">{titleHi}</p>}
+                      <h2 className="text-lg font-bold text-primary leading-snug">
+                        {(language === 'hi' && titleHi) ? titleHi : title}
+                      </h2>
                       <p className="text-xs text-on-surface-variant mt-0.5">
-                        Category: {category} • {gemCategory}
+                        {language === 'hi' ? 'श्रेणी' : 'Category'}: {category} • {gemCategory}
                       </p>
                       <div className="flex items-baseline gap-2 mt-2">
                         <span className="text-2xl font-bold text-secondary">₹{price.toLocaleString('en-IN')}</span>
@@ -240,27 +250,41 @@ export default function Success() {
                           ₹{Math.round(price * 1.4).toLocaleString('en-IN')}
                         </span>
                         <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
-                          30% OFF
+                          {language === 'hi' ? '30% छूट' : '30% OFF'}
                         </span>
                       </div>
                       <span className="text-xs text-on-surface-variant font-mono mt-1">
-                        GeM Ready: Certified • MOQ: {moq} units
+                        {language === 'hi'
+                          ? `GeM प्रमाणित • न्यूनतम आर्डर: ${moq} इकाइयां`
+                          : `GeM Ready: Certified • MOQ: ${moq} units`}
                       </span>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-3 gap-2.5 mt-5 bg-surface-container-low rounded-xl p-3 text-center border border-outline-variant/30">
                     <div className="flex flex-col items-center">
-                      <span className="text-[11px] font-medium text-on-surface-variant">Shipping</span>
-                      <span className="text-xs font-bold text-primary mt-0.5">Free Pan-India</span>
+                      <span className="text-[11px] font-medium text-on-surface-variant">
+                        {language === 'hi' ? 'शिपिंग' : 'Shipping'}
+                      </span>
+                      <span className="text-xs font-bold text-primary mt-0.5">
+                        {language === 'hi' ? 'अखिल भारतीय निःशुल्क' : 'Free Pan-India'}
+                      </span>
                     </div>
                     <div className="flex flex-col items-center border-x border-outline-variant/30">
-                      <span className="text-[11px] font-medium text-on-surface-variant">Dispatch Time</span>
-                      <span className="text-xs font-bold text-primary mt-0.5">24-48 Hours</span>
+                      <span className="text-[11px] font-medium text-on-surface-variant">
+                        {language === 'hi' ? 'डिस्पैच समय' : 'Dispatch Time'}
+                      </span>
+                      <span className="text-xs font-bold text-primary mt-0.5">
+                        {language === 'hi' ? '24-48 घंटे' : '24-48 Hours'}
+                      </span>
                     </div>
                     <div className="flex flex-col items-center">
-                      <span className="text-[11px] font-medium text-on-surface-variant">Commission</span>
-                      <span className="text-xs font-bold text-emerald-700 mt-0.5">0% Direct</span>
+                      <span className="text-[11px] font-medium text-on-surface-variant">
+                        {language === 'hi' ? 'कमीशन' : 'Commission'}
+                      </span>
+                      <span className="text-xs font-bold text-emerald-700 mt-0.5">
+                        {language === 'hi' ? '0% सीधा' : '0% Direct'}
+                      </span>
                     </div>
                   </div>
 
@@ -274,9 +298,9 @@ export default function Success() {
                     <button
                       onClick={copyLink}
                       type="button"
-                      className="px-3 py-1 bg-surface-container-lowest hover:bg-surface text-xs font-semibold rounded-lg border border-outline-variant/40 text-primary shadow-xs"
+                      className="px-3 py-1 bg-surface-container-lowest hover:bg-surface text-xs font-semibold rounded-lg border border-outline-variant/40 text-primary shadow-xs cursor-pointer"
                     >
-                      Copy
+                      {language === 'hi' ? 'कॉपी करें' : 'Copy'}
                     </button>
                   </div>
                 </div>
@@ -288,7 +312,7 @@ export default function Success() {
                     onClick={() => navigate('/catalog')}
                   >
                     <span className="material-symbols-outlined text-[18px]">storefront</span>
-                    <span>View Catalog • दुकान में देखें</span>
+                    <span>{language === 'hi' ? 'दुकान में देखें' : 'View Catalog'}</span>
                   </button>
                   <button
                     className="flex-1 min-h-[44px] px-4 rounded-xl bg-primary text-on-primary font-semibold text-xs flex items-center justify-center gap-2 hover:bg-primary-container transition-colors shadow-sm"
@@ -296,7 +320,7 @@ export default function Success() {
                     onClick={() => navigate('/capture')}
                   >
                     <span className="material-symbols-outlined text-[18px]">add_a_photo</span>
-                    <span>Add Another Craft • नया जोड़ें</span>
+                    <span>{language === 'hi' ? 'नया शिल्प जोड़ें' : 'Add Another Craft'}</span>
                   </button>
                 </div>
               </div>
@@ -314,20 +338,24 @@ export default function Success() {
                       </span>
                     </div>
                     <div>
-                      <h3 className="text-base font-bold text-primary">Direct WhatsApp Sharing Hub</h3>
+                      <h3 className="text-base font-bold text-primary">
+                        {language === 'hi' ? 'सीधा व्हाट्सएप साझा केंद्र' : 'Direct WhatsApp Sharing Hub'}
+                      </h3>
                       <p className="text-xs text-on-surface-variant">
-                        Reach recurring local patrons and village artisan collectives
+                        {language === 'hi'
+                          ? 'स्थानीय ग्राहकों और कारीगर समूहों तक तुरंत पहुंचें'
+                          : 'Reach recurring local patrons and village artisan collectives'}
                       </p>
                     </div>
                   </div>
                   <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800">
-                    Fastest Sales
+                    {language === 'hi' ? 'द्रुत बिक्री' : 'Fastest Sales'}
                   </span>
                 </div>
 
                 <button
                   onClick={shareWhatsApp}
-                  className="w-full py-4 px-6 rounded-2xl bg-[#1e7e45] text-white flex items-center justify-between shadow-md hover:bg-[#19693a] active:scale-[0.99] transition-all group"
+                  className="w-full py-4 px-6 rounded-2xl bg-[#1e7e45] text-white flex items-center justify-between shadow-md hover:bg-[#19693a] active:scale-[0.99] transition-all group cursor-pointer"
                   id="share-whatsapp-btn"
                   type="button"
                 >
@@ -339,10 +367,12 @@ export default function Success() {
                     </div>
                     <div className="flex flex-col text-left">
                       <span className="text-base font-bold text-white tracking-wide leading-tight">
-                        Share to WhatsApp • व्हाट्सएप पर शेयर करें
+                        {language === 'hi' ? 'व्हाट्सएप पर शेयर करें' : 'Share to WhatsApp'}
                       </span>
                       <span className="text-xs text-white/90 leading-tight mt-0.5">
-                        Pre-fills photo, retail price (₹{price}), and bulk MOQ details into chat
+                        {language === 'hi'
+                          ? `फ़ोटो, खुदरा मूल्य (₹${price}), व न्यूनतम मात्रा विवरण स्वतः चैट में जुड़ेंगे`
+                          : `Pre-fills photo, retail price (₹${price}), and bulk MOQ details into chat`}
                       </span>
                     </div>
                   </div>
@@ -354,7 +384,11 @@ export default function Success() {
                 <div className="flex items-center justify-center gap-2 py-1 text-xs text-on-surface-variant bg-surface-container-low rounded-xl p-2">
                   <span className="material-symbols-outlined text-[18px] text-secondary">trending_up</span>
                   <span>
-                    Artisans receive inquiries <strong>3.4x faster</strong> when shared directly in WhatsApp customer groups.
+                    {language === 'hi' ? (
+                      <>कारीगरों को व्हाट्सएप ग्रुप में शेयर करने पर <strong>3.4 गुना तेज़ी से</strong> ऑर्डर मिलते हैं।</>
+                    ) : (
+                      <>Artisans receive inquiries <strong>3.4x faster</strong> when shared directly in WhatsApp customer groups.</>
+                    )}
                   </span>
                 </div>
               </div>
@@ -376,7 +410,9 @@ export default function Success() {
                         </span>
                       </div>
                       <p className="text-xs text-on-surface-variant mt-0.5">
-                        ओएनडीसी नेटवर्क पर लाइव रखें • Seamless buyer discovery across major consumer apps
+                        {language === 'hi'
+                          ? 'ओएनडीसी नेटवर्क पर लाइव रखें • सभी प्रमुख उपभोक्ता ऐप्स पर दृश्यमान'
+                          : 'Keep Live on ONDC Network • Seamless buyer discovery across major apps'}
                       </p>
                     </div>
                   </div>
@@ -433,7 +469,9 @@ export default function Success() {
                         </span>
                       </div>
                       <p className="text-xs text-[#9bb0c4] mt-0.5">
-                        सरकारी ई-मार्केटप्लेस • Institutional Bulk Procurement & Public Sector Tenders
+                        {language === 'hi' 
+                          ? 'सरकारी ई-मार्केटप्लेस • संस्थागत थोक खरीद व सार्वजनिक टेंडर'
+                          : 'Government e-Marketplace • Institutional Bulk Procurement & Public Sector Tenders'}
                       </p>
                     </div>
                   </div>
@@ -486,13 +524,15 @@ export default function Success() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-secondary text-[22px]">grid_view</span>
-                <h3 className="text-base font-bold text-primary">Your Active Studio Catalog (13 Crafts)</h3>
+                <h3 className="text-base font-bold text-primary">
+                  {language === 'hi' ? 'आपकी सक्रिय शिल्प दुकान' : 'Your Active Studio Catalog'}
+                </h3>
               </div>
               <button
                 onClick={() => navigate('/catalog')}
-                className="text-xs font-bold text-secondary hover:underline flex items-center gap-1"
+                className="text-xs font-bold text-secondary hover:underline flex items-center gap-1 cursor-pointer"
               >
-                <span>View All Catalog Items</span>
+                <span>{language === 'hi' ? 'सभी शिल्प देखें' : 'View All Catalog Items'}</span>
                 <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
               </button>
             </div>
@@ -505,13 +545,17 @@ export default function Success() {
                     src={imageUrl}
                   />
                   <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-bold">
-                    Just Published
+                    {language === 'hi' ? 'अभी प्रकाशित' : 'Just Published'}
                   </span>
                 </div>
-                <h4 className="text-xs font-bold text-primary mt-2 truncate">{title}</h4>
+                <h4 className="text-xs font-bold text-primary mt-2 truncate">
+                  {(language === 'hi' && titleHi) ? titleHi : title}
+                </h4>
                 <div className="flex items-center justify-between mt-1 text-xs">
                   <span className="font-bold text-secondary">₹{price.toLocaleString('en-IN')}</span>
-                  <span className="text-on-surface-variant text-[11px]">GeM MOQ: {moq}</span>
+                  <span className="text-on-surface-variant text-[11px]">
+                    {language === 'hi' ? `न्यूनतम आर्डर: ${moq}` : `GeM MOQ: ${moq}`}
+                  </span>
                 </div>
               </div>
 
@@ -523,13 +567,17 @@ export default function Success() {
                     src="https://lh3.googleusercontent.com/aida-public/AB6AXuBBXVcOxFxwBEDIK0tQlH9EmtW8RrwrhO2BJsOCdii-dvPo1PaUJgypRxjyuo-cxircM61oBo9W0HM6jwknClyX17OFAO16oN4rTPkj1IvgR63oEfIzIrKYHpNpvVFI-SGcFtQM5yzYimFYBL9nZYvQuvq_l2bwI7A3nSDxruVj45Y84tpK_eDv16o-3Ev3yia0gaBXaFz7f8jIr4tLZXKCvSfhouiSOHCaY9s8I3txO-q_uMSeg6gx"
                   />
                   <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-surface/90 text-primary text-[10px] font-bold">
-                    Pottery
+                    {language === 'hi' ? 'मिट्टी कला' : 'Pottery'}
                   </span>
                 </div>
-                <h4 className="text-xs font-bold text-primary mt-2 truncate">Hand-carved Terracotta Vase</h4>
+                <h4 className="text-xs font-bold text-primary mt-2 truncate">
+                  {language === 'hi' ? 'हस्तनिर्मित टेराकोटा फूलदान' : 'Hand-carved Terracotta Vase'}
+                </h4>
                 <div className="flex items-center justify-between mt-1 text-xs">
                   <span className="font-bold text-secondary">₹850</span>
-                  <span className="text-on-surface-variant text-[11px]">4 in stock</span>
+                  <span className="text-on-surface-variant text-[11px]">
+                    {language === 'hi' ? '4 स्टॉक में' : '4 in stock'}
+                  </span>
                 </div>
               </div>
 
@@ -541,13 +589,17 @@ export default function Success() {
                     src="https://lh3.googleusercontent.com/aida-public/AB6AXuALVDefdl5uMsFe_V7uX6cplbhUNdecBGdjVi4gZ_WZITmIzbTKGGHmSxgfVfmsFOExt6ZpTB2uFtlPY4dEMcwlv0ICntXAfrwdLk5GG_HdPRs1DrasS2BHL1yEMKeovpkBlgXBoAFSCjWa3vI0uo2uhVu0nkxC7JgYEDNIK2L9AnUywuirLhpvhNiVegfbW5KUI79udVgCoVUKHL_EQ9dpUBVTaeSkK3E1m_yJmb32Pg6INj-JGne0"
                   />
                   <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-surface/90 text-primary text-[10px] font-bold">
-                    Eco Fiber
+                    {language === 'hi' ? 'प्राकृतिक जूट' : 'Eco Fiber'}
                   </span>
                 </div>
-                <h4 className="text-xs font-bold text-primary mt-2 truncate">Natural Braided Jute Tote</h4>
+                <h4 className="text-xs font-bold text-primary mt-2 truncate">
+                  {language === 'hi' ? 'प्राकृतिक बुना हुआ जूट बैग' : 'Natural Braided Jute Tote'}
+                </h4>
                 <div className="flex items-center justify-between mt-1 text-xs">
                   <span className="font-bold text-secondary">₹620</span>
-                  <span className="text-on-surface-variant text-[11px]">8 in stock</span>
+                  <span className="text-on-surface-variant text-[11px]">
+                    {language === 'hi' ? '8 स्टॉक में' : '8 in stock'}
+                  </span>
                 </div>
               </div>
 

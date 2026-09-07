@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
+import { useLanguage } from './LanguageContext';
 
 const INITIAL_NOTIFICATIONS = [
   {
@@ -100,14 +101,8 @@ export function AuthProvider({ children }) {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authSuccessCallback, setAuthSuccessCallback] = useState(null);
 
-  // Language state: defaults to Hindi 'hi'
-  const [language, setLanguageState] = useState(() => {
-    try {
-      return localStorage.getItem('artisan_language') || 'hi';
-    } catch {
-      return 'hi';
-    }
-  });
+  // Global Language state (synced with LanguageContext)
+  const { language, setLanguage: setGlobalLang, toggleLanguage: toggleGlobalLang } = useLanguage();
 
   // Notifications state
   const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
@@ -124,15 +119,14 @@ export function AuthProvider({ children }) {
   }, []);
 
   const setLanguage = (newLang) => {
-    setLanguageState(newLang);
-    try {
-      localStorage.setItem('artisan_language', newLang);
-    } catch {}
+    setGlobalLang(newLang);
     showToast(newLang === 'hi' ? '🇮🇳 भाषा बदलकर हिन्दी की गई' : '🌐 Language switched to English');
   };
 
   const toggleLanguage = () => {
-    setLanguage(language === 'hi' ? 'en' : 'hi');
+    const nextLang = language === 'hi' ? 'en' : 'hi';
+    toggleGlobalLang();
+    showToast(nextLang === 'hi' ? '🇮🇳 भाषा बदलकर हिन्दी की गई' : '🌐 Language switched to English');
   };
 
   const toggleNotifications = () => {

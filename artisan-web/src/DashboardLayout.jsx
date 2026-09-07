@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import NotificationBar from './components/NotificationBar';
+import LanguageToggle from './components/LanguageToggle';
 
 export default function DashboardLayout() {
   const navigate = useNavigate();
@@ -14,16 +15,15 @@ export default function DashboardLayout() {
     signOut,
     openAuthModal,
     language,
-    toggleLanguage,
     toggleNotifications,
     unreadCount,
   } = useAuth();
 
   const navItems = [
-    { to: '/home', label: 'Home (आवास)', icon: 'cottage' },
-    { to: '/catalog', label: 'Catalog (कैटलॉग)', icon: 'inventory_2', badge: '12' },
-    { to: '/orders', label: 'Orders (ऑर्डर्स)', icon: 'receipt_long', badge: '3 New', badgeColor: 'bg-[#ff9062]/20 text-[#9c441c]' },
-    { to: '/success', label: 'Success / Details (विवरण)', icon: 'verified' },
+    { to: '/home', label: language === 'hi' ? 'आवास' : 'Home', icon: 'cottage' },
+    { to: '/catalog', label: language === 'hi' ? 'कैटलॉग' : 'Catalog', icon: 'inventory_2', badge: '12' },
+    { to: '/orders', label: language === 'hi' ? 'ऑर्डर्स' : 'Orders', icon: 'receipt_long', badge: language === 'hi' ? '3 नए' : '3 New', badgeColor: 'bg-[#ff9062]/20 text-[#9c441c]' },
+    { to: '/success', label: language === 'hi' ? 'विवरण' : 'Details', icon: 'verified' },
   ];
 
   const isVerified = !!artisanProfile?.verified;
@@ -44,13 +44,15 @@ export default function DashboardLayout() {
               </div>
               <div className="flex flex-col">
                 <span className="font-bold text-[17px] text-primary tracking-tight leading-tight">Kala Sangam</span>
-                <span className="text-[12px] text-secondary font-medium tracking-wide">कला संगम स्टूडियो</span>
+                <span className="text-[12px] text-secondary font-medium tracking-wide">
+                  {language === 'hi' ? 'कला संगम स्टूडियो' : 'Kala Sangam Studio'}
+                </span>
               </div>
             </div>
             {/* Sync Badge */}
             <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10px] font-bold">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
-              <span>Sync</span>
+              <span>{language === 'hi' ? 'सिंक' : 'Sync'}</span>
             </div>
           </div>
 
@@ -88,16 +90,18 @@ export default function DashboardLayout() {
           <div className="p-3 bg-[#f1ede7] rounded-2xl border border-[#d1c4bd]/40 space-y-2">
             <div className="flex items-center gap-2 text-xs font-bold text-primary">
               <span className="material-symbols-outlined text-secondary text-[18px]">photo_camera</span>
-              <span>AI Studio Assistant</span>
+              <span>{language === 'hi' ? 'एआई स्टूडियो सहायक' : 'AI Studio Assistant'}</span>
             </div>
             <p className="text-[11px] text-on-surface-variant leading-relaxed">
-              Snap photo & speak Hindi/English to list in 10s.
+              {language === 'hi'
+                ? 'फ़ोटो लें और 10 सेकंड में शिल्प सूचीबद्ध करें।'
+                : 'Snap photo & speak naturally to list in 10s.'}
             </p>
             <button
               onClick={() => navigate('/capture')}
               className="w-full py-2 px-3 rounded-xl bg-primary hover:bg-[#2e241e] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
             >
-              <span>+ Add Craft (नया शिल्प)</span>
+              <span>{language === 'hi' ? '+ नया शिल्प' : '+ Add Craft'}</span>
             </button>
           </div>
         </div>
@@ -109,7 +113,7 @@ export default function DashboardLayout() {
             className="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:text-primary hover:bg-[#ebe8e2] transition-colors text-[13px] font-medium"
           >
             <span className="material-symbols-outlined text-[19px]">help</span>
-            <span>Sahayata Kendra (1800-KALA)</span>
+            <span>{language === 'hi' ? 'सहायता केंद्र (1800-KALA)' : 'Support Center (1800-KALA)'}</span>
           </a>
           <div 
             onClick={() => isVerified ? navigate('/success') : openAuthModal()}
@@ -125,10 +129,14 @@ export default function DashboardLayout() {
             </div>
             <div className="flex flex-col min-w-0 flex-1">
               <span className="font-bold text-[13px] text-primary truncate">
-                {isVerified ? (artisanProfile.phone || artisanName.split('(')[0].trim()) : 'रामेश कुम्हार (Guest)'}
+                {isVerified 
+                  ? (artisanProfile.phone || artisanName.split('(')[0].trim()) 
+                  : (language === 'hi' ? 'रामेश कुम्हार (अतिथि)' : 'Ramesh Kumar (Guest)')}
               </span>
               <span className="text-[11px] text-secondary truncate">
-                {isVerified ? '✓ Phone Verified' : 'Tap to Verify Phone'}
+                {isVerified 
+                  ? (language === 'hi' ? '✓ फ़ोन सत्यापित' : '✓ Phone Verified') 
+                  : (language === 'hi' ? 'फ़ोन सत्यापन करें' : 'Tap to Verify Phone')}
               </span>
             </div>
             <span className={`material-symbols-outlined text-[18px] ${isVerified ? 'text-emerald-700' : 'text-amber-600'}`}>
@@ -154,7 +162,7 @@ export default function DashboardLayout() {
               </div>
               <div className="flex flex-col lg:hidden">
                 <span className="font-bold text-sm text-white tracking-tight leading-tight">Kala Sangam</span>
-                <span className="text-[10px] text-white/60">कला संगम</span>
+                <span className="text-[10px] text-white/60">{language === 'hi' ? 'कला संगम' : 'Artisan Hub'}</span>
               </div>
             </div>
 
@@ -163,7 +171,7 @@ export default function DashboardLayout() {
               <span className="h-4 w-[1px] bg-white/20 hidden lg:block" />
               <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/10 text-[11px] font-bold text-white">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>GeM & ONDC Dual Linkage</span>
+                <span>{language === 'hi' ? 'GeM एवं ONDC लिंकेज' : 'GeM & ONDC Dual Linkage'}</span>
               </span>
             </div>
           </div>
@@ -174,16 +182,16 @@ export default function DashboardLayout() {
               <>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/90 border border-emerald-500/50 text-emerald-300 font-bold text-[11px] shadow-xs">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                  <span>🟢 {artisanProfile.phone || user?.phone || '+91 99999 99999'} [✓ Verified]</span>
+                  <span>🟢 {artisanProfile.phone || user?.phone || '+91 99999 99999'} [{language === 'hi' ? '✓ सत्यापित' : '✓ Verified'}]</span>
                 </span>
                 <button
                   onClick={signOut}
                   className="px-2.5 py-1 rounded-full bg-red-950/60 hover:bg-red-900 border border-red-500/40 text-red-300 hover:text-white font-bold text-[11px] flex items-center gap-1 transition-all cursor-pointer shadow-xs active:scale-95"
-                  title="Logout"
+                  title={language === 'hi' ? 'लॉगआउट' : 'Logout'}
                   type="button"
                 >
                   <span className="material-symbols-outlined text-[13px]">logout</span>
-                  <span className="hidden sm:inline">Logout</span>
+                  <span className="hidden sm:inline">{language === 'hi' ? 'लॉगआउट' : 'Logout'}</span>
                 </button>
               </>
             ) : (
@@ -193,23 +201,15 @@ export default function DashboardLayout() {
                 type="button"
               >
                 <span className="material-symbols-outlined text-[14px]">verified_user</span>
-                <span>📲 फ़ोन सत्यापन (Login with OTP)</span>
+                <span>{language === 'hi' ? '📲 फ़ोन लॉगिन' : '📲 Phone Login'}</span>
               </button>
             )}
             <span className="text-[11px] text-[#ffdeaa] font-medium hidden md:inline">
               {artisanStudio}
             </span>
 
-            {/* Language Toggle Button */}
-            <button
-              onClick={toggleLanguage}
-              className="px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-[#ffdeaa] font-bold text-[11px] flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95"
-              title={language === 'hi' ? 'Switch to English' : 'हिन्दी में बदलें'}
-              type="button"
-            >
-              <span className="material-symbols-outlined text-[15px] text-[#ff9062]">translate</span>
-              <span>{language === 'hi' ? '🇮🇳 हिन्दी' : '🌐 EN'}</span>
-            </button>
+            {/* Sleek Language Switcher Component */}
+            <LanguageToggle variant="dark" />
 
             {/* Notifications Bell Button */}
             <button
@@ -243,7 +243,7 @@ export default function DashboardLayout() {
           }
         >
           <span className="material-symbols-outlined text-[22px]">cottage</span>
-          <span>Home</span>
+          <span>{language === 'hi' ? 'आवास' : 'Home'}</span>
         </NavLink>
         <NavLink
           to="/catalog"
@@ -254,7 +254,7 @@ export default function DashboardLayout() {
           }
         >
           <span className="material-symbols-outlined text-[22px]">inventory_2</span>
-          <span>Catalog</span>
+          <span>{language === 'hi' ? 'कैटलॉग' : 'Catalog'}</span>
         </NavLink>
         {/* Floating Center Capture Button */}
         <button
@@ -273,7 +273,7 @@ export default function DashboardLayout() {
           }
         >
           <span className="material-symbols-outlined text-[22px]">receipt_long</span>
-          <span>Orders</span>
+          <span>{language === 'hi' ? 'ऑर्डर्स' : 'Orders'}</span>
           <span className="w-2 h-2 rounded-full bg-[#9c441c] absolute top-0 right-2"></span>
         </NavLink>
         <NavLink
@@ -285,7 +285,7 @@ export default function DashboardLayout() {
           }
         >
           <span className="material-symbols-outlined text-[22px]">account_circle</span>
-          <span>Profile</span>
+          <span>{language === 'hi' ? 'विवरण' : 'Profile'}</span>
         </NavLink>
       </nav>
     </div>

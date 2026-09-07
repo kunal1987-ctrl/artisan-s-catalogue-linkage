@@ -1,10 +1,11 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import LanguageToggle from '../components/LanguageToggle';
 
 export default function Home() {
   const navigate = useNavigate();
-  const { language, toggleLanguage, toggleNotifications, unreadCount } = useAuth();
+  const { language, toggleNotifications, unreadCount } = useAuth();
 
   return (
     <div className="w-full">
@@ -45,14 +46,7 @@ export default function Home() {
                             <span className="material-symbols-outlined text-[16px]">mic</span>
                         </button>
                     </div>
-                    <button aria-label="Switch Language"
-                        onClick={toggleLanguage}
-                        className="min-h-[40px] px-3.5 py-1.5 rounded-full bg-[#f1ede7] border border-[#d1c4bd] text-primary font-bold text-[14px] flex items-center gap-1.5 shadow-sm active:scale-95 transition-transform hover:bg-[#ebe8e2] cursor-pointer"
-                        title={language === 'hi' ? 'Switch to English' : 'हिन्दी में बदलें'}
-                        type="button">
-                        <span className="material-symbols-outlined text-[16px] text-[#9c441c]">translate</span>
-                        <span>{language === 'hi' ? 'अ (हिन्दी)' : 'A (English)'}</span>
-                    </button>
+                    <LanguageToggle variant="light" />
                     <button aria-label="Notifications"
                         onClick={toggleNotifications}
                         className="w-10 h-10 flex items-center justify-center rounded-full bg-[#f1ede7] text-on-surface-variant hover:text-primary transition-colors border border-[#d1c4bd]/50 relative cursor-pointer active:scale-95"

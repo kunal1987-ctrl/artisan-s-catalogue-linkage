@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 
 // ─── Realistic institutional purchase order templates for GeM / ONDC simulation ───
 const ORDER_TEMPLATES = [
@@ -126,6 +127,7 @@ function formatTimeAgo(isoDate) {
 }
 
 function OrderCard({ order, onAcceptPO, onDispatchPO }) {
+  const { language } = useLanguage();
   const isGem = order.order_type === 'gem';
   const navigate = useNavigate();
   const currentStatus = order.status || 'pending';
@@ -147,7 +149,9 @@ function OrderCard({ order, onAcceptPO, onDispatchPO }) {
             </div>
             <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
               <span className={`text-xs font-bold ${isGem ? 'text-amber-700' : 'text-secondary'}`}>
-                {isGem ? '🏛️ Institutional GeM Order' : '⚡ ONDC Network Live'}
+                {isGem 
+                  ? (language === 'hi' ? '🏛️ संस्थागत GeM खरीद' : '🏛️ Institutional GeM Order')
+                  : (language === 'hi' ? '⚡ ONDC नेटवर्क लाइव' : '⚡ ONDC Network Live')}
               </span>
               {order.buyer_name && (
                 <span className="text-[11px] text-on-surface-variant font-semibold">
@@ -162,17 +166,17 @@ function OrderCard({ order, onAcceptPO, onDispatchPO }) {
             {currentStatus === 'dispatched' ? (
               <span className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full font-bold bg-emerald-100 text-emerald-800">
                 <span className="material-symbols-outlined text-[14px]">local_shipping</span>
-                डिस्पैच पूर्ण
+                {language === 'hi' ? 'डिस्पैच पूर्ण' : 'Dispatched'}
               </span>
             ) : currentStatus === 'accepted' ? (
               <span className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full font-bold bg-blue-100 text-blue-800">
                 <span className="material-symbols-outlined text-[14px]">check</span>
-                स्वीकृत (Accepted)
+                {language === 'hi' ? 'स्वीकृत' : 'Accepted'}
               </span>
             ) : (
               <span className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full font-bold bg-amber-100 text-amber-800">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-600 animate-pulse"></span>
-                लंबित (Pending)
+                {language === 'hi' ? 'लंबित' : 'Pending'}
               </span>
             )}
 
@@ -189,7 +193,9 @@ function OrderCard({ order, onAcceptPO, onDispatchPO }) {
               >
                 {isGem ? 'account_balance' : 'hub'}
               </span>
-              {isGem ? '🏛️ सरकारी खरीद (Govt Order)' : '⚡ ONDC नेटवर्क'}
+              {isGem 
+                ? (language === 'hi' ? '🏛️ सरकारी खरीद' : '🏛️ Govt GeM Order') 
+                : (language === 'hi' ? '⚡ ONDC नेटवर्क' : '⚡ ONDC Network')}
             </span>
           </div>
         </div>
@@ -204,7 +210,7 @@ function OrderCard({ order, onAcceptPO, onDispatchPO }) {
             </h2>
             <div className="flex items-center gap-2 mt-0.5">
               <span className="text-xs text-on-surface-variant font-medium">
-                Qty: {order.quantity} {order.quantity > 1 ? 'Units' : 'Unit'}
+                {language === 'hi' ? 'मात्रा' : 'Qty'}: {order.quantity} {order.quantity > 1 ? (language === 'hi' ? 'इकाइयां' : 'Units') : (language === 'hi' ? 'इकाई' : 'Unit')}
               </span>
               <span className="text-xs text-on-surface-variant">•</span>
               <span className="text-base font-extrabold text-on-surface">
@@ -218,7 +224,7 @@ function OrderCard({ order, onAcceptPO, onDispatchPO }) {
               >
                 check_circle
               </span>
-              <span>🛡️ सुरक्षित भुगतान (Payment Secured)</span>
+              <span>{language === 'hi' ? '🛡️ सुरक्षित भुगतान' : '🛡️ Payment Secured'}</span>
             </span>
           </div>
         </div>
@@ -229,7 +235,7 @@ function OrderCard({ order, onAcceptPO, onDispatchPO }) {
               local_shipping
             </span>
             <p className="truncate">
-              Ship to: <strong className="text-on-surface">{order.shipping_address || order.city}</strong>
+              {language === 'hi' ? 'डिलीवरी पता' : 'Ship to'}: <strong className="text-on-surface">{order.shipping_address || order.city}</strong>
             </p>
           </div>
         )}
@@ -240,7 +246,7 @@ function OrderCard({ order, onAcceptPO, onDispatchPO }) {
         {currentStatus === 'dispatched' ? (
           <div className="w-full min-h-[50px] rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold flex items-center justify-center gap-2 py-2.5">
             <span className="material-symbols-outlined text-[20px] text-emerald-700">verified</span>
-            <span>डिस्पैच पूर्ण (Dispatched via ONDC Logistics)</span>
+            <span>{language === 'hi' ? 'डिस्पैच पूर्ण (ONDC लॉजिस्टिक्स)' : 'Dispatched via ONDC Logistics'}</span>
           </div>
         ) : currentStatus === 'accepted' ? (
           <button
@@ -250,7 +256,7 @@ function OrderCard({ order, onAcceptPO, onDispatchPO }) {
             onClick={() => onDispatchPO(order.order_id || order.id)}
           >
             <span className="material-symbols-outlined text-[22px]">local_shipping</span>
-            <span>डिस्पैच मार्क करें (Dispatch)</span>
+            <span>{language === 'hi' ? 'डिस्पैच मार्क करें' : 'Mark Dispatched'}</span>
           </button>
         ) : (
           <button
@@ -260,7 +266,7 @@ function OrderCard({ order, onAcceptPO, onDispatchPO }) {
             onClick={() => onAcceptPO(order.order_id || order.id)}
           >
             <span className="material-symbols-outlined text-[22px]">inventory_2</span>
-            <span>स्वीकार करें (Accept PO)</span>
+            <span>{language === 'hi' ? 'स्वीकार करें' : 'Accept PO'}</span>
           </button>
         )}
 
@@ -272,9 +278,11 @@ function OrderCard({ order, onAcceptPO, onDispatchPO }) {
             onClick={() => navigate('/success', { state: { ...order } })}
           >
             <span className="material-symbols-outlined text-[18px]">receipt_long</span>
-            View Slip • पर्ची देखें
+            <span>{language === 'hi' ? 'पर्ची देखें' : 'View PO Slip'}</span>
           </button>
-          <span className="text-[11px] text-outline font-medium">Auto-dispatch enabled</span>
+          <span className="text-[11px] text-outline font-medium">
+            {language === 'hi' ? 'ऑटो-डिस्पैच सक्रिय' : 'Auto-dispatch enabled'}
+          </span>
         </div>
       </div>
     </article>
@@ -284,6 +292,7 @@ function OrderCard({ order, onAcceptPO, onDispatchPO }) {
 export default function Orders() {
   const navigate = useNavigate();
   const { user, artisanName, artisanProfile } = useAuth();
+  const { language } = useLanguage();
   const [orders, setOrders] = useState(STATIC_ORDERS);
   const [isSimulating, setIsSimulating] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
@@ -506,32 +515,35 @@ export default function Orders() {
               </button>
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-bold text-secondary tracking-wider uppercase">Order Processing</span>
+                  <span className="text-xs font-bold text-secondary tracking-wider uppercase">
+                    {language === 'hi' ? 'ऑर्डर प्रोसेसिंग' : 'Order Processing'}
+                  </span>
                   <span className="w-1.5 h-1.5 rounded-full bg-secondary"></span>
                   <span className={`text-xs font-medium flex items-center gap-1 ${realtimeConnected ? 'text-emerald-600' : 'text-outline'}`}>
                     <span className={`w-1.5 h-1.5 rounded-full inline-block ${realtimeConnected ? 'bg-emerald-500 animate-pulse' : 'bg-outline'}`}></span>
-                    {realtimeConnected ? 'ONDC Realtime Live' : 'ONDC Network'}
+                    {realtimeConnected 
+                      ? (language === 'hi' ? 'ONDC रीयलटाइम लाइव' : 'ONDC Realtime Live') 
+                      : (language === 'hi' ? 'ONDC नेटवर्क' : 'ONDC Network')}
                   </span>
                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-950 border border-emerald-500/40 text-emerald-300 font-bold text-[11px]">
-                    <span>🟢 ऑथेंटिकेटेड (UID: ...{user?.id ? user.id.slice(0, 6) : 'anon'}) • {artisanName}</span>
+                    <span>🟢 {language === 'hi' ? 'प्रमाणित' : 'Authenticated'} (UID: ...{user?.id ? user.id.slice(0, 6) : 'anon'}) • {artisanName}</span>
                   </span>
                 </div>
                 <h1 className="text-xl sm:text-2xl font-extrabold text-espresso-deep tracking-tight mt-0.5">
-                  आर्डर इनबॉक्स (New Orders)
+                  {language === 'hi' ? 'आर्डर इनबॉक्स' : 'Order Inbox'}
                 </h1>
               </div>
             </div>
 
             {/* Header Actions */}
             <div className="flex items-center gap-2.5 flex-wrap justify-end">
-
               <button
                 aria-label="Filter Orders"
                 className="min-h-[44px] px-3 sm:px-4 rounded-full bg-surface-container-low hover:bg-surface-container text-on-surface font-bold text-xs flex items-center gap-2 border border-border-delicate/80 transition-colors"
                 type="button"
               >
                 <span className="material-symbols-outlined text-[18px] text-secondary">tune</span>
-                <span className="hidden sm:inline">Filter</span>
+                <span className="hidden sm:inline">{language === 'hi' ? 'फ़िल्टर' : 'Filter'}</span>
               </button>
               <button
                 aria-label="Refresh Orders"
@@ -555,16 +567,20 @@ export default function Orders() {
               </div>
               <div className="flex flex-col">
                 <p className="text-sm lg:text-base text-on-tertiary-fixed font-bold leading-snug">
-                  {displayedOrders.length} आर्डर सक्रिय हैं! ({displayedOrders.length} Active Orders)
+                  {language === 'hi' 
+                    ? `${displayedOrders.length} आर्डर सक्रिय हैं!` 
+                    : `${displayedOrders.length} Active Orders!`}
                 </p>
                 <p className="text-xs lg:text-sm text-on-tertiary-fixed-variant leading-tight">
-                  स्वीकार करने के लिए 'स्वीकार करें' तथा कूरियर हेतु 'डिस्पैच मार्क करें' दबाएं।
+                  {language === 'hi'
+                    ? "स्वीकार करने के लिए 'स्वीकार करें' तथा कूरियर हेतु 'डिस्पैच मार्क करें' दबाएं।"
+                    : "Click 'Accept PO' to confirm, and 'Mark Dispatched' once courier takes package."}
                 </p>
               </div>
             </div>
 
             <button
-              aria-label="बोलकर सुनें - Listen to Hindi instructions"
+              aria-label={language === 'hi' ? 'बोलकर सुनें' : 'Listen to audio instructions'}
               className="min-w-[48px] min-h-[48px] w-[48px] h-[48px] rounded-full bg-primary-container text-on-primary flex items-center justify-center shrink-0 active:scale-90 hover:scale-105 transition-all shadow-md cursor-pointer"
               id="voice-listen-btn"
               type="button"
@@ -592,10 +608,16 @@ export default function Orders() {
           <div className="text-center py-6 flex flex-col items-center justify-center gap-1.5 text-on-surface-variant border-t border-border-delicate/40 mt-4">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-secondary text-[24px]">verified</span>
-              <p className="text-xs font-bold text-on-surface">100% Guaranteed Payouts via ONDC Settlements & GeM Escrow</p>
+              <p className="text-xs font-bold text-on-surface">
+                {language === 'hi' 
+                  ? '100% सुरक्षित भुगतान - ONDC सेटलमेंट व GeM एस्क्रो' 
+                  : '100% Guaranteed Payouts via ONDC Settlements & GeM Escrow'}
+              </p>
             </div>
             <p className="text-[11px] text-outline">
-              सभी लेन-देन भारत सरकार द्वारा मान्यता प्राप्त ONDC एवं GeM नेटवर्क के तहत सुरक्षित हैं
+              {language === 'hi'
+                ? 'सभी लेन-देन भारत सरकार द्वारा मान्यता प्राप्त ONDC एवं GeM नेटवर्क के तहत सुरक्षित हैं'
+                : 'All transactions are guaranteed & secured via Government recognized ONDC & GeM networks'}
             </p>
           </div>
         </div>
@@ -621,7 +643,11 @@ export default function Orders() {
         <span className="material-symbols-outlined text-[16px]">
           {isSimulating ? 'hourglass_top' : 'bolt'}
         </span>
-        <span>{isSimulating ? 'Inserting...' : 'Demo Mode: Trigger PO ⚡'}</span>
+        <span>
+          {isSimulating 
+            ? (language === 'hi' ? 'जोड़ रहे हैं...' : 'Inserting...') 
+            : (language === 'hi' ? 'डेमो: नया ऑर्डर बनाएं ⚡' : 'Demo Mode: Trigger PO ⚡')}
+        </span>
       </button>
     </div>
   );

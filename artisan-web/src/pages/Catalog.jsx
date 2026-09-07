@@ -68,7 +68,7 @@ const EXPORT_CATALOG_URL = 'https://jrkrdlalnqswvwabktce.supabase.co/functions/v
 export default function Catalog() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, artisanName } = useAuth();
+  const { user, artisanName, language } = useAuth();
   const [products, setProducts] = useState(INITIAL_PRODUCTS);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all'); // all | live | draft | sold_out
@@ -348,22 +348,24 @@ export default function Catalog() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-surface-container-high">
               <div>
                 <div className="flex items-center gap-2 text-xs font-bold text-secondary uppercase tracking-wider mb-1">
-                  <span>Catalog</span>
+                  <span>{language === 'hi' ? 'कैटलॉग' : 'Catalog'}</span>
                   <span className="text-outline">/</span>
-                  <span>My Shop Inventory</span>
+                  <span>{language === 'hi' ? 'दुकान इन्वेंटरी' : 'My Shop Inventory'}</span>
                 </div>
                 <div className="flex items-center gap-3 flex-wrap">
-                  <h2 className="text-2xl font-bold text-primary tracking-tight">Handcrafted Collection</h2>
+                  <h2 className="text-2xl font-bold text-primary tracking-tight">
+                    {language === 'hi' ? 'हस्तशिल्प संग्रह' : 'Handcrafted Collection'}
+                  </h2>
                   <span className="px-3 py-1 bg-secondary-fixed text-on-secondary-fixed rounded-full text-xs font-bold">
-                    {products.length} Items Listed
+                    {language === 'hi' ? `${products.length} उत्पाद सूचीबद्ध` : `${products.length} Items Listed`}
                   </span>
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-950 border border-emerald-500/40 text-emerald-300 font-bold text-[11px] shadow-xs">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span>🟢 ऑथेंटिकेटेड (UID: ...{user?.id ? user.id.slice(0, 6) : 'anon'}) • {artisanName}</span>
+                    <span>🟢 {language === 'hi' ? 'प्रमाणित' : 'Authenticated'} (UID: ...{user?.id ? user.id.slice(0, 6) : 'anon'}) • {artisanName}</span>
                   </span>
                   <span className="inline-flex items-center gap-1 text-[11px] font-medium text-on-surface-variant bg-surface-container px-2.5 py-1 rounded-full border border-surface-container-high">
                     <span className="material-symbols-outlined text-[14px] text-emerald-700">cloud_done</span>
-                    <span>Saved Offline</span>
+                    <span>{language === 'hi' ? 'ऑफ़लाइन सुरक्षित' : 'Saved Offline'}</span>
                   </span>
                 </div>
               </div>
@@ -376,7 +378,7 @@ export default function Catalog() {
                   <input
                     className="w-full h-12 pl-11 pr-10 bg-surface-container-lowest text-on-surface placeholder:text-on-surface-variant text-sm font-medium rounded-xl shadow-xs border border-surface-container-high focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all"
                     id="productSearchInput"
-                    placeholder="Search crafts, sarees, pottery..."
+                    placeholder={language === 'hi' ? 'शिल्प, साड़ी, मिट्टी के बर्तन खोजें...' : 'Search crafts, sarees, pottery...'}
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -401,7 +403,7 @@ export default function Catalog() {
                     type="button"
                   >
                     <span className="material-symbols-outlined text-[17px]">download</span>
-                    <span>Export Protocols</span>
+                    <span>{language === 'hi' ? 'प्रोटोकॉल निर्यात' : 'Export Protocols'}</span>
                     <span className="material-symbols-outlined text-[14px]">expand_more</span>
                   </button>
 
@@ -416,7 +418,7 @@ export default function Catalog() {
                       >
                         <span className="material-symbols-outlined text-[18px] text-secondary">hub</span>
                         <div>
-                          <span className="block text-[13px] font-bold">{exportingFormat === 'ondc' ? 'Downloading...' : '📥 ONDC Beckn (JSON)'}</span>
+                          <span className="block text-[13px] font-bold">{exportingFormat === 'ondc' ? (language === 'hi' ? 'डाउनलोड हो रहा है...' : 'Downloading...') : '📥 ONDC Beckn (JSON)'}</span>
                           <span className="block text-[11px] text-on-surface-variant">artisan-ondc-catalog.json</span>
                         </div>
                       </button>
@@ -429,7 +431,7 @@ export default function Catalog() {
                       >
                         <span className="material-symbols-outlined text-[18px] text-amber-600">account_balance</span>
                         <div>
-                          <span className="block text-[13px] font-bold">{exportingFormat === 'gem' ? 'Downloading...' : '🏛️ GeM Batch (JSON)'}</span>
+                          <span className="block text-[13px] font-bold">{exportingFormat === 'gem' ? (language === 'hi' ? 'डाउनलोड हो रहा है...' : 'Downloading...') : '🏛️ GeM Batch (JSON)'}</span>
                           <span className="block text-[11px] text-on-surface-variant">gem-procurement-batch.json</span>
                         </div>
                       </button>
@@ -442,7 +444,7 @@ export default function Catalog() {
                       >
                         <span className="material-symbols-outlined text-[18px] text-emerald-700">table_view</span>
                         <div>
-                          <span className="block text-[13px] font-bold">{exportingFormat === 'csv' || exportingFormat === 'gem_csv' ? 'Downloading...' : '📊 GeM Sheet (CSV)'}</span>
+                          <span className="block text-[13px] font-bold">{exportingFormat === 'csv' || exportingFormat === 'gem_csv' ? (language === 'hi' ? 'डाउनलोड हो रहा है...' : 'Downloading...') : '📊 GeM Sheet (CSV)'}</span>
                           <span className="block text-[11px] text-on-surface-variant">gem-bulk-import.csv</span>
                         </div>
                       </button>
@@ -455,7 +457,7 @@ export default function Catalog() {
                     type="button"
                   >
                     <span className="material-symbols-outlined text-[18px]">add</span>
-                    <span className="hidden md:inline">+ Add Product</span>
+                    <span className="hidden md:inline">{language === 'hi' ? '+ नया शिल्प' : '+ Add Product'}</span>
                     <span className="md:hidden">+</span>
                   </button>
                 </div>
@@ -466,8 +468,10 @@ export default function Catalog() {
             <div className="bg-surface-container-low border border-surface-container rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex-1 w-full">
                 <div className="flex items-center justify-between text-xs font-semibold text-on-surface-variant mb-2">
-                  <span>Overall Stock Availability</span>
-                  <span className="font-bold text-primary">83% Active (Ready for dispatch)</span>
+                  <span>{language === 'hi' ? 'समग्र स्टॉक उपलब्धता' : 'Overall Stock Availability'}</span>
+                  <span className="font-bold text-primary">
+                    {language === 'hi' ? '83% सक्रिय (डिस्पैच हेतु तैयार)' : '83% Active (Ready for dispatch)'}
+                  </span>
                 </div>
                 <div className="w-full h-2.5 bg-surface-container-highest rounded-full overflow-hidden flex">
                   <div className="bg-emerald-700 h-full" style={{ width: '67%' }}></div>
@@ -478,15 +482,15 @@ export default function Catalog() {
               <div className="flex items-center gap-3 text-xs font-semibold shrink-0 flex-wrap">
                 <span className="flex items-center gap-1.5 bg-surface-container-lowest px-3 py-1.5 rounded-xl border border-surface-container">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-700 inline-block"></span>
-                  {liveCount} Live
+                  {liveCount} {language === 'hi' ? 'सक्रिय' : 'Live'}
                 </span>
                 <span className="flex items-center gap-1.5 bg-surface-container-lowest px-3 py-1.5 rounded-xl border border-surface-container">
                   <span className="w-2.5 h-2.5 rounded-full bg-amber-600 inline-block"></span>
-                  {draftCount} In Review
+                  {draftCount} {language === 'hi' ? 'समीक्षाधीन' : 'In Review'}
                 </span>
                 <span className="flex items-center gap-1.5 bg-surface-container-lowest px-3 py-1.5 rounded-xl border border-surface-container">
                   <span className="w-2.5 h-2.5 rounded-full bg-error inline-block"></span>
-                  {soldOutCount} Sold Out
+                  {soldOutCount} {language === 'hi' ? 'बिक गया' : 'Sold Out'}
                 </span>
               </div>
             </div>
@@ -503,7 +507,7 @@ export default function Catalog() {
                   onClick={() => setActiveFilter('all')}
                   type="button"
                 >
-                  All ({products.length})
+                  {language === 'hi' ? 'सभी' : 'All'} ({products.length})
                 </button>
                 <button
                   className={`shrink-0 h-10 px-4 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-2 cursor-pointer ${
@@ -515,7 +519,7 @@ export default function Catalog() {
                   type="button"
                 >
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-700"></span>
-                  Live ({liveCount})
+                  {language === 'hi' ? 'सक्रिय' : 'Live'} ({liveCount})
                 </button>
                 <button
                   className={`shrink-0 h-10 px-4 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-2 cursor-pointer ${
@@ -527,7 +531,7 @@ export default function Catalog() {
                   type="button"
                 >
                   <span className="w-2.5 h-2.5 rounded-full bg-amber-600"></span>
-                  In Review ({draftCount})
+                  {language === 'hi' ? 'समीक्षाधीन' : 'In Review'} ({draftCount})
                 </button>
                 <button
                   className={`shrink-0 h-10 px-4 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-2 cursor-pointer ${
@@ -539,7 +543,7 @@ export default function Catalog() {
                   type="button"
                 >
                   <span className="w-2.5 h-2.5 rounded-full bg-error"></span>
-                  Sold Out ({soldOutCount})
+                  {language === 'hi' ? 'बिक गया' : 'Sold Out'} ({soldOutCount})
                 </button>
               </div>
 
@@ -549,7 +553,7 @@ export default function Catalog() {
                   className="text-xs font-bold text-secondary hover:underline cursor-pointer"
                   type="button"
                 >
-                  Clear Search
+                  {language === 'hi' ? 'खोज साफ़ करें' : 'Clear Search'}
                 </button>
               )}
             </div>
@@ -584,7 +588,11 @@ export default function Catalog() {
                           }`}
                         ></span>
                         <span className="text-[11px] text-primary font-bold uppercase tracking-wider">
-                          {p.status === 'live' ? 'Live' : p.status === 'draft' ? 'In Review' : 'Sold Out'}
+                          {p.status === 'live' 
+                            ? (language === 'hi' ? 'सक्रिय' : 'Live') 
+                            : p.status === 'draft' 
+                            ? (language === 'hi' ? 'समीक्षा' : 'In Review') 
+                            : (language === 'hi' ? 'बिक गया' : 'Sold Out')}
                         </span>
                       </div>
 
@@ -593,7 +601,7 @@ export default function Catalog() {
                         {/* Direct Delete button on each card */}
                         <button
                           aria-label={`Delete ${p.title}`}
-                          title="Delete Product • हटाएं"
+                          title={language === 'hi' ? 'उत्पाद हटाएं' : 'Delete Product'}
                           className="w-9 h-9 rounded-full bg-red-600/90 hover:bg-red-700 text-white flex items-center justify-center shadow-md active:scale-90 transition-all cursor-pointer"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -627,12 +635,9 @@ export default function Catalog() {
                           </span>
                         )}
                       </div>
-                      <h3 className="text-sm font-bold text-primary line-clamp-1">{p.title}</h3>
-                      {p.hindi_title && (
-                        <p className="text-[11px] text-on-surface-variant font-hindi line-clamp-1 mb-0.5">
-                          {p.hindi_title}
-                        </p>
-                      )}
+                      <h3 className="text-sm font-bold text-primary line-clamp-1">
+                        {(language === 'hi' && p.hindi_title) ? p.hindi_title : p.title}
+                      </h3>
                       {p.craft_origin && (
                         <p className="text-[10px] text-secondary font-medium flex items-center gap-0.5 mb-1">
                           <span className="material-symbols-outlined text-[12px]">location_on</span>
@@ -644,12 +649,12 @@ export default function Catalog() {
                           <span className="text-base font-extrabold text-primary">₹{p.price}</span>
                           {p.bulk_price && (
                             <span className="text-[11px] text-emerald-700 font-bold ml-1.5">
-                              (Bulk: ₹{p.bulk_price})
+                              ({language === 'hi' ? 'थोक' : 'Bulk'}: ₹{p.bulk_price})
                             </span>
                           )}
                         </div>
                         <span className="text-xs font-semibold text-on-surface-variant">
-                          MOQ: {p.min_order_quantity || p.qty || 1}
+                          {language === 'hi' ? 'न्यूनतम आर्डर' : 'MOQ'}: {p.min_order_quantity || p.qty || 1}
                         </span>
                       </div>
                     </div>
@@ -661,9 +666,13 @@ export default function Catalog() {
                 <div className="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-secondary mb-3">
                   <span className="material-symbols-outlined text-[32px]">inventory_2</span>
                 </div>
-                <h3 className="text-lg font-bold text-primary mb-1">No Crafts Discovered</h3>
+                <h3 className="text-lg font-bold text-primary mb-1">
+                  {language === 'hi' ? 'कोई शिल्प नहीं मिला' : 'No Crafts Discovered'}
+                </h3>
                 <p className="text-sm text-on-surface-variant max-w-xs mb-4 font-normal">
-                  We couldn't locate items matching "{searchQuery}". Clear search or explore other categories.
+                  {language === 'hi'
+                    ? `"${searchQuery}" से मेल खाने वाले शिल्प नहीं मिले। खोज साफ़ करें या अन्य श्रेणियां देखें।`
+                    : `We couldn't locate items matching "${searchQuery}". Clear search or explore other categories.`}
                 </p>
                 <button
                   className="h-12 px-6 rounded-full bg-primary text-on-primary font-bold text-sm shadow-sm active:scale-95 cursor-pointer"
@@ -673,7 +682,7 @@ export default function Catalog() {
                   }}
                   type="button"
                 >
-                  Clear All Filters
+                  {language === 'hi' ? 'फ़िल्टर साफ़ करें' : 'Clear All Filters'}
                 </button>
               </div>
             )}
@@ -685,9 +694,13 @@ export default function Catalog() {
                   <span className="material-symbols-outlined text-[22px]">sync_saved_locally</span>
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-primary">Instant Restock Notification</h4>
+                  <h4 className="text-sm font-bold text-primary">
+                    {language === 'hi' ? 'पुनः स्टॉक अधिसूचना' : 'Instant Restock Notification'}
+                  </h4>
                   <p className="text-xs text-on-surface-variant mt-0.5">
-                    2 products require urgent replenishment in My Shop
+                    {language === 'hi'
+                      ? 'दुकान में 2 उत्पादों को तुरंत स्टॉक करने की आवश्यकता है'
+                      : '2 products require urgent replenishment in My Shop'}
                   </p>
                 </div>
               </div>
@@ -697,7 +710,7 @@ export default function Catalog() {
                 onClick={() => navigate('/capture')}
                 type="button"
               >
-                + Restock Craft
+                {language === 'hi' ? '+ स्टॉक जोड़ें' : '+ Restock Craft'}
               </button>
             </div>
           </div>
@@ -731,15 +744,16 @@ export default function Catalog() {
                         </span>
                       )}
                     </div>
-                    <h3 className="text-base font-bold text-primary leading-snug">{selectedProduct.title}</h3>
-                    {selectedProduct.hindi_title && (
-                      <p className="text-xs text-on-surface-variant font-hindi mb-1">{selectedProduct.hindi_title}</p>
-                    )}
-                    <div className="flex items-center gap-3">
-                      <p className="text-sm font-extrabold text-primary">Retail: ₹{selectedProduct.price}</p>
+                    <h3 className="text-base font-bold text-primary leading-snug">
+                      {(language === 'hi' && selectedProduct.hindi_title) ? selectedProduct.hindi_title : selectedProduct.title}
+                    </h3>
+                    <div className="flex items-center gap-3 mt-1">
+                      <p className="text-sm font-extrabold text-primary">
+                        {language === 'hi' ? 'खुदरा' : 'Retail'}: ₹{selectedProduct.price}
+                      </p>
                       {selectedProduct.bulk_price && (
                         <p className="text-xs font-bold text-emerald-700">
-                          Bulk: ₹{selectedProduct.bulk_price} (MOQ: {selectedProduct.min_order_quantity || 1})
+                          {language === 'hi' ? 'थोक' : 'Bulk'}: ₹{selectedProduct.bulk_price} ({language === 'hi' ? 'न्यूनतम' : 'MOQ'}: {selectedProduct.min_order_quantity || 1})
                         </p>
                       )}
                     </div>
@@ -763,7 +777,7 @@ export default function Catalog() {
               {/* Status Toggle Buttons */}
               <div className="flex flex-col gap-1.5 pt-2 border-t border-surface-container-high">
                 <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
-                  Product Status (स्थिति बदलें)
+                  {language === 'hi' ? 'उत्पाद स्थिति' : 'Product Status'}
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   <button
@@ -776,7 +790,7 @@ export default function Catalog() {
                     }`}
                   >
                     <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                    <span>Live</span>
+                    <span>{language === 'hi' ? 'सक्रिय' : 'Live'}</span>
                   </button>
                   <button
                     type="button"
@@ -788,7 +802,7 @@ export default function Catalog() {
                     }`}
                   >
                     <span className="w-2 h-2 rounded-full bg-amber-300"></span>
-                    <span>Review</span>
+                    <span>{language === 'hi' ? 'समीक्षा' : 'Review'}</span>
                   </button>
                   <button
                     type="button"
@@ -800,7 +814,7 @@ export default function Catalog() {
                     }`}
                   >
                     <span className="w-2 h-2 rounded-full bg-red-300"></span>
-                    <span>Sold Out</span>
+                    <span>{language === 'hi' ? 'बिक गया' : 'Sold Out'}</span>
                   </button>
                 </div>
               </div>
@@ -816,12 +830,12 @@ export default function Catalog() {
                   type="button"
                 >
                   <span className="material-symbols-outlined text-[18px]">add_a_photo</span>
-                  <span>Capture Similar Craft (समान शिल्प जोड़ें)</span>
+                  <span>{language === 'hi' ? 'समान शिल्प जोड़ें' : 'Capture Similar Craft'}</span>
                 </button>
 
                 <button
                   onClick={() => {
-                    showToast('Share link copied to clipboard!');
+                    showToast(language === 'hi' ? 'शेयर लिंक क्लिपबोर्ड पर कॉपी किया गया!' : 'Share link copied to clipboard!');
                     navigator.clipboard?.writeText(window.location.href);
                     setSelectedProduct(null);
                   }}
@@ -829,7 +843,7 @@ export default function Catalog() {
                   type="button"
                 >
                   <span className="material-symbols-outlined text-[18px]">share</span>
-                  <span>Share Catalog Link • शेयर करें</span>
+                  <span>{language === 'hi' ? 'कैटलॉग लिंक शेयर करें' : 'Share Catalog Link'}</span>
                 </button>
 
                 <button
@@ -838,7 +852,7 @@ export default function Catalog() {
                   type="button"
                 >
                   <span className="material-symbols-outlined text-[18px]">delete</span>
-                  <span>Delete Product • हटाएं</span>
+                  <span>{language === 'hi' ? 'उत्पाद हटाएं' : 'Delete Product'}</span>
                 </button>
               </div>
             </div>

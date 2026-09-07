@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { removeBackground } from '@imgly/background-removal';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
+import LanguageToggle from '../components/LanguageToggle';
 import { clearCorruptedStorage, isStorageQuotaError } from '../utils/storageCleanup';
 
 const blobToBase64 = (blob) =>
@@ -170,11 +171,36 @@ const centerOnStudioCanvas = (craftBlob, targetDimension = 1024, quality = 0.88)
 };
 
 const CRAFT_SUGGESTION_CHIPS = [
-  { label: 'टेराकोटा सजावटी बर्तन (Terracotta Pot)', text: 'हाथ से बना हुआ मिट्टी का सजावटी बर्तन, बहुत सुंदर नक्काशी, पारंपरिक कला।' },
-  { label: 'बनारसी रेशम साड़ी (Banarasi Saree)', text: 'हाथ से बुनी बनारसी शुद्ध रेशम साड़ी, शुद्ध ज़री बॉर्डर, 4 दिन की हस्तनिर्मित बुनाई।' },
-  { label: 'पीतल पूजा दीया (Brass Temple Diya)', text: 'पीतल का हस्तनिर्मित नक्काशीदार मंदिर दीया, शुद्ध पीतल, पारंपरिक धार्मिक शिल्प।' },
-  { label: 'शीशम लकड़ी का बॉक्स (Sheesham Box)', text: 'हाथ से नक्काशीदार शीशम की लकड़ी का बॉक्स, पारंपरिक जालीदार डिजाइन।' },
-  { label: 'कढ़ाई वाला जूट बैग (Embroidered Jute)', text: 'कच्छी कढ़ाई वाला हस्तनिर्मित इको-फ्रेंडली जूट बैग, प्राकृतिक फाइबर।' },
+  {
+    label_hi: 'टेराकोटा सजावटी बर्तन',
+    label_en: 'Terracotta Pot',
+    text_hi: 'हाथ से बना हुआ मिट्टी का सजावटी बर्तन, बहुत सुंदर नक्काशी, पारंपरिक कला।',
+    text_en: 'Handmade terracotta decorative clay pot with intricate floral carving and traditional firing.',
+  },
+  {
+    label_hi: 'बनारसी रेशम साड़ी',
+    label_en: 'Banarasi Silk Saree',
+    text_hi: 'हाथ से बुनी बनारसी शुद्ध रेशम साड़ी, शुद्ध ज़री बॉर्डर, 4 दिन की हस्तनिर्मित बुनाई।',
+    text_en: 'Handwoven pure mulberry Banarasi silk saree with authentic golden zari borders.',
+  },
+  {
+    label_hi: 'पीतल पूजा दीया',
+    label_en: 'Brass Temple Diya',
+    text_hi: 'पीतल का हस्तनिर्मित नक्काशीदार मंदिर दीया, शुद्ध पीतल, पारंपरिक धार्मिक शिल्प।',
+    text_en: 'Handcrafted carved brass temple diya lamp made from pure bell-metal brass.',
+  },
+  {
+    label_hi: 'शीशम लकड़ी का बॉक्स',
+    label_en: 'Sheesham Wood Box',
+    text_hi: 'हाथ से नक्काशीदार शीशम की लकड़ी का बॉक्स, पारंपरिक जालीदार डिजाइन।',
+    text_en: 'Hand-carved sheesham wood jewelry box with traditional fretwork jali lattice.',
+  },
+  {
+    label_hi: 'कढ़ाई वाला जूट बैग',
+    label_en: 'Embroidered Jute Bag',
+    text_hi: 'कच्छी कढ़ाई वाला हस्तनिर्मित इको-फ्रेंडली जूट बैग, प्राकृतिक फाइबर।',
+    text_en: 'Eco-friendly handmade natural jute tote bag with authentic Kutchi embroidery.',
+  },
 ];
 
 export default function Capture() {
@@ -573,7 +599,7 @@ export default function Capture() {
             ? "Varanasi Handwoven Heritage Silk Saree"
             : customTranscript?.includes('दीया')
             ? "Handcrafted Brass Hanging Temple Diya"
-            : "Handcrafted Terracotta Decorative Pot (टेराकोटा सजावटी बर्तन)",
+            : "Handcrafted Terracotta Decorative Pot",
           title_hi: customTranscript?.includes('सिल्क') || customTranscript?.includes('साड़ी')
             ? "वाराणसी हस्तनिर्मित बनारसी रेशम साड़ी"
             : customTranscript?.includes('दीया')
@@ -697,15 +723,7 @@ export default function Capture() {
               )}
 
               {/* Language Toggle */}
-              <button
-                onClick={toggleLanguage}
-                className="h-10 px-4 rounded-full bg-[#f1ede7] hover:bg-[#ebe8e2] text-[#180f0a] text-[13px] font-bold flex items-center gap-1.5 border border-[#e8e2d9] transition-colors shadow-sm cursor-pointer active:scale-95"
-                title={language === 'hi' ? 'Switch to English' : 'हिन्दी में बदलें'}
-                type="button"
-              >
-                <span className="material-symbols-outlined text-[17px] text-[#9c441c]">translate</span>
-                <span>{language === 'hi' ? 'अ (हिन्दी)' : 'A (English)'}</span>
-              </button>
+              <LanguageToggle variant="light" className="h-10" />
 
               {/* Notification Bell */}
               <button
@@ -794,20 +812,6 @@ export default function Capture() {
                 </div>
               )}
 
-              {/* Top Viewfinder Bar */}
-              <div className="relative z-20 flex items-center justify-between w-full">
-                <div className="flex items-center gap-2 bg-[#191312]/70 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/10">
-                  <span className={`w-2.5 h-2.5 rounded-full ${displayImage ? 'bg-emerald-400' : 'bg-[#ff9062] animate-ping'}`} />
-                  <span className="text-[11px] font-bold tracking-widest text-[#fdf9f3] uppercase">
-                    {bgRemovalStatus === 'processing'
-                      ? (language === 'hi' ? 'प्रोसेसिंग...' : 'PROCESSING AI...')
-                      : displayImage
-                      ? (language === 'hi' ? 'शिल्प फोटो लोड' : 'CRAFT CAPTURED')
-                      : (language === 'hi' ? 'व्यूफाइंडर लाइव' : 'VIEWFINDER LIVE')}
-                  </span>
-                </div>
-              </div>
-
               {/* Center Overlay Badges */}
               {displayImage && (
                 <div className="relative z-20 my-auto flex flex-col items-center pointer-events-none">
@@ -815,65 +819,58 @@ export default function Capture() {
                     <div className="bg-[#191312]/80 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-[#ff9062]/40 flex items-center gap-2.5 shadow-xl">
                       <div className="w-5 h-5 border-2 border-[#ff9062] border-t-transparent rounded-full animate-spin" />
                       <span className="text-xs font-bold text-[#ffdeaa] animate-pulse">
-                        {language === 'hi' ? 'एआई बैकग्राउंड रिमूवल सक्रिय...' : 'AI Edge Detection & Studio Background Removal in progress...'}
+                        {language === 'hi' ? 'एआई बैकग्राउंड रिमूवल सक्रिय...' : 'AI Background Removal in progress...'}
                       </span>
                     </div>
                   )}
                   {bgRemovalStatus === 'done' && (
                     <div className="bg-emerald-950/90 text-emerald-300 px-4 py-1.5 rounded-full border border-emerald-500/40 text-xs font-bold shadow-lg flex items-center gap-2 backdrop-blur-md">
                       <span className="material-symbols-outlined text-[16px] text-emerald-400">check_circle</span>
-                      <span>{language === 'hi' ? 'स्टूडियो कैनवास तैयार (सफ़ेद बैकग्राउंड ✓)' : 'Studio Canvas Ready (Pure White #FFFFFF ✓)'}</span>
+                      <span>{language === 'hi' ? 'सफ़ेद बैकग्राउंड तैयार' : 'Studio Background Ready'}</span>
                     </div>
                   )}
                 </div>
               )}
 
               {/* Bottom Camera Action Bar */}
-              <div className="relative z-20 flex items-center justify-between bg-[#191312]/80 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/10 flex-wrap gap-2">
-                <div className="flex items-center gap-2.5 flex-wrap">
-                  {/* Unified Capture / Select Button */}
+              <div className="relative z-20 flex items-center justify-center bg-[#191312]/80 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/10 gap-3">
+                {/* Unified Capture / Select Button */}
+                <button
+                  id="snap-photo-btn"
+                  disabled={isLoading}
+                  onClick={() => {
+                    if (!isLoading) uploadInputRef.current?.click();
+                  }}
+                  className={`flex items-center gap-2 text-sm font-bold px-6 py-3 rounded-xl transition-all shadow-lg ${
+                    isLoading
+                      ? 'bg-[#ff9062]/50 text-[#180f0a]/50 cursor-not-allowed'
+                      : 'text-[#180f0a] bg-[#ff9062] hover:bg-[#ff804a] cursor-pointer active:scale-95'
+                  }`}
+                  type="button"
+                >
+                  <span className="material-symbols-outlined text-[20px]">photo_camera</span>
+                  <span>{language === 'hi' ? 'तस्वीर लें' : 'Capture Craft'}</span>
+                </button>
+
+                {/* Retake Photo if already captured */}
+                {displayImage && (
                   <button
-                    id="snap-photo-btn"
+                    id="retake-photo-btn"
                     disabled={isLoading}
                     onClick={() => {
-                      if (!isLoading) uploadInputRef.current?.click();
+                      if (!isLoading) handleRetake();
                     }}
-                    className={`flex items-center gap-2 text-sm font-bold px-5 py-3 rounded-xl transition-all shadow-lg ${
+                    className={`flex items-center gap-1.5 text-xs font-bold px-4 py-3 rounded-xl border transition-all ${
                       isLoading
-                        ? 'bg-[#ff9062]/50 text-[#180f0a]/50 cursor-not-allowed'
-                        : 'text-[#180f0a] bg-[#ff9062] hover:bg-[#ff804a] cursor-pointer active:scale-95'
+                        ? 'text-red-300/40 bg-red-950/30 border-red-500/20 cursor-not-allowed'
+                        : 'text-red-300 bg-red-950/60 hover:bg-red-900/60 border-red-500/40 cursor-pointer active:scale-95'
                     }`}
                     type="button"
                   >
-                    <span className="material-symbols-outlined text-[20px]">photo_camera</span>
-                    <span>{language === 'hi' ? 'तस्वीर लें / फोटो चुनें' : 'Capture or Select Craft'}</span>
+                    <span className="material-symbols-outlined text-[16px]">replay</span>
+                    <span>{language === 'hi' ? 'दोबारा फोटो लें' : 'Retake Photo'}</span>
                   </button>
-
-                  {/* Retake Photo if already captured */}
-                  {displayImage && (
-                    <button
-                      id="retake-photo-btn"
-                      disabled={isLoading}
-                      onClick={() => {
-                        if (!isLoading) handleRetake();
-                      }}
-                      className={`flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl border transition-all ${
-                        isLoading
-                          ? 'text-red-300/40 bg-red-950/30 border-red-500/20 cursor-not-allowed'
-                          : 'text-red-300 bg-red-950/60 hover:bg-red-900/60 border-red-500/40 cursor-pointer active:scale-95'
-                      }`}
-                      type="button"
-                    >
-                      <span className="material-symbols-outlined text-[16px]">replay</span>
-                      <span>{language === 'hi' ? 'दोबारा फोटो लें' : 'Retake'}</span>
-                    </button>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-1.5 text-[11px] text-white/70">
-                  <span className="material-symbols-outlined text-[15px] text-emerald-400">verified</span>
-                  <span>{language === 'hi' ? '1024px मोबाइल ऑप्टिमाइजेशन सक्रिय' : '1024px Mobile Safe WASM'}</span>
-                </div>
+                )}
               </div>
             </div>
 
@@ -953,7 +950,11 @@ export default function Capture() {
 
                 {/* Clean, Mobile-Friendly Recording Helper Text Block */}
                 <div className="bg-blue-50 text-blue-800 rounded-lg p-3 text-xs sm:text-sm text-center mb-4 shadow-sm border border-blue-200/60 leading-relaxed">
-                  💡 <strong>सुझाव (Hint):</strong> माइक दबाएं और बताएं—यह क्या है, कैसे बना है, और आपकी अपेक्षित कीमत (₹) क्या है? (Tell us what this is, how it's made, and your expected price).
+                  {language === 'hi' ? (
+                    <>💡 <strong>सुझाव:</strong> माइक दबाएं और बताएं—यह क्या है, कैसे बना है, और आपकी अपेक्षित कीमत (₹) क्या है?</>
+                  ) : (
+                    <>💡 <strong>Hint:</strong> Tap the mic and tell us—what this is, how it's made, and your expected price (₹).</>
+                  )}
                 </div>
 
                 {/* Microphone Button with visual feedback */}
@@ -966,8 +967,8 @@ export default function Capture() {
                   )}
                   <button
                     id="record-mic-btn"
-                    aria-label="Record Audio (माइक दबाकर बोलें)"
-                    title="Record Audio (माइक दबाकर बोलें)"
+                    aria-label={language === 'hi' ? 'माइक दबाकर बोलें' : 'Record Voice Note'}
+                    title={language === 'hi' ? 'माइक दबाकर बोलें' : 'Record Voice Note'}
                     disabled={isLoading}
                     onClick={() => {
                       if (!isLoading) toggleRecording();
@@ -1023,8 +1024,8 @@ export default function Capture() {
                     <span className="material-symbols-outlined text-[16px]">record_voice_over</span>
                     <span>
                       {language === 'hi'
-                        ? '🎙️ नमूना शिल्प आवाज़ का उपयोग करें (Sample Speech)'
-                        : '🎙️ Use Sample Craft Speech (Instant Demo)'}
+                        ? '🎙️ नमूना शिल्प आवाज़ का उपयोग करें'
+                        : '🎙️ Use Sample Craft Speech'}
                     </span>
                   </button>
                 </div>
@@ -1045,25 +1046,30 @@ export default function Capture() {
 
                   {/* 1-Tap Chips */}
                   <div className="flex flex-wrap gap-1.5">
-                    {CRAFT_SUGGESTION_CHIPS.map((chip, idx) => (
-                      <button
-                        key={idx}
-                        disabled={isLoading}
-                        onClick={() => {
-                          if (!isLoading) setCustomTranscript(chip.text);
-                        }}
-                        className={`text-[11px] px-2.5 py-1 rounded-lg border transition-all text-left ${
-                          isLoading
-                            ? 'opacity-50 cursor-not-allowed border-white/5 bg-[#2e241e]'
-                            : customTranscript === chip.text
-                            ? 'bg-[#ff9062] text-[#180f0a] font-bold border-[#ff9062] cursor-pointer'
-                            : 'bg-[#2e241e] text-[#d4c3ba] hover:text-white border-white/10 hover:border-white/20 cursor-pointer'
-                        }`}
-                        type="button"
-                      >
-                        {chip.label}
-                      </button>
-                    ))}
+                    {CRAFT_SUGGESTION_CHIPS.map((chip, idx) => {
+                      const chipLabel = language === 'hi' ? chip.label_hi : chip.label_en;
+                      const chipText = language === 'hi' ? chip.text_hi : chip.text_en;
+                      const isSelected = customTranscript === chip.text_hi || customTranscript === chip.text_en;
+                      return (
+                        <button
+                          key={idx}
+                          disabled={isLoading}
+                          onClick={() => {
+                            if (!isLoading) setCustomTranscript(chipText);
+                          }}
+                          className={`text-[11px] px-2.5 py-1 rounded-lg border transition-all text-left ${
+                            isLoading
+                              ? 'opacity-50 cursor-not-allowed border-white/5 bg-[#2e241e]'
+                              : isSelected
+                              ? 'bg-[#ff9062] text-[#180f0a] font-bold border-[#ff9062] cursor-pointer'
+                              : 'bg-[#2e241e] text-[#d4c3ba] hover:text-white border-white/10 hover:border-white/20 cursor-pointer'
+                          }`}
+                          type="button"
+                        >
+                          {chipLabel}
+                        </button>
+                      );
+                    })}
                   </div>
 
                   {/* Custom Description Text Input */}
@@ -1073,7 +1079,7 @@ export default function Capture() {
                     onChange={(e) => setCustomTranscript(e.target.value)}
                     placeholder={
                       language === 'hi'
-                        ? 'या शिल्प का विवरण यहाँ लिखें (जैसे: सामग्री, आकार, निर्माण का समय)...'
+                        ? 'या शिल्प का विवरण यहाँ लिखें (सामग्री, आकार, निर्माण का समय)...'
                         : 'Or type custom craft details (materials, dimensions, labor hours)...'
                     }
                     className="w-full mt-1 bg-[#2e241e] border border-white/15 rounded-xl p-2.5 text-xs text-white placeholder-white/40 focus:outline-none focus:border-[#ff9062] transition-colors resize-none"
@@ -1117,9 +1123,9 @@ export default function Capture() {
                   <span>
                     {isLoading
                       ? isOptimizing
-                        ? (language === 'hi' ? 'फोटो ऑप्टिमाइज़ हो रही है...' : 'Optimizing Photo...')
+                        ? (language === 'hi' ? 'फोटो अनुकूलित हो रही है...' : 'Optimizing Photo...')
                         : (language === 'hi' ? 'कैटलॉग बन रहा है...' : 'Generating Listing...')
-                      : (language === 'hi' ? 'एआई कैटलॉग बनाएं (आगे बढ़ें)' : 'Process with AI / आगे बढ़ें')}
+                      : (language === 'hi' ? 'एआई कैटलॉग बनाएं' : 'Process with AI')}
                   </span>
                   <span className="material-symbols-outlined text-[22px]">
                     {isLoading ? 'hourglass_top' : 'auto_awesome'}
@@ -1130,8 +1136,8 @@ export default function Capture() {
                   <span className="material-symbols-outlined text-[14px] text-[#ff9062]">bolt</span>
                   <span>
                     {language === 'hi'
-                      ? 'शून्य टाइपिंग • द्विभाषी शीर्षक, GeM कोड और B2B थोक मूल्य 10 सेकंड में'
-                      : 'Zero typing • Instant bilingual title, GeM UNSPSC codes & B2B bulk pricing'}
+                      ? 'शून्य टाइपिंग • त्वरित शीर्षक, GeM कोड और थोक मूल्य 10 सेकंड में'
+                      : 'Zero typing • Instant title, GeM codes & bulk pricing in 10s'}
                   </span>
                 </div>
               </div>

@@ -343,17 +343,26 @@ export default function Catalog() {
       <main className="flex-1 flex flex-col relative w-full bg-surface min-h-screen">
         <div className="flex flex-col w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           
-          {/* Top Administrative Toolbar (Breathing Room) */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-            <h2 className="text-2xl font-bold text-gray-800">My Catalog / मेरी सूची</h2>
+          {/* Top Administrative Toolbar (Spacing & Alignment) */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+            {/* Left Side: Title & Add Button */}
+            <div className="flex flex-wrap items-center gap-4">
+              <h2 className="text-xl font-bold text-gray-800">My Catalog / मेरी सूची</h2>
+              <button
+                onClick={() => navigate('/capture')}
+                className="bg-indigo-600 text-white px-4 py-2 rounded-lg shadow-sm hover:bg-indigo-700 flex items-center gap-2 text-sm font-medium transition-colors cursor-pointer"
+              >
+                📸 + 🎙️ नया उत्पाद (Add New)
+              </button>
+            </div>
 
-            {/* Export Protocols ▾ Dropdown (Subtle Secondary Button) */}
+            {/* Right Side: Export Controls */}
             <div className="relative">
               <button
                 id="export-protocols-btn"
                 aria-label="Export Protocols"
                 onClick={() => setExportMenuOpen((prev) => !prev)}
-                className="h-10 px-4 rounded-xl bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 shadow-sm font-semibold text-xs active:scale-95 flex items-center gap-2 transition-all shrink-0 cursor-pointer"
+                className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm shadow-sm hover:bg-gray-50 transition-colors flex items-center gap-2 shrink-0 cursor-pointer"
                 type="button"
               >
                 <span className="material-symbols-outlined text-[17px] text-gray-600">download</span>
@@ -403,40 +412,6 @@ export default function Catalog() {
                   </button>
                 </div>
               )}
-            </div>
-          </div>
-
-          {/* Redesigned "Instant AI Cataloger" Hero Card */}
-          <div className="bg-gradient-to-r from-indigo-600 to-violet-600 rounded-2xl p-6 text-white shadow-lg mb-8 relative overflow-hidden">
-            <div className="absolute -right-12 -bottom-12 w-56 h-56 rounded-full bg-white/10 blur-2xl pointer-events-none" />
-            <div className="absolute right-1/3 -top-12 w-48 h-48 rounded-full bg-violet-400/20 blur-xl pointer-events-none" />
-
-            <div className="relative z-10">
-              <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                नया उत्पाद जोड़ें (Add New Craft) ✨
-              </h3>
-              <p className="text-white/90 text-sm sm:text-base mt-2 max-w-2xl leading-relaxed">
-                फोटो खींचें और अपनी भाषा में बोलें। AI 10 सेकंड में कैटलॉग बना देगा। (Just point, speak, and let AI do the rest.)
-              </p>
-
-              <div className="flex items-center gap-2.5 flex-wrap mt-3">
-                <span className="bg-white/20 text-white rounded-full px-3 py-1 text-xs backdrop-blur-sm font-medium flex items-center gap-1.5">
-                  <span>🎙️</span>
-                  <span>हिंदी, Guj, Tam Supported</span>
-                </span>
-                <span className="bg-white/20 text-white rounded-full px-3 py-1 text-xs backdrop-blur-sm font-medium flex items-center gap-1.5">
-                  <span>⚡</span>
-                  <span>10s Auto-Pricing</span>
-                </span>
-              </div>
-
-              <button
-                onClick={() => navigate('/capture')}
-                className="bg-white text-indigo-600 font-bold text-lg px-6 py-4 rounded-xl shadow-md hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 w-full sm:w-auto mt-6 cursor-pointer"
-                type="button"
-              >
-                <span>📸 + 🎙️ Start Camera (कैमरा खोलें)</span>
-              </button>
             </div>
           </div>
 

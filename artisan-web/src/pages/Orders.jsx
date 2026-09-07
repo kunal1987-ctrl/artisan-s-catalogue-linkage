@@ -555,7 +555,7 @@ export default function Orders() {
                     onClick={() => setActiveFilter('ALL')}
                     className={`px-3.5 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-all shrink-0 active:scale-95 ${
                       activeFilter === 'ALL'
-                        ? 'bg-indigo-600 text-white shadow-xs'
+                        ? 'bg-emerald-600 text-white shadow-xs'
                         : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
                   >
@@ -566,7 +566,7 @@ export default function Orders() {
                     onClick={() => setActiveFilter('GEM')}
                     className={`px-3.5 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-all shrink-0 active:scale-95 ${
                       activeFilter === 'GEM'
-                        ? 'bg-indigo-600 text-white shadow-xs'
+                        ? 'bg-emerald-600 text-white shadow-xs'
                         : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
                   >
@@ -577,7 +577,7 @@ export default function Orders() {
                     onClick={() => setActiveFilter('ONDC')}
                     className={`px-3.5 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-all shrink-0 active:scale-95 ${
                       activeFilter === 'ONDC'
-                        ? 'bg-indigo-600 text-white shadow-xs'
+                        ? 'bg-emerald-600 text-white shadow-xs'
                         : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
                   >
@@ -646,7 +646,7 @@ export default function Orders() {
                 </p>
                 <button
                   onClick={() => setActiveFilter('ALL')}
-                  className="mt-2 px-4 py-1.5 rounded-full bg-indigo-600 text-white text-xs font-bold cursor-pointer active:scale-95"
+                  className="mt-2 px-4 py-1.5 rounded-full bg-emerald-600 text-white text-xs font-bold cursor-pointer active:scale-95"
                   type="button"
                 >
                   {language === 'hi' ? 'सभी आर्डर देखें (View All)' : 'View All Orders'}

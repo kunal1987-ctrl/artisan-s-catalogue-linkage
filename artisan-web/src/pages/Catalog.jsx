@@ -350,7 +350,7 @@ export default function Catalog() {
               <h2 className="text-xl font-bold text-gray-800">My Catalog / मेरी सूची</h2>
               <button
                 onClick={() => navigate('/capture')}
-                className="bg-indigo-600 text-white px-4 py-2 rounded-lg shadow-sm hover:bg-indigo-700 flex items-center gap-2 text-sm font-medium transition-colors cursor-pointer"
+                className="bg-emerald-600 text-white px-4 py-2 rounded-lg shadow-sm hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:outline-none flex items-center gap-2 text-sm font-medium transition-colors cursor-pointer"
               >
                 📸 + 🎙️ नया उत्पाद (Add New)
               </button>
@@ -378,7 +378,7 @@ export default function Catalog() {
                     className="w-full px-4 py-3 text-left text-sm font-semibold text-gray-800 hover:bg-gray-50 flex items-center gap-3 transition-colors disabled:opacity-50 cursor-pointer"
                     type="button"
                   >
-                    <span className="material-symbols-outlined text-[18px] text-indigo-600">hub</span>
+                    <span className="material-symbols-outlined text-[18px] text-emerald-600">hub</span>
                     <div>
                       <span className="block text-[13px] font-bold">{exportingFormat === 'ondc' ? (language === 'hi' ? 'डाउनलोड हो रहा है...' : 'Downloading...') : '📥 ONDC Beckn (JSON)'}</span>
                       <span className="block text-[11px] text-gray-500">artisan-ondc-catalog.json</span>

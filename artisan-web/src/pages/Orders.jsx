@@ -355,15 +355,13 @@ export default function Orders() {
     );
     showToast(`✅ ऑर्डर स्वीकार किया गया (PO Accepted) — #${String(orderId).slice(0, 8)}`);
 
-    // Persist to Supabase if real DB record
+    // Persist to Supabase
     try {
-      if (!String(orderId).includes('static') && !String(orderId).startsWith('sim-')) {
-        const { error } = await supabase
-          .from('orders')
-          .update({ status: 'accepted' })
-          .eq('id', orderId);
-        if (error) console.error('Error updating order to accepted:', error);
-      }
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: 'accepted' })
+        .eq('id', orderId);
+      if (error) console.error('Error updating order to accepted:', error);
     } catch (err) {
       console.error('Failed to update order status in Supabase:', err);
     }
@@ -377,15 +375,13 @@ export default function Orders() {
     );
     showToast(`🚚 ऑर्डर डिस्पैच मार्क किया गया (Dispatched) — #${String(orderId).slice(0, 8)}`);
 
-    // Persist to Supabase if real DB record
+    // Persist to Supabase
     try {
-      if (!String(orderId).includes('static') && !String(orderId).startsWith('sim-')) {
-        const { error } = await supabase
-          .from('orders')
-          .update({ status: 'dispatched' })
-          .eq('id', orderId);
-        if (error) console.error('Error updating order to dispatched:', error);
-      }
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: 'dispatched' })
+        .eq('id', orderId);
+      if (error) console.error('Error updating order to dispatched:', error);
     } catch (err) {
       console.error('Failed to update order status in Supabase:', err);
     }

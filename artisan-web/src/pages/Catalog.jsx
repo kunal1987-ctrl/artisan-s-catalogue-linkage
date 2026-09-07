@@ -153,15 +153,13 @@ export default function Catalog() {
     setSelectedProduct(null);
     showToast('🗑️ Product deleted from catalog');
 
-    // Persist to Supabase if real product
+    // Persist to Supabase
     try {
-      if (!String(productId).startsWith('sample-')) {
-        const { error } = await supabase
-          .from('products')
-          .delete()
-          .eq('id', productId);
-        if (error) console.error('Supabase delete error:', error);
-      }
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', productId);
+      if (error) console.error('Supabase delete error:', error);
     } catch (err) {
       console.error('Failed to delete product from Supabase:', err);
     }
@@ -170,41 +168,118 @@ export default function Catalog() {
   const handleExportCatalog = async (format) => {
     setExportingFormat(format);
     try {
-      const res = await fetch(`${EXPORT_CATALOG_URL}?format=${format}`, {
-        method: 'GET',
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const queryFormat = format === 'gem_csv' ? 'csv' : format;
+      let textContent = null;
+      let jsonContent = null;
 
-      if (format === 'gem_csv') {
-        // CSV download
-        const text = await res.text();
-        const blob = new Blob([text], { type: 'text/csv;charset=utf-8;' });
+      try {
+        const res = await fetch(`${EXPORT_CATALOG_URL}?format=${queryFormat}`, {
+          method: 'GET',
+        });
+        if (res.ok) {
+          if (queryFormat === 'csv') {
+            textContent = await res.text();
+          } else {
+            jsonContent = await res.json();
+          }
+        }
+      } catch (fetchErr) {
+        console.warn(`[Export ${format}] Remote fetch failed, using local builder:`, fetchErr);
+      }
+
+      if (queryFormat === 'csv') {
+        // Fallback CSV if remote fetch was unavailable
+        if (!textContent) {
+          const header = 'Product Title,Category,Retail Price (INR),Wholesale Price (INR),MOQ,GeM Category,HSN Code,UNSPSC Code,Status\n';
+          const rows = products.map((p) =>
+            `"${(p.title || '').replace(/"/g, '""')}","${p.category || 'Handicrafts'}",${p.price || 0},${Math.round((p.price || 0) * 0.72)},50,"Handicrafts","69120010","60121002","${p.status || 'live'}"`
+          ).join('\n');
+          textContent = header + rows;
+        }
+
+        const blob = new Blob([textContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `gem-procurement-batch-${new Date().toISOString().slice(0, 10)}.csv`;
+        a.download = 'gem-bulk-import.csv';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        showToast('✅ GeM Procurement Sheet downloaded as CSV!');
+        showToast('✅ GeM Sheet (CSV) downloaded: gem-bulk-import.csv');
+      } else if (format === 'gem') {
+        // GeM Procurement Batch JSON
+        if (!jsonContent) {
+          jsonContent = {
+            batch_id: `GEM-BATCH-${Date.now()}`,
+            generated_at: new Date().toISOString(),
+            procurement_ready_items: products.map((p) => ({
+              product_id: p.id,
+              title: p.title,
+              gem_category: 'Handicrafts - Traditional Art & Decor',
+              price_inr: p.price,
+              bulk_price_inr: Math.round((p.price || 0) * 0.72),
+              moq: 50,
+              hsn_code: '69120010',
+              unspsc_code: '60121002',
+              status: p.status,
+            })),
+          };
+        }
+
+        const blob = new Blob([JSON.stringify(jsonContent, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'gem-procurement-batch.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('✅ GeM Batch (JSON) downloaded: gem-procurement-batch.json');
       } else {
-        // JSON download
-        const json = await res.json();
-        const blob = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' });
+        // ONDC Beckn Catalog JSON
+        if (!jsonContent) {
+          jsonContent = {
+            context: {
+              domain: 'nic2004:52110',
+              country: 'IND',
+              city: 'std:0542',
+              action: 'on_search',
+              core_version: '1.2.0',
+              bap_id: 'ondc.buyer.app',
+              bpp_id: 'artisan.seller.hub',
+            },
+            message: {
+              catalog: {
+                'bpp/descriptor': { name: 'Artisan Heritage Collective' },
+                'bpp/providers': [
+                  {
+                    id: 'artisan-provider-1',
+                    descriptor: { name: 'Heritage Artisans of India' },
+                    items: products.map((p) => ({
+                      id: String(p.id),
+                      descriptor: { name: p.title, images: [p.image_url] },
+                      price: { currency: 'INR', value: String(p.price) },
+                      category_id: p.category,
+                    })),
+                  },
+                ],
+              },
+            },
+          };
+        }
+
+        const blob = new Blob([JSON.stringify(jsonContent, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = format === 'gem'
-          ? `gem-catalog-${new Date().toISOString().slice(0, 10)}.json`
-          : `ondc-beckn-catalog-${new Date().toISOString().slice(0, 10)}.json`;
+        a.download = 'artisan-ondc-catalog.json';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        showToast(format === 'gem'
-          ? '✅ GeM Tender Batch JSON downloaded!'
-          : '✅ ONDC Beckn Feed JSON downloaded!');
+        showToast('✅ ONDC Beckn (JSON) downloaded: artisan-ondc-catalog.json');
       }
     } catch (err) {
       console.error(`[Export ${format}]`, err);
@@ -307,75 +382,75 @@ export default function Catalog() {
                 {/* Export Action Bar */}
                 <div className="flex items-center gap-2 flex-wrap">
 
-                  {/* 1. ONDC Beckn Feed (JSON) */}
+                  {/* 1. ONDC Beckn (JSON) */}
                   <div className="flex flex-col items-center gap-0.5 group relative">
                     <button
                       id="export-ondc-btn"
-                      aria-label="Download ONDC Beckn Feed JSON"
+                      aria-label="ONDC Beckn (JSON)"
                       onClick={() => handleExportCatalog('ondc')}
                       disabled={!!exportingFormat}
                       className="h-11 px-3.5 rounded-xl bg-secondary text-on-secondary font-bold text-xs shadow-md active:scale-95 flex items-center gap-1.5 hover:opacity-90 transition-all shrink-0 cursor-pointer disabled:opacity-50"
                       type="button"
-                      title="For ONDC network buyer gateways (Paytm, Mystore, Craftsvilla)"
+                      title="Download artisan-ondc-catalog.json for ONDC buyer network"
                     >
                       <span className="material-symbols-outlined text-[17px]">
                         {exportingFormat === 'ondc' ? 'hourglass_top' : 'download'}
                       </span>
                       <span className="hidden xl:inline">
-                        {exportingFormat === 'ondc' ? 'Fetching...' : '📥 ONDC Beckn Feed'}
+                        {exportingFormat === 'ondc' ? 'Fetching...' : '📥 ONDC Beckn (JSON)'}
                       </span>
                       <span className="xl:hidden">📥</span>
                     </button>
                     <span className="hidden xl:block text-[10px] text-on-surface-variant text-center leading-tight max-w-[130px] truncate">
-                      For ONDC buyer gateways
+                      artisan-ondc-catalog.json
                     </span>
                   </div>
 
-                  {/* 2. GeM Tender Batch (JSON) */}
+                  {/* 2. GeM Batch (JSON) */}
                   <div className="flex flex-col items-center gap-0.5">
                     <button
                       id="export-gem-btn"
-                      aria-label="Export GeM Tender Batch JSON"
+                      aria-label="GeM Batch (JSON)"
                       onClick={() => handleExportCatalog('gem')}
                       disabled={!!exportingFormat}
                       className="h-11 px-3.5 rounded-xl bg-amber-600 text-white font-bold text-xs shadow-md active:scale-95 flex items-center gap-1.5 hover:opacity-90 transition-all shrink-0 cursor-pointer disabled:opacity-50"
                       type="button"
-                      title="For GeM automated API ingestion & PSU procurement tenders"
+                      title="Download gem-procurement-batch.json for PSU procurement tenders"
                     >
                       <span className="material-symbols-outlined text-[17px]">
                         {exportingFormat === 'gem' ? 'hourglass_top' : 'account_balance'}
                       </span>
                       <span className="hidden xl:inline">
-                        {exportingFormat === 'gem' ? 'Fetching...' : '🏛️ GeM Tender JSON'}
+                        {exportingFormat === 'gem' ? 'Fetching...' : '🏛️ GeM Batch (JSON)'}
                       </span>
                       <span className="xl:hidden">🏛️</span>
                     </button>
                     <span className="hidden xl:block text-[10px] text-on-surface-variant text-center leading-tight max-w-[130px] truncate">
-                      PSU procurement tenders
+                      gem-procurement-batch.json
                     </span>
                   </div>
 
-                  {/* 3. GeM Procurement Sheet (CSV / Excel) */}
+                  {/* 3. GeM Sheet (CSV) */}
                   <div className="flex flex-col items-center gap-0.5">
                     <button
                       id="export-gem-csv-btn"
-                      aria-label="Download GeM Procurement Sheet CSV"
-                      onClick={() => handleExportCatalog('gem_csv')}
+                      aria-label="GeM Sheet (CSV)"
+                      onClick={() => handleExportCatalog('csv')}
                       disabled={!!exportingFormat}
                       className="h-11 px-3.5 rounded-xl bg-emerald-700 text-white font-bold text-xs shadow-md active:scale-95 flex items-center gap-1.5 hover:opacity-90 transition-all shrink-0 cursor-pointer disabled:opacity-50"
                       type="button"
-                      title="Standard CSV upload for Government e-Marketplace vendor portal"
+                      title="Download gem-bulk-import.csv for Government e-Marketplace vendor portal"
                     >
                       <span className="material-symbols-outlined text-[17px]">
-                        {exportingFormat === 'gem_csv' ? 'hourglass_top' : 'table_view'}
+                        {exportingFormat === 'csv' || exportingFormat === 'gem_csv' ? 'hourglass_top' : 'table_view'}
                       </span>
                       <span className="hidden xl:inline">
-                        {exportingFormat === 'gem_csv' ? 'Fetching...' : '📊 GeM CSV / Excel'}
+                        {exportingFormat === 'csv' || exportingFormat === 'gem_csv' ? 'Fetching...' : '📊 GeM Sheet (CSV)'}
                       </span>
                       <span className="xl:hidden">📊</span>
                     </button>
                     <span className="hidden xl:block text-[10px] text-on-surface-variant text-center leading-tight max-w-[130px] truncate">
-                      GeM vendor portal upload
+                      gem-bulk-import.csv
                     </span>
                   </div>
 
@@ -517,15 +592,32 @@ export default function Catalog() {
                         </span>
                       </div>
 
-                      {/* Details / Actions modal button */}
-                      <button
-                        aria-label="Product Options"
-                        className="absolute top-1.5 right-1.5 w-10 h-10 rounded-full bg-white/90 backdrop-blur-md text-primary flex items-center justify-center shadow-md active:scale-90 hover:bg-white transition-all z-10 cursor-pointer"
-                        onClick={() => setSelectedProduct(p)}
-                        type="button"
-                      >
-                        <span className="material-symbols-outlined text-[20px]">more_vert</span>
-                      </button>
+                      {/* Top right card actions: Delete Button & Options */}
+                      <div className="absolute top-1.5 right-1.5 flex items-center gap-1.5 z-10">
+                        {/* Direct Delete button on each card */}
+                        <button
+                          aria-label={`Delete ${p.title}`}
+                          title="Delete Product • हटाएं"
+                          className="w-9 h-9 rounded-full bg-red-600/90 hover:bg-red-700 text-white flex items-center justify-center shadow-md active:scale-90 transition-all cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteProduct(p.id);
+                          }}
+                          type="button"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">delete</span>
+                        </button>
+
+                        {/* Details / Actions modal button */}
+                        <button
+                          aria-label="Product Options"
+                          className="w-9 h-9 rounded-full bg-white/90 backdrop-blur-md text-primary flex items-center justify-center shadow-md active:scale-90 hover:bg-white transition-all cursor-pointer"
+                          onClick={() => setSelectedProduct(p)}
+                          type="button"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">more_vert</span>
+                        </button>
+                      </div>
                     </div>
 
                     <div className="flex flex-col flex-1 px-1 pb-1">

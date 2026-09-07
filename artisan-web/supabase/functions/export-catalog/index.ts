@@ -261,13 +261,13 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const url = new URL(req.url);
-    const format = (url.searchParams.get("format") || "ondc").toLowerCase();
+    const rawFormat = (url.searchParams.get("format") || "ondc").toLowerCase();
+    const format = rawFormat === "csv" ? "gem_csv" : rawFormat;
 
     const validFormats = ["ondc", "gem", "gem_csv"];
     if (!validFormats.includes(format)) {
       return new Response(
-        JSON.stringify({ error: "Invalid format. Use ?format=ondc, ?format=gem, or ?format=gem_csv" }),
+        JSON.stringify({ error: "Invalid format. Use ?format=ondc, ?format=gem, or ?format=csv" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
       );
     }

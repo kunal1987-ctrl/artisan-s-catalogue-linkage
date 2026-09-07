@@ -83,18 +83,32 @@ export default function Review() {
     try {
       let finalImageUrl = imageUrl;
 
-      // 1. Convert background-removed image (base64 / blob) to file & upload to Supabase Storage bucket 'artisan-images'
-      if (imageUrl && (imageUrl.startsWith('data:') || imageUrl.startsWith('blob:'))) {
-        try {
+      // 1. Convert studio-processed image into a Blob & upload to Supabase Storage bucket 'artisan-images'
+      try {
+        let imageBlob = null;
+        let ext = 'jpg';
+        if (imageUrl && (imageUrl.startsWith('data:') || imageUrl.startsWith('blob:'))) {
           const res = await fetch(imageUrl);
-          const blob = await res.blob();
-          const ext = blob.type?.includes('png') ? 'png' : 'jpg';
-          const fileName = `craft-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
+          imageBlob = await res.blob();
+          ext = imageBlob.type?.includes('png') ? 'png' : 'jpg';
+        } else if (aiData.imageBase64) {
+          const cleanBase64 = aiData.imageBase64.includes(',') ? aiData.imageBase64.split(',')[1] : aiData.imageBase64;
+          const byteChars = atob(cleanBase64);
+          const byteNumbers = new Array(byteChars.length);
+          for (let i = 0; i < byteChars.length; i++) {
+            byteNumbers[i] = byteChars.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          imageBlob = new Blob([byteArray], { type: 'image/jpeg' });
+          ext = 'jpg';
+        }
 
+        if (imageBlob) {
+          const fileName = `craft-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
           const { data: uploadData, error: uploadErr } = await supabase.storage
             .from('artisan-images')
-            .upload(fileName, blob, {
-              contentType: blob.type || 'image/png',
+            .upload(fileName, imageBlob, {
+              contentType: imageBlob.type || 'image/jpeg',
               upsert: true,
             });
 
@@ -108,9 +122,9 @@ export default function Review() {
               finalImageUrl = urlData.publicUrl;
             }
           }
-        } catch (uploadException) {
-          console.warn('Error during image upload to artisan-images bucket:', uploadException);
         }
+      } catch (uploadException) {
+        console.warn('Error during image upload to artisan-images bucket:', uploadException);
       }
 
       // 2. Insert complete product record into public.products with verified user.id and user.phone

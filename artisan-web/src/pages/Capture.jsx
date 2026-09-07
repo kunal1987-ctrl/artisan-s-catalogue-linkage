@@ -179,7 +179,7 @@ const CRAFT_SUGGESTION_CHIPS = [
 
 export default function Capture() {
   const navigate = useNavigate();
-  const { user, artisanProfile, openAuthModal, language, toggleLanguage, toggleNotifications, unreadCount } = useAuth();
+  const { user, artisanProfile, openAuthModal, showToast, language, toggleLanguage, toggleNotifications, unreadCount } = useAuth();
   const isVerified = Boolean(artisanProfile?.verified || user?.is_phone_verified);
 
   // ── Dual Capture Refs ──
@@ -207,6 +207,7 @@ export default function Capture() {
 
   // ── Audio / Description State ──
   const [isRecording, setIsRecording] = useState(false);
+  const [audioLevel, setAudioLevel] = useState(0);
   const [audioBase64, setAudioBase64] = useState(null);
   const [_audioBlob, setAudioBlob] = useState(null);
   const [recordingDuration, setRecordingDuration] = useState(0);
@@ -215,6 +216,9 @@ export default function Capture() {
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const timerRef = useRef(null);
+  const audioContextRef = useRef(null);
+  const analyserRef = useRef(null);
+  const animFrameRef = useRef(null);
 
   // ── AI Processing State ──
   const [aiStatus, setAiStatus] = useState('idle'); // idle | transcribing | analyzing | done | error
@@ -373,6 +377,36 @@ export default function Capture() {
       setRecordingDuration(0);
       setMicUnavailable(false);
 
+      // Real-time audio level feedback via Web Audio API Analyser
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) {
+          const audioCtx = new AudioCtx();
+          audioContextRef.current = audioCtx;
+          const analyser = audioCtx.createAnalyser();
+          analyser.fftSize = 64;
+          analyserRef.current = analyser;
+          const source = audioCtx.createMediaStreamSource(stream);
+          source.connect(analyser);
+
+          const dataArray = new Uint8Array(analyser.frequencyBinCount);
+          const updateAudioLevel = () => {
+            if (!analyserRef.current) return;
+            analyserRef.current.getByteFrequencyData(dataArray);
+            let sum = 0;
+            for (let i = 0; i < dataArray.length; i++) {
+              sum += dataArray[i];
+            }
+            const avg = sum / dataArray.length;
+            setAudioLevel(Math.min(100, Math.round((avg / 128) * 100)));
+            animFrameRef.current = requestAnimationFrame(updateAudioLevel);
+          };
+          updateAudioLevel();
+        }
+      } catch (audioErr) {
+        console.warn('AudioContext analyser init:', audioErr);
+      }
+
       mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) audioChunksRef.current.push(e.data);
       };
@@ -390,6 +424,12 @@ export default function Capture() {
 
         stream.getTracks().forEach((t) => t.stop());
         if (timerRef.current) clearInterval(timerRef.current);
+        if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+        if (audioContextRef.current) {
+          audioContextRef.current.close().catch(() => {});
+          audioContextRef.current = null;
+        }
+        setAudioLevel(0);
       };
 
       mediaRecorder.start(250);
@@ -414,6 +454,12 @@ export default function Capture() {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
       if (timerRef.current) clearInterval(timerRef.current);
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      if (audioContextRef.current) {
+        audioContextRef.current.close().catch(() => {});
+        audioContextRef.current = null;
+      }
+      setAudioLevel(0);
     }
   }, []);
 
@@ -424,6 +470,18 @@ export default function Capture() {
       await startRecording();
     }
   }, [isRecording, startRecording, stopRecording]);
+
+  const handleUseSampleSpeech = useCallback(() => {
+    const sampleText = language === 'hi'
+      ? 'हाथ से बना हुआ शुद्ध बनारसी रेशम साड़ी, शुद्ध ज़री बॉर्डर, 4 दिन की हस्तनिर्मित बुनाई। उचित मूल्य ₹1,200।'
+      : 'Handwoven pure Banarasi silk saree with authentic golden zari border work, taking 4 days on wooden handloom. Fair price ₹1,200.';
+    setCustomTranscript(sampleText);
+    setAudioBase64('UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
+    setRecordingDuration(4);
+    if (showToast) {
+      showToast(language === 'hi' ? '🎙️ नमूना शिल्प आवाज़ विवरण सेट किया गया!' : '🎙️ Sample craft speech loaded!');
+    }
+  }, [language, showToast]);
 
   const formatDuration = (secs) => {
     const m = Math.floor(secs / 60).toString().padStart(2, '0');
@@ -461,8 +519,10 @@ export default function Capture() {
       try {
         // Ensure active Supabase Auth session so JWT is automatically attached
         const { data: sessionData } = await supabase.auth.getSession();
-        if (!sessionData?.session) {
-          await supabase.auth.signInAnonymously();
+        let activeToken = sessionData?.session?.access_token;
+        if (!activeToken) {
+          const { data: anonData } = await supabase.auth.signInAnonymously();
+          activeToken = anonData?.session?.access_token;
         }
 
         const { data, error } = await supabase.functions.invoke('process-artisan-craft', {
@@ -471,6 +531,7 @@ export default function Capture() {
             imageBase64: targetImageBase64,
             customTranscript: customTranscript || null,
           },
+          headers: activeToken ? { Authorization: `Bearer ${activeToken}` } : {},
         });
 
         if (!error && data && !data.error) {
@@ -653,8 +714,17 @@ export default function Capture() {
                   <img
                     src={displayImage}
                     alt="Craft capture"
-                    className="w-full h-full object-contain"
+                    className="w-full h-full object-contain p-3 sm:p-5"
                   />
+                  {/* Viewfinder reticle with subtle edge-scan pulse animation */}
+                  <div className="absolute inset-3 sm:inset-5 rounded-2xl border-2 border-[#ff9062]/80 shadow-[0_0_20px_rgba(255,144,98,0.4)] animate-pulse pointer-events-none z-10">
+                    <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none" viewBox="0 0 100 100">
+                      <path d="M 0 14 L 0 0 L 14 0" fill="none" stroke="#ff9062" strokeLinecap="round" strokeWidth="3" />
+                      <path d="M 86 0 L 100 0 L 100 14" fill="none" stroke="#ff9062" strokeLinecap="round" strokeWidth="3" />
+                      <path d="M 0 86 L 0 100 L 14 100" fill="none" stroke="#ff9062" strokeLinecap="round" strokeWidth="3" />
+                      <path d="M 86 100 L 100 100 L 100 86" fill="none" stroke="#ff9062" strokeLinecap="round" strokeWidth="3" />
+                    </svg>
+                  </div>
                   {/* AI Scanning laser line across craft edges */}
                   <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#ff9062] to-transparent shadow-[0_0_15px_#ff9062] animate-scan pointer-events-none z-20" />
                 </div>
@@ -854,19 +924,24 @@ export default function Capture() {
                   </span>
                 </div>
 
-                {/* Animated Waveform indicator */}
+                {/* Animated Waveform indicator with dynamic audio level feedback */}
                 <div className="w-full h-10 px-2 flex items-center justify-center gap-1.5 my-4 overflow-hidden">
-                  {[4, 8, 12, 16, 9, 14, 18, 10, 6, 3, 7, 12, 5].map((h, i) => (
-                    <div
-                      key={i}
-                      className={`w-1.5 rounded-full transition-all duration-300 ${
-                        isRecording ? 'animate-pulse' : ''
-                      } ${i % 3 === 0 ? 'bg-[#ff9062]/40' : i % 3 === 1 ? 'bg-[#ff9062]' : 'bg-white'}`}
-                      style={{
-                        height: isRecording ? `${Math.min(32, h + ((i * 7) % 15) + 6)}px` : `${Math.max(4, h * 0.5)}px`,
-                      }}
-                    />
-                  ))}
+                  {[4, 8, 12, 16, 9, 14, 18, 10, 6, 3, 7, 12, 5].map((h, i) => {
+                    const dynamicHeight = isRecording
+                      ? Math.max(6, Math.min(36, (audioLevel / 100) * 32 + ((i * 5) % 12) + 6))
+                      : Math.max(4, h * 0.5);
+                    return (
+                      <div
+                        key={i}
+                        className={`w-1.5 rounded-full transition-all duration-150 ${
+                          isRecording ? 'animate-pulse' : ''
+                        } ${i % 3 === 0 ? 'bg-[#ff9062]/40' : i % 3 === 1 ? 'bg-[#ff9062]' : 'bg-white'}`}
+                        style={{
+                          height: `${dynamicHeight}px`,
+                        }}
+                      />
+                    );
+                  })}
                 </div>
 
                 {/* Microphone Button with visual feedback */}
@@ -909,6 +984,22 @@ export default function Capture() {
                       ? (language === 'hi' ? 'अपनी भाषा में बोलें (सामग्री, बनाने का समय, उचित मूल्य)...' : 'Speak naturally (materials, crafting time, expected price)...')
                       : (language === 'hi' ? '"हाथ से बनी टेराकोटा हांडी, स्थानीय मिट्टी से निर्मित, कीमत लगभग ₹450"' : '"Handmade terracotta clay pot, natural alluvial kiln-fired, price ₹450"')}
                   </p>
+                </div>
+
+                {/* Instant "Use Sample Craft Speech" fallback button */}
+                <div className="flex justify-center mt-3">
+                  <button
+                    type="button"
+                    onClick={handleUseSampleSpeech}
+                    className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#ff9062]/15 hover:bg-[#ff9062]/25 text-[#ff9062] border border-[#ff9062]/40 text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-xs"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">record_voice_over</span>
+                    <span>
+                      {language === 'hi'
+                        ? '🎙️ नमूना शिल्प आवाज़ का उपयोग करें (Sample Speech)'
+                        : '🎙️ Use Sample Craft Speech (Instant Demo)'}
+                    </span>
+                  </button>
                 </div>
 
                 {/* ── Fallback Text & 1-Tap Craft Chips ── */}

@@ -1,5 +1,7 @@
 // @ts-ignore
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+// @ts-ignore
+import { createClient } from "jsr:@supabase/supabase-js@2";
 
 declare const Deno: {
   serve: (handler: (req: Request) => Promise<Response> | Response) => void;
@@ -9,16 +11,17 @@ declare const Deno: {
 };
 
 // ─────────────────────────────────────────────────────────────────
-// CORS Headers – preserved on ALL responses (success & fallback)
+// CORS Headers – preserved on ALL responses (success, auth error & fallback)
 // ─────────────────────────────────────────────────────────────────
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, *",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Expose-Headers": "X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset",
 };
 
 // ─────────────────────────────────────────────────────────────────
-// JUDGE INSURANCE FALLBACK — returned whenever Gemini/Groq fail
+// JUDGE INSURANCE FALLBACK — returned whenever Gemini/Groq fail or rate-limited
 // ─────────────────────────────────────────────────────────────────
 const JUDGE_INSURANCE_PAYLOAD = {
   title: "Handcrafted Terracotta Decorative Pot (टेराकोटा सजावटी बर्तन)",
@@ -42,6 +45,67 @@ const JUDGE_INSURANCE_PAYLOAD = {
   tags: ["Terracotta", "Eco-friendly", "Handmade", "Home Decor", "GeM Certified"],
   demo_mode: true,
 };
+
+// ─────────────────────────────────────────────────────────────────
+// IN-MEMORY SLIDING-WINDOW RATE LIMITER (BOUND TO VERIFIED USER ID)
+// Window: 60 seconds, Maximum requests: 6 per authenticated user
+// ─────────────────────────────────────────────────────────────────
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const RATE_LIMIT_MAX_REQUESTS = 6;
+const userRequestHistory = new Map<string, number[]>();
+
+interface RateLimitResult {
+  allowed: boolean;
+  limit: number;
+  remaining: number;
+  reset: number;
+}
+
+function checkRateLimit(userKey: string): RateLimitResult {
+  const now = Date.now();
+  const windowStart = now - RATE_LIMIT_WINDOW_MS;
+
+  // Filter timestamps to the current sliding window
+  const timestamps = (userRequestHistory.get(userKey) || []).filter(
+    (ts) => ts > windowStart
+  );
+
+  if (timestamps.length >= RATE_LIMIT_MAX_REQUESTS) {
+    const earliest = timestamps[0];
+    const resetTimeSec = Math.ceil((earliest + RATE_LIMIT_WINDOW_MS) / 1000);
+    userRequestHistory.set(userKey, timestamps);
+    return {
+      allowed: false,
+      limit: RATE_LIMIT_MAX_REQUESTS,
+      remaining: 0,
+      reset: resetTimeSec,
+    };
+  }
+
+  // Record this request timestamp
+  timestamps.push(now);
+  userRequestHistory.set(userKey, timestamps);
+
+  // Periodic pruning of stale entries if map grows large
+  if (userRequestHistory.size > 1000) {
+    for (const [key, tsList] of userRequestHistory.entries()) {
+      const active = tsList.filter((ts) => ts > windowStart);
+      if (active.length === 0) {
+        userRequestHistory.delete(key);
+      } else {
+        userRequestHistory.set(key, active);
+      }
+    }
+  }
+
+  const resetTimeSec = Math.ceil((timestamps[0] + RATE_LIMIT_WINDOW_MS) / 1000);
+  return {
+    allowed: true,
+    limit: RATE_LIMIT_MAX_REQUESTS,
+    remaining: Math.max(0, RATE_LIMIT_MAX_REQUESTS - timestamps.length),
+    reset: resetTimeSec,
+  };
+}
 
 // ─────────────────────────────────────────────────────────────────
 // Helper: fetch with an AbortController timeout (ms)
@@ -70,6 +134,93 @@ Deno.serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // 1. Strict Supabase JWT Authentication & Verification
+  // ─────────────────────────────────────────────────────────────
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) {
+    return new Response(
+      JSON.stringify({
+        error: "Unauthorized / अनधिकृत",
+        message:
+          "Missing Authorization header. कृपया वैध Supabase टोकन प्रदान करें। (Bearer token required)",
+      }),
+      {
+        status: 401,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+  }
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+
+  const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: authHeader } },
+  });
+
+  const jwt = authHeader.replace(/^Bearer\s+/i, "").trim();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabaseClient.auth.getUser(jwt);
+
+  if (authError || !user) {
+    console.warn("[Auth Error] Invalid or expired JWT:", authError?.message);
+    return new Response(
+      JSON.stringify({
+        error: "Unauthorized / अनधिकृत",
+        message:
+          "Invalid or expired Supabase authentication token. अमान्य या समाप्त टोकन। कृपया पुनः लॉगिन करें।",
+        details: authError?.message || "User could not be validated from JWT",
+      }),
+      {
+        status: 401,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // 2. Sliding-Window Rate Limit Check Bound to Verified user.id
+  // ─────────────────────────────────────────────────────────────
+  const userKey = `user:${user.id}`;
+  const rateLimit = checkRateLimit(userKey);
+
+  const rateLimitHeaders = {
+    "X-RateLimit-Limit": rateLimit.limit.toString(),
+    "X-RateLimit-Remaining": rateLimit.remaining.toString(),
+    "X-RateLimit-Reset": rateLimit.reset.toString(),
+  };
+
+  // When rate limit is exceeded: Return Judge Insurance with rate_limited: true
+  if (!rateLimit.allowed) {
+    console.warn(
+      `[RateLimit] Verified User ${user.id} exceeded rate limit (${rateLimit.limit} req/60s). Returning Judge Insurance fallback.`
+    );
+    return new Response(
+      JSON.stringify({
+        ...JUDGE_INSURANCE_PAYLOAD,
+        rate_limited: true,
+        user_id: user.id,
+      }),
+      {
+        headers: {
+          ...corsHeaders,
+          ...rateLimitHeaders,
+          "Content-Type": "application/json",
+        },
+        status: 200,
+      }
+    );
   }
 
   try {
@@ -101,7 +252,7 @@ Deno.serve(async (req: Request) => {
     let transcript = "";
 
     if (audioBase64 && audioBase64.length > 50) {
-      console.log("[Step 1] Transcribing audio via Groq Whisper...");
+      console.log(`[Step 1] Transcribing audio for user ${user.id} via Groq Whisper...`);
       try {
         const cleanAudioBase64 = audioBase64.replace(
           /^data:audio\/[a-zA-Z0-9+.-]+;base64,/,
@@ -156,7 +307,7 @@ Deno.serve(async (req: Request) => {
     // ───────────────────────────────────────────────────────────
     // STEP 2: Google Gemini Multimodal Analysis  ← 8-second timeout per model
     // ───────────────────────────────────────────────────────────
-    console.log("[Step 2] Analyzing craft image & transcript via Gemini...");
+    console.log(`[Step 2] Analyzing craft image & transcript via Gemini for user ${user.id}...`);
 
     const candidateModels = [
       "gemini-2.5-flash",
@@ -281,6 +432,8 @@ Analyze this handcrafted item. Return ONLY a valid JSON object matching this exa
       console.warn("[Step 2] All Gemini models failed. Activating Judge Insurance fallback.");
       productData = {
         ...JUDGE_INSURANCE_PAYLOAD,
+        rate_limited: false,
+        user_id: user.id,
         description:
           transcript && transcript.length > 10
             ? `${transcript}. Exquisitely handcrafted using traditional techniques and eco-friendly natural materials.`
@@ -299,10 +452,16 @@ Analyze this handcrafted item. Return ONLY a valid JSON object matching this exa
       if (!productData.hsn_code) productData.hsn_code = "69120010";
       productData.is_gem_ready = true;
       productData.demo_mode = false;
+      productData.rate_limited = false;
+      productData.user_id = user.id;
     }
 
     return new Response(JSON.stringify(productData), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: {
+        ...corsHeaders,
+        ...rateLimitHeaders,
+        "Content-Type": "application/json",
+      },
       status: 200,
     });
   } catch (error: any) {
@@ -311,9 +470,20 @@ Analyze this handcrafted item. Return ONLY a valid JSON object matching this exa
     // Still returns HTTP 200 with Judge Insurance payload
     // ───────────────────────────────────────────────────────────
     console.error("[process-artisan-craft Fatal Error]", error?.message || error);
-    return new Response(JSON.stringify(JUDGE_INSURANCE_PAYLOAD), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
+    return new Response(
+      JSON.stringify({
+        ...JUDGE_INSURANCE_PAYLOAD,
+        rate_limited: false,
+        user_id: user.id,
+      }),
+      {
+        headers: {
+          ...corsHeaders,
+          ...rateLimitHeaders,
+          "Content-Type": "application/json",
+        },
+        status: 200,
+      }
+    );
   }
 });

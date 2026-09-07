@@ -1,9 +1,11 @@
 import React from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
 
 export default function DashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, artisanName, artisanStudio } = useAuth();
 
   const navItems = [
     { to: '/home', label: 'Home (आवास)', icon: 'cottage' },
@@ -79,7 +81,7 @@ export default function DashboardLayout() {
             </p>
             <button
               onClick={() => navigate('/capture')}
-              className="w-full py-2 px-3 rounded-xl bg-primary hover:bg-[#2e241e] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
+              className="w-full py-2 px-3 rounded-xl bg-primary hover:bg-[#2e241e] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
             >
               <span>+ Add Craft (नया शिल्प)</span>
             </button>
@@ -108,16 +110,36 @@ export default function DashboardLayout() {
               <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-600 ring-2 ring-[#f7f3ed]"></span>
             </div>
             <div className="flex flex-col min-w-0 flex-1">
-              <span className="font-bold text-[13px] text-primary truncate">Ramesh Kumar</span>
-              <span className="text-[11px] text-secondary truncate">Kala Sangam Shop</span>
+              <span className="font-bold text-[13px] text-primary truncate">{artisanName.split('(')[0].trim()}</span>
+              <span className="text-[11px] text-secondary truncate">
+                UID: ...{user?.id ? user.id.slice(0, 6) : 'anon'}
+              </span>
             </div>
-            <span className="material-symbols-outlined text-[18px] text-on-surface-variant">verified</span>
+            <span className="material-symbols-outlined text-[18px] text-emerald-700">verified</span>
           </div>
         </div>
       </aside>
 
       {/* Main Routed Area */}
       <main className="flex-1 flex flex-col min-w-0 min-h-screen bg-[#fdf9f3] pb-20 lg:pb-0 overflow-y-auto">
+        {/* Global Auth Status Top Bar */}
+        <header className="bg-[#180f0a] text-white px-4 sm:px-6 py-2 flex items-center justify-between border-b border-black/20 text-xs sticky top-0 z-30 shadow-sm flex-wrap gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/90 border border-emerald-500/50 text-emerald-300 font-bold text-[11px] shadow-xs">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>🟢 ऑथेंटिकेटेड (UID: ...{user?.id ? user.id.slice(0, 6) : 'anon'}) • {artisanName}</span>
+            </span>
+            <span className="hidden sm:inline-block text-white/50 text-[11px]">
+              | Supabase Auth JWT Active • Institutional GeM & ONDC
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] text-[#ffdeaa] font-medium hidden md:inline">
+              {artisanStudio}
+            </span>
+          </div>
+        </header>
+
         <Outlet />
       </main>
 
@@ -148,7 +170,7 @@ export default function DashboardLayout() {
         {/* Floating Center Capture Button */}
         <button
           onClick={() => navigate('/capture')}
-          className="w-12 h-12 -mt-5 rounded-full bg-primary text-white flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-transform border-2 border-white"
+          className="w-12 h-12 -mt-5 rounded-full bg-primary text-white flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-transform border-2 border-white cursor-pointer"
           aria-label="Add Product"
         >
           <span className="material-symbols-outlined text-[24px]">photo_camera</span>

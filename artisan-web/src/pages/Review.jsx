@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+import { useAuth } from '../context/AuthContext';
 
 const GEM_CATEGORIES = [
   'Handloom / Silk Sarees',
@@ -19,6 +20,7 @@ const GEM_CATEGORIES = [
 export default function Review() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, artisanName } = useAuth();
 
   // Read AI data passed from Capture.jsx
   const aiData = location.state || {};
@@ -78,6 +80,41 @@ export default function Review() {
     setPublishError('');
 
     try {
+      let finalImageUrl = imageUrl;
+
+      // 1. Convert background-removed image (base64 / blob) to file & upload to Supabase Storage bucket 'artisan-images'
+      if (imageUrl && (imageUrl.startsWith('data:') || imageUrl.startsWith('blob:'))) {
+        try {
+          const res = await fetch(imageUrl);
+          const blob = await res.blob();
+          const ext = blob.type?.includes('png') ? 'png' : 'jpg';
+          const fileName = `craft-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
+
+          const { data: uploadData, error: uploadErr } = await supabase.storage
+            .from('artisan-images')
+            .upload(fileName, blob, {
+              contentType: blob.type || 'image/png',
+              upsert: true,
+            });
+
+          if (uploadErr) {
+            console.warn('Storage upload error, falling back to original URL:', uploadErr);
+          } else if (uploadData) {
+            const { data: urlData } = supabase.storage
+              .from('artisan-images')
+              .getPublicUrl(uploadData.path || fileName);
+            if (urlData?.publicUrl) {
+              finalImageUrl = urlData.publicUrl;
+            }
+          }
+        } catch (uploadException) {
+          console.warn('Error during image upload to artisan-images bucket:', uploadException);
+        }
+      }
+
+      // 2. Insert complete product record into public.products
+      const authUserId = user?.id || (await supabase.auth.getUser()).data?.user?.id || null;
+
       const payload = {
         title,
         title_hi: titleHi,
@@ -86,31 +123,27 @@ export default function Review() {
         category,
         price: Number(price),
         wholesale_price: Number(wholesalePrice),
+        bulk_price: Number(wholesalePrice),
         moq: Number(moq),
         gem_category: gemCategory,
+        hsn_code: aiData.hsn_code || '69120010',
+        unspsc_code: aiData.unspsc_code || '60121002',
         is_gem_ready: true,
         pricing_reasoning: pricingReasoning,
         tags,
-        image_url: imageUrl,
+        image_url: finalImageUrl,
         status: 'published',
+        user_id: authUserId,
       };
 
       const { error } = await supabase.from('products').insert([payload]);
 
       if (error) throw error;
 
-      navigate('/success', {
+      // 3. Show success toast and redirect to /catalog
+      navigate('/catalog', {
         state: {
-          title,
-          titleHi,
-          price,
-          wholesalePrice,
-          moq,
-          gemCategory,
-          imageUrl,
-          category,
-          isGemReady: true,
-          pricingReasoning,
+          toast: '🎉 Product published successfully to ONDC & GeM Network!',
         },
       });
     } catch (err) {
@@ -137,8 +170,8 @@ export default function Review() {
 
   return (
     <div className="min-h-screen bg-surface text-on-surface font-sans">
-      {/* Top Return Header */}
-      <div className="bg-[#180f0a] text-white px-6 py-3 flex items-center justify-between sticky top-0 z-40 shadow-md">
+      {/* Top Return Header with Auth Indicator */}
+      <div className="bg-[#180f0a] text-white px-6 py-3 flex items-center justify-between sticky top-0 z-40 shadow-md flex-wrap gap-2">
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate('/capture')}
@@ -147,7 +180,13 @@ export default function Review() {
             <span className="material-symbols-outlined text-[18px]">arrow_back</span>
           </button>
           <div>
-            <span className="font-bold text-sm block leading-tight">Review & Finalize AI Craft Draft</span>
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-sm block leading-tight">Review & Finalize AI Craft Draft</span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-500/50 text-emerald-300 text-[10px] font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>🟢 ऑथेंटिकेटेड (UID: ...{user?.id ? user.id.slice(0, 6) : 'anon'}) • {artisanName}</span>
+              </span>
+            </div>
             <span className="text-[11px] text-white/60 block leading-tight">AI-Driven Dual Market Linkage • ONDC & GeM</span>
           </div>
         </div>

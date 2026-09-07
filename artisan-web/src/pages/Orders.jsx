@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+import { useAuth } from '../context/AuthContext';
 
 // ─── Realistic mock order templates for GeM / ONDC simulation ───
 const ORDER_TEMPLATES = [
@@ -48,7 +49,7 @@ function speakOrder(order) {
     window.speechSynthesis.cancel();
     const qty = order.quantity || 1;
     const price = order.total_price_inr || order.unit_price_inr || 0;
-    const channel = order.channel || order.order_type?.toUpperCase() || 'ONDC';
+    const channel = order.channel || (order.order_type === 'gem' ? 'GeM' : 'ONDC');
     const buyer = order.buyer_name || 'एक ग्राहक';
     const text = `नया आर्डर आया है! ${channel} से ${buyer} ने ${qty} नग मांगे हैं। कुल कीमत ₹${price}। जल्दी से पैक करें।`;
     const utterance = new SpeechSynthesisUtterance(text);
@@ -69,10 +70,11 @@ function formatTimeAgo(isoDate) {
   return `${Math.floor(diff / 3600)}h ago`;
 }
 
-function OrderCard({ order, onAccept }) {
+function OrderCard({ order, onAcceptPO, onDispatchPO }) {
   const isGem = order.order_type === 'gem';
   const channelLabel = order.channel || (isGem ? 'GeM PO' : 'ONDC');
   const navigate = useNavigate();
+  const currentStatus = order.status || 'pending';
 
   return (
     <article
@@ -94,21 +96,41 @@ function OrderCard({ order, onAccept }) {
             </span>
           </div>
 
-          <span
-            className={`inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-full font-bold ${
-              isGem
-                ? 'bg-amber-100 text-amber-800'
-                : 'bg-surface-container-high text-primary'
-            }`}
-          >
+          <div className="flex items-center gap-1.5 flex-wrap justify-end">
+            {/* Status Pill */}
+            {currentStatus === 'dispatched' ? (
+              <span className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full font-bold bg-emerald-100 text-emerald-800">
+                <span className="material-symbols-outlined text-[14px]">local_shipping</span>
+                डिस्पैच पूर्ण
+              </span>
+            ) : currentStatus === 'accepted' ? (
+              <span className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full font-bold bg-blue-100 text-blue-800">
+                <span className="material-symbols-outlined text-[14px]">check</span>
+                स्वीकृत (Accepted)
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full font-bold bg-amber-100 text-amber-800">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-600 animate-pulse"></span>
+                लंबित (Pending)
+              </span>
+            )}
+
             <span
-              className="material-symbols-outlined text-[16px]"
-              style={{ fontVariationSettings: "'FILL' 1" }}
+              className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-bold ${
+                isGem
+                  ? 'bg-amber-100 text-amber-800'
+                  : 'bg-surface-container-high text-primary'
+              }`}
             >
-              {isGem ? 'account_balance' : 'hub'}
+              <span
+                className="material-symbols-outlined text-[15px]"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                {isGem ? 'account_balance' : 'hub'}
+              </span>
+              {channelLabel}
             </span>
-            {channelLabel}
-          </span>
+          </div>
         </div>
 
         <div className="flex items-center gap-3.5 bg-surface-container-low p-3.5 rounded-2xl">
@@ -125,7 +147,7 @@ function OrderCard({ order, onAccept }) {
               </span>
               <span className="text-xs text-on-surface-variant">•</span>
               <span className="text-base font-extrabold text-on-surface">
-                ₹{(order.total_price_inr || order.unit_price_inr || 0).toLocaleString('en-IN')}
+                ₹{(order.total_price_inr || (order.unit_price_inr ? order.unit_price_inr * (order.quantity || 1) : 0)).toLocaleString('en-IN')}
               </span>
             </div>
             <span className="inline-flex items-center gap-1 text-[#1A3824] text-xs font-bold mt-1">
@@ -153,23 +175,42 @@ function OrderCard({ order, onAccept }) {
       </div>
 
       <div className="flex flex-col gap-2 pt-2 border-t border-border-delicate/40">
-        <button
-          aria-label={`Accept and pack order ${order.id}`}
-          className="action-btn w-full min-h-[52px] h-[52px] rounded-full bg-primary-container hover:bg-black text-on-primary text-sm font-bold flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all cursor-pointer"
-          type="button"
-          onClick={() => { onAccept(order.id); navigate('/success'); }}
-        >
-          <span className="material-symbols-outlined text-[22px]">inventory_2</span>
-          <span>Accept &amp; Pack • स्वीकारें</span>
-        </button>
+        {/* Dynamic Action Buttons for Accept & Dispatch */}
+        {currentStatus === 'dispatched' ? (
+          <div className="w-full min-h-[50px] rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold flex items-center justify-center gap-2 py-2.5">
+            <span className="material-symbols-outlined text-[20px] text-emerald-700">verified</span>
+            <span>डिस्पैच पूर्ण (Dispatched via ONDC Logistics)</span>
+          </div>
+        ) : currentStatus === 'accepted' ? (
+          <button
+            aria-label={`Dispatch order ${order.id}`}
+            className="action-btn w-full min-h-[52px] h-[52px] rounded-full bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-bold flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all cursor-pointer"
+            type="button"
+            onClick={() => onDispatchPO(order.id)}
+          >
+            <span className="material-symbols-outlined text-[22px]">local_shipping</span>
+            <span>डिस्पैच मार्क करें (Dispatch)</span>
+          </button>
+        ) : (
+          <button
+            aria-label={`Accept PO order ${order.id}`}
+            className="action-btn w-full min-h-[52px] h-[52px] rounded-full bg-primary-container hover:bg-black text-on-primary text-sm font-bold flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all cursor-pointer"
+            type="button"
+            onClick={() => onAcceptPO(order.id)}
+          >
+            <span className="material-symbols-outlined text-[22px]">inventory_2</span>
+            <span>स्वीकार करें (Accept PO)</span>
+          </button>
+        )}
+
         <div className="flex items-center justify-between px-1">
           <button
             aria-label="Download or view packaging slip"
-            className="min-h-[48px] h-[48px] px-3 rounded-full text-secondary hover:text-primary font-bold text-xs flex items-center gap-1.5 active:bg-surface-container transition-colors cursor-pointer"
+            className="min-h-[44px] h-[44px] px-3 rounded-full text-secondary hover:text-primary font-bold text-xs flex items-center gap-1.5 active:bg-surface-container transition-colors cursor-pointer"
             type="button"
-            onClick={() => navigate('/success')}
+            onClick={() => navigate('/success', { state: { ...order } })}
           >
-            <span className="material-symbols-outlined text-[20px]">receipt_long</span>
+            <span className="material-symbols-outlined text-[18px]">receipt_long</span>
             View Slip • पर्ची देखें
           </button>
           <span className="text-[11px] text-outline font-medium">Auto-dispatch enabled</span>
@@ -181,6 +222,7 @@ function OrderCard({ order, onAccept }) {
 
 export default function Orders() {
   const navigate = useNavigate();
+  const { user, artisanName } = useAuth();
   const [orders, setOrders] = useState([]);
   const [isSimulating, setIsSimulating] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
@@ -204,6 +246,7 @@ export default function Orders() {
       quantity: 1,
       unit_price_inr: 1200,
       total_price_inr: 1200,
+      status: 'pending',
       city: 'Lucknow, UP',
       created_at: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
     },
@@ -216,6 +259,7 @@ export default function Orders() {
       quantity: 2,
       unit_price_inr: 450,
       total_price_inr: 900,
+      status: 'accepted',
       city: 'Varanasi, UP',
       created_at: new Date(Date.now() - 35 * 60 * 1000).toISOString(),
     },
@@ -228,12 +272,37 @@ export default function Orders() {
       quantity: 1,
       unit_price_inr: 200,
       total_price_inr: 200,
+      status: 'dispatched',
       city: 'Varanasi, UP',
       created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
     },
   ];
 
-  // Set up Supabase Realtime subscription on public.orders
+  // 1. Initial Load of Orders from Supabase
+  useEffect(() => {
+    async function loadSupabaseOrders() {
+      try {
+        const { data, error } = await supabase
+          .from('orders')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (!error && data && data.length > 0) {
+          const mapped = data.map((item) => ({
+            ...item,
+            channel: item.order_type === 'gem' ? 'GeM PO' : 'ONDC Network',
+            product_title: item.notes || item.product_title || 'Artisan Craft Product',
+          }));
+          setOrders(mapped);
+        }
+      } catch (err) {
+        console.warn('Could not load orders from Supabase:', err);
+      }
+    }
+    loadSupabaseOrders();
+  }, []);
+
+  // 2. Set up Supabase Realtime subscription on public.orders
   useEffect(() => {
     const channel = supabase
       .channel('orders-realtime')
@@ -242,10 +311,24 @@ export default function Orders() {
         { event: 'INSERT', schema: 'public', table: 'orders' },
         (payload) => {
           console.log('[Realtime] New order received:', payload.new);
-          const newOrder = { ...payload.new, channel: payload.new.order_type === 'gem' ? 'GeM PO' : 'ONDC Network' };
-          setOrders((prev) => [newOrder, ...prev]);
+          const newOrder = {
+            ...payload.new,
+            channel: payload.new.order_type === 'gem' ? 'GeM PO' : 'ONDC Network',
+            product_title: payload.new.notes || payload.new.product_title || 'Artisan Craft Product',
+          };
+          setOrders((prev) => [newOrder, ...prev.filter((o) => o.id !== newOrder.id)]);
           showToast(`⚡ नया आर्डर आया! ${newOrder.buyer_name || 'Customer'} — ₹${newOrder.total_price_inr || newOrder.unit_price_inr || 0}`);
           speakOrder(newOrder);
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'orders' },
+        (payload) => {
+          console.log('[Realtime] Order updated:', payload.new);
+          setOrders((prev) =>
+            prev.map((o) => (o.id === payload.new.id ? { ...o, ...payload.new } : o))
+          );
         }
       )
       .subscribe((status) => {
@@ -264,13 +347,58 @@ export default function Orders() {
     };
   }, []);
 
-  // Simulate an incoming GeM / ONDC Purchase Order
+  // 3. Action Handler: "स्वीकार करें (Accept PO)" -> update({ status: 'accepted' })
+  const handleAcceptPO = async (orderId) => {
+    // Immediate optimistic UI update
+    setOrders((prev) =>
+      prev.map((o) => (o.id === orderId ? { ...o, status: 'accepted' } : o))
+    );
+    showToast(`✅ ऑर्डर स्वीकार किया गया (PO Accepted) — #${String(orderId).slice(0, 8)}`);
+
+    // Persist to Supabase if real DB record
+    try {
+      if (!String(orderId).includes('static') && !String(orderId).startsWith('sim-')) {
+        const { error } = await supabase
+          .from('orders')
+          .update({ status: 'accepted' })
+          .eq('id', orderId);
+        if (error) console.error('Error updating order to accepted:', error);
+      }
+    } catch (err) {
+      console.error('Failed to update order status in Supabase:', err);
+    }
+  };
+
+  // 4. Action Handler: "डिस्पैच मार्क करें (Dispatch)" -> update({ status: 'dispatched' })
+  const handleDispatchPO = async (orderId) => {
+    // Immediate optimistic UI update
+    setOrders((prev) =>
+      prev.map((o) => (o.id === orderId ? { ...o, status: 'dispatched' } : o))
+    );
+    showToast(`🚚 ऑर्डर डिस्पैच मार्क किया गया (Dispatched) — #${String(orderId).slice(0, 8)}`);
+
+    // Persist to Supabase if real DB record
+    try {
+      if (!String(orderId).includes('static') && !String(orderId).startsWith('sim-')) {
+        const { error } = await supabase
+          .from('orders')
+          .update({ status: 'dispatched' })
+          .eq('id', orderId);
+        if (error) console.error('Error updating order to dispatched:', error);
+      }
+    } catch (err) {
+      console.error('Failed to update order status in Supabase:', err);
+    }
+  };
+
+  // 5. Simulate an incoming GeM / ONDC Purchase Order
   const handleSimulateOrder = async () => {
     setIsSimulating(true);
     try {
       const template = ORDER_TEMPLATES[templateIndexRef.current % ORDER_TEMPLATES.length];
       templateIndexRef.current += 1;
 
+      const authUserId = user?.id || (await supabase.auth.getUser()).data?.user?.id || null;
       const total = template.quantity * template.unit_price_inr;
       const orderPayload = {
         buyer_name: template.buyer_name,
@@ -280,12 +408,13 @@ export default function Orders() {
         total_price_inr: total,
         status: 'pending',
         notes: template.product_title,
+        user_id: authUserId,
       };
 
       const { data, error } = await supabase.from('orders').insert([orderPayload]).select().single();
 
       if (error) {
-        // Realtime insert failed — simulate locally for demo
+        // Realtime insert fallback — simulate locally for demo
         console.warn('[Simulate] Supabase insert failed, using local simulation:', error.message);
         const localOrder = {
           id: `sim-${Date.now()}`,
@@ -309,11 +438,8 @@ export default function Orders() {
     }
   };
 
-  const handleAcceptOrder = (orderId) => {
-    setOrders((prev) => prev.filter((o) => o.id !== orderId));
-  };
-
-  const allOrders = [...orders, ...STATIC_ORDERS];
+  // Merge static demo orders if real orders list is empty or prepend
+  const displayedOrders = orders.length > 0 ? orders : STATIC_ORDERS;
 
   return (
     <div className="w-full">
@@ -321,26 +447,29 @@ export default function Orders() {
         <div className="flex flex-col gap-6 max-w-7xl mx-auto w-full">
 
           {/* Top Bar Navigation */}
-          <div className="flex items-center justify-between gap-4 pb-4 border-b border-border-delicate/60">
+          <div className="flex items-center justify-between gap-4 pb-4 border-b border-border-delicate/60 flex-wrap">
             <div className="flex items-center gap-3">
               <button
                 aria-label="Go back to Home"
-                className="min-w-[48px] min-h-[48px] w-[48px] h-[48px] rounded-full bg-surface-container-low hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors"
+                className="min-w-[48px] min-h-[48px] w-[48px] h-[48px] rounded-full bg-surface-container-low hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors cursor-pointer"
                 type="button"
                 onClick={() => navigate('/home')}
               >
                 <span className="material-symbols-outlined text-[24px]">arrow_back</span>
               </button>
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs font-bold text-secondary tracking-wider uppercase">Order Processing</span>
                   <span className="w-1.5 h-1.5 rounded-full bg-secondary"></span>
                   <span className={`text-xs font-medium flex items-center gap-1 ${realtimeConnected ? 'text-emerald-600' : 'text-outline'}`}>
                     <span className={`w-1.5 h-1.5 rounded-full inline-block ${realtimeConnected ? 'bg-emerald-500 animate-pulse' : 'bg-outline'}`}></span>
                     {realtimeConnected ? 'ONDC Realtime Live' : 'ONDC Network'}
                   </span>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-950 border border-emerald-500/40 text-emerald-300 font-bold text-[11px]">
+                    <span>🟢 ऑथेंटिकेटेड (UID: ...{user?.id ? user.id.slice(0, 6) : 'anon'}) • {artisanName}</span>
+                  </span>
                 </div>
-                <h1 className="text-xl sm:text-2xl font-extrabold text-espresso-deep tracking-tight">
+                <h1 className="text-xl sm:text-2xl font-extrabold text-espresso-deep tracking-tight mt-0.5">
                   आर्डर इनबॉक्स (New Orders)
                 </h1>
               </div>
@@ -376,7 +505,8 @@ export default function Orders() {
               </button>
               <button
                 aria-label="Refresh Orders"
-                className="min-w-[44px] min-h-[44px] w-[44px] h-[44px] rounded-full bg-surface-container-low hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors"
+                onClick={() => window.location.reload()}
+                className="min-w-[44px] min-h-[44px] w-[44px] h-[44px] rounded-full bg-surface-container-low hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors cursor-pointer"
                 type="button"
               >
                 <span className="material-symbols-outlined text-[20px]">refresh</span>
@@ -395,21 +525,21 @@ export default function Orders() {
               </div>
               <div className="flex flex-col">
                 <p className="text-sm lg:text-base text-on-tertiary-fixed font-bold leading-snug">
-                  {allOrders.length} नए आर्डर तैयार हैं! ({allOrders.length} New Orders Ready)
+                  {displayedOrders.length} आर्डर सक्रिय हैं! ({displayedOrders.length} Active Orders)
                 </p>
                 <p className="text-xs lg:text-sm text-on-tertiary-fixed-variant leading-tight">
-                  Tap 'Accept &amp; Pack' to dispatch today before courier pickup.
+                  स्वीकार करने के लिए 'स्वीकार करें' तथा कूरियर हेतु 'डिस्पैच मार्क करें' दबाएं।
                 </p>
               </div>
             </div>
 
             <button
               aria-label="बोलकर सुनें - Listen to Hindi instructions"
-              className="min-w-[48px] min-h-[48px] w-[48px] h-[48px] rounded-full bg-primary-container text-on-primary flex items-center justify-center shrink-0 active:scale-90 hover:scale-105 transition-all shadow-md"
+              className="min-w-[48px] min-h-[48px] w-[48px] h-[48px] rounded-full bg-primary-container text-on-primary flex items-center justify-center shrink-0 active:scale-90 hover:scale-105 transition-all shadow-md cursor-pointer"
               id="voice-listen-btn"
               type="button"
               onClick={() => {
-                if (allOrders.length > 0) speakOrder(allOrders[0]);
+                if (displayedOrders.length > 0) speakOrder(displayedOrders[0]);
               }}
             >
               <span className="material-symbols-outlined text-[24px]">volume_up</span>
@@ -418,8 +548,13 @@ export default function Orders() {
 
           {/* Orders Cards Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6" id="orders-list">
-            {allOrders.map((order) => (
-              <OrderCard key={order.id} order={order} onAccept={handleAcceptOrder} />
+            {displayedOrders.map((order) => (
+              <OrderCard
+                key={order.id}
+                order={order}
+                onAcceptPO={handleAcceptPO}
+                onDispatchPO={handleDispatchPO}
+              />
             ))}
           </div>
 
@@ -427,10 +562,10 @@ export default function Orders() {
           <div className="text-center py-6 flex flex-col items-center justify-center gap-1.5 text-on-surface-variant border-t border-border-delicate/40 mt-4">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-secondary text-[24px]">verified</span>
-              <p className="text-xs font-bold text-on-surface">100% Guaranteed Payouts via ONDC Settlements</p>
+              <p className="text-xs font-bold text-on-surface">100% Guaranteed Payouts via ONDC Settlements & GeM Escrow</p>
             </div>
             <p className="text-[11px] text-outline">
-              सभी लेन-देन भारत सरकार द्वारा मान्यता प्राप्त ONDC नेटवर्क के तहत सुरक्षित हैं
+              सभी लेन-देन भारत सरकार द्वारा मान्यता प्राप्त ONDC एवं GeM नेटवर्क के तहत सुरक्षित हैं
             </p>
           </div>
         </div>
@@ -438,7 +573,7 @@ export default function Orders() {
 
       {/* Live Toast Notification */}
       {toastMsg && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-primary text-on-primary px-5 py-3 rounded-full text-xs font-bold shadow-xl flex items-center gap-2 transition-all max-w-sm text-center">
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-primary text-on-primary px-5 py-3 rounded-full text-xs font-bold shadow-xl flex items-center gap-2 transition-all max-w-sm text-center animate-in fade-in slide-in-from-top-2">
           <span className="material-symbols-outlined text-[18px] text-emerald-400">bolt</span>
           <span>{toastMsg}</span>
         </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+import { useAuth } from '../context/AuthContext';
 
 const INITIAL_PRODUCTS = [
   {
@@ -63,12 +64,28 @@ const EXPORT_CATALOG_URL = 'https://jrkrdlalnqswvwabktce.supabase.co/functions/v
 
 export default function Catalog() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user, artisanName } = useAuth();
   const [products, setProducts] = useState(INITIAL_PRODUCTS);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all'); // all | live | draft | sold_out
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [toastMsg, setToastMsg] = useState('');
-  const [exportingFormat, setExportingFormat] = useState(null); // 'ondc' | 'gem' | null
+  const [exportingFormat, setExportingFormat] = useState(null); // 'ondc' | 'gem' | 'gem_csv' | null
+
+  const showToast = (msg) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(''), 4000);
+  };
+
+  // Check for navigation toast state
+  useEffect(() => {
+    if (location.state?.toast) {
+      showToast(location.state.toast);
+      // Clean up state
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   // Fetch real products from Supabase
   useEffect(() => {
@@ -86,7 +103,7 @@ export default function Catalog() {
             category: item.category || 'Handicrafts',
             price: item.price || 850,
             status: item.status === 'published' ? 'live' : item.status || 'live',
-            qty: 1,
+            qty: item.stock || 1,
             image_url: item.image_url || 'https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?w=600&auto=format&fit=crop'
           }));
           // Merge unique products
@@ -103,9 +120,51 @@ export default function Catalog() {
     loadSupabaseProducts();
   }, []);
 
-  const showToast = (msg) => {
-    setToastMsg(msg);
-    setTimeout(() => setToastMsg(''), 4000);
+  // Handle product status toggle (live / draft / sold_out)
+  const handleToggleStatus = async (productId, newStatus) => {
+    // Optimistic UI update
+    setProducts((prev) =>
+      prev.map((p) => (p.id === productId ? { ...p, status: newStatus } : p))
+    );
+    if (selectedProduct && selectedProduct.id === productId) {
+      setSelectedProduct((prev) => ({ ...prev, status: newStatus }));
+    }
+    showToast(`Status updated: ${newStatus === 'live' ? 'Live' : newStatus === 'draft' ? 'In Review' : 'Sold Out'}`);
+
+    // Persist to Supabase if real product
+    try {
+      if (!String(productId).startsWith('sample-')) {
+        const dbStatus = newStatus === 'live' ? 'published' : newStatus;
+        const { error } = await supabase
+          .from('products')
+          .update({ status: dbStatus })
+          .eq('id', productId);
+        if (error) console.error('Supabase update status error:', error);
+      }
+    } catch (err) {
+      console.error('Failed to update status in Supabase:', err);
+    }
+  };
+
+  // Handle product delete
+  const handleDeleteProduct = async (productId) => {
+    // Optimistic UI update
+    setProducts((prev) => prev.filter((p) => p.id !== productId));
+    setSelectedProduct(null);
+    showToast('🗑️ Product deleted from catalog');
+
+    // Persist to Supabase if real product
+    try {
+      if (!String(productId).startsWith('sample-')) {
+        const { error } = await supabase
+          .from('products')
+          .delete()
+          .eq('id', productId);
+        if (error) console.error('Supabase delete error:', error);
+      }
+    } catch (err) {
+      console.error('Failed to delete product from Supabase:', err);
+    }
   };
 
   const handleExportCatalog = async (format) => {
@@ -206,10 +265,14 @@ export default function Catalog() {
                   <span className="text-outline">/</span>
                   <span>My Shop Inventory</span>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
                   <h2 className="text-2xl font-bold text-primary tracking-tight">Handcrafted Collection</h2>
                   <span className="px-3 py-1 bg-secondary-fixed text-on-secondary-fixed rounded-full text-xs font-bold">
                     {products.length} Items Listed
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-950 border border-emerald-500/40 text-emerald-300 font-bold text-[11px] shadow-xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>🟢 ऑथेंटिकेटेड (UID: ...{user?.id ? user.id.slice(0, 6) : 'anon'}) • {artisanName}</span>
                   </span>
                   <span className="inline-flex items-center gap-1 text-[11px] font-medium text-on-surface-variant bg-surface-container px-2.5 py-1 rounded-full border border-surface-container-high">
                     <span className="material-symbols-outlined text-[14px] text-emerald-700">cloud_done</span>
@@ -454,7 +517,7 @@ export default function Catalog() {
                         </span>
                       </div>
 
-                      {/* Details modal button */}
+                      {/* Details / Actions modal button */}
                       <button
                         aria-label="Product Options"
                         className="absolute top-1.5 right-1.5 w-10 h-10 rounded-full bg-white/90 backdrop-blur-md text-primary flex items-center justify-center shadow-md active:scale-90 hover:bg-white transition-all z-10 cursor-pointer"
@@ -546,7 +609,7 @@ export default function Catalog() {
                     <span className="text-[11px] font-bold text-secondary uppercase tracking-wider">
                       {selectedProduct.category}
                     </span>
-                    <h3 className="text-base font-bold text-primary">{selectedProduct.title}</h3>
+                    <h3 className="text-base font-bold text-primary leading-snug">{selectedProduct.title}</h3>
                     <p className="text-sm font-extrabold text-primary">₹{selectedProduct.price}</p>
                   </div>
                 </div>
@@ -559,6 +622,52 @@ export default function Catalog() {
                 </button>
               </div>
 
+              {/* Status Toggle Buttons */}
+              <div className="flex flex-col gap-1.5 pt-2 border-t border-surface-container-high">
+                <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
+                  Product Status (स्थिति बदलें)
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleToggleStatus(selectedProduct.id, 'live')}
+                    className={`py-2 px-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                      selectedProduct.status === 'live'
+                        ? 'bg-emerald-700 text-white shadow-sm'
+                        : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
+                    }`}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                    <span>Live</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleStatus(selectedProduct.id, 'draft')}
+                    className={`py-2 px-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                      selectedProduct.status === 'draft'
+                        ? 'bg-amber-600 text-white shadow-sm'
+                        : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
+                    }`}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-amber-300"></span>
+                    <span>Review</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleStatus(selectedProduct.id, 'sold_out')}
+                    className={`py-2 px-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                      selectedProduct.status === 'sold_out'
+                        ? 'bg-red-600 text-white shadow-sm'
+                        : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
+                    }`}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-red-300"></span>
+                    <span>Sold Out</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
               <div className="flex flex-col gap-2 pt-2 border-t border-surface-container-high">
                 <button
                   onClick={() => {
@@ -571,6 +680,7 @@ export default function Catalog() {
                   <span className="material-symbols-outlined text-[18px]">add_a_photo</span>
                   <span>Capture Similar Craft (समान शिल्प जोड़ें)</span>
                 </button>
+
                 <button
                   onClick={() => {
                     showToast('Share link copied to clipboard!');
@@ -583,6 +693,15 @@ export default function Catalog() {
                   <span className="material-symbols-outlined text-[18px]">share</span>
                   <span>Share Catalog Link • शेयर करें</span>
                 </button>
+
+                <button
+                  onClick={() => handleDeleteProduct(selectedProduct.id)}
+                  className="w-full py-2.5 px-4 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs flex items-center justify-center gap-2 border border-red-200 transition-colors cursor-pointer"
+                  type="button"
+                >
+                  <span className="material-symbols-outlined text-[18px]">delete</span>
+                  <span>Delete Product • हटाएं</span>
+                </button>
               </div>
             </div>
           </div>
@@ -590,7 +709,7 @@ export default function Catalog() {
 
         {/* Live Toast Notification */}
         {toastMsg && (
-          <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-primary text-on-primary px-5 py-2.5 rounded-full text-xs font-bold shadow-xl flex items-center gap-2 transition-all">
+          <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-primary text-on-primary px-5 py-2.5 rounded-full text-xs font-bold shadow-xl flex items-center gap-2 transition-all animate-in fade-in slide-in-from-top-2">
             <span className="material-symbols-outlined text-[18px] text-emerald-400">check_circle</span>
             <span>{toastMsg}</span>
           </div>

@@ -423,6 +423,12 @@ export default function Capture() {
       let listingData = null;
 
       try {
+        // Ensure active Supabase Auth session so that valid JWT Bearer token is automatically attached
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (!sessionData?.session) {
+          await supabase.auth.signInAnonymously();
+        }
+
         const { data, error } = await supabase.functions.invoke('process-artisan-craft', {
           body: { audioBase64: audioBase64 || null, imageBase64: targetImageBase64 },
         });

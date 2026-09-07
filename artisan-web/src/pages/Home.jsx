@@ -66,24 +66,17 @@ export default function Home() {
         <div className="flex flex-col w-full px-gutter-mobile pb-space-lg">
             <div
                 className="border-b border-[#d1c4bd]/40 px-4 sm:px-8 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                    <div className="flex flex-col">
-                        <div
-                            className="flex items-center gap-2 text-[12px] font-semibold text-secondary uppercase tracking-wider">
-                            <span>{language === 'hi' ? 'आवास' : 'Home'}</span>
-                            <span>/</span>
-                            <span>{language === 'hi' ? 'शिल्पकार डैशबोर्ड' : 'Artisan Dashboard'}</span>
-                        </div>
-                        <h2 className="text-[24px] font-bold text-primary flex items-center gap-2">
-                            {language === 'hi' ? 'नमस्ते, रामेश!' : 'Namaste, Ramesh!'}
-                            <span className="text-[14px] font-medium text-on-surface-variant font-normal">कला संगम शॉप</span>
-                        </h2>
+                <div className="flex flex-col">
+                    <div
+                        className="flex items-center gap-2 text-[12px] font-semibold text-secondary uppercase tracking-wider">
+                        <span>{language === 'hi' ? 'आवास' : 'Home'}</span>
+                        <span>/</span>
+                        <span>{language === 'hi' ? 'शिल्पकार डैशबोर्ड' : 'Artisan Dashboard'}</span>
                     </div>
-                    <span
-                        className="text-[12px] font-semibold text-[#50443d] bg-[#ebe8e2] px-3 py-1 rounded-full inline-flex items-center gap-1.5 border border-[#d1c4bd]/40">
-                        <span className="material-symbols-outlined text-[15px] text-green-700">check_circle</span>
-                        <span>{language === 'hi' ? 'ऑफ़लाइन सुरक्षित' : 'Saved Offline'}</span>
-                    </span>
+                    <h2 className="text-[24px] font-bold text-primary flex items-center gap-2">
+                        {language === 'hi' ? 'नमस्ते, रामेश!' : 'Namaste, Ramesh!'}
+                        <span className="text-[14px] font-medium text-on-surface-variant font-normal">कला संगम शॉप</span>
+                    </h2>
                 </div>
                 
                 <div className="flex items-center gap-3">

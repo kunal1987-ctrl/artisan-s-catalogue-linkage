@@ -128,18 +128,27 @@ async function fetchWithTimeout(
 }
 
 // ─────────────────────────────────────────────────────────────────
+// Maximum Allowed Sizes for Incoming Base64 Payloads
+// ─────────────────────────────────────────────────────────────────
+const MAX_IMAGE_BASE64_LENGTH = 10 * 1024 * 1024; // ~7.5MB binary
+const MAX_AUDIO_BASE64_LENGTH = 20 * 1024 * 1024; // ~15MB binary
+
+// ─────────────────────────────────────────────────────────────────
 // MAIN HANDLER
 // ─────────────────────────────────────────────────────────────────
 Deno.serve(async (req: Request) => {
-  // Handle CORS preflight
+  // 1. CORS Preflight: Return HTTP 204 No Content
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders,
+    });
   }
 
   // ─────────────────────────────────────────────────────────────
-  // 1. Strict Supabase JWT Authentication & Verification
+  // 2. Strict Supabase JWT Authentication & Verification
   // ─────────────────────────────────────────────────────────────
-  const authHeader = req.headers.get("Authorization");
+  const authHeader = req.headers.get("Authorization") || req.headers.get("authorization");
   if (!authHeader) {
     return new Response(
       JSON.stringify({
@@ -157,27 +166,81 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
-
-  const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
-    global: { headers: { Authorization: authHeader } },
-  });
-
-  const jwt = authHeader.replace(/^Bearer\s+/i, "").trim();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabaseClient.auth.getUser(jwt);
-
-  if (authError || !user) {
-    console.warn("[Auth Error] Invalid or expired JWT:", authError?.message);
+  if (!authHeader.trim().toLowerCase().startsWith("bearer ")) {
     return new Response(
       JSON.stringify({
         error: "Unauthorized / अनधिकृत",
         message:
-          "Invalid or expired Supabase authentication token. अमान्य या समाप्त टोकन। कृपया पुनः लॉगिन करें।",
-        details: authError?.message || "User could not be validated from JWT",
+          "Malformed Authorization header. Must start with 'Bearer <token>'. अमान्य टोकन प्रारूप।",
+      }),
+      {
+        status: 401,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+  }
+
+  const jwt = authHeader.replace(/^Bearer\s+/i, "").trim();
+  if (!jwt || jwt.length < 10) {
+    return new Response(
+      JSON.stringify({
+        error: "Unauthorized / अनधिकृत",
+        message:
+          "Empty or invalid Bearer token string. अमान्य या खाली टोकन।",
+      }),
+      {
+        status: 401,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+  }
+
+  let user: any = null;
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const {
+      data: { user: authUser },
+      error: authError,
+    } = await supabaseClient.auth.getUser(jwt);
+
+    if (authError || !authUser) {
+      console.warn("[Auth Error] Invalid or expired JWT:", authError?.message);
+      return new Response(
+        JSON.stringify({
+          error: "Unauthorized / अनधिकृत",
+          message:
+            "Invalid or expired Supabase authentication token. अमान्य या समाप्त टोकन। कृपया पुनः लॉगिन करें।",
+          details: authError?.message || "User could not be validated from JWT",
+        }),
+        {
+          status: 401,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
+    user = authUser;
+  } catch (err: any) {
+    console.error("[Auth Exception] Unexpected failure during JWT check:", err?.message || err);
+    return new Response(
+      JSON.stringify({
+        error: "Unauthorized / अनधिकृत",
+        message: "Authentication verification failed.",
+        details: err?.message || "Token verification threw an exception",
       }),
       {
         status: 401,
@@ -190,7 +253,7 @@ Deno.serve(async (req: Request) => {
   }
 
   // ─────────────────────────────────────────────────────────────
-  // 2. Sliding-Window Rate Limit Check Bound to Verified user.id
+  // 3. Sliding-Window Rate Limit Check Bound to Verified user.id
   // ─────────────────────────────────────────────────────────────
   const userKey = `user:${user.id}`;
   const rateLimit = checkRateLimit(userKey);
@@ -223,9 +286,107 @@ Deno.serve(async (req: Request) => {
     );
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // 4. Payload Parsing & Rigorous Sanitization
+  // ─────────────────────────────────────────────────────────────
+  let requestPayload: any = null;
   try {
-    const { audioBase64, imageBase64, customTranscript } = await req.json();
+    requestPayload = await req.json();
+  } catch {
+    return new Response(
+      JSON.stringify({
+        error: "Bad Request",
+        message: "Malformed JSON in request body.",
+      }),
+      {
+        status: 400,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+  }
 
+  const { audioBase64, imageBase64, customTranscript } = requestPayload || {};
+
+  if (imageBase64) {
+    if (typeof imageBase64 !== "string") {
+      return new Response(
+        JSON.stringify({
+          error: "Bad Request",
+          message: "imageBase64 must be a string.",
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+    if (imageBase64.length > MAX_IMAGE_BASE64_LENGTH) {
+      return new Response(
+        JSON.stringify({
+          error: "Payload Too Large",
+          message: `imageBase64 exceeds maximum allowed size of 10MB (got ${(imageBase64.length / (1024 * 1024)).toFixed(1)}MB).`,
+        }),
+        {
+          status: 413,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+  }
+
+  if (audioBase64) {
+    if (typeof audioBase64 !== "string") {
+      return new Response(
+        JSON.stringify({
+          error: "Bad Request",
+          message: "audioBase64 must be a string.",
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+    if (audioBase64.length > MAX_AUDIO_BASE64_LENGTH) {
+      return new Response(
+        JSON.stringify({
+          error: "Payload Too Large",
+          message: `audioBase64 exceeds maximum allowed size of 20MB (got ${(audioBase64.length / (1024 * 1024)).toFixed(1)}MB).`,
+        }),
+        {
+          status: 413,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+  }
+
+  // Ensure at least one input field is provided
+  const hasImage = Boolean(imageBase64 && imageBase64.length > 20);
+  const hasAudio = Boolean(audioBase64 && audioBase64.length > 20);
+  const hasTranscript = Boolean(
+    customTranscript &&
+    typeof customTranscript === "string" &&
+    customTranscript.trim().length > 0
+  );
+
+  if (!hasImage && !hasAudio && !hasTranscript) {
+    return new Response(
+      JSON.stringify({
+        error: "Bad Request",
+        message: "At least one input (imageBase64, audioBase64, or customTranscript) is required.",
+      }),
+      {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  }
+
+  try {
     const groqApiKey = Deno.env.get("GROQ_API_KEY");
     const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
 
@@ -251,7 +412,7 @@ Deno.serve(async (req: Request) => {
 
     let transcript = "";
 
-    if (audioBase64 && audioBase64.length > 50) {
+    if (audioBase64 && audioBase64.length > 50 && groqApiKey) {
       console.log(`[Step 1] Transcribing audio for user ${user.id} via Groq Whisper...`);
       try {
         const cleanAudioBase64 = audioBase64.replace(
@@ -299,11 +460,11 @@ Deno.serve(async (req: Request) => {
         }
         transcript = FALLBACK_TRANSCRIPT;
       }
-    } else if (customTranscript && typeof customTranscript === "string" && customTranscript.trim().length > 0) {
+    } else if (hasTranscript) {
       console.log(`[Step 1] Using provided artisan description for user ${user.id}:`, customTranscript);
       transcript = customTranscript.trim();
     } else {
-      console.log("[Step 1] No audio provided. Using visual craft analysis.");
+      console.log("[Step 1] Using visual craft analysis default.");
       transcript = "Handcrafted artisan item. Analyze visual craft features.";
     }
 
@@ -319,23 +480,25 @@ Deno.serve(async (req: Request) => {
     ];
 
     let productData: any = null;
+    let hitRateLimit429 = false;
 
-    const geminiPayload = {
-      systemInstruction: {
-        parts: [
-          {
-            text: `You are an expert Indian handicraft cataloger, Government e-Marketplace (GeM) specialist, and fair-trade pricing analyst for rural Indian artisans.
+    if (geminiApiKey) {
+      const geminiPayload = {
+        systemInstruction: {
+          parts: [
+            {
+              text: `You are an expert Indian handicraft cataloger, Government e-Marketplace (GeM) specialist, and fair-trade pricing analyst for rural Indian artisans.
 Analyze the craft image and the artisan's regional voice transcript (Hindi/English).
 Generate a structured, dual-market catalog profile supporting both Direct-to-Consumer (ONDC) and Institutional/B2B (GeM) procurement.
 Return ONLY a valid JSON object matching the requested schema. No markdown, no code blocks.`,
-          },
-        ],
-      },
-      contents: [
-        {
-          parts: [
-            {
-              text: `Artisan voice transcript: "${transcript}"
+            },
+          ],
+        },
+        contents: [
+          {
+            parts: [
+              {
+                text: `Artisan voice transcript: "${transcript}"
 
 Analyze this handcrafted item. Return ONLY a valid JSON object matching this exact schema:
 {
@@ -354,91 +517,95 @@ Analyze this handcrafted item. Return ONLY a valid JSON object matching this exa
   "craft_category": "string",
   "tags": ["string", "string", "string", "string", "string"]
 }`,
-            },
-            ...(cleanImageBase64.length > 50
-              ? [
-                  {
-                    inlineData: {
-                      mimeType: mimeType,
-                      data: cleanImageBase64,
+              },
+              ...(cleanImageBase64.length > 50
+                ? [
+                    {
+                      inlineData: {
+                        mimeType: mimeType,
+                        data: cleanImageBase64,
+                      },
                     },
-                  },
-                ]
-              : []),
-          ],
-        },
-      ],
-      generationConfig: {
-        responseMimeType: "application/json",
-      },
-    };
-
-    for (const model of candidateModels) {
-      try {
-        console.log(`[Step 2] Attempting model: ${model}...`);
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiApiKey}`;
-
-        const geminiRes = await fetchWithTimeout(
-          geminiUrl,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(geminiPayload),
+                  ]
+                : []),
+            ],
           },
-          8000 // 8-second timeout per model
-        );
+        ],
+        generationConfig: {
+          responseMimeType: "application/json",
+        },
+      };
 
-        if (geminiRes.status === 429) {
-          console.warn(`[Step 2] Model ${model} rate-limited (429). Trying next model...`);
-          continue;
-        }
+      for (const model of candidateModels) {
+        try {
+          console.log(`[Step 2] Attempting model: ${model}...`);
+          const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiApiKey}`;
 
-        if (geminiRes.ok) {
-          const geminiResult = await geminiRes.json();
-          let rawText = geminiResult?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-          rawText = rawText
-            .replace(/^```json\s*/i, "")
-            .replace(/^```\s*/i, "")
-            .replace(/\s*```$/i, "")
-            .trim();
+          const geminiRes = await fetchWithTimeout(
+            geminiUrl,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(geminiPayload),
+            },
+            8000 // 8-second timeout per model
+          );
 
-          if (!rawText) {
-            console.warn(`[Step 2] Model ${model} returned empty text. Trying next...`);
+          if (geminiRes.status === 429) {
+            console.warn(`[Step 2] Model ${model} rate-limited (429). Trying next model...`);
+            hitRateLimit429 = true;
             continue;
           }
 
-          try {
-            productData = JSON.parse(rawText);
-            console.log(`[Step 2 Success] Generated listing with ${model}:`, productData.title);
-            break;
-          } catch (parseErr) {
-            console.warn(`[Step 2] JSON parse failed for ${model}:`, parseErr);
-            continue;
+          if (geminiRes.ok) {
+            const geminiResult = await geminiRes.json();
+            let rawText = geminiResult?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+            rawText = rawText
+              .replace(/^```json\s*/i, "")
+              .replace(/^```\s*/i, "")
+              .replace(/\s*```$/i, "")
+              .trim();
+
+            if (!rawText) {
+              console.warn(`[Step 2] Model ${model} returned empty text. Trying next...`);
+              continue;
+            }
+
+            try {
+              productData = JSON.parse(rawText);
+              console.log(`[Step 2 Success] Generated listing with ${model}:`, productData.title);
+              break;
+            } catch (parseErr) {
+              console.warn(`[Step 2] JSON parse failed for ${model}:`, parseErr);
+              continue;
+            }
+          } else {
+            const errText = await geminiRes.text();
+            console.warn(`[Step 2] Model ${model} failed (${geminiRes.status}):`, errText);
           }
-        } else {
-          const errText = await geminiRes.text();
-          console.warn(`[Step 2] Model ${model} failed (${geminiRes.status}):`, errText);
-        }
-      } catch (modelErr: any) {
-        if (modelErr?.name === "AbortError") {
-          console.warn(`[Step 2] Model ${model} timed out after 8s. Trying next model...`);
-        } else {
-          console.warn(`[Step 2] Error with ${model}:`, modelErr);
+        } catch (modelErr: any) {
+          if (modelErr?.name === "AbortError") {
+            console.warn(`[Step 2] Model ${model} timed out after 8s. Trying next model...`);
+          } else {
+            console.warn(`[Step 2] Error with ${model}:`, modelErr);
+          }
         }
       }
+    } else {
+      console.warn("[Step 2] GEMINI_API_KEY not configured. Defaulting to Judge Insurance fallback.");
     }
 
     // ───────────────────────────────────────────────────────────
-    // Judge Insurance: if ALL models failed, return safe payload
+    // Judge Insurance Circuit Breaker: if ALL models failed / timed out / 429
     // ───────────────────────────────────────────────────────────
     if (!productData) {
-      console.warn("[Step 2] All Gemini models failed. Activating Judge Insurance fallback.");
+      console.warn("[Step 2] All Gemini attempts exhausted. Activating Judge Insurance fallback.");
       productData = {
         ...JUDGE_INSURANCE_PAYLOAD,
-        rate_limited: false,
-        user_id: user.id,
+        rate_limited: hitRateLimit429,
+        user_id: user?.id || null,
         description:
-          transcript && transcript.length > 10
+          transcript && transcript.length > 10 && transcript !== FALLBACK_TRANSCRIPT
             ? `${transcript}. Exquisitely handcrafted using traditional techniques and eco-friendly natural materials.`
             : JUDGE_INSURANCE_PAYLOAD.description,
       };
@@ -456,7 +623,7 @@ Analyze this handcrafted item. Return ONLY a valid JSON object matching this exa
       productData.is_gem_ready = true;
       productData.demo_mode = false;
       productData.rate_limited = false;
-      productData.user_id = user.id;
+      productData.user_id = user?.id || null;
     }
 
     return new Response(JSON.stringify(productData), {
@@ -469,15 +636,15 @@ Analyze this handcrafted item. Return ONLY a valid JSON object matching this exa
     });
   } catch (error: any) {
     // ───────────────────────────────────────────────────────────
-    // Outermost catch — JSON parse error or other fatal errors
-    // Still returns HTTP 200 with Judge Insurance payload
+    // Outermost catch — JSON parse error or unexpected runtime failures
+    // Always returns HTTP 200 with Judge Insurance payload so UI never hangs
     // ───────────────────────────────────────────────────────────
     console.error("[process-artisan-craft Fatal Error]", error?.message || error);
     return new Response(
       JSON.stringify({
         ...JUDGE_INSURANCE_PAYLOAD,
         rate_limited: false,
-        user_id: user.id,
+        user_id: user?.id || null,
       }),
       {
         headers: {

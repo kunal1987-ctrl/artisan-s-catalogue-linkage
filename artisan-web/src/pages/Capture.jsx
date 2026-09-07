@@ -182,12 +182,11 @@ export default function Capture() {
   const { user, artisanProfile, openAuthModal, showToast, language, toggleLanguage, toggleNotifications, unreadCount } = useAuth();
   const isVerified = Boolean(artisanProfile?.verified || user?.is_phone_verified);
 
-  // ── Dual Capture Refs ──
-  const cameraInputRef = useRef(null);
+  // ── Capture Input Ref ──
   const uploadInputRef = useRef(null);
 
   // ── Image State ──
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [_selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [processedPreview, setProcessedPreview] = useState(null);
   const [imageBase64, setImageBase64] = useState(null);
@@ -441,13 +440,26 @@ export default function Capture() {
     } catch (err) {
       console.warn('Microphone access unavailable or denied:', err);
       setMicUnavailable(true);
+      const isDenied =
+        err?.name === 'NotAllowedError' ||
+        err?.name === 'PermissionDeniedError' ||
+        String(err?.message || '').toLowerCase().includes('permission') ||
+        String(err?.message || '').toLowerCase().includes('denied');
+
+      if (showToast) {
+        showToast('Microphone access denied. Using text fallback.');
+      }
       setErrorMsg(
-        language === 'hi'
-          ? 'माइक्रोफ़ोन अनुपलब्ध है। कृपया नीचे दिए गए त्वरित विकल्पों में से चुनें या लिखें।'
-          : 'Microphone permission blocked or unavailable. Select a quick description below or type details.'
+        isDenied
+          ? (language === 'hi'
+              ? 'माइक्रोफ़ोन अनुमति अस्वीकृत। कृपया नीचे दिए गए त्वरित विकल्पों में से चुनें या लिखें।'
+              : 'Microphone access denied. Using text fallback.')
+          : (language === 'hi'
+              ? 'माइक्रोफ़ोन अनुपलब्ध है। कृपया नीचे दिए गए विकल्पों में से चुनें।'
+              : 'Microphone unavailable. Using text fallback.')
       );
     }
-  }, [language]);
+  }, [language, showToast]);
 
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
@@ -538,9 +550,23 @@ export default function Capture() {
           listingData = data;
         } else {
           console.warn('Edge Function returned non-2xx or error payload:', error || data?.error);
+          if (showToast) {
+            showToast(
+              language === 'hi'
+                ? 'एआई सेवा सूचना: सुरक्षित स्थानीय कैटलॉग सक्रिय किया गया।'
+                : 'AI Edge notice: Resilient local craft profile activated.'
+            );
+          }
         }
       } catch (invokeErr) {
         console.warn('Edge Function invocation caught error:', invokeErr);
+        if (showToast) {
+          showToast(
+            language === 'hi'
+              ? 'नेटवर्क विफलता: सुरक्षित कैटलॉग बैकअप का उपयोग किया जा रहा है।'
+              : 'Network failure during AI invocation. Using fallback.'
+          );
+        }
       }
 
       // Safe local fallback if remote Edge Function is unreachable
@@ -576,6 +602,8 @@ export default function Capture() {
         };
       }
 
+      setAiStatus('done');
+
       // Navigate to Review page with full AI profile
       navigate('/review', {
         state: {
@@ -586,13 +614,19 @@ export default function Capture() {
       });
     } catch (fatalErr) {
       console.error('Fatal generation error:', fatalErr);
-      setErrorMsg(fatalErr?.message || 'Processing failed. Please try again.');
+      const errMsg = fatalErr?.message || 'Processing failed. Please try again.';
+      setErrorMsg(errMsg);
+      if (showToast) {
+        showToast(`❌ ${errMsg}`);
+      }
       setAiStatus('error');
     }
-  }, [audioBase64, imageBase64, imageUrl, processedPreview, previewUrl, customTranscript, language, navigate]);
+  }, [audioBase64, imageBase64, imageUrl, processedPreview, previewUrl, customTranscript, language, navigate, showToast]);
 
   const displayImage = processedPreview || previewUrl;
   const isProcessing = aiStatus === 'transcribing' || aiStatus === 'analyzing';
+  const isOptimizing = bgRemovalStatus === 'processing';
+  const isLoading = isProcessing || isOptimizing;
 
   return (
     <div className="w-full">
@@ -720,8 +754,12 @@ export default function Capture() {
                 </div>
               ) : (
                 <div
-                  onClick={() => uploadInputRef.current?.click()}
-                  className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer group bg-gradient-to-b from-[#201815] to-[#140d0a] hover:from-[#261d19] transition-all"
+                  onClick={() => {
+                    if (!isLoading) uploadInputRef.current?.click();
+                  }}
+                  className={`absolute inset-0 flex flex-col items-center justify-center ${
+                    isLoading ? 'cursor-not-allowed opacity-75' : 'cursor-pointer group'
+                  } bg-gradient-to-b from-[#201815] to-[#140d0a] hover:from-[#261d19] transition-all`}
                 >
                   {/* Interactive targeting reticle */}
                   <div className="relative w-3/4 aspect-[4/3] max-w-md border border-white/10 rounded-2xl flex flex-col items-center justify-center p-6 text-center group-hover:border-[#ff9062]/50 transition-colors">
@@ -822,8 +860,16 @@ export default function Capture() {
                 <div className="flex items-center gap-2.5 flex-wrap">
                   {/* Unified Capture / Select Button */}
                   <button
-                    onClick={() => uploadInputRef.current?.click()}
-                    className="flex items-center gap-2 text-sm font-bold text-[#180f0a] bg-[#ff9062] hover:bg-[#ff804a] px-5 py-3 rounded-xl transition-all cursor-pointer active:scale-95 shadow-lg"
+                    id="snap-photo-btn"
+                    disabled={isLoading}
+                    onClick={() => {
+                      if (!isLoading) uploadInputRef.current?.click();
+                    }}
+                    className={`flex items-center gap-2 text-sm font-bold px-5 py-3 rounded-xl transition-all shadow-lg ${
+                      isLoading
+                        ? 'bg-[#ff9062]/50 text-[#180f0a]/50 cursor-not-allowed'
+                        : 'text-[#180f0a] bg-[#ff9062] hover:bg-[#ff804a] cursor-pointer active:scale-95'
+                    }`}
                     type="button"
                   >
                     <span className="material-symbols-outlined text-[20px]">photo_camera</span>
@@ -833,8 +879,16 @@ export default function Capture() {
                   {/* Retake Photo if already captured */}
                   {displayImage && (
                     <button
-                      onClick={handleRetake}
-                      className="flex items-center gap-1.5 text-xs font-bold text-red-300 bg-red-950/60 hover:bg-red-900/60 px-3 py-2 rounded-xl border border-red-500/40 transition-all cursor-pointer active:scale-95"
+                      id="retake-photo-btn"
+                      disabled={isLoading}
+                      onClick={() => {
+                        if (!isLoading) handleRetake();
+                      }}
+                      className={`flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl border transition-all ${
+                        isLoading
+                          ? 'text-red-300/40 bg-red-950/30 border-red-500/20 cursor-not-allowed'
+                          : 'text-red-300 bg-red-950/60 hover:bg-red-900/60 border-red-500/40 cursor-pointer active:scale-95'
+                      }`}
                       type="button"
                     >
                       <span className="material-symbols-outlined text-[16px]">replay</span>
@@ -933,14 +987,20 @@ export default function Capture() {
                     </>
                   )}
                   <button
+                    id="record-mic-btn"
                     aria-label="Speak craft details"
-                    onClick={toggleRecording}
-                    className={`relative z-10 w-20 h-20 rounded-full shadow-2xl flex items-center justify-center transform active:scale-95 transition-all duration-200 focus:outline-none border-2 cursor-pointer ${
-                      isRecording
-                        ? 'bg-red-600 border-red-400 text-white animate-pulse'
+                    disabled={isLoading}
+                    onClick={() => {
+                      if (!isLoading) toggleRecording();
+                    }}
+                    className={`relative z-10 w-20 h-20 rounded-full shadow-2xl flex items-center justify-center transform transition-all duration-200 focus:outline-none border-2 ${
+                      isLoading
+                        ? 'opacity-40 cursor-not-allowed border-stone-600 bg-stone-800 text-stone-500'
+                        : isRecording
+                        ? 'bg-red-600 border-red-400 text-white animate-pulse active:scale-95 cursor-pointer'
                         : audioBase64
-                        ? 'bg-emerald-600 border-emerald-400 text-white'
-                        : 'bg-[#9c441c] hover:bg-[#b04d20] border-[#ff9062]/40 text-white'
+                        ? 'bg-emerald-600 border-emerald-400 text-white active:scale-95 cursor-pointer'
+                        : 'bg-[#9c441c] hover:bg-[#b04d20] border-[#ff9062]/40 text-white active:scale-95 cursor-pointer'
                     }`}
                     type="button"
                   >
@@ -969,9 +1029,17 @@ export default function Capture() {
                 {/* Instant "Use Sample Craft Speech" fallback button */}
                 <div className="flex justify-center mt-3">
                   <button
+                    id="sample-speech-btn"
                     type="button"
-                    onClick={handleUseSampleSpeech}
-                    className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#ff9062]/15 hover:bg-[#ff9062]/25 text-[#ff9062] border border-[#ff9062]/40 text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-xs"
+                    disabled={isLoading}
+                    onClick={() => {
+                      if (!isLoading) handleUseSampleSpeech();
+                    }}
+                    className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full border text-xs font-bold transition-all shadow-xs ${
+                      isLoading
+                        ? 'bg-[#ff9062]/5 text-[#ff9062]/30 border-[#ff9062]/20 cursor-not-allowed'
+                        : 'bg-[#ff9062]/15 hover:bg-[#ff9062]/25 text-[#ff9062] border-[#ff9062]/40 cursor-pointer active:scale-95'
+                    }`}
                   >
                     <span className="material-symbols-outlined text-[16px]">record_voice_over</span>
                     <span>
@@ -1001,11 +1069,16 @@ export default function Capture() {
                     {CRAFT_SUGGESTION_CHIPS.map((chip, idx) => (
                       <button
                         key={idx}
-                        onClick={() => setCustomTranscript(chip.text)}
-                        className={`text-[11px] px-2.5 py-1 rounded-lg border transition-all cursor-pointer text-left ${
-                          customTranscript === chip.text
-                            ? 'bg-[#ff9062] text-[#180f0a] font-bold border-[#ff9062]'
-                            : 'bg-[#2e241e] text-[#d4c3ba] hover:text-white border-white/10 hover:border-white/20'
+                        disabled={isLoading}
+                        onClick={() => {
+                          if (!isLoading) setCustomTranscript(chip.text);
+                        }}
+                        className={`text-[11px] px-2.5 py-1 rounded-lg border transition-all text-left ${
+                          isLoading
+                            ? 'opacity-50 cursor-not-allowed border-white/5 bg-[#2e241e]'
+                            : customTranscript === chip.text
+                            ? 'bg-[#ff9062] text-[#180f0a] font-bold border-[#ff9062] cursor-pointer'
+                            : 'bg-[#2e241e] text-[#d4c3ba] hover:text-white border-white/10 hover:border-white/20 cursor-pointer'
                         }`}
                         type="button"
                       >
@@ -1049,23 +1122,28 @@ export default function Capture() {
 
                 {/* Primary Button */}
                 <button
+                  id="process-ai-btn"
                   aria-label="Process with AI"
-                  disabled={isProcessing}
-                  onClick={handleGenerateListing}
-                  className={`w-full h-14 rounded-2xl font-bold text-base tracking-wide flex items-center justify-center gap-2 shadow-xl active:scale-95 transition-all cursor-pointer ${
-                    isProcessing
-                      ? 'bg-[#ff9062]/60 text-[#180f0a]/60 cursor-wait'
-                      : 'bg-[#ff9062] hover:bg-[#ff804a] text-[#180f0a]'
+                  disabled={isLoading}
+                  onClick={() => {
+                    if (!isLoading) handleGenerateListing();
+                  }}
+                  className={`w-full h-14 rounded-2xl font-bold text-base tracking-wide flex items-center justify-center gap-2 shadow-xl transition-all ${
+                    isLoading
+                      ? 'bg-[#ff9062]/50 text-[#180f0a]/50 cursor-not-allowed'
+                      : 'bg-[#ff9062] hover:bg-[#ff804a] text-[#180f0a] cursor-pointer active:scale-95'
                   }`}
                   type="button"
                 >
                   <span>
-                    {isProcessing
-                      ? (language === 'hi' ? 'कैटलॉग बन रहा है...' : 'Generating Listing...')
+                    {isLoading
+                      ? isOptimizing
+                        ? (language === 'hi' ? 'फोटो ऑप्टिमाइज़ हो रही है...' : 'Optimizing Photo...')
+                        : (language === 'hi' ? 'कैटलॉग बन रहा है...' : 'Generating Listing...')
                       : (language === 'hi' ? 'एआई कैटलॉग बनाएं (आगे बढ़ें)' : 'Process with AI / आगे बढ़ें')}
                   </span>
                   <span className="material-symbols-outlined text-[22px]">
-                    {isProcessing ? 'hourglass_top' : 'auto_awesome'}
+                    {isLoading ? 'hourglass_top' : 'auto_awesome'}
                   </span>
                 </button>
 

@@ -127,7 +127,6 @@ function formatTimeAgo(isoDate) {
 
 function OrderCard({ order, onAcceptPO, onDispatchPO }) {
   const isGem = order.order_type === 'gem';
-  const channelLabel = order.channel || (isGem ? 'GeM PO' : 'ONDC');
   const navigate = useNavigate();
   const currentStatus = order.status || 'pending';
 
@@ -462,7 +461,7 @@ export default function Orders() {
         user_phone: userPhone,
       };
 
-      const { data, error } = await supabase.from('orders').insert([orderPayload]).select().single();
+      const { error } = await supabase.from('orders').insert([orderPayload]).select().single();
 
       if (error) {
         // Realtime insert fallback — simulate locally for demo

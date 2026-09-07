@@ -20,7 +20,7 @@ const GEM_CATEGORIES = [
 export default function Review() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, artisanName, artisanProfile, openAuthModal, showToast } = useAuth();
+  const { user, artisanProfile, openAuthModal, showToast } = useAuth();
 
   // Read AI data passed from Capture.jsx
   const aiData = location.state || {};

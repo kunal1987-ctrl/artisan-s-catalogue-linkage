@@ -291,9 +291,10 @@ function OrderCard({ order, onAcceptPO, onDispatchPO }) {
 
 export default function Orders() {
   const navigate = useNavigate();
-  const { user, artisanName, artisanProfile } = useAuth();
+  const { user, artisanProfile } = useAuth();
   const { language } = useLanguage();
   const [orders, setOrders] = useState(STATIC_ORDERS);
+  const [activeFilter, setActiveFilter] = useState('ALL');
   const [isSimulating, setIsSimulating] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const [realtimeConnected, setRealtimeConnected] = useState(false);
@@ -494,8 +495,25 @@ export default function Orders() {
     }
   };
 
-  // Merge static demo orders if real orders list is empty or prepend
-  const displayedOrders = orders.length > 0 ? orders : STATIC_ORDERS;
+  // Merge static demo orders if real orders list is empty or prepend, filtered by activeFilter
+  const allOrders = orders.length > 0 ? orders : STATIC_ORDERS;
+  const displayedOrders = allOrders.filter((order) => {
+    if (activeFilter === 'GEM') {
+      return (
+        order.order_type?.toLowerCase() === 'gem' ||
+        order.channel?.toLowerCase().includes('gem') ||
+        order.order_id?.toLowerCase().startsWith('gem')
+      );
+    }
+    if (activeFilter === 'ONDC') {
+      return (
+        order.order_type?.toLowerCase() === 'ondc' ||
+        order.channel?.toLowerCase().includes('ondc') ||
+        order.order_id?.toLowerCase().startsWith('ondc')
+      );
+    }
+    return true; // 'ALL'
+  });
 
   return (
     <div className="w-full">
@@ -503,11 +521,11 @@ export default function Orders() {
         <div className="flex flex-col gap-6 max-w-7xl mx-auto w-full">
 
           {/* Top Bar Navigation */}
-          <div className="flex items-center justify-between gap-4 pb-4 border-b border-border-delicate/60 flex-wrap">
-            <div className="flex items-center gap-3">
+          <div className="flex items-start justify-between gap-4 pb-4 border-b border-border-delicate/60 flex-wrap">
+            <div className="flex items-start gap-3">
               <button
                 aria-label="Go back to Home"
-                className="min-w-[48px] min-h-[48px] w-[48px] h-[48px] rounded-full bg-surface-container-low hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors cursor-pointer"
+                className="min-w-[48px] min-h-[48px] w-[48px] h-[48px] rounded-full bg-surface-container-low hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors cursor-pointer mt-0.5"
                 type="button"
                 onClick={() => navigate('/home')}
               >
@@ -525,26 +543,52 @@ export default function Orders() {
                       ? (language === 'hi' ? 'ONDC रीयलटाइम लाइव' : 'ONDC Realtime Live') 
                       : (language === 'hi' ? 'ONDC नेटवर्क' : 'ONDC Network')}
                   </span>
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-950 border border-emerald-500/40 text-emerald-300 font-bold text-[11px]">
-                    <span>🟢 {language === 'hi' ? 'प्रमाणित' : 'Authenticated'} (UID: ...{user?.id ? user.id.slice(0, 6) : 'anon'}) • {artisanName}</span>
-                  </span>
                 </div>
                 <h1 className="text-xl sm:text-2xl font-extrabold text-espresso-deep tracking-tight mt-0.5">
                   {language === 'hi' ? 'आर्डर इनबॉक्स' : 'Order Inbox'}
                 </h1>
+
+                {/* Horizontal touch-friendly filter pills */}
+                <div className="flex items-center gap-2 overflow-x-auto py-2 scrollbar-none mt-2">
+                  <button
+                    type="button"
+                    onClick={() => setActiveFilter('ALL')}
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-all shrink-0 active:scale-95 ${
+                      activeFilter === 'ALL'
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    All / सभी
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveFilter('GEM')}
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-all shrink-0 active:scale-95 ${
+                      activeFilter === 'GEM'
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    GeM Orders / सरकारी
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveFilter('ONDC')}
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-all shrink-0 active:scale-95 ${
+                      activeFilter === 'ONDC'
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    ONDC Orders / रिटेल
+                  </button>
+                </div>
               </div>
             </div>
 
             {/* Header Actions */}
-            <div className="flex items-center gap-2.5 flex-wrap justify-end">
-              <button
-                aria-label="Filter Orders"
-                className="min-h-[44px] px-3 sm:px-4 rounded-full bg-surface-container-low hover:bg-surface-container text-on-surface font-bold text-xs flex items-center gap-2 border border-border-delicate/80 transition-colors"
-                type="button"
-              >
-                <span className="material-symbols-outlined text-[18px] text-secondary">tune</span>
-                <span className="hidden sm:inline">{language === 'hi' ? 'फ़िल्टर' : 'Filter'}</span>
-              </button>
+            <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-center">
               <button
                 aria-label="Refresh Orders"
                 onClick={() => window.location.reload()}
@@ -594,14 +638,30 @@ export default function Orders() {
 
           {/* Orders Cards Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6" id="orders-list">
-            {displayedOrders.map((order) => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                onAcceptPO={handleAcceptPO}
-                onDispatchPO={handleDispatchPO}
-              />
-            ))}
+            {displayedOrders.length === 0 ? (
+              <div className="col-span-full py-12 text-center flex flex-col items-center justify-center gap-2 bg-surface-container-low rounded-3xl border border-border-delicate/60 p-6">
+                <span className="material-symbols-outlined text-4xl text-outline">inventory_2</span>
+                <p className="text-sm font-bold text-on-surface">
+                  {language === 'hi' ? 'इस श्रेणी में कोई आर्डर नहीं है' : 'No orders found for this filter'}
+                </p>
+                <button
+                  onClick={() => setActiveFilter('ALL')}
+                  className="mt-2 px-4 py-1.5 rounded-full bg-indigo-600 text-white text-xs font-bold cursor-pointer active:scale-95"
+                  type="button"
+                >
+                  {language === 'hi' ? 'सभी आर्डर देखें (View All)' : 'View All Orders'}
+                </button>
+              </div>
+            ) : (
+              displayedOrders.map((order) => (
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  onAcceptPO={handleAcceptPO}
+                  onDispatchPO={handleDispatchPO}
+                />
+              ))
+            )}
           </div>
 
           {/* Bottom Info Banner */}

@@ -68,7 +68,7 @@ const EXPORT_CATALOG_URL = 'https://jrkrdlalnqswvwabktce.supabase.co/functions/v
 export default function Catalog() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, artisanName, language } = useAuth();
+  const { language } = useAuth();
   const [products, setProducts] = useState(INITIAL_PRODUCTS);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all'); // all | live | draft | sold_out
@@ -354,18 +354,10 @@ export default function Catalog() {
                 </div>
                 <div className="flex items-center gap-3 flex-wrap">
                   <h2 className="text-2xl font-bold text-primary tracking-tight">
-                    {language === 'hi' ? 'हस्तशिल्प संग्रह' : 'Handcrafted Collection'}
+                    {language === 'hi' ? 'मेरी सूची (My Catalog)' : 'My Catalog / मेरी सूची'}
                   </h2>
                   <span className="px-3 py-1 bg-secondary-fixed text-on-secondary-fixed rounded-full text-xs font-bold">
                     {language === 'hi' ? `${products.length} उत्पाद सूचीबद्ध` : `${products.length} Items Listed`}
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-950 border border-emerald-500/40 text-emerald-300 font-bold text-[11px] shadow-xs">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span>🟢 {language === 'hi' ? 'प्रमाणित' : 'Authenticated'} (UID: ...{user?.id ? user.id.slice(0, 6) : 'anon'}) • {artisanName}</span>
-                  </span>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-on-surface-variant bg-surface-container px-2.5 py-1 rounded-full border border-surface-container-high">
-                    <span className="material-symbols-outlined text-[14px] text-emerald-700">cloud_done</span>
-                    <span>{language === 'hi' ? 'ऑफ़लाइन सुरक्षित' : 'Saved Offline'}</span>
                   </span>
                 </div>
               </div>

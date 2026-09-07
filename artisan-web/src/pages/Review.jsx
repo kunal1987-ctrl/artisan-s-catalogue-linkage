@@ -20,7 +20,7 @@ const GEM_CATEGORIES = [
 export default function Review() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, artisanName } = useAuth();
+  const { user, artisanName, artisanProfile, openAuthModal, showToast } = useAuth();
 
   // Read AI data passed from Capture.jsx
   const aiData = location.state || {};
@@ -70,12 +70,13 @@ export default function Review() {
   const [editingField, setEditingField] = useState(null); // 'title' | 'titleHi' | 'price' | 'wholesalePrice' | 'moq' | 'reasoning' | 'description' | 'descriptionHi' | null
 
   const hasAiData = !!location.state;
+  const isPhoneVerified = Boolean(artisanProfile?.verified || user?.is_phone_verified);
 
   // ════════════════════════════════════════════
   // PUBLISH TO SUPABASE (ONDC & GeM Payload)
   // ════════════════════════════════════════════
 
-  const handlePublish = async () => {
+  const proceedWithPublish = async () => {
     setIsPublishing(true);
     setPublishError('');
 
@@ -112,8 +113,10 @@ export default function Review() {
         }
       }
 
-      // 2. Insert complete product record into public.products
-      const authUserId = user?.id || (await supabase.auth.getUser()).data?.user?.id || null;
+      // 2. Insert complete product record into public.products with verified user.id and user.phone
+      const authUser = (await supabase.auth.getUser()).data?.user || user;
+      const authUserId = authUser?.id || user?.id || null;
+      const userPhone = artisanProfile?.phone || authUser?.phone || user?.phone || null;
 
       const payload = {
         title,
@@ -134,6 +137,7 @@ export default function Review() {
         image_url: finalImageUrl,
         status: 'published',
         user_id: authUserId,
+        user_phone: userPhone,
       };
 
       const { error } = await supabase.from('products').insert([payload]);
@@ -151,6 +155,18 @@ export default function Review() {
       setPublishError(err.message || 'Failed to publish. Please try again.');
       setIsPublishing(false);
     }
+  };
+
+  const handlePublish = async () => {
+    // Check if artisan phone is verified before publishing
+    if (!isPhoneVerified) {
+      showToast('कृपया पहले मोबाइल नंबर सत्यापित करें (Please verify phone with OTP before publishing)');
+      openAuthModal(() => {
+        proceedWithPublish();
+      });
+      return;
+    }
+    await proceedWithPublish();
   };
 
   const addTag = () => {
@@ -182,10 +198,21 @@ export default function Review() {
           <div>
             <div className="flex items-center gap-2">
               <span className="font-bold text-sm block leading-tight">Review & Finalize AI Craft Draft</span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-500/50 text-emerald-300 text-[10px] font-bold">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>🟢 ऑथेंटिकेटेड (UID: ...{user?.id ? user.id.slice(0, 6) : 'anon'}) • {artisanName}</span>
-              </span>
+              {isPhoneVerified ? (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-500/50 text-emerald-300 text-[10px] font-bold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span>🟢 {artisanProfile?.phone || user?.phone || '+91 99999 99999'} [✓ Verified]</span>
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => openAuthModal()}
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500 hover:bg-amber-400 text-stone-950 text-[10px] font-bold cursor-pointer transition-all active:scale-95 animate-pulse"
+                >
+                  <span className="material-symbols-outlined text-[13px]">login</span>
+                  <span>⚠️ असत्यापित कारीगर (Click to Verify Phone)</span>
+                </button>
+              )}
             </div>
             <span className="text-[11px] text-white/60 block leading-tight">AI-Driven Dual Market Linkage • ONDC & GeM</span>
           </div>

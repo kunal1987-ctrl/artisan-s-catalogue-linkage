@@ -222,7 +222,7 @@ function OrderCard({ order, onAcceptPO, onDispatchPO }) {
 
 export default function Orders() {
   const navigate = useNavigate();
-  const { user, artisanName } = useAuth();
+  const { user, artisanName, artisanProfile } = useAuth();
   const [orders, setOrders] = useState([]);
   const [isSimulating, setIsSimulating] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
@@ -398,7 +398,9 @@ export default function Orders() {
       const template = ORDER_TEMPLATES[templateIndexRef.current % ORDER_TEMPLATES.length];
       templateIndexRef.current += 1;
 
-      const authUserId = user?.id || (await supabase.auth.getUser()).data?.user?.id || null;
+      const authUser = (await supabase.auth.getUser()).data?.user || user;
+      const authUserId = authUser?.id || user?.id || null;
+      const userPhone = artisanProfile?.phone || authUser?.phone || user?.phone || null;
       const total = template.quantity * template.unit_price_inr;
       const orderPayload = {
         buyer_name: template.buyer_name,
@@ -409,6 +411,7 @@ export default function Orders() {
         status: 'pending',
         notes: template.product_title,
         user_id: authUserId,
+        user_phone: userPhone,
       };
 
       const { data, error } = await supabase.from('orders').insert([orderPayload]).select().single();

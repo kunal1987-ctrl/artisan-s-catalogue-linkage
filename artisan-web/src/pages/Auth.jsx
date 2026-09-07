@@ -1,40 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export default function Auth() {
   const navigate = useNavigate();
+  const { openAuthModal, artisanProfile, language, toggleLanguage } = useAuth();
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
-  const [language, setLanguage] = useState('hi');
 
-  const toggleLanguage = () => {
-    setLanguage(prev => prev === 'hi' ? 'en' : 'hi');
-  };
+  // If artisan is already verified, allow direct jump to home
+  useEffect(() => {
+    if (artisanProfile?.verified) {
+      navigate('/home');
+    }
+  }, [artisanProfile, navigate]);
 
   const handleVoiceInput = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
-      recognition.lang = 'hi-IN';
+      recognition.lang = language === 'hi' ? 'hi-IN' : 'en-IN';
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript.replace(/\D/g, '');
         if (transcript) setPhoneNumber(transcript.slice(0, 10));
       };
       recognition.start();
     } else {
-      alert('बोलकर नंबर दर्ज करने के लिए कृपया माइक्रोफ़ोन चालू रखें या 10-अंकीय नंबर टाइप करें।');
+      alert(language === 'hi'
+        ? 'बोलकर नंबर दर्ज करने के लिए कृपया माइक्रोफ़ोन चालू रखें या 10-अंकीय नंबर टाइप करें।'
+        : 'Please enable microphone or type 10-digit mobile number.');
     }
   };
 
   const handleSendOtp = () => {
-    if (phoneNumber.length < 10) {
-      alert('कृपया 10 अंकों का मोबाइल नंबर दर्ज करें (Please enter 10-digit mobile number)');
-      return;
-    }
-    setOtpSent(true);
-    setTimeout(() => {
+    openAuthModal(() => {
       navigate('/home');
-    }, 800);
+    });
   };
 
   return (
@@ -168,6 +168,27 @@ export default function Auth() {
                     </div>
 
                     
+                    {/* 1-Click Demo Badge */}
+                    <div className="p-3 rounded-2xl bg-[#ffede6] border border-[#ff9062]/40 flex flex-col gap-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-[#9c441c] uppercase tracking-wider flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[15px]">bolt</span>
+                          <span>Evaluator Quick Access</span>
+                        </span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#ff9062] text-white">
+                          Instant Pass
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleSendOtp}
+                        className="w-full py-2 px-3 rounded-xl bg-white hover:bg-[#fff7f4] border border-[#ff9062]/50 text-[#1e140e] text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition-all active:scale-[0.98] cursor-pointer"
+                      >
+                        <span className="text-base">⚡</span>
+                        <span>Demo Artisan (+91 99999 99999 / OTP: 123456)</span>
+                      </button>
+                    </div>
+
                     <div className="flex items-center justify-between pt-1">
                         <label className="text-xs font-bold text-outline uppercase tracking-wider" htmlFor="phone-input">
                             Mobile Number • मोबाइल नंबर
@@ -215,17 +236,16 @@ export default function Auth() {
                         अपना 10-अंकों का मोबाइल नंबर लिखें या माइक दबाकर बोलें
                     </p>
 
-                    
                     <button 
-    onClick={handleSendOtp} 
-    className="w-full py-4 px-6 rounded-full bg-primary text-on-primary font-bold text-sm tracking-wider uppercase shadow-md hover:bg-surface-tint active:scale-[0.99] transition-all flex items-center justify-center gap-2 group"
-    type="button"
-  >
-    <span>{otpSent ? 'OTP SENT! (ओटीपी भेजा गया)' : 'SEND OTP (ओटीपी प्राप्त करें)'}</span>
-    <span className="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">
-      {otpSent ? 'check_circle' : 'arrow_forward'}
-    </span>
-  </button>
+                      onClick={handleSendOtp} 
+                      className="w-full py-4 px-6 rounded-full bg-primary text-on-primary font-bold text-sm tracking-wider uppercase shadow-md hover:bg-surface-tint active:scale-[0.99] transition-all flex items-center justify-center gap-2 group cursor-pointer"
+                      type="button"
+                    >
+                      <span>SEND OTP (ओटीपी प्राप्त करें)</span>
+                      <span className="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">
+                        arrow_forward
+                      </span>
+                    </button>
 
                     
                     <div

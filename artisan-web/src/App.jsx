@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext.jsx';
+import AuthModal from './components/AuthModal.jsx';
 
 import DashboardLayout from './DashboardLayout.jsx';
 import Auth from './pages/Auth.jsx';
@@ -15,6 +16,7 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <AuthModal />
         <Routes>
           {/* Fullscreen Root Flow */}
           <Route path="/" element={<Auth />} />

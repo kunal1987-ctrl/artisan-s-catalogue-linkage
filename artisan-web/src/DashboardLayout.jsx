@@ -10,6 +10,9 @@ export default function DashboardLayout() {
     user,
     artisanName,
     artisanStudio,
+    artisanProfile,
+    signOut,
+    openAuthModal,
     language,
     toggleLanguage,
     toggleNotifications,
@@ -22,6 +25,8 @@ export default function DashboardLayout() {
     { to: '/orders', label: 'Orders (ऑर्डर्स)', icon: 'receipt_long', badge: '3 New', badgeColor: 'bg-[#ff9062]/20 text-[#9c441c]' },
     { to: '/success', label: 'Success / Details (विवरण)', icon: 'verified' },
   ];
+
+  const isVerified = !!artisanProfile?.verified;
 
   return (
     <div className="flex min-h-screen bg-[#fdf9f3] text-on-surface font-sans selection:bg-[#ffdbce]">
@@ -107,7 +112,7 @@ export default function DashboardLayout() {
             <span>Sahayata Kendra (1800-KALA)</span>
           </a>
           <div 
-            onClick={() => navigate('/success')}
+            onClick={() => isVerified ? navigate('/success') : openAuthModal()}
             className="flex items-center gap-3 p-2.5 rounded-xl bg-[#ebe8e2]/60 border border-[#d1c4bd]/30 cursor-pointer hover:bg-[#ebe8e2] transition-all"
           >
             <div className="relative">
@@ -116,15 +121,19 @@ export default function DashboardLayout() {
                 className="w-10 h-10 rounded-full object-cover shadow-sm"
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmvGYszZXuA45tASeKKSeAVzVfFnHtKAGtNsa4IB8eSEDv7aMN2Dj5pKYYgdmAj_qpHqPikrwnevchRmdRCCcuMRXPRl7fhyfOt-_XjOQic4K5XzVtP9-UCofnVEe570fnmUd_GNT4uQVrjHGKIIoPPyo1B2RZ4vXYFmloLyQfCyNa2hjDllGlTqYSywEQevMYAYPK6K6FMsX9YfKjc5nGMVc5iOINi_PYrPZd2lLY5bqH9AK1mI1L"
               />
-              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-600 ring-2 ring-[#f7f3ed]"></span>
+              <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ring-2 ring-[#f7f3ed] ${isVerified ? 'bg-green-600' : 'bg-amber-500'}`}></span>
             </div>
             <div className="flex flex-col min-w-0 flex-1">
-              <span className="font-bold text-[13px] text-primary truncate">{artisanName.split('(')[0].trim()}</span>
+              <span className="font-bold text-[13px] text-primary truncate">
+                {isVerified ? (artisanProfile.phone || artisanName.split('(')[0].trim()) : 'रामेश कुम्हार (Guest)'}
+              </span>
               <span className="text-[11px] text-secondary truncate">
-                UID: ...{user?.id ? user.id.slice(0, 6) : 'anon'}
+                {isVerified ? '✓ Phone Verified' : 'Tap to Verify Phone'}
               </span>
             </div>
-            <span className="material-symbols-outlined text-[18px] text-emerald-700">verified</span>
+            <span className={`material-symbols-outlined text-[18px] ${isVerified ? 'text-emerald-700' : 'text-amber-600'}`}>
+              {isVerified ? 'verified' : 'login'}
+            </span>
           </div>
         </div>
       </aside>
@@ -134,10 +143,37 @@ export default function DashboardLayout() {
         {/* Global Auth Status Top Bar */}
         <header className="bg-[#180f0a] text-white px-4 sm:px-6 py-2 flex items-center justify-between border-b border-black/20 text-xs sticky top-0 z-30 shadow-sm flex-wrap gap-2">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/90 border border-emerald-500/50 text-emerald-300 font-bold text-[11px] shadow-xs">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span>🟢 ऑथेंटिकेटेड (UID: ...{user?.id ? user.id.slice(0, 6) : 'anon'}) • {artisanName}</span>
-            </span>
+            {isVerified ? (
+              <>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/90 border border-emerald-500/50 text-emerald-300 font-bold text-[11px] shadow-xs">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span>🟢 {artisanProfile.phone || user?.phone || '+91 99999 99999'} • {artisanProfile.name || 'रामेश कुम्हार'} [✓ Verified]</span>
+                </span>
+                <button
+                  onClick={signOut}
+                  className="px-2.5 py-1 rounded-full bg-red-950/60 hover:bg-red-900 border border-red-500/40 text-red-300 hover:text-white font-bold text-[11px] flex items-center gap-1 transition-all cursor-pointer shadow-xs active:scale-95"
+                  title="Logout"
+                  type="button"
+                >
+                  <span className="material-symbols-outlined text-[13px]">logout</span>
+                  <span>लॉग आउट (Logout)</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => openAuthModal()}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-[11px] shadow-md transition-all cursor-pointer active:scale-95 animate-pulse"
+                  type="button"
+                >
+                  <span className="material-symbols-outlined text-[14px]">verified_user</span>
+                  <span>📲 फ़ोन सत्यापन (Login with Phone OTP)</span>
+                </button>
+                <span className="hidden sm:inline-block text-white/50 text-[11px]">
+                  | Guest Mode • Verify Phone to Publish to GeM & ONDC
+                </span>
+              </>
+            )}
             <span className="hidden sm:inline-block text-white/50 text-[11px]">
               | Supabase Auth JWT Active • Institutional GeM & ONDC
             </span>

@@ -6,37 +6,37 @@ import { useAuth } from '../context/AuthContext';
 const INITIAL_PRODUCTS = [
   {
     id: 'a1b2c3d4-0001-4000-8000-000000000001',
-    title: 'Handcrafted Gorakhpur Terracotta Surahi',
-    hindi_title: 'गोरखपुर हस्तनिर्मित टेराकोटा सुराही',
-    description: 'Traditional natural red clay water pitcher hand-thrown by Gorakhpur GI craftspeople. Naturally cooling with subtle tribal engravings.',
-    hindi_description: 'पारंपरिक प्राकृतिक लाल मिट्टी की सुराही, गोरखपुर जीआई शिल्पकारों द्वारा हस्तनिर्मित। प्राकृतिक शीतलन और सूक्ष्म पारंपरिक नक्काशी युक्त।',
-    price: 480,
-    bulk_price: 310,
-    min_order_quantity: 40,
-    gem_category: 'Handicraft / Terracotta Pottery',
+    title: 'Handcrafted Terracotta Earthen Pitcher (Surahi)',
+    hindi_title: 'पारंपरिक हस्तनिर्मित मिट्टी की सुराही',
+    description: 'Naturally cooled unglazed terracotta water pitcher with micro-porous earthen filtration. Traditional hand-thrown pottery crafted using organic riverbed clay with embossed floral motifs.',
+    hindi_description: 'प्राकृतिक रूप से पानी को शीतल रखने वाली हस्तनिर्मित मिट्टी की सुराही। नदी की शुद्ध चिकनी मिट्टी से पारंपरिक चाक पर तैयार और फूलों के बारीक नक्काशीदार काम से अलंकृत।',
+    price: 450,
+    bulk_price: 260,
+    min_order_quantity: 50,
+    gem_category: 'Handicrafts & Traditional Artware - Terracotta Ware',
     hsn_code: '69120010',
     unspsc_code: '60121002',
     craft_origin: 'Gorakhpur, Uttar Pradesh',
-    image_url: 'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?w=800&auto=format&fit=crop',
+    image_url: 'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=800&q=80',
     is_gem_ready: true,
     status: 'live',
     category: 'Ceramics & Pottery',
-    qty: 40,
+    qty: 50,
   },
   {
     id: 'a1b2c3d4-0002-4000-8000-000000000002',
-    title: 'Jaipur Heritage Floral Blue Pottery Vase',
-    hindi_title: 'जयपुर हेरिटेज फ्लोरल ब्लू पॉटरी फूलदान',
-    description: 'Authentic Quartz-based glazed decorative vase hand-painted with cobalt oxide floral arabesques by Jaipur master artisans.',
-    hindi_description: 'क्वार्ट्ज और कांच के मिश्रण से निर्मित प्रामाणिक हस्तनिर्मित ब्लू पॉटरी फूलदान, कोबाल्ट नीले फूलों के सुंदर पारंपरिक रूपांकन सहित।',
-    price: 950,
-    bulk_price: 680,
+    title: 'GI-Certified Jaipur Blue Pottery Decorative Wall Plate (10 Inch)',
+    hindi_title: 'भौगोलिक संकेतक (GI) प्रमाणित जयपुर ब्लू पॉटरी सजावटी प्लेट',
+    description: 'Authentic quartz powder and glass-frit ceramic plate hand-painted with Egyptian blue cobalt oxide and floral arabesque motifs. Turquoises glaze fired at low temperatures without clay.',
+    hindi_description: 'पारंपरिक क्वार्ट्ज और कांच के मिश्रण से निर्मित प्रामाणिक जयपुर ब्लू पॉटरी वॉल प्लेट। कोबाल्ट ऑक्साइड और प्राकृतिक रंगों से हाथ से चित्रित पारंपरिक फ्लोरल डिजाइन।',
+    price: 1250,
+    bulk_price: 780,
     min_order_quantity: 25,
-    gem_category: 'Handicraft / Ceramics & Pottery',
+    gem_category: 'Handicrafts & Decorative Items - Ceramic & Pottery Art',
     hsn_code: '69139000',
-    unspsc_code: '60121004',
+    unspsc_code: '60121001',
     craft_origin: 'Jaipur, Rajasthan',
-    image_url: 'https://images.unsplash.com/photo-1615529182904-14819c35db37?w=800&auto=format&fit=crop',
+    image_url: 'https://images.unsplash.com/photo-1610701596007-11502861dcfa?auto=format&fit=crop&w=800&q=80',
     is_gem_ready: true,
     status: 'live',
     category: 'Ceramics & Pottery',
@@ -44,18 +44,18 @@ const INITIAL_PRODUCTS = [
   },
   {
     id: 'a1b2c3d4-0003-4000-8000-000000000003',
-    title: 'Handwoven Chanderi Silk Zari Stole',
-    hindi_title: 'हस्तनिर्मित चंदेरी शुद्ध सिल्क ज़री स्टोल',
-    description: 'Gossamer pure Chanderi silk and cotton blend scarf with handcrafted golden zari borders and delicate buttis.',
-    hindi_description: 'पारंपरिक हथकरघे पर शुद्ध रेशम और मखमली सूत के संगम से बुना गया चंदेरी स्टोल, शुद्ध स्वर्ण ज़री बॉर्डर और महीन बूटी वर्क सहित।',
-    price: 1650,
+    title: 'Handwoven Chanderi Silk-Cotton Zari Border Stole',
+    hindi_title: 'हथकरघा चंदेरी सिल्क-कॉटन जरी बॉर्डर स्टोल',
+    description: 'Fine lightweight handloom stole woven on traditional pit-looms using pure mulberry silk warp and cotton weft. Embellished with tested gold zari booti motifs and finished selvage.',
+    hindi_description: 'पारंपरिक गड्ढा करघे पर बुना गया हल्का और मुलायम चंदेरी सिल्क-कॉटन स्टोल। शुद्ध रेशम और सूती धागों के साथ बारीक सुनहरी जरी बूटी और पारंपरिक किनारी डिजाइन।',
+    price: 1850,
     bulk_price: 1150,
     min_order_quantity: 20,
-    gem_category: 'Handloom / Silk Sarees & Stoles',
-    hsn_code: '50072010',
-    unspsc_code: '60121008',
+    gem_category: 'Handloom Textiles & Apparels - Scarves & Stoles',
+    hsn_code: '52085290',
+    unspsc_code: '53102504',
     craft_origin: 'Chanderi, Madhya Pradesh',
-    image_url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&auto=format&fit=crop',
+    image_url: 'https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?auto=format&fit=crop&w=800&q=80',
     is_gem_ready: true,
     status: 'live',
     category: 'Textiles & Handloom',
@@ -119,12 +119,10 @@ export default function Catalog() {
             category: item.category || item.gem_category || 'Handicrafts',
             qty: item.stock || item.min_order_quantity || item.moq || 1,
           }));
-          // Merge unique products
-          setProducts((prev) => {
-            const existingIds = new Set(prev.map(p => p.id));
-            const newItems = mapped.filter(m => !existingIds.has(m.id));
-            return [...newItems, ...prev];
-          });
+          // Replace with live products from Supabase
+          if (mapped.length > 0) {
+            setProducts(mapped);
+          }
         }
       } catch (e) {
         console.warn('Could not load products from Supabase:', e);

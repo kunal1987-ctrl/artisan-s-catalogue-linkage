@@ -6,52 +6,94 @@ import { useAuth } from '../context/AuthContext';
 // ─── Realistic institutional purchase order templates for GeM / ONDC simulation ───
 const ORDER_TEMPLATES = [
   {
-    order_id: 'GEM-PO-2026-9812',
-    buyer_name: 'Ministry of Tourism, Govt of India',
-    channel: 'GeM Institutional PO',
+    order_id: 'GEM-PO-2026-8849102',
+    buyer_name: 'Ministry of Tourism & Culture (Govt. of India)',
+    channel: 'GeM',
     order_type: 'gem',
-    item_title: 'Handcrafted Gorakhpur Terracotta Surahi',
-    quantity: 150,
-    unit_price_inr: 310,
-    total_amount: 46500,
-    total_price_inr: 46500,
-    status: 'accepted',
-    shipping_address: 'Transport Bhawan, 1 Parliament Street, New Delhi 110001',
+    item_title: 'Handcrafted Terracotta Earthen Pitcher (Surahi)',
+    quantity: 50,
+    unit_price_inr: 260,
+    total_amount: 13000,
+    total_price_inr: 13000,
+    status: 'pending',
+    shipping_address: 'Central State Guest House, Chanakyapuri, New Delhi - 110021',
     city: 'New Delhi',
-    payment_mode: 'GeM PFMS Institutional Escrow',
+    payment_mode: 'GeM PFMS Verified Institutional Escrow (Auto-settlement on Dispatch)',
     notes: 'Urgent institutional procurement for National Tourism Conclave 2026',
   },
   {
-    order_id: 'ONDC-TRIFED-8742',
-    buyer_name: 'TRIFED Regional Emporium',
-    channel: 'ONDC Network via Mystore',
+    order_id: 'ONDC-BECKN-PO-739218',
+    buyer_name: 'Tribal Co-operative Marketing Development Federation (TRIFED Store Network)',
+    channel: 'ONDC',
     order_type: 'ondc',
-    item_title: 'Jaipur Heritage Floral Blue Pottery Vase',
-    quantity: 40,
-    unit_price_inr: 680,
-    total_amount: 27200,
-    total_price_inr: 27200,
-    status: 'pending',
-    shipping_address: 'NCUI Complex, 3 Siri Institutional Area, August Kranti Marg, New Delhi 110016',
-    city: 'New Delhi',
-    payment_mode: 'ONDC Escrow RSP Prepaid',
+    item_title: 'GI-Certified Jaipur Blue Pottery Decorative Wall Plate (10 Inch)',
+    quantity: 25,
+    unit_price_inr: 780,
+    total_amount: 19500,
+    total_price_inr: 19500,
+    status: 'accepted',
+    shipping_address: 'TRIFED Central Fulfillment Hub, Sector 62, Noida, Uttar Pradesh - 201309',
+    city: 'Noida',
+    payment_mode: 'ONDC Protocol Settlement via UPI / BharatQR',
     notes: 'Tribal & Artisan Heritage Retail Distribution',
   },
   {
     order_id: 'GEM-PO-2026-9813',
     buyer_name: 'Ministry of Textiles (DC Handlooms)',
-    channel: 'GeM Institutional PO',
+    channel: 'GeM',
     order_type: 'gem',
-    item_title: 'Handwoven Chanderi Silk Zari Stole',
-    quantity: 80,
+    item_title: 'Handwoven Chanderi Silk-Cotton Zari Border Stole',
+    quantity: 20,
     unit_price_inr: 1150,
-    total_amount: 92000,
-    total_price_inr: 92000,
+    total_amount: 23000,
+    total_price_inr: 23000,
     status: 'pending',
     shipping_address: 'Udyog Bhawan, Rafi Marg, New Delhi 110011',
     city: 'New Delhi',
-    payment_mode: 'GeM PFMS Institutional Escrow',
+    payment_mode: 'GeM PFMS Verified Institutional Escrow (Auto-settlement on Dispatch)',
     notes: 'Institutional Diplomatic Gift Procurement Batch',
+  },
+];
+
+// Static demo institutional orders matching production seed
+const STATIC_ORDERS = [
+  {
+    id: 'b2c3d4e5-0001-4000-8000-000000000001',
+    order_id: 'GEM-PO-2026-8849102',
+    buyer_name: 'Ministry of Tourism & Culture (Govt. of India)',
+    channel: 'GeM',
+    order_type: 'gem',
+    item_title: 'Handcrafted Terracotta Earthen Pitcher (Surahi)',
+    product_title: 'Handcrafted Terracotta Earthen Pitcher (Surahi)',
+    quantity: 50,
+    unit_price_inr: 260,
+    total_amount: 13000,
+    total_price_inr: 13000,
+    status: 'pending',
+    shipping_address: 'Central State Guest House, Chanakyapuri, New Delhi - 110021',
+    city: 'New Delhi',
+    payment_mode: 'GeM PFMS Verified Institutional Escrow (Auto-settlement on Dispatch)',
+    notes: 'Urgent institutional procurement for National Tourism Conclave 2026',
+    created_at: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'b2c3d4e5-0002-4000-8000-000000000002',
+    order_id: 'ONDC-BECKN-PO-739218',
+    buyer_name: 'Tribal Co-operative Marketing Development Federation (TRIFED Store Network)',
+    channel: 'ONDC',
+    order_type: 'ondc',
+    item_title: 'GI-Certified Jaipur Blue Pottery Decorative Wall Plate (10 Inch)',
+    product_title: 'GI-Certified Jaipur Blue Pottery Decorative Wall Plate (10 Inch)',
+    quantity: 25,
+    unit_price_inr: 780,
+    total_amount: 19500,
+    total_price_inr: 19500,
+    status: 'accepted',
+    shipping_address: 'TRIFED Central Fulfillment Hub, Sector 62, Noida, Uttar Pradesh - 201309',
+    city: 'Noida',
+    payment_mode: 'ONDC Protocol Settlement via UPI / BharatQR',
+    notes: 'Tribal & Artisan Heritage Retail Distribution',
+    created_at: new Date(Date.now() - 75 * 60 * 1000).toISOString(),
   },
 ];
 
@@ -243,7 +285,7 @@ function OrderCard({ order, onAcceptPO, onDispatchPO }) {
 export default function Orders() {
   const navigate = useNavigate();
   const { user, artisanName, artisanProfile } = useAuth();
-  const [orders, setOrders] = useState([]);
+  const [orders, setOrders] = useState(STATIC_ORDERS);
   const [isSimulating, setIsSimulating] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const [realtimeConnected, setRealtimeConnected] = useState(false);
@@ -254,48 +296,6 @@ export default function Orders() {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(''), 4000);
   };
-
-  // Static demo institutional orders matching production seed
-  const STATIC_ORDERS = [
-    {
-      id: 'b2c3d4e5-0001-4000-8000-000000000001',
-      order_id: 'GEM-PO-2026-9812',
-      buyer_name: 'Ministry of Tourism, Govt of India',
-      channel: 'GeM Institutional PO',
-      order_type: 'gem',
-      item_title: 'Handcrafted Gorakhpur Terracotta Surahi',
-      product_title: 'Handcrafted Gorakhpur Terracotta Surahi',
-      quantity: 150,
-      unit_price_inr: 310,
-      total_amount: 46500,
-      total_price_inr: 46500,
-      status: 'accepted',
-      shipping_address: 'Transport Bhawan, 1 Parliament Street, New Delhi 110001',
-      city: 'New Delhi',
-      payment_mode: 'GeM PFMS Institutional Escrow',
-      notes: 'Urgent institutional procurement for National Tourism Conclave 2026',
-      created_at: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
-    },
-    {
-      id: 'b2c3d4e5-0002-4000-8000-000000000002',
-      order_id: 'ONDC-TRIFED-8742',
-      buyer_name: 'TRIFED Regional Emporium',
-      channel: 'ONDC Network via Mystore',
-      order_type: 'ondc',
-      item_title: 'Jaipur Heritage Floral Blue Pottery Vase',
-      product_title: 'Jaipur Heritage Floral Blue Pottery Vase',
-      quantity: 40,
-      unit_price_inr: 680,
-      total_amount: 27200,
-      total_price_inr: 27200,
-      status: 'pending',
-      shipping_address: 'NCUI Complex, 3 Siri Institutional Area, August Kranti Marg, New Delhi 110016',
-      city: 'New Delhi',
-      payment_mode: 'ONDC Escrow RSP Prepaid',
-      notes: 'Tribal & Artisan Heritage Retail Distribution',
-      created_at: new Date(Date.now() - 75 * 60 * 1000).toISOString(),
-    },
-  ];
 
   // Helper to normalize Supabase row to exact frontend model
   const mapOrderRecord = (item) => ({

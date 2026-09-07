@@ -1,292 +1,159 @@
--- Migration: 20260907_seed_crafts_and_orders.sql
--- Description: Schema extensions, RLS alignment, and production seed crafts & institutional purchase orders
+begin;
 
 -- ============================================================================
--- 1. SCHEMA EXTENSIONS FOR public.products
+-- 1. PRODUCTS SCHEMA & SEED CRAFTS (TERRACOTTA, BLUE POTTERY, CHANDERI)
 -- ============================================================================
-CREATE TABLE IF NOT EXISTS public.products (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    title TEXT NOT NULL,
-    description TEXT,
-    price NUMERIC NOT NULL DEFAULT 0,
-    tags TEXT[] DEFAULT '{}',
-    image_url TEXT,
-    status TEXT DEFAULT 'live',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+
+-- Ensure required columns exist
+alter table public.products 
+add column if not exists hindi_title text,
+add column if not exists hindi_description text,
+add column if not exists bulk_price numeric default 280,
+add column if not exists min_order_quantity integer default 25,
+add column if not exists gem_category text default 'Handicrafts & Traditional Art',
+add column if not exists hsn_code text default '69120010',
+add column if not exists unspsc_code text default '60121002',
+add column if not exists craft_origin text default 'India',
+add column if not exists is_gem_ready boolean default true,
+add column if not exists user_id uuid references auth.users(id) default auth.uid();
+
+-- Clean up test records
+delete from public.products 
+where title is null or title in ('Test', 'Untitled Craft');
+
+-- Clean up prior seed crafts if existing
+delete from public.products
+where title in (
+  'Handcrafted Terracotta Earthen Pitcher (Surahi)',
+  'GI-Certified Jaipur Blue Pottery Decorative Wall Plate (10 Inch)',
+  'Handwoven Chanderi Silk-Cotton Zari Border Stole'
 );
 
--- Ensure all requested columns exist on public.products
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS hindi_title TEXT;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS hindi_description TEXT;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS bulk_price NUMERIC;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS min_order_quantity INTEGER DEFAULT 1;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS gem_category TEXT;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS hsn_code TEXT;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS unspsc_code TEXT;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS craft_origin TEXT;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS image_url TEXT;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS is_gem_ready BOOLEAN DEFAULT true;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS user_id UUID;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS artisan_user_id UUID;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS title_hi TEXT;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS description_hi TEXT;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS moq INTEGER DEFAULT 1;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS wholesale_price NUMERIC;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS category TEXT;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS pricing_reasoning TEXT;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS user_phone TEXT;
-
--- ============================================================================
--- 2. SCHEMA EXTENSIONS FOR public.orders
--- ============================================================================
-CREATE TABLE IF NOT EXISTS public.orders (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
--- Drop restrictive status or order_type check constraints if present
-ALTER TABLE public.orders DROP CONSTRAINT IF EXISTS orders_status_check;
-ALTER TABLE public.orders DROP CONSTRAINT IF EXISTS orders_order_type_check;
-
--- Ensure all requested columns exist on public.orders
-ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS order_id TEXT;
-ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS buyer_name TEXT;
-ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS channel TEXT;
-ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS item_title TEXT;
-ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS quantity INTEGER DEFAULT 1;
-ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS total_amount NUMERIC;
-ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'pending';
-ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS shipping_address TEXT;
-ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS payment_mode TEXT;
-ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS user_id UUID;
-ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS artisan_user_id UUID;
-ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS user_phone TEXT;
-ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS order_type TEXT DEFAULT 'retail';
-ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS product_id UUID;
-ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS unit_price_inr NUMERIC;
-ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS total_price_inr NUMERIC;
-ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS notes TEXT;
-ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS city TEXT;
-ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
-
--- Enable realtime on public.orders safely
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_publication_tables 
-    WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'orders'
-  ) THEN
-    ALTER PUBLICATION supabase_realtime ADD TABLE public.orders;
-  END IF;
-END $$;
-
--- ============================================================================
--- 3. RLS PERMISSIVE POLICIES (Prevent queries from getting blocked)
--- ============================================================================
-ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Allow public select on products" ON public.products;
-CREATE POLICY "Allow public select on products"
-ON public.products FOR SELECT TO public USING (true);
-
-DROP POLICY IF EXISTS "Allow public insert on products" ON public.products;
-CREATE POLICY "Allow public insert on products"
-ON public.products FOR INSERT TO public WITH CHECK (true);
-
-DROP POLICY IF EXISTS "Allow public update on products" ON public.products;
-CREATE POLICY "Allow public update on products"
-ON public.products FOR UPDATE TO public USING (true);
-
-DROP POLICY IF EXISTS "Allow public delete on products" ON public.products;
-CREATE POLICY "Allow public delete on products"
-ON public.products FOR DELETE TO public USING (true);
-
-ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Allow public select on orders" ON public.orders;
-CREATE POLICY "Allow public select on orders"
-ON public.orders FOR SELECT TO public USING (true);
-
-DROP POLICY IF EXISTS "Allow public insert on orders" ON public.orders;
-CREATE POLICY "Allow public insert on orders"
-ON public.orders FOR INSERT TO public WITH CHECK (true);
-
-DROP POLICY IF EXISTS "Allow public update on orders" ON public.orders;
-CREATE POLICY "Allow public update on orders"
-ON public.orders FOR UPDATE TO public USING (true);
-
-DROP POLICY IF EXISTS "Allow public delete on orders" ON public.orders;
-CREATE POLICY "Allow public delete on orders"
-ON public.orders FOR DELETE TO public USING (true);
-
--- ============================================================================
--- 4. CLEANUP ROUTINES FOR SEED DATA
--- ============================================================================
-DELETE FROM public.products WHERE title IN (
-    'Handcrafted Gorakhpur Terracotta Surahi',
-    'Jaipur Heritage Floral Blue Pottery Vase',
-    'Handwoven Chanderi Silk Zari Stole'
-);
-
-DELETE FROM public.orders WHERE order_id IN (
-    'GEM-PO-2026-9812',
-    'ONDC-TRIFED-8742'
-);
-
--- ============================================================================
--- 5. EXPLICIT SEED INSERTS: 3 PRODUCTION CRAFTS
--- ============================================================================
-INSERT INTO public.products (
-    id,
-    title,
-    hindi_title,
-    title_hi,
-    description,
-    hindi_description,
-    description_hi,
-    price,
-    bulk_price,
-    wholesale_price,
-    min_order_quantity,
-    moq,
-    gem_category,
-    category,
-    hsn_code,
-    unspsc_code,
-    craft_origin,
-    image_url,
-    is_gem_ready,
-    status,
-    tags,
-    pricing_reasoning
-) VALUES
+-- Insert 3 Production-Grade Seed Crafts
+insert into public.products (
+  title,
+  hindi_title,
+  description,
+  hindi_description,
+  price,
+  bulk_price,
+  min_order_quantity,
+  gem_category,
+  hsn_code,
+  unspsc_code,
+  craft_origin,
+  image_url,
+  is_gem_ready
+) values 
 (
-    'a1b2c3d4-0001-4000-8000-000000000001',
-    'Handcrafted Gorakhpur Terracotta Surahi',
-    'गोरखपुर हस्तनिर्मित टेराकोटा सुराही',
-    'गोरखपुर हस्तनिर्मित टेराकोटा सुराही',
-    'Traditional natural red clay water pitcher hand-thrown by Gorakhpur GI craftspeople. Naturally cooling with subtle tribal engravings.',
-    'पारंपरिक प्राकृतिक लाल मिट्टी की सुराही, गोरखपुर जीआई शिल्पकारों द्वारा हस्तनिर्मित। प्राकृतिक शीतलन और सूक्ष्म पारंपरिक नक्काशी युक्त।',
-    'पारंपरिक प्राकृतिक लाल मिट्टी की सुराही, गोरखपुर जीआई शिल्पकारों द्वारा हस्तनिर्मित। प्राकृतिक शीतलन और सूक्ष्म पारंपरिक नक्काशी युक्त।',
-    480,
-    310,
-    310,
-    40,
-    40,
-    'Handicraft / Terracotta Pottery',
-    'Ceramics & Pottery',
-    '69120010',
-    '60121002',
-    'Gorakhpur, Uttar Pradesh',
-    'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?w=800&auto=format&fit=crop',
-    true,
-    'live',
-    ARRAY['Terracotta', 'Gorakhpur GI', 'Pottery', 'Eco-friendly', 'GeM Ready'],
-    'Fair artisan living wage with wood-kiln firing overhead factored for volume institutional contracts.'
+  'Handcrafted Terracotta Earthen Pitcher (Surahi)',
+  'पारंपरिक हस्तनिर्मित मिट्टी की सुराही',
+  'Naturally cooled unglazed terracotta water pitcher with micro-porous earthen filtration. Traditional hand-thrown pottery crafted using organic riverbed clay with embossed floral motifs.',
+  'प्राकृतिक रूप से पानी को शीतल रखने वाली हस्तनिर्मित मिट्टी की सुराही। नदी की शुद्ध चिकनी मिट्टी से पारंपरिक चाक पर तैयार और फूलों के बारीक नक्काशीदार काम से अलंकृत।',
+  450.00,
+  260.00,
+  50,
+  'Handicrafts & Traditional Artware - Terracotta Ware',
+  '69120010',
+  '60121002',
+  'Gorakhpur, Uttar Pradesh',
+  'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=800&q=80',
+  true
 ),
 (
-    'a1b2c3d4-0002-4000-8000-000000000002',
-    'Jaipur Heritage Floral Blue Pottery Vase',
-    'जयपुर हेरिटेज फ्लोरल ब्लू पॉटरी फूलदान',
-    'जयपुर हेरिटेज फ्लोरल ब्लू पॉटरी फूलदान',
-    'Authentic Quartz-based glazed decorative vase hand-painted with cobalt oxide floral arabesques by Jaipur master artisans.',
-    'क्वार्ट्ज और कांच के मिश्रण से निर्मित प्रामाणिक हस्तनिर्मित ब्लू पॉटरी फूलदान, कोबाल्ट नीले फूलों के सुंदर पारंपरिक रूपांकन सहित।',
-    'क्वार्ट्ज और कांच के मिश्रण से निर्मित प्रामाणिक हस्तनिर्मित ब्लू पॉटरी फूलदान, कोबाल्ट नीले फूलों के सुंदर पारंपरिक रूपांकन सहित।',
-    950,
-    680,
-    680,
-    25,
-    25,
-    'Handicraft / Ceramics & Pottery',
-    'Ceramics & Pottery',
-    '69139000',
-    '60121004',
-    'Jaipur, Rajasthan',
-    'https://images.unsplash.com/photo-1615529182904-14819c35db37?w=800&auto=format&fit=crop',
-    true,
-    'live',
-    ARRAY['Blue Pottery', 'Jaipur GI', 'Ceramics', 'Handpainted', 'GeM Verified'],
-    'Includes non-toxic lead-free glaze certification and custom export packaging buffers.'
+  'GI-Certified Jaipur Blue Pottery Decorative Wall Plate (10 Inch)',
+  'भौगोलिक संकेतक (GI) प्रमाणित जयपुर ब्लू पॉटरी सजावटी प्लेट',
+  'Authentic quartz powder and glass-frit ceramic plate hand-painted with Egyptian blue cobalt oxide and floral arabesque motifs. Turquoises glaze fired at low temperatures without clay.',
+  'पारंपरिक क्वार्ट्ज और कांच के मिश्रण से निर्मित प्रामाणिक जयपुर ब्लू पॉटरी वॉल प्लेट। कोबाल्ट ऑक्साइड और प्राकृतिक रंगों से हाथ से चित्रित पारंपरिक फ्लोरल डिजाइन।',
+  1250.00,
+  780.00,
+  25,
+  'Handicrafts & Decorative Items - Ceramic & Pottery Art',
+  '69139000',
+  '60121001',
+  'Jaipur, Rajasthan',
+  'https://images.unsplash.com/photo-1610701596007-11502861dcfa?auto=format&fit=crop&w=800&q=80',
+  true
 ),
 (
-    'a1b2c3d4-0003-4000-8000-000000000003',
-    'Handwoven Chanderi Silk Zari Stole',
-    'हस्तनिर्मित चंदेरी शुद्ध सिल्क ज़री स्टोल',
-    'हस्तनिर्मित चंदेरी शुद्ध सिल्क ज़री स्टोल',
-    'Gossamer pure Chanderi silk and cotton blend scarf with handcrafted golden zari borders and delicate buttis.',
-    'पारंपरिक हथकरघे पर शुद्ध रेशम और मखमली सूत के संगम से बुना गया चंदेरी स्टोल, शुद्ध स्वर्ण ज़री बॉर्डर और महीन बूटी वर्क सहित।',
-    'पारंपरिक हथकरघे पर शुद्ध रेशम और मखमली सूत के संगम से बुना गया चंदेरी स्टोल, शुद्ध स्वर्ण ज़री बॉर्डर और महीन बूटी वर्क सहित।',
-    1650,
-    1150,
-    1150,
-    20,
-    20,
-    'Handloom / Silk Sarees & Stoles',
-    'Textiles & Handloom',
-    '50072010',
-    '60121008',
-    'Chanderi, Madhya Pradesh',
-    'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&auto=format&fit=crop',
-    true,
-    'live',
-    ARRAY['Chanderi', 'Handloom', 'Silk', 'Zari', 'Make in India'],
-    'Reflects 36 hours of handloom shuttle weaving with authentic Silk Mark tested yarn.'
+  'Handwoven Chanderi Silk-Cotton Zari Border Stole',
+  'हथकरघा चंदेरी सिल्क-कॉटन जरी बॉर्डर स्टोल',
+  'Fine lightweight handloom stole woven on traditional pit-looms using pure mulberry silk warp and cotton weft. Embellished with tested gold zari booti motifs and finished selvage.',
+  'पारंपरिक गड्ढा करघे पर बुना गया हल्का और मुलायम चंदेरी सिल्क-कॉटन स्टोल। शुद्ध रेशम और सूती धागों के साथ बारीक सुनहरी जरी बूटी और पारंपरिक किनारी डिजाइन।',
+  1850.00,
+  1150.00,
+  20,
+  'Handloom Textiles & Apparels - Scarves & Stoles',
+  '52085290',
+  '53102504',
+  'Chanderi, Madhya Pradesh',
+  'https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?auto=format&fit=crop&w=800&q=80',
+  true
 );
 
 -- ============================================================================
--- 6. EXPLICIT SEED INSERTS: 2 INSTITUTIONAL PURCHASE ORDERS
+-- 2. ORDERS SCHEMA & SEED INSTITUTIONAL PURCHASE ORDERS
 -- ============================================================================
-INSERT INTO public.orders (
-    id,
-    order_id,
-    buyer_name,
-    channel,
-    order_type,
-    item_title,
-    quantity,
-    total_amount,
-    unit_price_inr,
-    total_price_inr,
-    status,
-    shipping_address,
-    city,
-    payment_mode,
-    notes,
-    product_id
-) VALUES
+
+-- Ensure required order columns exist
+alter table public.orders 
+add column if not exists order_id text,
+add column if not exists buyer_name text,
+add column if not exists channel text default 'GeM',
+add column if not exists item_title text,
+add column if not exists quantity integer default 1,
+add column if not exists total_amount numeric default 0,
+add column if not exists status text default 'pending',
+add column if not exists shipping_address text,
+add column if not exists payment_mode text default 'GeM Public Financial Management System (PFMS) Escrow',
+add column if not exists artisan_user_id uuid references auth.users(id) default auth.uid(),
+add column if not exists created_at timestamp with time zone default timezone('utc'::text, now());
+
+-- Drop restrictive legacy check constraints
+alter table public.orders drop constraint if exists orders_status_check;
+alter table public.orders drop constraint if exists orders_order_type_check;
+
+-- Clean up broken test order rows
+delete from public.orders 
+where buyer_name is null or buyer_name = 'Test Buyer';
+
+-- Clean up prior seed orders if existing
+delete from public.orders 
+where order_id in ('GEM-PO-2026-8849102', 'ONDC-BECKN-PO-739218');
+
+-- Insert 2 Realistic Institutional Purchase Orders
+insert into public.orders (
+  order_id,
+  buyer_name,
+  channel,
+  item_title,
+  quantity,
+  total_amount,
+  status,
+  shipping_address,
+  payment_mode
+) values 
 (
-    'b2c3d4e5-0001-4000-8000-000000000001',
-    'GEM-PO-2026-9812',
-    'Ministry of Tourism, Govt of India',
-    'GeM Institutional PO',
-    'gem',
-    'Handcrafted Gorakhpur Terracotta Surahi',
-    150,
-    46500,
-    310,
-    46500,
-    'accepted',
-    'Transport Bhawan, 1 Parliament Street, New Delhi 110001',
-    'New Delhi',
-    'GeM PFMS Institutional Escrow',
-    'Urgent institutional procurement for National Tourism Conclave 2026',
-    'a1b2c3d4-0001-4000-8000-000000000001'
+  'GEM-PO-2026-8849102',
+  'Ministry of Tourism & Culture (Govt. of India)',
+  'GeM',
+  'Handcrafted Terracotta Earthen Pitcher (Surahi)',
+  50,
+  13000.00,
+  'pending',
+  'Central State Guest House, Chanakyapuri, New Delhi - 110021',
+  'GeM PFMS Verified Institutional Escrow (Auto-settlement on Dispatch)'
 ),
 (
-    'b2c3d4e5-0002-4000-8000-000000000002',
-    'ONDC-TRIFED-8742',
-    'TRIFED Regional Emporium',
-    'ONDC Network via Mystore',
-    'ondc',
-    'Jaipur Heritage Floral Blue Pottery Vase',
-    40,
-    27200,
-    680,
-    27200,
-    'pending',
-    'NCUI Complex, 3 Siri Institutional Area, August Kranti Marg, New Delhi 110016',
-    'New Delhi',
-    'ONDC Escrow RSP Prepaid',
-    'Tribal & Artisan Heritage Retail Distribution',
-    'a1b2c3d4-0002-4000-8000-000000000002'
+  'ONDC-BECKN-PO-739218',
+  'Tribal Co-operative Marketing Development Federation (TRIFED Store Network)',
+  'ONDC',
+  'GI-Certified Jaipur Blue Pottery Decorative Wall Plate (10 Inch)',
+  25,
+  19500.00,
+  'accepted',
+  'TRIFED Central Fulfillment Hub, Sector 62, Noida, Uttar Pradesh - 201309',
+  'ONDC Protocol Settlement via UPI / BharatQR'
 );
+
+commit;

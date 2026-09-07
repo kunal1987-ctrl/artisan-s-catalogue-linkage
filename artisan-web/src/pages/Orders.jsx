@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import WebhookSimulator from '../components/WebhookSimulator';
+import InstitutionalTenderCard, { ACTIVE_INSTITUTIONAL_TENDERS } from '../components/InstitutionalTenderCard';
 
 // ─── Realistic institutional purchase order templates for GeM / ONDC simulation ───
 const ORDER_TEMPLATES = [
@@ -296,6 +298,7 @@ export default function Orders() {
   const [orders, setOrders] = useState(STATIC_ORDERS);
   const [activeFilter, setActiveFilter] = useState('ALL');
   const [isSimulating, setIsSimulating] = useState(false);
+  const [showTendersSection, setShowTendersSection] = useState(true);
   const [toastMsg, setToastMsg] = useState('');
   const [realtimeConnected, setRealtimeConnected] = useState(false);
   const channelRef = useRef(null);
@@ -495,6 +498,93 @@ export default function Orders() {
     }
   };
 
+  // 6. Handle Live Webhook Simulator Injection (ONDC Retail or GeM PO)
+  const handleSimulateWebhookOrder = (simulatedOrder, channelType) => {
+    const mapped = mapOrderRecord(simulatedOrder);
+    setOrders((prev) => [mapped, ...prev.filter((o) => o.id !== mapped.id && o.order_id !== mapped.order_id)]);
+    showToast(
+      language === 'hi'
+        ? `⚡ ${channelType === 'gem' ? 'GeM सरकारी थोक खरीद' : 'ONDC रिटेल नेटवर्क'} नया ऑर्डर प्राप्त! — ₹${(mapped.total_amount || 0).toLocaleString('en-IN')}`
+        : `⚡ New ${channelType === 'gem' ? 'GeM Institutional PO' : 'ONDC Retail Webhook'} Received! — ₹${(mapped.total_amount || 0).toLocaleString('en-IN')}`
+    );
+    speakOrder(mapped);
+
+    // Persist to Supabase if database connection is available
+    try {
+      supabase.from('orders').insert([{
+        order_id: mapped.order_id,
+        buyer_name: mapped.buyer_name,
+        channel: mapped.channel,
+        order_type: mapped.order_type,
+        item_title: mapped.item_title,
+        quantity: mapped.quantity,
+        unit_price_inr: mapped.unit_price_inr,
+        total_amount: mapped.total_amount,
+        total_price_inr: mapped.total_price_inr,
+        status: 'pending',
+        shipping_address: mapped.shipping_address,
+        payment_mode: mapped.payment_mode,
+        notes: mapped.notes,
+        city: mapped.city,
+      }]).then(() => {});
+    } catch (e) {
+      console.warn('[WebhookSimulator] Background DB insert fallback:', e);
+    }
+  };
+
+  // 7. Handle 1-Click Institutional Tender Bid & Acceptance
+  const handleAcceptTender = (tender) => {
+    const generatedOrderId = `GEM-PO-${Date.now().toString().slice(-6)}`;
+    const tenderOrder = mapOrderRecord({
+      id: `tender-${Date.now()}`,
+      order_id: generatedOrderId,
+      buyer_name: tender.ministry,
+      channel: 'GeM Institutional PO',
+      order_type: 'gem',
+      item_title: tender.title,
+      product_title: tender.title,
+      quantity: tender.quantity,
+      unit_price_inr: tender.unit_budget_inr,
+      total_amount: tender.total_budget_inr,
+      total_price_inr: tender.total_budget_inr,
+      status: 'accepted',
+      shipping_address: tender.delivery_location,
+      city: 'New Delhi',
+      payment_mode: 'GeM PFMS Verified Institutional Escrow (Auto-settlement on Dispatch)',
+      notes: `Awarded Tender: ${tender.tender_no} • ${tender.eligibility}`,
+      created_at: new Date().toISOString(),
+    });
+
+    setOrders((prev) => [tenderOrder, ...prev.filter((o) => o.id !== tenderOrder.id && o.order_id !== tenderOrder.order_id)]);
+    showToast(
+      language === 'hi'
+        ? `🏆 सरकारी निविदा स्वीकृत! GeM PO #${generatedOrderId} — ₹${tender.total_budget_inr.toLocaleString('en-IN')}`
+        : `🏆 GeM Tender Awarded! PO #${generatedOrderId} — ₹${tender.total_budget_inr.toLocaleString('en-IN')}`
+    );
+    speakOrder(tenderOrder);
+
+    try {
+      supabase.from('orders').insert([{
+        order_id: tenderOrder.order_id,
+        buyer_name: tenderOrder.buyer_name,
+        channel: tenderOrder.channel,
+        order_type: 'gem',
+        item_title: tenderOrder.item_title,
+        quantity: tenderOrder.quantity,
+        unit_price_inr: tenderOrder.unit_price_inr,
+        total_amount: tenderOrder.total_amount,
+        total_price_inr: tenderOrder.total_price_inr,
+        status: 'accepted',
+        shipping_address: tenderOrder.shipping_address,
+        payment_mode: tenderOrder.payment_mode,
+        notes: tenderOrder.notes,
+        city: tenderOrder.city,
+      }]).then(() => {});
+    } catch (e) {
+      console.warn('[InstitutionalTender] Background DB insert fallback:', e);
+    }
+  };
+
   // Merge static demo orders if real orders list is empty or prepend, filtered by activeFilter
   const allOrders = orders.length > 0 ? orders : STATIC_ORDERS;
   const displayedOrders = allOrders.filter((order) => {
@@ -599,6 +689,55 @@ export default function Orders() {
               </button>
             </div>
           </div>
+
+          {/* ── LIVE ONDC & GEM WEBHOOK PROTOCOL SIMULATOR ── */}
+          <WebhookSimulator onSimulateOrder={handleSimulateWebhookOrder} isSimulating={isSimulating} />
+
+          {/* ── ACTIVE GEM INSTITUTIONAL PROCUREMENT TENDERS ── */}
+          <section className="bg-[#fcfaf7] border border-[#d1c4bd]/60 rounded-3xl p-5 sm:p-6 shadow-xs flex flex-col gap-4">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-3">
+                <span className="w-10 h-10 rounded-2xl bg-blue-100 text-blue-900 flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-[22px]">gavel</span>
+                </span>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-base sm:text-lg font-bold text-stone-900">
+                      {language === 'hi' ? '🏛️ सक्रिय सरकारी खरीद निविदाएं (GeM B2B Tenders)' : '🏛️ Active Government Procurement Tenders (GeM)'}
+                    </h3>
+                    <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-900 text-[10px] font-bold">
+                      {ACTIVE_INSTITUTIONAL_TENDERS.length} {language === 'hi' ? 'सक्रिय' : 'Live'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-stone-600">
+                    {language === 'hi'
+                      ? 'आपके शिल्प क्लस्टर हेतु आरक्षित थोक खरीद निविदाएं • 1-क्लिक में डिजिटल बोली लगाएं'
+                      : 'Reserved institutional procurement requests matched to your cluster • 1-Click Digital Bidding'}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowTendersSection(!showTendersSection)}
+                className="px-3.5 py-1.5 rounded-full bg-white border border-[#d1c4bd] hover:bg-stone-50 text-xs font-semibold text-stone-700 cursor-pointer transition-colors shadow-2xs"
+              >
+                {showTendersSection ? (language === 'hi' ? 'संक्षेप ▴' : 'Collapse ▴') : (language === 'hi' ? 'निविदाएं देखें ▾' : 'View Tenders ▾')}
+              </button>
+            </div>
+
+            {showTendersSection && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
+                {ACTIVE_INSTITUTIONAL_TENDERS.map((tender) => (
+                  <InstitutionalTenderCard
+                    key={tender.id}
+                    tender={tender}
+                    onAcceptTender={handleAcceptTender}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
 
           {/* Quick Status / Voice Banner */}
           <section

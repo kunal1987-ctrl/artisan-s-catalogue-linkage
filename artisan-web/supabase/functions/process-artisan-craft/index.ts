@@ -47,6 +47,44 @@ const JUDGE_INSURANCE_PAYLOAD = {
   craft_category: "Terracotta & Pottery",
   tags: ["Terracotta", "Eco-friendly", "Handmade", "Home Decor", "GeM Certified"],
   demo_mode: true,
+  // Standardized ONDC Beckn Protocol Schema
+  ondc_beckn_item: {
+    id: "ONDC-ITEM-TERRACOTTA-001",
+    descriptor: {
+      name: "Handcrafted Terracotta Decorative Pot",
+      name_hi: "हस्तनिर्मित टेराकोटा सजावटी बर्तन",
+      short_desc: "Eco-friendly natural clay pot hand-thrown with traditional folk motifs",
+      long_desc: "Exquisitely hand-thrown and kiln-fired natural clay pot featuring traditional folk motifs.",
+      images: [],
+    },
+    price: {
+      currency: "INR",
+      value: "450",
+    },
+    category_id: "artisan_handicrafts",
+    fulfillment_id: "ondc_standard_delivery",
+    tags: {
+      hsn_code: "69120010",
+      origin_country: "IND",
+      make_in_india: "true",
+      digital_escrow_enabled: "true",
+      escrow_protocol: "ONDC_RSP_BECKN_ESCROW",
+      bpp_id: "kala-sangam.artisan.in",
+    },
+  },
+  // Standardized GeM Procurement Schema
+  gem_specification: {
+    category: "Handicrafts - Terracotta Pottery and Planters",
+    unspsc: "60121002",
+    hsn: "69120010",
+    moq: 50,
+    bulk_unit_price: 280,
+    digital_escrow: true,
+    pfms_integrated: true,
+    msme_preference_eligible: true,
+    delivery_terms: "F.O.R. Destination (Central Government Stores)",
+    escrow_settlement: "PFMS Milestone Auto-Disbursement on Dispatch",
+  },
 };
 
 // ─────────────────────────────────────────────────────────────────
@@ -664,6 +702,46 @@ Return ONLY a valid JSON object matching this exact schema:
       productData.demo_mode = false;
       productData.rate_limited = false;
       productData.user_id = user?.id || null;
+
+      // Standardized ONDC Beckn Protocol Schema
+      productData.ondc_beckn_item = {
+        id: `ONDC-ITEM-${Date.now().toString(36).toUpperCase()}`,
+        descriptor: {
+          name: productData.title,
+          name_hi: productData.title_hi || productData.title,
+          short_desc: (productData.description || "").slice(0, 140),
+          long_desc: productData.description || "",
+          images: [],
+        },
+        price: {
+          currency: "INR",
+          value: String(productData.price || 450),
+        },
+        category_id: productData.craft_category || "artisan_handicrafts",
+        fulfillment_id: "ondc_standard_delivery",
+        tags: {
+          hsn_code: productData.hsn_code || "69120010",
+          origin_country: "IND",
+          make_in_india: "true",
+          digital_escrow_enabled: "true",
+          escrow_protocol: "ONDC_RSP_BECKN_ESCROW",
+          bpp_id: "kala-sangam.artisan.in",
+        },
+      };
+
+      // Standardized GeM Procurement Schema
+      productData.gem_specification = {
+        category: productData.gem_category || "Handicrafts",
+        unspsc: productData.unspsc_code || "60121002",
+        hsn: productData.hsn_code || "69120010",
+        moq: productData.moq || 50,
+        bulk_unit_price: productData.bulk_price || productData.bulk_price_inr || 280,
+        digital_escrow: true,
+        pfms_integrated: true,
+        msme_preference_eligible: true,
+        delivery_terms: "F.O.R. Destination (Central Government Stores)",
+        escrow_settlement: "PFMS Milestone Auto-Disbursement on Dispatch",
+      };
     }
 
     return new Response(JSON.stringify(productData), {

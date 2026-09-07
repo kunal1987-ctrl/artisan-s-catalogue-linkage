@@ -5,58 +5,61 @@ import { useAuth } from '../context/AuthContext';
 
 const INITIAL_PRODUCTS = [
   {
-    id: 'sample-1',
-    title: 'Handwoven Silk Saree',
-    category: 'Textiles',
-    price: 1200,
+    id: 'a1b2c3d4-0001-4000-8000-000000000001',
+    title: 'Handcrafted Gorakhpur Terracotta Surahi',
+    hindi_title: 'गोरखपुर हस्तनिर्मित टेराकोटा सुराही',
+    description: 'Traditional natural red clay water pitcher hand-thrown by Gorakhpur GI craftspeople. Naturally cooling with subtle tribal engravings.',
+    hindi_description: 'पारंपरिक प्राकृतिक लाल मिट्टी की सुराही, गोरखपुर जीआई शिल्पकारों द्वारा हस्तनिर्मित। प्राकृतिक शीतलन और सूक्ष्म पारंपरिक नक्काशी युक्त।',
+    price: 480,
+    bulk_price: 310,
+    min_order_quantity: 40,
+    gem_category: 'Handicraft / Terracotta Pottery',
+    hsn_code: '69120010',
+    unspsc_code: '60121002',
+    craft_origin: 'Gorakhpur, Uttar Pradesh',
+    image_url: 'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?w=800&auto=format&fit=crop',
+    is_gem_ready: true,
     status: 'live',
-    qty: 4,
-    image_url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB-sNNPD7NjjGMS1v2tbVl4yFv8Iu1JhWlZUSvVBfDKp5ZF6QhcVD2Sj6bZWaiqixmiP37vRBG3SX9F3b4uR1n5MGGkrup-cALXMHLo3q5mJKxvO6Nb25E-D5gbpBwccFakVyyk-_RDpwytaljJ-QALr2nS-n5AudvitRZYoapt2ZvvelTIOPpiqcpPk-naPoAd76t5OvZDzT6uu5VR1pT5VNtpORRdvDWNlvYgSEdonfXI4gmBrbBJ'
+    category: 'Ceramics & Pottery',
+    qty: 40,
   },
   {
-    id: 'sample-2',
-    title: 'Handcrafted Terracotta Vase',
-    category: 'Ceramics',
-    price: 450,
+    id: 'a1b2c3d4-0002-4000-8000-000000000002',
+    title: 'Jaipur Heritage Floral Blue Pottery Vase',
+    hindi_title: 'जयपुर हेरिटेज फ्लोरल ब्लू पॉटरी फूलदान',
+    description: 'Authentic Quartz-based glazed decorative vase hand-painted with cobalt oxide floral arabesques by Jaipur master artisans.',
+    hindi_description: 'क्वार्ट्ज और कांच के मिश्रण से निर्मित प्रामाणिक हस्तनिर्मित ब्लू पॉटरी फूलदान, कोबाल्ट नीले फूलों के सुंदर पारंपरिक रूपांकन सहित।',
+    price: 950,
+    bulk_price: 680,
+    min_order_quantity: 25,
+    gem_category: 'Handicraft / Ceramics & Pottery',
+    hsn_code: '69139000',
+    unspsc_code: '60121004',
+    craft_origin: 'Jaipur, Rajasthan',
+    image_url: 'https://images.unsplash.com/photo-1615529182904-14819c35db37?w=800&auto=format&fit=crop',
+    is_gem_ready: true,
     status: 'live',
-    qty: 8,
-    image_url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD8gEkbmMy61lt8HNipaEyZvDF0R6p-ND7qw2cjEn5TZ1I4aNy53nnPEyP6HiXzAHRgdm_ed09vPoCnl1sL8dhIZLrqPDv4KXmty4ipc14XLjBMFnBDpRj8Tp826kW8qSIVv90XEcFniXGnN--UJKkOv6Z1BwWZ2wbgGT3jt2qtrJbDQFLBGha72GH9OeMBzvmZduyd2xRG_j1AtZWd8ofVb3w5hKebi8HhvGosoQnjAelg213v4nsH'
+    category: 'Ceramics & Pottery',
+    qty: 25,
   },
   {
-    id: 'sample-3',
-    title: 'Embroidered Jute Tote Bag',
-    category: 'Accessories',
-    price: 350,
-    status: 'draft',
-    qty: 'Pending',
-    image_url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDukLnU4bbCJbOZFDn_6jsPBmdqKn0r3eCL6M7LKio3tU9vVx7laPhV7YMS0u2u3VEnhOvQFoarfhdEr44HF8cu5Ue78dPL4VecZWcWMZ4ZBUY7Ij25ZyVmRw1QUp8SXgDKWGXmI6Ga7PA9Muw9XeiCxNmHUMQbM6tR8xumpfSzCnLCXtuTl-6yJILr8hkIhG7rVFe8bo3rRjFirA6FjylAkc-cadJG7GgQavy9VRWMS_LHqQees_0A'
-  },
-  {
-    id: 'sample-4',
-    title: 'Brass Hanging Temple Diya',
-    category: 'Metalcraft',
-    price: 890,
-    status: 'sold_out',
-    qty: '0 in stock',
-    image_url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDlHfIaGDyYI0EAvbGgSI27CpGX-wwPKR744QBj2N5mF8JiWx2pJEHOznBx3d-QTMJ7vwL8abVP2GDeWgoqjrZOXB6G9WbSDMfbSWGXlLSiZU1Q-PDh11pL5VbO-WmzFvbUxJPftFGSV8ArB3R772RiFxmCm1-nwf-qg8p7Fc1-jem9M8p3KpuoF4kRmPSpWYOw_XkuS_4kMmzYH_Lr1CqJ72xPS8g2gMw4SDBvOS-AIa9mLyHIicHJ'
-  },
-  {
-    id: 'sample-5',
-    title: 'Block-print Cotton Kurta',
-    category: 'Apparel',
-    price: 650,
+    id: 'a1b2c3d4-0003-4000-8000-000000000003',
+    title: 'Handwoven Chanderi Silk Zari Stole',
+    hindi_title: 'हस्तनिर्मित चंदेरी शुद्ध सिल्क ज़री स्टोल',
+    description: 'Gossamer pure Chanderi silk and cotton blend scarf with handcrafted golden zari borders and delicate buttis.',
+    hindi_description: 'पारंपरिक हथकरघे पर शुद्ध रेशम और मखमली सूत के संगम से बुना गया चंदेरी स्टोल, शुद्ध स्वर्ण ज़री बॉर्डर और महीन बूटी वर्क सहित।',
+    price: 1650,
+    bulk_price: 1150,
+    min_order_quantity: 20,
+    gem_category: 'Handloom / Silk Sarees & Stoles',
+    hsn_code: '50072010',
+    unspsc_code: '60121008',
+    craft_origin: 'Chanderi, Madhya Pradesh',
+    image_url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&auto=format&fit=crop',
+    is_gem_ready: true,
     status: 'live',
-    qty: 12,
-    image_url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCxOJ0FKTYbbuMdGP2TFkBovi83nJiUcJ9esAv6gvCjf8DY5gmmeeF-yPcG4I1EsSm76xXiCiLZNUCaGj_X0VefIt-9VDN_Hc4hPgKA2A10j92yfkmqMbhWlxTaX89BIeLseNRlL641YrAhqjzPPC8uHDFOBQcCZFL6W7c-LlEicZC4u5RWq6tWpsRptguCMiGZb517GyYZIP2HSkZP4dhUo8-pUSLXe6Qn-iKKHY8lcxO3RCq5S1PX'
-  },
-  {
-    id: 'sample-6',
-    title: 'Carved Sheesham Wood Box',
-    category: 'Woodcraft',
-    price: 550,
-    status: 'live',
-    qty: 6,
-    image_url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCp1cvKGoksKi4GTU_zeqkUAQyN_YdiyEV1hiX72ms9PeoKrT3-utw_vtH95S1WqbmkU3G_2jmzW7jFU0sl-ywaXtYbKHF1W9FtgYm5rFNQ5JJT8nE5E-XxN50l4NeudtXowIgi6i0VdgvVivkWC5-FVyY_tbEOuNG3pwcf1Y7wlWRjMVepn3Ul5174sdJyUHdoWXNcrvaVnU57nZN7wnn-4Py6PNboZs8tl2q0BEWf8C-eiRJ-pX80'
+    category: 'Textiles & Handloom',
+    qty: 20,
   }
 ];
 
@@ -100,11 +103,21 @@ export default function Catalog() {
           const mapped = data.map((item) => ({
             id: item.id,
             title: item.title,
-            category: item.category || 'Handicrafts',
-            price: item.price || 850,
+            hindi_title: item.hindi_title || item.title_hi || '',
+            description: item.description || '',
+            hindi_description: item.hindi_description || item.description_hi || '',
+            price: Number(item.price || 0),
+            bulk_price: Number(item.bulk_price || item.wholesale_price || Math.round((item.price || 0) * 0.72)),
+            min_order_quantity: Number(item.min_order_quantity || item.moq || 1),
+            gem_category: item.gem_category || item.category || 'Handicrafts',
+            hsn_code: item.hsn_code || '69120010',
+            unspsc_code: item.unspsc_code || '60121002',
+            craft_origin: item.craft_origin || 'India',
+            image_url: item.image_url || 'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?w=800&auto=format&fit=crop',
+            is_gem_ready: item.is_gem_ready ?? true,
             status: item.status === 'published' ? 'live' : item.status || 'live',
-            qty: item.stock || 1,
-            image_url: item.image_url || 'https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?w=600&auto=format&fit=crop'
+            category: item.category || item.gem_category || 'Handicrafts',
+            qty: item.stock || item.min_order_quantity || item.moq || 1,
           }));
           // Merge unique products
           setProducts((prev) => {
@@ -621,13 +634,40 @@ export default function Catalog() {
                     </div>
 
                     <div className="flex flex-col flex-1 px-1 pb-1">
-                      <span className="text-[11px] font-bold uppercase text-secondary tracking-wider truncate mb-0.5">
-                        {p.category}
-                      </span>
-                      <h3 className="text-sm font-bold text-primary line-clamp-1 mb-1">{p.title}</h3>
-                      <div className="mt-auto flex items-center justify-between pt-1">
-                        <span className="text-base font-extrabold text-primary">✨ ₹{p.price}</span>
-                        <span className="text-xs font-semibold text-on-surface-variant">Qty: {p.qty}</span>
+                      <div className="flex items-center justify-between gap-1 mb-0.5">
+                        <span className="text-[11px] font-bold uppercase text-secondary tracking-wider truncate">
+                          {p.gem_category || p.category}
+                        </span>
+                        {p.is_gem_ready && (
+                          <span className="text-[10px] font-bold text-amber-900 bg-amber-100/90 px-1.5 py-0.5 rounded shrink-0">
+                            GeM
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="text-sm font-bold text-primary line-clamp-1">{p.title}</h3>
+                      {p.hindi_title && (
+                        <p className="text-[11px] text-on-surface-variant font-hindi line-clamp-1 mb-0.5">
+                          {p.hindi_title}
+                        </p>
+                      )}
+                      {p.craft_origin && (
+                        <p className="text-[10px] text-secondary font-medium flex items-center gap-0.5 mb-1">
+                          <span className="material-symbols-outlined text-[12px]">location_on</span>
+                          <span className="truncate">{p.craft_origin}</span>
+                        </p>
+                      )}
+                      <div className="mt-auto flex items-center justify-between pt-1 border-t border-surface-container/60">
+                        <div>
+                          <span className="text-base font-extrabold text-primary">₹{p.price}</span>
+                          {p.bulk_price && (
+                            <span className="text-[11px] text-emerald-700 font-bold ml-1.5">
+                              (Bulk: ₹{p.bulk_price})
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs font-semibold text-on-surface-variant">
+                          MOQ: {p.min_order_quantity || p.qty || 1}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -698,11 +738,34 @@ export default function Catalog() {
                     className="w-16 h-16 rounded-xl object-cover border border-surface-container"
                   />
                   <div>
-                    <span className="text-[11px] font-bold text-secondary uppercase tracking-wider">
-                      {selectedProduct.category}
-                    </span>
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <span className="text-[11px] font-bold text-secondary uppercase tracking-wider">
+                        {selectedProduct.gem_category || selectedProduct.category}
+                      </span>
+                      {selectedProduct.is_gem_ready && (
+                        <span className="text-[10px] font-bold text-amber-900 bg-amber-100 px-1.5 py-0.5 rounded">
+                          GeM Ready
+                        </span>
+                      )}
+                    </div>
                     <h3 className="text-base font-bold text-primary leading-snug">{selectedProduct.title}</h3>
-                    <p className="text-sm font-extrabold text-primary">₹{selectedProduct.price}</p>
+                    {selectedProduct.hindi_title && (
+                      <p className="text-xs text-on-surface-variant font-hindi mb-1">{selectedProduct.hindi_title}</p>
+                    )}
+                    <div className="flex items-center gap-3">
+                      <p className="text-sm font-extrabold text-primary">Retail: ₹{selectedProduct.price}</p>
+                      {selectedProduct.bulk_price && (
+                        <p className="text-xs font-bold text-emerald-700">
+                          Bulk: ₹{selectedProduct.bulk_price} (MOQ: {selectedProduct.min_order_quantity || 1})
+                        </p>
+                      )}
+                    </div>
+                    {selectedProduct.craft_origin && (
+                      <p className="text-[11px] text-secondary font-medium flex items-center gap-0.5 mt-0.5">
+                        <span className="material-symbols-outlined text-[13px]">location_on</span>
+                        <span>{selectedProduct.craft_origin}</span>
+                      </p>
+                    )}
                   </div>
                 </div>
                 <button

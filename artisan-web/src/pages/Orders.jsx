@@ -3,43 +3,55 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 
-// ─── Realistic mock order templates for GeM / ONDC simulation ───
+// ─── Realistic institutional purchase order templates for GeM / ONDC simulation ───
 const ORDER_TEMPLATES = [
   {
-    buyer_name: 'Ministry of Tribal Affairs',
+    order_id: 'GEM-PO-2026-9812',
+    buyer_name: 'Ministry of Tourism, Govt of India',
+    channel: 'GeM Institutional PO',
     order_type: 'gem',
+    item_title: 'Handcrafted Gorakhpur Terracotta Surahi',
     quantity: 150,
-    unit_price_inr: 450,
-    product_title: 'Handcrafted Terracotta Decorative Pot',
-    channel: 'GeM PO',
+    unit_price_inr: 310,
+    total_amount: 46500,
+    total_price_inr: 46500,
+    status: 'accepted',
+    shipping_address: 'Transport Bhawan, 1 Parliament Street, New Delhi 110001',
     city: 'New Delhi',
+    payment_mode: 'GeM PFMS Institutional Escrow',
+    notes: 'Urgent institutional procurement for National Tourism Conclave 2026',
   },
   {
-    buyer_name: 'Priya Sharma',
+    order_id: 'ONDC-TRIFED-8742',
+    buyer_name: 'TRIFED Regional Emporium',
+    channel: 'ONDC Network via Mystore',
     order_type: 'ondc',
-    quantity: 1,
-    unit_price_inr: 1200,
-    product_title: 'Handwoven Blue Pure Silk Saree',
-    channel: 'ONDC via Mystore',
-    city: 'Lucknow, UP',
+    item_title: 'Jaipur Heritage Floral Blue Pottery Vase',
+    quantity: 40,
+    unit_price_inr: 680,
+    total_amount: 27200,
+    total_price_inr: 27200,
+    status: 'pending',
+    shipping_address: 'NCUI Complex, 3 Siri Institutional Area, August Kranti Marg, New Delhi 110016',
+    city: 'New Delhi',
+    payment_mode: 'ONDC Escrow RSP Prepaid',
+    notes: 'Tribal & Artisan Heritage Retail Distribution',
   },
   {
-    buyer_name: 'KVIC Bulk Procurement',
+    order_id: 'GEM-PO-2026-9813',
+    buyer_name: 'Ministry of Textiles (DC Handlooms)',
+    channel: 'GeM Institutional PO',
     order_type: 'gem',
+    item_title: 'Handwoven Chanderi Silk Zari Stole',
     quantity: 80,
-    unit_price_inr: 280,
-    product_title: 'Banarasi Handwoven Silk Saree (Wholesale)',
-    channel: 'GeM PO',
-    city: 'Mumbai, MH',
-  },
-  {
-    buyer_name: 'Rohit Verma',
-    order_type: 'ondc',
-    quantity: 2,
-    unit_price_inr: 900,
-    product_title: 'Handcrafted Brass Puja Diya',
-    channel: 'ONDC via Paytm',
-    city: 'Varanasi, UP',
+    unit_price_inr: 1150,
+    total_amount: 92000,
+    total_price_inr: 92000,
+    status: 'pending',
+    shipping_address: 'Udyog Bhawan, Rafi Marg, New Delhi 110011',
+    city: 'New Delhi',
+    payment_mode: 'GeM PFMS Institutional Escrow',
+    notes: 'Institutional Diplomatic Gift Procurement Batch',
   },
 ];
 
@@ -48,10 +60,11 @@ function speakOrder(order) {
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     const qty = order.quantity || 1;
-    const price = order.total_price_inr || order.unit_price_inr || 0;
+    const price = order.total_amount || order.total_price_inr || order.unit_price_inr || 0;
     const channel = order.channel || (order.order_type === 'gem' ? 'GeM' : 'ONDC');
     const buyer = order.buyer_name || 'एक ग्राहक';
-    const text = `नया आर्डर आया है! ${channel} से ${buyer} ने ${qty} नग मांगे हैं। कुल कीमत ₹${price}। जल्दी से पैक करें।`;
+    const item = order.item_title || order.product_title || 'शिल्प उत्पाद';
+    const text = `नया आर्डर आया है! ${channel} से ${buyer} ने ${qty} नग ${item} मांगे हैं। कुल कीमत ₹${price}। जल्दी से पैक करें।`;
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'hi-IN';
     utterance.rate = 0.9;
@@ -84,16 +97,23 @@ function OrderCard({ order, onAcceptPO, onDispatchPO }) {
       <div className="flex flex-col gap-4">
         <div className="flex items-start justify-between gap-2">
           <div className="flex flex-col">
-            <div className="flex items-center gap-1.5">
-              <span className="text-sm font-bold text-on-surface">
-                #{String(order.id || 'NEW').slice(0, 8).toUpperCase()}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-sm font-bold text-on-surface font-mono">
+                #{String(order.order_id || order.id || 'NEW').toUpperCase()}
               </span>
               <span className="text-on-surface-variant">•</span>
               <span className="text-xs text-on-surface-variant">{formatTimeAgo(order.created_at)}</span>
             </div>
-            <span className={`text-xs font-bold ${isGem ? 'text-amber-700' : 'text-secondary'}`}>
-              {isGem ? '🏛️ Institutional GeM Order' : '⚡ ONDC Network Live'}
-            </span>
+            <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+              <span className={`text-xs font-bold ${isGem ? 'text-amber-700' : 'text-secondary'}`}>
+                {isGem ? '🏛️ Institutional GeM Order' : '⚡ ONDC Network Live'}
+              </span>
+              {order.buyer_name && (
+                <span className="text-[11px] text-on-surface-variant font-semibold">
+                  • {order.buyer_name}
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center gap-1.5 flex-wrap justify-end">
@@ -139,7 +159,7 @@ function OrderCard({ order, onAcceptPO, onDispatchPO }) {
           </div>
           <div className="flex flex-col flex-1 min-w-0">
             <h2 className="text-sm font-bold text-on-surface truncate">
-              {order.product_title || order.notes || 'Artisan Craft Product'}
+              {order.item_title || order.product_title || order.notes || 'Artisan Craft Product'}
             </h2>
             <div className="flex items-center gap-2 mt-0.5">
               <span className="text-xs text-on-surface-variant font-medium">
@@ -147,7 +167,7 @@ function OrderCard({ order, onAcceptPO, onDispatchPO }) {
               </span>
               <span className="text-xs text-on-surface-variant">•</span>
               <span className="text-base font-extrabold text-on-surface">
-                ₹{(order.total_price_inr || (order.unit_price_inr ? order.unit_price_inr * (order.quantity || 1) : 0)).toLocaleString('en-IN')}
+                ₹{(order.total_amount || order.total_price_inr || (order.unit_price_inr ? order.unit_price_inr * (order.quantity || 1) : 0)).toLocaleString('en-IN')}
               </span>
             </div>
             <span className="inline-flex items-center gap-1 text-[#1A3824] text-xs font-bold mt-1">
@@ -157,18 +177,18 @@ function OrderCard({ order, onAcceptPO, onDispatchPO }) {
               >
                 check_circle
               </span>
-              Paid Online • भुगतान हुआ
+              <span>{order.payment_mode || 'Paid Online • भुगतान हुआ'}</span>
             </span>
           </div>
         </div>
 
-        {order.city && (
+        {(order.shipping_address || order.city) && (
           <div className="flex items-center gap-2 px-1 text-on-surface-variant text-xs">
             <span className="material-symbols-outlined text-[20px] text-on-surface-variant shrink-0">
               local_shipping
             </span>
             <p className="truncate">
-              Ship to: <strong className="text-on-surface">{order.city}</strong>
+              Ship to: <strong className="text-on-surface">{order.shipping_address || order.city}</strong>
             </p>
           </div>
         )}
@@ -183,20 +203,20 @@ function OrderCard({ order, onAcceptPO, onDispatchPO }) {
           </div>
         ) : currentStatus === 'accepted' ? (
           <button
-            aria-label={`Dispatch order ${order.id}`}
+            aria-label={`Dispatch order ${order.order_id || order.id}`}
             className="action-btn w-full min-h-[52px] h-[52px] rounded-full bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-bold flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all cursor-pointer"
             type="button"
-            onClick={() => onDispatchPO(order.id)}
+            onClick={() => onDispatchPO(order.order_id || order.id)}
           >
             <span className="material-symbols-outlined text-[22px]">local_shipping</span>
             <span>डिस्पैच मार्क करें (Dispatch)</span>
           </button>
         ) : (
           <button
-            aria-label={`Accept PO order ${order.id}`}
+            aria-label={`Accept PO order ${order.order_id || order.id}`}
             className="action-btn w-full min-h-[52px] h-[52px] rounded-full bg-primary-container hover:bg-black text-on-primary text-sm font-bold flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all cursor-pointer"
             type="button"
-            onClick={() => onAcceptPO(order.id)}
+            onClick={() => onAcceptPO(order.order_id || order.id)}
           >
             <span className="material-symbols-outlined text-[22px]">inventory_2</span>
             <span>स्वीकार करें (Accept PO)</span>
@@ -235,48 +255,69 @@ export default function Orders() {
     setTimeout(() => setToastMsg(''), 4000);
   };
 
-  // Static demo orders always shown
+  // Static demo institutional orders matching production seed
   const STATIC_ORDERS = [
     {
-      id: 'ks-8921-static',
-      buyer_name: 'Priya Sharma',
-      order_type: 'ondc',
-      channel: 'ONDC via Mystore',
-      product_title: 'Handwoven Blue Pure Silk Saree',
-      quantity: 1,
-      unit_price_inr: 1200,
-      total_price_inr: 1200,
-      status: 'pending',
-      city: 'Lucknow, UP',
-      created_at: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
-    },
-    {
-      id: 'ks-8919-static',
-      buyer_name: 'Rohit Verma',
-      order_type: 'ondc',
-      channel: 'WhatsApp Direct',
-      product_title: 'Handcrafted Brass Puja Diya',
-      quantity: 2,
-      unit_price_inr: 450,
-      total_price_inr: 900,
+      id: 'b2c3d4e5-0001-4000-8000-000000000001',
+      order_id: 'GEM-PO-2026-9812',
+      buyer_name: 'Ministry of Tourism, Govt of India',
+      channel: 'GeM Institutional PO',
+      order_type: 'gem',
+      item_title: 'Handcrafted Gorakhpur Terracotta Surahi',
+      product_title: 'Handcrafted Gorakhpur Terracotta Surahi',
+      quantity: 150,
+      unit_price_inr: 310,
+      total_amount: 46500,
+      total_price_inr: 46500,
       status: 'accepted',
-      city: 'Varanasi, UP',
-      created_at: new Date(Date.now() - 35 * 60 * 1000).toISOString(),
+      shipping_address: 'Transport Bhawan, 1 Parliament Street, New Delhi 110001',
+      city: 'New Delhi',
+      payment_mode: 'GeM PFMS Institutional Escrow',
+      notes: 'Urgent institutional procurement for National Tourism Conclave 2026',
+      created_at: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
     },
     {
-      id: 'ks-8915-static',
-      buyer_name: 'Meena Devi',
+      id: 'b2c3d4e5-0002-4000-8000-000000000002',
+      order_id: 'ONDC-TRIFED-8742',
+      buyer_name: 'TRIFED Regional Emporium',
+      channel: 'ONDC Network via Mystore',
       order_type: 'ondc',
-      channel: 'ONDC via Paytm',
-      product_title: 'Handmade Terracotta Pitcher',
-      quantity: 1,
-      unit_price_inr: 200,
-      total_price_inr: 200,
-      status: 'dispatched',
-      city: 'Varanasi, UP',
-      created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+      item_title: 'Jaipur Heritage Floral Blue Pottery Vase',
+      product_title: 'Jaipur Heritage Floral Blue Pottery Vase',
+      quantity: 40,
+      unit_price_inr: 680,
+      total_amount: 27200,
+      total_price_inr: 27200,
+      status: 'pending',
+      shipping_address: 'NCUI Complex, 3 Siri Institutional Area, August Kranti Marg, New Delhi 110016',
+      city: 'New Delhi',
+      payment_mode: 'ONDC Escrow RSP Prepaid',
+      notes: 'Tribal & Artisan Heritage Retail Distribution',
+      created_at: new Date(Date.now() - 75 * 60 * 1000).toISOString(),
     },
   ];
+
+  // Helper to normalize Supabase row to exact frontend model
+  const mapOrderRecord = (item) => ({
+    ...item,
+    id: item.id || item.order_id,
+    order_id: item.order_id || item.id,
+    buyer_name: item.buyer_name || 'Institutional Buyer',
+    channel: item.channel || (item.order_type === 'gem' ? 'GeM Institutional PO' : 'ONDC Network'),
+    order_type: item.order_type || (item.channel?.toLowerCase().includes('gem') ? 'gem' : 'ondc'),
+    item_title: item.item_title || item.product_title || item.notes || 'Artisan Craft Product',
+    product_title: item.item_title || item.product_title || item.notes || 'Artisan Craft Product',
+    quantity: Number(item.quantity || 1),
+    total_amount: Number(item.total_amount || item.total_price_inr || (item.unit_price_inr ? item.unit_price_inr * item.quantity : 0)),
+    unit_price_inr: Number(item.unit_price_inr || (item.total_amount && item.quantity ? Math.round(item.total_amount / item.quantity) : 0)),
+    total_price_inr: Number(item.total_amount || item.total_price_inr || 0),
+    status: item.status || 'pending',
+    shipping_address: item.shipping_address || item.city || 'Transport Bhawan, New Delhi',
+    city: item.city || item.shipping_address || 'New Delhi',
+    payment_mode: item.payment_mode || (item.order_type === 'gem' ? 'GeM PFMS Institutional Escrow' : 'ONDC Escrow RSP Prepaid'),
+    notes: item.notes || item.item_title || 'Institutional Purchase Order',
+    created_at: item.created_at || new Date().toISOString(),
+  });
 
   // 1. Initial Load of Orders from Supabase
   useEffect(() => {
@@ -288,11 +329,7 @@ export default function Orders() {
           .order('created_at', { ascending: false });
 
         if (!error && data && data.length > 0) {
-          const mapped = data.map((item) => ({
-            ...item,
-            channel: item.order_type === 'gem' ? 'GeM PO' : 'ONDC Network',
-            product_title: item.notes || item.product_title || 'Artisan Craft Product',
-          }));
+          const mapped = data.map(mapOrderRecord);
           setOrders(mapped);
         }
       } catch (err) {
@@ -311,13 +348,9 @@ export default function Orders() {
         { event: 'INSERT', schema: 'public', table: 'orders' },
         (payload) => {
           console.log('[Realtime] New order received:', payload.new);
-          const newOrder = {
-            ...payload.new,
-            channel: payload.new.order_type === 'gem' ? 'GeM PO' : 'ONDC Network',
-            product_title: payload.new.notes || payload.new.product_title || 'Artisan Craft Product',
-          };
-          setOrders((prev) => [newOrder, ...prev.filter((o) => o.id !== newOrder.id)]);
-          showToast(`⚡ नया आर्डर आया! ${newOrder.buyer_name || 'Customer'} — ₹${newOrder.total_price_inr || newOrder.unit_price_inr || 0}`);
+          const newOrder = mapOrderRecord(payload.new);
+          setOrders((prev) => [newOrder, ...prev.filter((o) => o.id !== newOrder.id && o.order_id !== newOrder.order_id)]);
+          showToast(`⚡ नया आर्डर आया! ${newOrder.buyer_name || 'Customer'} — ₹${newOrder.total_amount}`);
           speakOrder(newOrder);
         }
       )
@@ -326,8 +359,9 @@ export default function Orders() {
         { event: 'UPDATE', schema: 'public', table: 'orders' },
         (payload) => {
           console.log('[Realtime] Order updated:', payload.new);
+          const updated = mapOrderRecord(payload.new);
           setOrders((prev) =>
-            prev.map((o) => (o.id === payload.new.id ? { ...o, ...payload.new } : o))
+            prev.map((o) => (o.id === updated.id || o.order_id === updated.order_id ? { ...o, ...updated } : o))
           );
         }
       )
@@ -351,16 +385,20 @@ export default function Orders() {
   const handleAcceptPO = async (orderId) => {
     // Immediate optimistic UI update
     setOrders((prev) =>
-      prev.map((o) => (o.id === orderId ? { ...o, status: 'accepted' } : o))
+      prev.map((o) => ((o.order_id === orderId || o.id === orderId) ? { ...o, status: 'accepted' } : o))
     );
-    showToast(`✅ ऑर्डर स्वीकार किया गया (PO Accepted) — #${String(orderId).slice(0, 8)}`);
+    showToast(`✅ ऑर्डर स्वीकार किया गया (PO Accepted) — #${String(orderId).slice(0, 16)}`);
 
-    // Persist to Supabase
+    // Persist to Supabase safely handling both uuid id and text order_id
     try {
-      const { error } = await supabase
-        .from('orders')
-        .update({ status: 'accepted' })
-        .eq('id', orderId);
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(orderId));
+      let query = supabase.from('orders').update({ status: 'accepted' });
+      if (isUuid) {
+        query = query.eq('id', orderId);
+      } else {
+        query = query.eq('order_id', orderId);
+      }
+      const { error } = await query;
       if (error) console.error('Error updating order to accepted:', error);
     } catch (err) {
       console.error('Failed to update order status in Supabase:', err);
@@ -371,16 +409,20 @@ export default function Orders() {
   const handleDispatchPO = async (orderId) => {
     // Immediate optimistic UI update
     setOrders((prev) =>
-      prev.map((o) => (o.id === orderId ? { ...o, status: 'dispatched' } : o))
+      prev.map((o) => ((o.order_id === orderId || o.id === orderId) ? { ...o, status: 'dispatched' } : o))
     );
-    showToast(`🚚 ऑर्डर डिस्पैच मार्क किया गया (Dispatched) — #${String(orderId).slice(0, 8)}`);
+    showToast(`🚚 ऑर्डर डिस्पैच मार्क किया गया (Dispatched) — #${String(orderId).slice(0, 16)}`);
 
-    // Persist to Supabase
+    // Persist to Supabase safely handling both uuid id and text order_id
     try {
-      const { error } = await supabase
-        .from('orders')
-        .update({ status: 'dispatched' })
-        .eq('id', orderId);
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(orderId));
+      let query = supabase.from('orders').update({ status: 'dispatched' });
+      if (isUuid) {
+        query = query.eq('id', orderId);
+      } else {
+        query = query.eq('order_id', orderId);
+      }
+      const { error } = await query;
       if (error) console.error('Error updating order to dispatched:', error);
     } catch (err) {
       console.error('Failed to update order status in Supabase:', err);
@@ -397,16 +439,26 @@ export default function Orders() {
       const authUser = (await supabase.auth.getUser()).data?.user || user;
       const authUserId = authUser?.id || user?.id || null;
       const userPhone = artisanProfile?.phone || authUser?.phone || user?.phone || null;
-      const total = template.quantity * template.unit_price_inr;
+      const total = template.total_amount || (template.quantity * template.unit_price_inr);
+      const generatedOrderId = `${template.order_type === 'gem' ? 'GEM-PO' : 'ONDC-PO'}-${Date.now().toString().slice(-4)}`;
+
       const orderPayload = {
+        order_id: template.order_id || generatedOrderId,
         buyer_name: template.buyer_name,
+        channel: template.channel,
         order_type: template.order_type,
+        item_title: template.item_title,
         quantity: template.quantity,
+        total_amount: total,
         unit_price_inr: template.unit_price_inr,
         total_price_inr: total,
         status: 'pending',
-        notes: template.product_title,
+        shipping_address: template.shipping_address,
+        payment_mode: template.payment_mode,
+        notes: template.notes || template.item_title,
+        city: template.city,
         user_id: authUserId,
+        artisan_user_id: authUserId,
         user_phone: userPhone,
       };
 
@@ -415,14 +467,11 @@ export default function Orders() {
       if (error) {
         // Realtime insert fallback — simulate locally for demo
         console.warn('[Simulate] Supabase insert failed, using local simulation:', error.message);
-        const localOrder = {
+        const localOrder = mapOrderRecord({
           id: `sim-${Date.now()}`,
           ...orderPayload,
-          channel: template.channel,
-          city: template.city,
-          product_title: template.product_title,
           created_at: new Date().toISOString(),
-        };
+        });
         setOrders((prev) => [localOrder, ...prev]);
         showToast(`⚡ ${template.channel} — नया आर्डर! ₹${total.toLocaleString('en-IN')}`);
         speakOrder({ ...localOrder });

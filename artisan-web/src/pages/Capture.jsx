@@ -224,10 +224,6 @@ export default function Capture() {
   const [aiStatusText, setAiStatusText] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
-  // ── Viewfinder UI State ──
-  const [flashOn, setFlashOn] = useState(false);
-  const [gridOn, setGridOn] = useState(true);
-
   // ════════════════════════════════════════════
   // IMAGE SELECTION & OPTIMIZATION
   // ════════════════════════════════════════════
@@ -732,21 +728,6 @@ export default function Capture() {
           {/* ──────────────────────────────── LEFT: CAMERA & VIEWFINDER ──────────────────────────────── */}
           <div className="w-full lg:w-1/2 flex flex-col gap-4">
             <div className="relative w-full aspect-[16/11] bg-[#191312] rounded-3xl overflow-hidden shadow-2xl flex flex-col justify-between p-4 sm:p-6 border border-[#2e241e]">
-              {/* Alignment Grid Overlay */}
-              {gridOn && (
-                <div className="absolute inset-0 pointer-events-none z-10 grid grid-cols-3 grid-rows-3 opacity-30">
-                  <div className="border-r border-b border-white/30" />
-                  <div className="border-r border-b border-white/30" />
-                  <div className="border-b border-white/30" />
-                  <div className="border-r border-b border-white/30" />
-                  <div className="border-r border-b border-white/30" />
-                  <div className="border-b border-white/30" />
-                  <div className="border-r border-white/30" />
-                  <div className="border-r border-white/30" />
-                  <div className="" />
-                </div>
-              )}
-
               {/* Background Display / Selected Craft */}
               {displayImage ? (
                 <div className="absolute inset-0 flex items-center justify-center bg-[#191312]">
@@ -824,29 +805,6 @@ export default function Capture() {
                       ? (language === 'hi' ? 'शिल्प फोटो लोड' : 'CRAFT CAPTURED')
                       : (language === 'hi' ? 'व्यूफाइंडर लाइव' : 'VIEWFINDER LIVE')}
                   </span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setFlashOn((prev) => !prev)}
-                    className={`w-10 h-10 rounded-full backdrop-blur-md flex items-center justify-center transition-all border border-white/10 cursor-pointer ${
-                      flashOn ? 'bg-[#ff9062] text-[#180f0a]' : 'bg-[#191312]/70 text-[#fdf9f3] hover:text-[#ff9062]'
-                    }`}
-                    type="button"
-                    title="Toggle Flash"
-                  >
-                    <span className="material-symbols-outlined text-[20px]">{flashOn ? 'flash_on' : 'flash_off'}</span>
-                  </button>
-                  <button
-                    onClick={() => setGridOn((prev) => !prev)}
-                    className={`w-10 h-10 rounded-full backdrop-blur-md flex items-center justify-center transition-all border border-white/10 cursor-pointer ${
-                      gridOn ? 'bg-[#ff9062] text-[#180f0a]' : 'bg-[#191312]/70 text-[#fdf9f3] hover:text-[#ff9062]'
-                    }`}
-                    type="button"
-                    title="Toggle Alignment Grid"
-                  >
-                    <span className="material-symbols-outlined text-[20px]">grid_3x3</span>
-                  </button>
                 </div>
               </div>
 

@@ -8,9 +8,7 @@ export default function DashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const {
-    user,
     artisanName,
-    artisanStudio,
     artisanProfile,
     signOut,
     openAuthModal,
@@ -23,7 +21,6 @@ export default function DashboardLayout() {
     { to: '/home', label: language === 'hi' ? 'आवास' : 'Home', icon: 'cottage' },
     { to: '/catalog', label: language === 'hi' ? 'कैटलॉग' : 'Catalog', icon: 'inventory_2', badge: '12' },
     { to: '/orders', label: language === 'hi' ? 'ऑर्डर्स' : 'Orders', icon: 'receipt_long', badge: language === 'hi' ? '3 नए' : '3 New', badgeColor: 'bg-[#ff9062]/20 text-[#9c441c]' },
-    { to: '/success', label: language === 'hi' ? 'विवरण' : 'Details', icon: 'verified' },
   ];
 
   const isVerified = !!artisanProfile?.verified;
@@ -262,17 +259,6 @@ export default function DashboardLayout() {
           <span className="material-symbols-outlined text-[22px]">receipt_long</span>
           <span>{language === 'hi' ? 'ऑर्डर्स' : 'Orders'}</span>
           <span className="w-2 h-2 rounded-full bg-[#9c441c] absolute top-0 right-2"></span>
-        </NavLink>
-        <NavLink
-          to="/success"
-          className={({ isActive }) =>
-            `flex flex-col items-center gap-0.5 text-[11px] font-bold transition-colors ${
-              isActive ? 'text-primary' : 'text-on-surface-variant'
-            }`
-          }
-        >
-          <span className="material-symbols-outlined text-[22px]">account_circle</span>
-          <span>{language === 'hi' ? 'विवरण' : 'Profile'}</span>
         </NavLink>
       </nav>
     </div>

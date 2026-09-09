@@ -242,11 +242,10 @@ function OrderCard({ order, onAcceptPO, onDispatchPO }) {
 
 export default function Orders() {
   const navigate = useNavigate();
-  const { user, artisanProfile } = useAuth();
   const { language } = useLanguage();
   const [orders, setOrders] = useState(STATIC_ORDERS);
   const [activeFilter, setActiveFilter] = useState('ALL');
-  const [showTendersSection, setShowTendersSection] = useState(true);
+  const [showTenders, setShowTenders] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const [realtimeConnected, setRealtimeConnected] = useState(false);
   const channelRef = useRef(null);
@@ -577,15 +576,18 @@ export default function Orders() {
 
               <button
                 type="button"
-                onClick={() => setShowTendersSection(!showTendersSection)}
-                className="px-3.5 py-1.5 rounded-full bg-white border border-[#d1c4bd] hover:bg-stone-50 text-xs font-semibold text-stone-700 cursor-pointer transition-colors shadow-2xs"
+                onClick={() => setShowTenders(!showTenders)}
+                className="px-3.5 py-1.5 rounded-full bg-white border border-[#d1c4bd] hover:bg-stone-50 text-xs font-semibold text-stone-700 flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
               >
-                {showTendersSection ? (language === 'hi' ? 'संक्षेप ▴' : 'Collapse ▴') : (language === 'hi' ? 'निविदाएं देखें ▾' : 'View Tenders ▾')}
+                <span>{showTenders ? (language === 'hi' ? 'निविदाएं छिपाएं' : 'Hide Tenders') : (language === 'hi' ? 'निविदाएं देखें' : 'View Tenders')}</span>
+                <span className="material-symbols-outlined text-[16px] transition-transform duration-200" style={{ transform: showTenders ? 'rotate(180deg)' : 'none' }}>
+                  expand_more
+                </span>
               </button>
             </div>
 
-            {showTendersSection && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
+            {showTenders && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-1 tenders-list">
                 {ACTIVE_INSTITUTIONAL_TENDERS.map((tender) => (
                   <InstitutionalTenderCard
                     key={tender.id}

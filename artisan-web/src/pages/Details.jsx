@@ -26,6 +26,14 @@ export default function Details() {
 
   const [loading, setLoading] = useState(!location.state?.product);
   const [copied, setCopied] = useState(false);
+  const [isOndcListed, setIsOndcListed] = useState(() => {
+    const prod = location.state?.product || product;
+    return prod?.status !== 'sold_out';
+  });
+  const [isGemListed, setIsGemListed] = useState(() => {
+    const prod = location.state?.product || product;
+    return Boolean(prod?.is_gem_ready ?? true);
+  });
 
   // Fetch product from Supabase if not found in memory
   useEffect(() => {
@@ -58,6 +66,8 @@ export default function Details() {
             category: data.category || 'Handicrafts',
             qty: data.stock || data.qty || 50,
           });
+          setIsOndcListed(data.status !== 'draft' && data.status !== 'sold_out');
+          setIsGemListed(data.is_gem_ready ?? true);
         }
       } catch (err) {
         console.warn('Could not fetch product by ID from Supabase:', err);
@@ -68,6 +78,53 @@ export default function Details() {
 
     fetchProduct();
   }, [id]);
+
+  // Handler: List / Delist on ONDC Network
+  const handleToggleOndc = async () => {
+    const nextState = !isOndcListed;
+    setIsOndcListed(nextState);
+    const newStatus = nextState ? 'live' : 'draft';
+    setProduct((prev) => ({ ...prev, status: newStatus }));
+
+    if (showToast) {
+      showToast(
+        nextState
+          ? (language === 'hi' ? '✅ उत्पाद ONDC नेटवर्क (Paytm, Mystore, PhonePe) पर सक्रिय है' : '✅ Listed to ONDC Network (Paytm, Mystore, PhonePe)')
+          : (language === 'hi' ? '⏸️ उत्पाद ONDC नेटवर्क से निष्क्रिय कर दिया गया' : '⏸️ Product unlisted from ONDC Network')
+      );
+    }
+
+    if (product.id) {
+      try {
+        await supabase.from('products').update({ status: newStatus }).eq('id', product.id);
+      } catch (err) {
+        console.warn('Could not update ONDC status in Supabase:', err);
+      }
+    }
+  };
+
+  // Handler: List / Delist on GeM Portal
+  const handleToggleGem = async () => {
+    const nextState = !isGemListed;
+    setIsGemListed(nextState);
+    setProduct((prev) => ({ ...prev, is_gem_ready: nextState }));
+
+    if (showToast) {
+      showToast(
+        nextState
+          ? (language === 'hi' ? '🏛️ उत्पाद GeM सरकारी खरीद पोर्टल पर सक्रिय है' : '🏛️ Listed to GeM Portal (Govt Procurement)')
+          : (language === 'hi' ? '⏸️ उत्पाद GeM पोर्टल से निष्क्रिय कर दिया गया' : '⏸️ Product unlisted from GeM Portal')
+      );
+    }
+
+    if (product.id) {
+      try {
+        await supabase.from('products').update({ is_gem_ready: nextState }).eq('id', product.id);
+      } catch (err) {
+        console.warn('Could not update GeM status in Supabase:', err);
+      }
+    }
+  };
 
   // Dynamic WhatsApp Sharing Implementation
   const handleWhatsAppShare = () => {
@@ -280,8 +337,145 @@ export default function Details() {
                 </div>
               </div>
 
-              {/* ── WhatsApp Sharing & Primary Actions ── */}
-              <div className="flex flex-col sm:flex-row items-center gap-3 pt-4 border-t border-[#d1c4bd]/40">
+              {/* ── Prominent Market Linkage Action Hub: List to ONDC & List to GeM Portal ── */}
+              <div className="p-5 rounded-2xl bg-white border border-[#d1c4bd]/60 shadow-sm flex flex-col gap-4">
+                <div className="flex items-center justify-between gap-2 border-b border-[#d1c4bd]/30 pb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary text-[22px]">hub</span>
+                    <h3 className="text-sm font-extrabold text-primary uppercase tracking-wider">
+                      {language === 'hi' ? 'बाजार लिंकेज एवं वितरण (Market Distribution)' : 'Multi-Channel Market Linkage'}
+                    </h3>
+                  </div>
+                  <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                    {language === 'hi' ? 'एक्सक्लूसिव लिस्टिंग हब' : 'Exclusive Listing Hub'}
+                  </span>
+                </div>
+
+                {/* Primary Action Buttons: "List to ONDC" & "List to GeM Portal" */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* List to ONDC Button */}
+                  <button
+                    id="list-to-ondc-btn"
+                    onClick={handleToggleOndc}
+                    type="button"
+                    className={`w-full py-4 px-4 rounded-2xl font-black text-sm flex items-center justify-between gap-2 shadow-sm transition-all cursor-pointer active:scale-95 border ${
+                      isOndcListed
+                        ? 'bg-[#9c441c] hover:bg-[#833714] text-white border-[#9c441c]'
+                        : 'bg-[#f7f4ee] hover:bg-[#eae5dc] text-stone-700 border-[#d1c4bd]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className="material-symbols-outlined text-[22px]">hub</span>
+                      <span className="tracking-wide">
+                        {isOndcListed ? 'List to ONDC' : 'List to ONDC'}
+                      </span>
+                    </div>
+                    <span
+                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                        isOndcListed ? 'bg-white/20 text-white' : 'bg-stone-300 text-stone-700'
+                      }`}
+                    >
+                      {isOndcListed ? (language === 'hi' ? 'लाइव' : 'Live') : (language === 'hi' ? 'निष्क्रिय' : 'Off')}
+                    </span>
+                  </button>
+
+                  {/* List to GeM Portal Button */}
+                  <button
+                    id="list-to-gem-btn"
+                    onClick={handleToggleGem}
+                    type="button"
+                    className={`w-full py-4 px-4 rounded-2xl font-black text-sm flex items-center justify-between gap-2 shadow-sm transition-all cursor-pointer active:scale-95 border ${
+                      isGemListed
+                        ? 'bg-[#1e4d3a] hover:bg-[#163a2c] text-white border-[#1e4d3a]'
+                        : 'bg-[#f7f4ee] hover:bg-[#eae5dc] text-stone-700 border-[#d1c4bd]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className="material-symbols-outlined text-[22px]">account_balance</span>
+                      <span className="tracking-wide">
+                        {isGemListed ? 'List to GeM Portal' : 'List to GeM Portal'}
+                      </span>
+                    </div>
+                    <span
+                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                        isGemListed ? 'bg-white/20 text-white' : 'bg-stone-300 text-stone-700'
+                      }`}
+                    >
+                      {isGemListed ? (language === 'hi' ? 'लाइव' : 'Live') : (language === 'hi' ? 'निष्क्रिय' : 'Off')}
+                    </span>
+                  </button>
+                </div>
+
+                {/* Detailed Channels Status & Buyer Apps */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  {/* ONDC Channel Card */}
+                  <div
+                    className={`p-3.5 rounded-xl border transition-all ${
+                      isOndcListed
+                        ? 'bg-[#fff9f6] border-[#ff9062]/50'
+                        : 'bg-stone-50 border-stone-200 opacity-60'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-bold text-stone-900 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                        ONDC Consumer Apps
+                      </span>
+                      <span className="text-[10px] font-bold text-[#9c441c] bg-[#ffdbce] px-1.5 py-0.5 rounded">
+                        Beckn v1.2
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-stone-600 leading-tight mb-2">
+                      Zero-fee retail orders routed directly to your studio.
+                    </p>
+                    <div className="flex items-center gap-1 flex-wrap">
+                      {['Paytm', 'Mystore', 'PhonePe', 'Magicpin', 'Tata Neu'].map((app) => (
+                        <span
+                          key={app}
+                          className="px-1.5 py-0.5 rounded bg-white border border-[#d1c4bd]/50 text-stone-700 text-[9px] font-semibold"
+                        >
+                          {app}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* GeM Portal Channel Card */}
+                  <div
+                    className={`p-3.5 rounded-xl border transition-all ${
+                      isGemListed
+                        ? 'bg-[#f4faf7] border-emerald-400/50'
+                        : 'bg-stone-50 border-stone-200 opacity-60'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-bold text-stone-900 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
+                        GeM Govt Desks
+                      </span>
+                      <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded">
+                        25% MSE Quota
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-stone-600 leading-tight mb-2">
+                      Wholesale rate ₹{bulkPrice} (MOQ: {moq} pcs) for institutional POs.
+                    </p>
+                    <div className="flex items-center gap-1 flex-wrap">
+                      {['GeM 4.0', 'TRIFED', 'CCIC Emporium'].map((desk) => (
+                        <span
+                          key={desk}
+                          className="px-1.5 py-0.5 rounded bg-white border border-emerald-200 text-stone-700 text-[9px] font-semibold"
+                        >
+                          {desk}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ── WhatsApp Sharing & Direct Actions ── */}
+              <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
                 {/* Dedicated WhatsApp Share Button */}
                 <button
                   id="whatsapp-share-btn"

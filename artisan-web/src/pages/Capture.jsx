@@ -206,11 +206,12 @@ const CRAFT_SUGGESTION_CHIPS = [
 
 export default function Capture() {
   const navigate = useNavigate();
-  const { user, artisanProfile, openAuthModal, showToast, language, toggleLanguage, toggleNotifications, unreadCount } = useAuth();
+  const { user, artisanProfile, openAuthModal, showToast, language, toggleNotifications, unreadCount } = useAuth();
   const isVerified = Boolean(artisanProfile?.verified || user?.is_phone_verified);
 
-  // ── Capture Input Ref ──
-  const uploadInputRef = useRef(null);
+  // ── Distinct Camera & Gallery Input Refs ──
+  const cameraInputRef = useRef(null);
+  const galleryInputRef = useRef(null);
 
   // ── Image State ──
   const [_selectedFile, setSelectedFile] = useState(null);
@@ -370,6 +371,8 @@ export default function Capture() {
       }
     }
   }, [language]);
+
+  const handleImageSelection = handleFileSelect;
 
   const handleRetake = useCallback(() => {
     if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
@@ -652,7 +655,7 @@ export default function Capture() {
       }
       setAiStatus('error');
     }
-  }, [audioBase64, imageBase64, imageUrl, processedPreview, previewUrl, customTranscript, language, navigate, showToast]);
+  }, [audioBase64, imageBase64, imageUrl, processedPreview, previewUrl, customTranscript, transcriptionLang, language, navigate, showToast]);
 
   const displayImage = processedPreview || previewUrl;
   const isProcessing = aiStatus === 'transcribing' || aiStatus === 'analyzing';
@@ -661,19 +664,29 @@ export default function Capture() {
 
   return (
     <div className="w-full">
-      {/* ── Unified Hidden File Input (Camera or Gallery) ── */}
-      <input
-        ref={uploadInputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={handleFileSelect}
+      {/* Forces the device camera to open */}
+      <input 
+        type="file" 
+        accept="image/*" 
+        capture="environment" 
+        ref={cameraInputRef}
+        onChange={handleImageSelection} 
+        className="hidden" 
+      />
+      
+      {/* Opens the device gallery/file picker */}
+      <input 
+        type="file" 
+        accept="image/*" 
+        ref={galleryInputRef}
+        onChange={handleImageSelection} 
+        className="hidden" 
       />
 
       <main className="flex-1 flex flex-col relative w-full min-h-screen bg-[#fdf9f3] overflow-y-auto">
         {/* Top Header */}
         <header className="sticky top-0 z-20 bg-[#fdf9f3]/95 backdrop-blur-md border-b border-[#e8e2d9] w-full">
-          <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
+          <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div 
                 onClick={() => navigate('/home')}
@@ -683,31 +696,8 @@ export default function Capture() {
                 <div className="w-8 h-8 rounded-lg bg-[#2e241e] text-[#ffdeaa] flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
                   <span className="material-symbols-outlined text-[18px]">photo_camera</span>
                 </div>
-                <span className="font-bold text-sm text-[#180f0a] tracking-tight hidden sm:inline">Shilp Setu</span>
+                <span className="font-bold text-sm text-[#180f0a] tracking-tight">Shilp Setu</span>
               </div>
-              <div className="h-4 w-[1px] bg-[#e8e2d9] mx-0.5 hidden sm:block" />
-              <div className="flex items-center gap-1.5 text-xs font-bold text-[#80756f]">
-                <span
-                  onClick={() => navigate('/home')}
-                  className="cursor-pointer hover:text-primary transition-colors"
-                >
-                  {language === 'hi' ? 'आवास' : 'HOME'}
-                </span>
-                <span className="text-[10px]">/</span>
-                <span
-                  onClick={() => navigate('/catalog')}
-                  className="cursor-pointer hover:text-primary transition-colors"
-                >
-                  {language === 'hi' ? 'कैटलॉग' : 'CATALOG'}
-                </span>
-                <span className="text-[10px]">/</span>
-                <span className="text-[#9c441c] font-black">
-                  {language === 'hi' ? 'स्मार्ट एआई कैप्चर' : 'SMART AI CAPTURE'}
-                </span>
-              </div>
-              <span className="hidden md:inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#ffdbce] text-[#752801] tracking-wide">
-                {language === 'hi' ? 'चरण 1: फोटो एवं विवरण' : 'STEP 1 OF 2'}
-              </span>
             </div>
 
             <div className="flex items-center gap-2.5 shrink-0">
@@ -729,18 +719,18 @@ export default function Capture() {
               )}
 
               {/* Language Toggle */}
-              <LanguageToggle variant="light" className="h-10" />
+              <LanguageToggle variant="light" className="h-9" />
 
               {/* Notification Bell */}
               <button
                 onClick={toggleNotifications}
-                className="w-10 h-10 rounded-full bg-[#f1ede7] hover:bg-[#ebe8e2] border border-[#e8e2d9] flex items-center justify-center relative text-[#4e4540] cursor-pointer active:scale-95 transition-colors"
+                className="w-9 h-9 rounded-full bg-[#f1ede7] hover:bg-[#ebe8e2] border border-[#e8e2d9] flex items-center justify-center relative text-[#4e4540] cursor-pointer active:scale-95 transition-colors"
                 title="Notifications"
                 type="button"
               >
-                <span className="material-symbols-outlined text-[20px]">notifications</span>
+                <span className="material-symbols-outlined text-[19px]">notifications</span>
                 {unreadCount > 0 && (
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#9c441c] absolute top-2 right-2 ring-2 ring-[#fdf9f3] animate-pulse"></span>
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#9c441c] absolute top-1.5 right-1.5 ring-2 ring-[#fdf9f3] animate-pulse"></span>
                 )}
               </button>
             </div>
@@ -748,7 +738,7 @@ export default function Capture() {
         </header>
 
         {/* Main Split-Screen Desktop Workspace */}
-        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col lg:flex-row gap-8 items-start">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 flex flex-col lg:flex-row gap-6 items-start">
           {/* ──────────────────────────────── LEFT: CAMERA & VIEWFINDER ──────────────────────────────── */}
           <div className="w-full lg:w-1/2 flex flex-col gap-4">
             <div className="relative w-full aspect-[16/11] bg-[#191312] rounded-3xl overflow-hidden shadow-2xl flex flex-col justify-between p-4 sm:p-6 border border-[#2e241e]">
@@ -775,7 +765,7 @@ export default function Capture() {
               ) : (
                 <div
                   onClick={() => {
-                    if (!isLoading) uploadInputRef.current?.click();
+                    if (!isLoading) cameraInputRef.current?.click();
                   }}
                   className={`absolute inset-0 flex flex-col items-center justify-center ${
                     isLoading ? 'cursor-not-allowed opacity-75' : 'cursor-pointer group'
@@ -804,15 +794,29 @@ export default function Capture() {
                         : 'Tap anywhere to launch rear camera (Keep craft centered within frame)'}
                     </p>
 
-                    <div className="mt-4 flex items-center gap-2 flex-wrap justify-center">
-                      <span className="px-3 py-1 rounded-full bg-white/10 text-white text-[11px] font-bold border border-white/10 flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[14px] text-[#ff9062]">photo_camera</span>
+                    <div className="mt-4 flex items-center gap-2.5 flex-wrap justify-center">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!isLoading) cameraInputRef.current?.click();
+                        }}
+                        className="px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-[#ff9062]/20 text-white text-[12px] font-bold border border-white/20 hover:border-[#ff9062]/50 flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                      >
+                        <span className="material-symbols-outlined text-[15px] text-[#ff9062]">photo_camera</span>
                         <span>{language === 'hi' ? 'कैमरा' : 'Camera'}</span>
-                      </span>
-                      <span className="px-3 py-1 rounded-full bg-white/10 text-white text-[11px] font-bold border border-white/10 flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[14px] text-[#ff9062]">upload_file</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!isLoading) galleryInputRef.current?.click();
+                        }}
+                        className="px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-[#ff9062]/20 text-white text-[12px] font-bold border border-white/20 hover:border-[#ff9062]/50 flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                      >
+                        <span className="material-symbols-outlined text-[15px] text-[#ff9062]">upload_file</span>
                         <span>{language === 'hi' ? 'गैलरी' : 'Upload'}</span>
-                      </span>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -839,15 +843,13 @@ export default function Capture() {
               )}
 
               {/* Bottom Camera Action Bar */}
-              <div className="relative z-20 flex items-center justify-center bg-[#191312]/80 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/10 gap-3">
-                {/* Unified Capture / Select Button */}
+              <div className="relative z-20 flex items-center justify-center bg-[#191312]/80 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/10 gap-3 flex-wrap">
+                {/* Distinct Camera Trigger Button */}
                 <button
-                  id="snap-photo-btn"
+                  id="camera-trigger-btn"
                   disabled={isLoading}
-                  onClick={() => {
-                    if (!isLoading) uploadInputRef.current?.click();
-                  }}
-                  className={`flex items-center gap-2 text-sm font-bold px-6 py-3 rounded-xl transition-all shadow-lg ${
+                  onClick={() => cameraInputRef.current?.click()}
+                  className={`flex items-center gap-2 text-sm font-bold px-5 py-2.5 rounded-xl transition-all shadow-lg ${
                     isLoading
                       ? 'bg-[#ff9062]/50 text-[#180f0a]/50 cursor-not-allowed'
                       : 'text-[#180f0a] bg-[#ff9062] hover:bg-[#ff804a] cursor-pointer active:scale-95'
@@ -855,7 +857,23 @@ export default function Capture() {
                   type="button"
                 >
                   <span className="material-symbols-outlined text-[20px]">photo_camera</span>
-                  <span>{language === 'hi' ? 'तस्वीर लें' : 'Capture Craft'}</span>
+                  <span>{language === 'hi' ? 'कैमरा' : 'Camera'}</span>
+                </button>
+
+                {/* Distinct Gallery / Upload Trigger Button */}
+                <button
+                  id="gallery-trigger-btn"
+                  disabled={isLoading}
+                  onClick={() => galleryInputRef.current?.click()}
+                  className={`flex items-center gap-2 text-sm font-bold px-5 py-2.5 rounded-xl transition-all shadow-lg border border-white/20 ${
+                    isLoading
+                      ? 'bg-white/5 text-white/40 cursor-not-allowed border-white/10'
+                      : 'bg-white/10 hover:bg-white/20 text-white cursor-pointer active:scale-95'
+                  }`}
+                  type="button"
+                >
+                  <span className="material-symbols-outlined text-[20px]">upload_file</span>
+                  <span>{language === 'hi' ? 'गैलरी' : 'Upload'}</span>
                 </button>
 
                 {/* Retake Photo if already captured */}
@@ -866,7 +884,7 @@ export default function Capture() {
                     onClick={() => {
                       if (!isLoading) handleRetake();
                     }}
-                    className={`flex items-center gap-1.5 text-xs font-bold px-4 py-3 rounded-xl border transition-all ${
+                    className={`flex items-center gap-1.5 text-xs font-bold px-4 py-2.5 rounded-xl border transition-all ${
                       isLoading
                         ? 'text-red-300/40 bg-red-950/30 border-red-500/20 cursor-not-allowed'
                         : 'text-red-300 bg-red-950/60 hover:bg-red-900/60 border-red-500/40 cursor-pointer active:scale-95'
@@ -874,7 +892,7 @@ export default function Capture() {
                     type="button"
                   >
                     <span className="material-symbols-outlined text-[16px]">replay</span>
-                    <span>{language === 'hi' ? 'दोबारा फोटो लें' : 'Retake Photo'}</span>
+                    <span>{language === 'hi' ? 'दोबारा फोटो लें' : 'Retake'}</span>
                   </button>
                 )}
               </div>

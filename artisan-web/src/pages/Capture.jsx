@@ -209,9 +209,8 @@ export default function Capture() {
   const { user, artisanProfile, openAuthModal, showToast, language, toggleNotifications, unreadCount } = useAuth();
   const isVerified = Boolean(artisanProfile?.verified || user?.is_phone_verified);
 
-  // ── Distinct Camera & Gallery Input Refs ──
-  const cameraInputRef = useRef(null);
-  const galleryInputRef = useRef(null);
+  // ── Capture File Input Ref ──
+  const fileInputRef = useRef(null);
 
   // ── Image State ──
   const [_selectedFile, setSelectedFile] = useState(null);
@@ -664,21 +663,11 @@ export default function Capture() {
 
   return (
     <div className="w-full">
-      {/* Forces the device camera to open */}
+      {/* Hidden File Picker / Camera Input */}
       <input 
         type="file" 
         accept="image/*" 
-        capture="environment" 
-        ref={cameraInputRef}
-        onChange={handleImageSelection} 
-        className="hidden" 
-      />
-      
-      {/* Opens the device gallery/file picker */}
-      <input 
-        type="file" 
-        accept="image/*" 
-        ref={galleryInputRef}
+        ref={fileInputRef}
         onChange={handleImageSelection} 
         className="hidden" 
       />
@@ -765,7 +754,7 @@ export default function Capture() {
               ) : (
                 <div
                   onClick={() => {
-                    if (!isLoading) cameraInputRef.current?.click();
+                    if (!isLoading) fileInputRef.current?.click();
                   }}
                   className={`absolute inset-0 flex flex-col items-center justify-center ${
                     isLoading ? 'cursor-not-allowed opacity-75' : 'cursor-pointer group'
@@ -780,33 +769,6 @@ export default function Capture() {
                       <path d="M 0 84 L 0 100 L 16 100" fill="none" stroke="#ff9062" strokeLinecap="round" strokeWidth="3" />
                       <path d="M 84 100 L 100 100 L 100 84" fill="none" stroke="#ff9062" strokeLinecap="round" strokeWidth="3" />
                     </svg>
-
-                    <div className="flex items-center gap-3 flex-wrap justify-center z-10">
-                      <button
-                        type="button"
-                        id="reticle-camera-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (!isLoading) cameraInputRef.current?.click();
-                        }}
-                        className="px-5 py-2.5 rounded-xl bg-[#ff9062] hover:bg-[#ff804a] text-[#180f0a] text-sm font-bold flex items-center gap-2 shadow-lg transition-all cursor-pointer active:scale-95"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">photo_camera</span>
-                        <span>{language === 'hi' ? 'कैमरा' : 'Camera'}</span>
-                      </button>
-                      <button
-                        type="button"
-                        id="reticle-gallery-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (!isLoading) galleryInputRef.current?.click();
-                        }}
-                        className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-bold border border-white/20 flex items-center gap-2 shadow-lg transition-all cursor-pointer active:scale-95"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">upload_file</span>
-                        <span>{language === 'hi' ? 'गैलरी' : 'Upload'}</span>
-                      </button>
-                    </div>
                   </div>
                 </div>
               )}
@@ -831,60 +793,27 @@ export default function Capture() {
                 </div>
               )}
 
-              {/* Bottom Camera Action Bar */}
-              <div className="relative z-20 flex items-center justify-center bg-[#191312]/80 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/10 gap-3 flex-wrap">
-                {/* Distinct Camera Trigger Button */}
-                <button
-                  id="camera-trigger-btn"
-                  disabled={isLoading}
-                  onClick={() => cameraInputRef.current?.click()}
-                  className={`flex items-center gap-2 text-sm font-bold px-5 py-2.5 rounded-xl transition-all shadow-lg ${
-                    isLoading
-                      ? 'bg-[#ff9062]/50 text-[#180f0a]/50 cursor-not-allowed'
-                      : 'text-[#180f0a] bg-[#ff9062] hover:bg-[#ff804a] cursor-pointer active:scale-95'
-                  }`}
-                  type="button"
-                >
-                  <span className="material-symbols-outlined text-[20px]">photo_camera</span>
-                  <span>{language === 'hi' ? 'कैमरा' : 'Camera'}</span>
-                </button>
-
-                {/* Distinct Gallery / Upload Trigger Button */}
-                <button
-                  id="gallery-trigger-btn"
-                  disabled={isLoading}
-                  onClick={() => galleryInputRef.current?.click()}
-                  className={`flex items-center gap-2 text-sm font-bold px-5 py-2.5 rounded-xl transition-all shadow-lg border border-white/20 ${
-                    isLoading
-                      ? 'bg-white/5 text-white/40 cursor-not-allowed border-white/10'
-                      : 'bg-white/10 hover:bg-white/20 text-white cursor-pointer active:scale-95'
-                  }`}
-                  type="button"
-                >
-                  <span className="material-symbols-outlined text-[20px]">upload_file</span>
-                  <span>{language === 'hi' ? 'गैलरी' : 'Upload'}</span>
-                </button>
-
-                {/* Retake Photo if already captured */}
-                {displayImage && (
+              {/* Retake Photo if already captured */}
+              {displayImage && (
+                <div className="relative z-20 flex items-center justify-center">
                   <button
                     id="retake-photo-btn"
                     disabled={isLoading}
                     onClick={() => {
                       if (!isLoading) handleRetake();
                     }}
-                    className={`flex items-center gap-1.5 text-xs font-bold px-4 py-2.5 rounded-xl border transition-all ${
+                    className={`flex items-center gap-1.5 text-xs font-bold px-5 py-2.5 rounded-xl border transition-all shadow-lg ${
                       isLoading
                         ? 'text-red-300/40 bg-red-950/30 border-red-500/20 cursor-not-allowed'
-                        : 'text-red-300 bg-red-950/60 hover:bg-red-900/60 border-red-500/40 cursor-pointer active:scale-95'
+                        : 'text-red-300 bg-red-950/80 hover:bg-red-900/80 border-red-500/40 cursor-pointer active:scale-95'
                     }`}
                     type="button"
                   >
                     <span className="material-symbols-outlined text-[16px]">replay</span>
-                    <span>{language === 'hi' ? 'दोबारा फोटो लें' : 'Retake'}</span>
+                    <span>{language === 'hi' ? 'दोबारा फोटो लें' : 'Retake Photo'}</span>
                   </button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
             {/* Feature Helper Cards */}

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Camera, Upload } from 'lucide-react';
 import { removeBackground } from '@imgly/background-removal';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
@@ -209,8 +210,9 @@ export default function Capture() {
   const { user, artisanProfile, openAuthModal, showToast, language, toggleNotifications, unreadCount } = useAuth();
   const isVerified = Boolean(artisanProfile?.verified || user?.is_phone_verified);
 
-  // ── Capture File Input Ref ──
-  const fileInputRef = useRef(null);
+  // ── Camera & Gallery Input Refs ──
+  const cameraRef = useRef(null);
+  const galleryRef = useRef(null);
 
   // ── Image State ──
   const [_selectedFile, setSelectedFile] = useState(null);
@@ -663,15 +665,6 @@ export default function Capture() {
 
   return (
     <div className="w-full">
-      {/* Hidden File Picker / Camera Input */}
-      <input 
-        type="file" 
-        accept="image/*" 
-        ref={fileInputRef}
-        onChange={handleImageSelection} 
-        className="hidden" 
-      />
-
       <main className="flex-1 flex flex-col relative w-full min-h-screen bg-[#fdf9f3] overflow-y-auto">
         {/* Top Header */}
         <header className="sticky top-0 z-20 bg-[#fdf9f3]/95 backdrop-blur-md border-b border-[#e8e2d9] w-full">
@@ -754,7 +747,7 @@ export default function Capture() {
               ) : (
                 <div
                   onClick={() => {
-                    if (!isLoading) fileInputRef.current?.click();
+                    if (!isLoading) cameraRef.current?.click();
                   }}
                   className={`absolute inset-0 flex flex-col items-center justify-center ${
                     isLoading ? 'cursor-not-allowed opacity-75' : 'cursor-pointer group'
@@ -769,6 +762,34 @@ export default function Capture() {
                       <path d="M 0 84 L 0 100 L 16 100" fill="none" stroke="#ff9062" strokeLinecap="round" strokeWidth="3" />
                       <path d="M 84 100 L 100 100 L 100 84" fill="none" stroke="#ff9062" strokeLinecap="round" strokeWidth="3" />
                     </svg>
+
+                    <div className="flex justify-center items-center gap-6 my-4 z-10">
+                      <button 
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          cameraRef.current?.click();
+                        }}
+                        className="p-4 bg-orange-100 text-orange-600 rounded-full hover:bg-orange-200 transition-colors shadow-sm flex flex-col items-center gap-1 cursor-pointer active:scale-95"
+                        title="Open Camera"
+                      >
+                        <Camera size={28}/>
+                        <span className="text-xs font-medium">Camera</span>
+                      </button>
+
+                      <button 
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          galleryRef.current?.click();
+                        }}
+                        className="p-4 bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-colors shadow-sm flex flex-col items-center gap-1 cursor-pointer active:scale-95"
+                        title="Upload from Gallery"
+                      >
+                        <Upload size={28}/>
+                        <span className="text-xs font-medium">Gallery</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1100,6 +1121,24 @@ export default function Capture() {
         selectedLang={transcriptionLang}
         onSelectLang={(code) => setTranscriptionLang(code)}
         uiLanguage={language}
+      />
+
+      {/* Forces native camera app */}
+      <input 
+        type="file" 
+        accept="image/*" 
+        capture="environment" 
+        ref={cameraRef}
+        onChange={handleImageSelection} 
+        className="hidden" 
+      />
+      {/* Opens native gallery / file picker */}
+      <input 
+        type="file" 
+        accept="image/*" 
+        ref={galleryRef}
+        onChange={handleImageSelection} 
+        className="hidden" 
       />
       </main>
     </div>

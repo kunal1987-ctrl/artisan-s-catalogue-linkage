@@ -59,7 +59,11 @@ export default function DashboardLayout() {
           {/* Navigation Links */}
           <nav className="flex flex-col gap-1.5 mt-2">
             {navItems.map((item) => {
-              const isActive = location.pathname === item.to;
+              const isDirectActive = location.pathname === item.to;
+              const isCatalogActive =
+                item.to === '/catalog' &&
+                (location.pathname.includes('/details') || location.pathname.includes('/product'));
+              const isActive = isDirectActive || isCatalogActive;
               return (
                 <NavLink
                   key={item.to}
@@ -226,11 +230,15 @@ export default function DashboardLayout() {
         </NavLink>
         <NavLink
           to="/catalog"
-          className={({ isActive }) =>
-            `flex flex-col items-center gap-0.5 text-[11px] font-bold transition-colors ${
-              isActive ? 'text-primary' : 'text-on-surface-variant'
-            }`
-          }
+          className={({ isActive }) => {
+            const isCatalogActive =
+              isActive ||
+              location.pathname.includes('/details') ||
+              location.pathname.includes('/product');
+            return `flex flex-col items-center gap-0.5 text-[11px] font-bold transition-colors ${
+              isCatalogActive ? 'text-primary' : 'text-on-surface-variant'
+            }`;
+          }}
         >
           <span className="material-symbols-outlined text-[22px]">inventory_2</span>
           <span>{language === 'hi' ? 'कैटलॉग' : 'Catalog'}</span>

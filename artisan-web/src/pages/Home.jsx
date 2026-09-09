@@ -312,7 +312,7 @@ export default function Home() {
                         return (
                             <div
                                 key={product.id}
-                                onClick={() => navigate('/catalog', { state: { editProductId: product.id } })}
+                                onClick={() => navigate(`/details/${product.id}`, { state: { product } })}
                                 className="rounded-2xl bg-[#f7f3ed] border border-[#d1c4bd]/40 overflow-hidden shadow-sm flex flex-col group cursor-pointer hover:shadow-lg transition-all active:scale-[0.99]"
                             >
                                 <div className="relative w-full aspect-[4/5] bg-[#ebe8e2] overflow-hidden">
@@ -333,11 +333,11 @@ export default function Home() {
                                         </span>
                                     </div>
                                     <button
-                                        aria-label={language === 'hi' ? 'कैटलॉग में देखें' : 'View in catalog'}
-                                        title={language === 'hi' ? 'कैटलॉग में देखें' : 'View in catalog'}
+                                        aria-label={language === 'hi' ? 'विवरण देखें' : 'View product details'}
+                                        title={language === 'hi' ? 'विवरण देखें' : 'View product details'}
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            navigate('/catalog', { state: { editProductId: product.id } });
+                                            navigate(`/details/${product.id}`, { state: { product } });
                                         }}
                                         className="absolute top-3 right-3 w-9 h-9 rounded-full bg-[#fdf9f3]/90 text-primary backdrop-blur-md flex items-center justify-center shadow-md hover:bg-white group-hover:bg-[#9c441c] group-hover:text-white transition-all cursor-pointer"
                                         type="button"

@@ -12,6 +12,7 @@ import Orders from './pages/Orders.jsx';
 import Capture from './pages/Capture.jsx';
 import Review from './pages/Review.jsx';
 import Success from './pages/Success.jsx';
+import Details from './pages/Details.jsx';
 
 export default function App() {
   return (
@@ -25,7 +26,6 @@ export default function App() {
           <Route path="/capture" element={<Capture />} />
           <Route path="/review" element={<Review />} />
           <Route path="/success" element={<Success />} />
-          <Route path="/details" element={<Navigate to="/success" replace />} />
 
           {/* Persistent Dashboard Layout Flow */}
           <Route element={<DashboardLayout />}>
@@ -33,6 +33,9 @@ export default function App() {
             <Route path="/catalog" element={<Catalog />} />
             <Route path="/catalogue" element={<Navigate to="/catalog" replace />} />
             <Route path="/orders" element={<Orders />} />
+            <Route path="/details/:id" element={<Details />} />
+            <Route path="/details" element={<Details />} />
+            <Route path="/product/:id" element={<Details />} />
           </Route>
 
           {/* Catch-all redirect */}

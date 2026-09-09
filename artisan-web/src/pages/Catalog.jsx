@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 
-const INITIAL_PRODUCTS = [
+export const INITIAL_PRODUCTS = [
   {
     id: 'a1b2c3d4-0001-4000-8000-000000000001',
     title: 'Handcrafted Terracotta Earthen Pitcher (Surahi)',
@@ -311,6 +311,15 @@ export default function Catalog() {
     }
   };
 
+  const handleWhatsAppShare = (product) => {
+    if (!product) return;
+    const productUrl = `${window.location.origin}/details/${product.id}`;
+    const name = product.title || product.hindi_title || 'Handcrafted Craft';
+    const message = `Check out this handcrafted item on Shilp Setu!\n\n*${name}*\nPrice: ₹${product.price}\n\nView details and buy here: ${productUrl}`;
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
   const handleVoiceSearch = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
@@ -563,7 +572,7 @@ export default function Catalog() {
                 {filteredProducts.map((p) => (
                   <div
                     key={p.id}
-                    onClick={() => setSelectedProduct(p)}
+                    onClick={() => navigate(`/details/${p.id}`, { state: { product: p } })}
                     className="product-item flex flex-col bg-surface-container-lowest rounded-2xl p-3 border border-surface-container shadow-xs group relative hover:shadow-xl hover:border-secondary/40 transition-all cursor-pointer"
                   >
                     <div className="relative aspect-[4/5] w-full rounded-xl overflow-hidden bg-surface-container-low mb-2">
@@ -593,8 +602,22 @@ export default function Catalog() {
                         </span>
                       </div>
 
-                      {/* Top right card actions: Delete Button & Options */}
+                      {/* Top right card actions: WhatsApp, Delete Button & Options */}
                       <div className="absolute top-1.5 right-1.5 flex items-center gap-1.5 z-10">
+                        {/* Direct WhatsApp Share button on card */}
+                        <button
+                          aria-label={`Share ${p.title} on WhatsApp`}
+                          title="Share via WhatsApp"
+                          className="w-9 h-9 rounded-full bg-emerald-600/95 hover:bg-emerald-700 text-white flex items-center justify-center shadow-md active:scale-90 transition-all cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleWhatsAppShare(p);
+                          }}
+                          type="button"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">share</span>
+                        </button>
+
                         {/* Direct Delete button on each card */}
                         <button
                           aria-label={`Delete ${p.title}`}
@@ -613,7 +636,10 @@ export default function Catalog() {
                         <button
                           aria-label="Product Options"
                           className="w-9 h-9 rounded-full bg-white/90 backdrop-blur-md text-primary flex items-center justify-center shadow-md active:scale-90 hover:bg-white transition-all cursor-pointer"
-                          onClick={() => setSelectedProduct(p)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedProduct(p);
+                          }}
                           type="button"
                         >
                           <span className="material-symbols-outlined text-[18px]">more_vert</span>
@@ -820,10 +846,36 @@ export default function Catalog() {
               <div className="flex flex-col gap-2 pt-2 border-t border-surface-container-high">
                 <button
                   onClick={() => {
+                    handleWhatsAppShare(selectedProduct);
+                    setSelectedProduct(null);
+                  }}
+                  className="w-full py-3 px-4 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer"
+                  type="button"
+                >
+                  <span className="material-symbols-outlined text-[18px]">chat</span>
+                  <span>{language === 'hi' ? 'व्हाट्सएप पर शेयर करें (WhatsApp)' : 'Share via WhatsApp'}</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    const id = selectedProduct.id;
+                    const prod = selectedProduct;
+                    setSelectedProduct(null);
+                    navigate(`/details/${id}`, { state: { product: prod } });
+                  }}
+                  className="w-full py-3 px-4 rounded-xl bg-[#2e241e] hover:bg-[#180f0a] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer"
+                  type="button"
+                >
+                  <span className="material-symbols-outlined text-[18px]">visibility</span>
+                  <span>{language === 'hi' ? 'विस्तृत उत्पाद पृष्ठ देखें' : 'View Full Details Page'}</span>
+                </button>
+
+                <button
+                  onClick={() => {
                     setSelectedProduct(null);
                     navigate('/capture');
                   }}
-                  className="w-full py-3 px-4 rounded-xl bg-primary text-on-primary font-bold text-xs flex items-center justify-center gap-2 hover:bg-primary-container transition-colors cursor-pointer"
+                  className="w-full py-2.5 px-4 rounded-xl bg-primary text-on-primary font-bold text-xs flex items-center justify-center gap-2 hover:bg-primary-container transition-colors cursor-pointer"
                   type="button"
                 >
                   <span className="material-symbols-outlined text-[18px]">add_a_photo</span>
@@ -833,10 +885,10 @@ export default function Catalog() {
                 <button
                   onClick={() => {
                     showToast(language === 'hi' ? 'शेयर लिंक क्लिपबोर्ड पर कॉपी किया गया!' : 'Share link copied to clipboard!');
-                    navigator.clipboard?.writeText(window.location.href);
+                    navigator.clipboard?.writeText(`${window.location.origin}/details/${selectedProduct.id}`);
                     setSelectedProduct(null);
                   }}
-                  className="w-full py-3 px-4 rounded-xl bg-surface-container hover:bg-surface-container-high text-primary font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                  className="w-full py-2.5 px-4 rounded-xl bg-surface-container hover:bg-surface-container-high text-primary font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
                   type="button"
                 >
                   <span className="material-symbols-outlined text-[18px]">share</span>
@@ -845,7 +897,7 @@ export default function Catalog() {
 
                 <button
                   onClick={() => handleDeleteProduct(selectedProduct.id)}
-                  className="w-full py-2.5 px-4 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs flex items-center justify-center gap-2 border border-red-200 transition-colors cursor-pointer"
+                  className="w-full py-2 px-4 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs flex items-center justify-center gap-2 border border-red-200 transition-colors cursor-pointer"
                   type="button"
                 >
                   <span className="material-symbols-outlined text-[18px]">delete</span>

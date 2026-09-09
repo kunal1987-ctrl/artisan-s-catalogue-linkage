@@ -781,40 +781,29 @@ export default function Capture() {
                       <path d="M 84 100 L 100 100 L 100 84" fill="none" stroke="#ff9062" strokeLinecap="round" strokeWidth="3" />
                     </svg>
 
-                    <div className="w-16 h-16 rounded-full bg-[#ff9062]/10 border border-[#ff9062]/30 flex items-center justify-center text-[#ff9062] mb-3 group-hover:scale-110 group-hover:bg-[#ff9062]/20 transition-all shadow-lg">
-                      <span className="material-symbols-outlined text-[32px]">photo_camera</span>
-                    </div>
-
-                    <h4 className="text-white font-bold text-base sm:text-lg mb-1 leading-tight">
-                      {language === 'hi' ? 'कैमरा खोलें या गैलरी से तस्वीर चुनें' : 'Open Camera or Select Photo'}
-                    </h4>
-                    <p className="text-[#d4c3ba] text-xs max-w-xs leading-relaxed">
-                      {language === 'hi'
-                        ? 'शिल्प को फ्रेम के बीच में रखें • चारों कोने फ्रेम के अंदर'
-                        : 'Tap anywhere to launch rear camera (Keep craft centered within frame)'}
-                    </p>
-
-                    <div className="mt-4 flex items-center gap-2.5 flex-wrap justify-center">
+                    <div className="flex items-center gap-3 flex-wrap justify-center z-10">
                       <button
                         type="button"
+                        id="reticle-camera-btn"
                         onClick={(e) => {
                           e.stopPropagation();
                           if (!isLoading) cameraInputRef.current?.click();
                         }}
-                        className="px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-[#ff9062]/20 text-white text-[12px] font-bold border border-white/20 hover:border-[#ff9062]/50 flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                        className="px-5 py-2.5 rounded-xl bg-[#ff9062] hover:bg-[#ff804a] text-[#180f0a] text-sm font-bold flex items-center gap-2 shadow-lg transition-all cursor-pointer active:scale-95"
                       >
-                        <span className="material-symbols-outlined text-[15px] text-[#ff9062]">photo_camera</span>
+                        <span className="material-symbols-outlined text-[18px]">photo_camera</span>
                         <span>{language === 'hi' ? 'कैमरा' : 'Camera'}</span>
                       </button>
                       <button
                         type="button"
+                        id="reticle-gallery-btn"
                         onClick={(e) => {
                           e.stopPropagation();
                           if (!isLoading) galleryInputRef.current?.click();
                         }}
-                        className="px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-[#ff9062]/20 text-white text-[12px] font-bold border border-white/20 hover:border-[#ff9062]/50 flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                        className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-bold border border-white/20 flex items-center gap-2 shadow-lg transition-all cursor-pointer active:scale-95"
                       >
-                        <span className="material-symbols-outlined text-[15px] text-[#ff9062]">upload_file</span>
+                        <span className="material-symbols-outlined text-[18px]">upload_file</span>
                         <span>{language === 'hi' ? 'गैलरी' : 'Upload'}</span>
                       </button>
                     </div>

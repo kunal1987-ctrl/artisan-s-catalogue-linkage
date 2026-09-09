@@ -43,9 +43,9 @@ export default function DashboardLayout() {
                 <span className="material-symbols-outlined text-[24px]">storefront</span>
               </div>
               <div className="flex flex-col">
-                <span className="font-bold text-[17px] text-primary tracking-tight leading-tight">Kala Sangam</span>
+                <span className="font-bold text-[17px] text-primary tracking-tight leading-tight">Shilp Setu</span>
                 <span className="text-[12px] text-secondary font-medium tracking-wide">
-                  {language === 'hi' ? 'कला संगम स्टूडियो' : 'Kala Sangam Studio'}
+                  {language === 'hi' ? 'शिल्प सेतु स्टूडियो' : 'Shilp Setu Studio'}
                 </span>
               </div>
             </div>
@@ -109,11 +109,11 @@ export default function DashboardLayout() {
         {/* Bottom Sidebar Profile & Help */}
         <div className="flex flex-col gap-4 pt-4 border-t border-[#d1c4bd]/40">
           <a
-            href="tel:1800-KALA"
+            href="tel:1800-SHILP"
             className="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:text-primary hover:bg-[#ebe8e2] transition-colors text-[13px] font-medium"
           >
             <span className="material-symbols-outlined text-[19px]">help</span>
-            <span>{language === 'hi' ? 'सहायता केंद्र (1800-KALA)' : 'Support Center (1800-KALA)'}</span>
+            <span>{language === 'hi' ? 'सहायता केंद्र (1800-SHILP)' : 'Support Center (1800-SHILP)'}</span>
           </a>
           <div 
             onClick={() => isVerified ? navigate('/success') : openAuthModal()}
@@ -154,10 +154,10 @@ export default function DashboardLayout() {
           <div 
             onClick={() => navigate('/home')} 
             className="flex items-center gap-2 cursor-pointer group"
-            title="कला संगम (ArtisanHub)"
+            title={language === 'hi' ? 'शिल्प सेतु' : 'Shilp Setu'}
           >
             <h1 className="text-lg font-bold text-gray-800 group-hover:text-primary transition-colors">
-              कला संगम (ArtisanHub)
+              {language === 'hi' ? 'शिल्प सेतु' : 'Shilp Setu'}
             </h1>
           </div>
 

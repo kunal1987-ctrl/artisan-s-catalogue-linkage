@@ -28,7 +28,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold tracking-tight text-white serif-font">ArtisanHub</h1>
+            <h1 className="text-xl font-bold tracking-tight text-white serif-font">Shilp Setu</h1>
             <span className={`px-2 py-0.5 text-[10px] font-semibold rounded-full flex items-center gap-1 ${
               isConnected ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
             }`}>

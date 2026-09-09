@@ -31,17 +31,17 @@ export default function Success() {
 
   const copyLink = () => {
     if (navigator.clipboard) {
-      navigator.clipboard.writeText('https://kalasangam.in/s/ks-8492');
+      navigator.clipboard.writeText('https://shilpsetu.in/s/ss-8492');
     }
     triggerToast(language === 'hi' ? 'लिंक कॉपी हो गया' : 'Link copied to clipboard');
   };
 
   const shareWhatsApp = () => {
     const text = encodeURIComponent(
-      `नमस्ते! कला संगम पर हमारा नया हस्तशिल्प "${title}" (${titleHi}) अब लाइव है।\n` +
+      `नमस्ते! शिल्प सेतु पर हमारा नया हस्तशिल्प "${title}" (${titleHi}) अब लाइव है।\n` +
       `खुदरा मूल्य: ₹${price} | थोक/संस्थागत (MOQ ${moq}): ₹${wholesalePrice}/यूनिट\n` +
       `GeM श्रेणी: ${gemCategory}\n` +
-      `देखें और ऑर्डर करें: https://kalasangam.in/s/ks-8492`
+      `देखें और ऑर्डर करें: https://shilpsetu.in/s/ss-8492`
     );
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
@@ -57,7 +57,7 @@ export default function Success() {
           >
             <span className="material-symbols-outlined text-[18px]">arrow_back</span>
           </button>
-          <span className="font-bold text-sm">Kala Sangam • Multi-Channel Market Linkage</span>
+          <span className="font-bold text-sm">Shilp Setu • Multi-Channel Market Linkage</span>
         </div>
         <div className="flex items-center gap-3">
           <button
@@ -84,8 +84,8 @@ export default function Success() {
                 <span className="material-symbols-outlined text-[24px]">palette</span>
               </div>
               <div className="flex flex-col min-w-0">
-                <span className="text-xs font-semibold tracking-wider text-secondary uppercase">कला संगम</span>
-                <span className="font-bold text-primary text-base leading-tight truncate">Kala Sangam Studio</span>
+                <span className="text-xs font-semibold tracking-wider text-secondary uppercase">शिल्प सेतु</span>
+                <span className="font-bold text-primary text-base leading-tight truncate">Shilp Setu Studio</span>
               </div>
             </div>
 
@@ -176,7 +176,7 @@ export default function Success() {
                   <span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                     auto_awesome
                   </span>
-                  <span>{language === 'hi' ? 'कला संगम प्रमाणित शिल्पकला • लाइव' : 'Kala Sangam Certified Craft • Multi-Channel Live'}</span>
+                  <span>{language === 'hi' ? 'शिल्प सेतु प्रमाणित शिल्पकला • लाइव' : 'Shilp Setu Certified Craft • Multi-Channel Live'}</span>
                 </div>
                 <h1 className="text-2xl lg:text-3xl font-bold text-primary tracking-tight">
                   {language === 'hi' ? 'बधाई हो! उत्पाद लाइव एवं प्रकाशित हो चुका है!' : 'Congratulations! Product is Live & Published!'}
@@ -292,7 +292,7 @@ export default function Success() {
                     <div className="flex items-center gap-2.5 truncate">
                       <span className="material-symbols-outlined text-secondary text-[20px]">link</span>
                       <span className="text-xs text-on-surface-variant font-mono truncate">
-                        kalasangam.in/s/ks-8492
+                        shilpsetu.in/s/ss-8492
                       </span>
                     </div>
                     <button

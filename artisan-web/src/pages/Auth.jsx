@@ -224,7 +224,7 @@ export default function Auth() {
                 <span>
                     {language === 'hi' ? 'मदद चाहिए?' : 'Need help signing in?'}{' '}
                     <a href="#" className="text-primary font-bold underline hover:text-secondary">
-                        {language === 'hi' ? 'सहायता केंद्र (1800-KALA)' : 'Sahayata Kendra (1800-KALA)'}
+                        {language === 'hi' ? 'सहायता केंद्र (1800-SHILP)' : 'Sahayata Kendra (1800-SHILP)'}
                     </a>
                 </span>
             </div>

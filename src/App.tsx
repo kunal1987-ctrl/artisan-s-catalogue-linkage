@@ -188,7 +188,7 @@ export function App() {
           <Database className="w-3.5 h-3.5 text-amber-500" />
           <span>Connected to Supabase Project: <code className="text-amber-400 bg-neutral-900 px-1.5 py-0.5 rounded">jrkrdlalnqswvwabktce</code></span>
         </div>
-        <p>© {new Date().getFullYear()} Artisan Catalogue Hub. Built with Vite, React & Supabase Backend.</p>
+        <p>© {new Date().getFullYear()} Shilp Setu. Built with Vite, React & Supabase Backend.</p>
       </footer>
     </div>
   );

@@ -136,7 +136,7 @@ export const ReviewScreenReactNative: React.FC<ReviewScreenProps> = ({ navigatio
             <View className="flex-row items-center space-x-1.5 px-3 py-1 rounded-full bg-[#fedeb2] mb-2">
               <MaterialIcons name="auto-awesome" size={15} color="#78603e" />
               <Text className="text-[11px] font-bold text-[#281800]">
-                कला संगम प्रमाणित शिल्पकला • Verified
+                शिल्प सेतु प्रमाणित शिल्पकला • Verified
               </Text>
             </View>
 
@@ -365,7 +365,7 @@ export const ReviewScreenReactNative: React.FC<ReviewScreenProps> = ({ navigatio
           <View className="flex-row items-center justify-center space-x-2 pt-5 pb-2 text-center">
             <Feather name="headphones" size={16} color="#725b38" />
             <Text className="text-[12px] text-[#4e4542]">
-              Need help? Dial Sahayata Kendra 1800-KALA-HELP
+              Need help? Dial Sahayata Kendra 1800-SHILP-HELP
             </Text>
           </View>
         </ScrollView>

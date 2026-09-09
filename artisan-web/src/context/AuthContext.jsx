@@ -42,7 +42,7 @@ const AuthContext = createContext({
   user: null,
   session: null,
   artisanName: 'रामेश कुम्हार (Jaipur Craft Cluster)',
-  artisanStudio: 'कला संगम स्टूडियो',
+  artisanStudio: 'शिल्प सेतु स्टूडियो',
   artisanProfile: {
     name: 'रामेश कुम्हार',
     phone: null,
@@ -74,7 +74,7 @@ export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [artisanName] = useState('रामेश कुम्हार (Jaipur Craft Cluster)');
-  const [artisanStudio] = useState('कला संगम स्टूडियो');
+  const [artisanStudio] = useState('शिल्प सेतु स्टूडियो');
 
   // Artisan phone verification profile
   const [artisanProfile, setArtisanProfile] = useState(() => {

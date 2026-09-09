@@ -221,7 +221,7 @@ export default function Review() {
               <div className="w-8 h-8 rounded-lg bg-[#2e241e] text-[#ffdeaa] flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
                 <span className="material-symbols-outlined text-[18px]">palette</span>
               </div>
-              <span className="font-bold text-sm text-white tracking-tight hidden sm:inline">Kala Sangam</span>
+              <span className="font-bold text-sm text-white tracking-tight hidden sm:inline">Shilp Setu</span>
             </div>
             <div className="h-4 w-[1px] bg-white/20 mx-0.5 hidden sm:block" />
             <div className="flex items-center gap-1.5 text-xs font-bold text-white/70">

@@ -5,73 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import InstitutionalTenderCard, { ACTIVE_INSTITUTIONAL_TENDERS } from '../components/InstitutionalTenderCard';
 
-// ─── Realistic institutional purchase order templates for GeM / ONDC simulation ───
-const ORDER_TEMPLATES = [
-  {
-    order_id: 'GEM-PO-2026-8849102',
-    buyer_name: 'Ministry of Tourism & Culture (Govt. of India)',
-    channel: 'GeM',
-    order_type: 'gem',
-    item_title: 'Handcrafted Terracotta Earthen Pitcher (Surahi)',
-    quantity: 50,
-    unit_price_inr: 260,
-    total_amount: 13000,
-    total_price_inr: 13000,
-    status: 'pending',
-    shipping_address: 'Central State Guest House, Chanakyapuri, New Delhi - 110021',
-    city: 'New Delhi',
-    payment_mode: 'GeM PFMS Verified Institutional Escrow (Auto-settlement on Dispatch)',
-    notes: 'Urgent institutional procurement for National Tourism Conclave 2026',
-  },
-  {
-    order_id: 'ONDC-BECKN-PO-739218',
-    buyer_name: 'Tribal Co-operative Marketing Development Federation (TRIFED Store Network)',
-    channel: 'ONDC',
-    order_type: 'ondc',
-    item_title: 'GI-Certified Jaipur Blue Pottery Decorative Wall Plate (10 Inch)',
-    quantity: 25,
-    unit_price_inr: 780,
-    total_amount: 19500,
-    total_price_inr: 19500,
-    status: 'accepted',
-    shipping_address: 'TRIFED Central Fulfillment Hub, Sector 62, Noida, Uttar Pradesh - 201309',
-    city: 'Noida',
-    payment_mode: 'ONDC Protocol Settlement via UPI / BharatQR',
-    notes: 'Tribal & Artisan Heritage Retail Distribution',
-  },
-  {
-    order_id: 'GEM-PO-2026-9813',
-    buyer_name: 'Ministry of Textiles (DC Handlooms)',
-    channel: 'GeM',
-    order_type: 'gem',
-    item_title: 'Handwoven Chanderi Silk-Cotton Zari Border Stole',
-    quantity: 20,
-    unit_price_inr: 1150,
-    total_amount: 23000,
-    total_price_inr: 23000,
-    status: 'pending',
-    shipping_address: 'Udyog Bhawan, Rafi Marg, New Delhi 110011',
-    city: 'New Delhi',
-    payment_mode: 'GeM PFMS Verified Institutional Escrow (Auto-settlement on Dispatch)',
-    notes: 'Institutional Diplomatic Gift Procurement Batch',
-  },
-  {
-    order_id: 'ONDC-RET-2026-4401',
-    buyer_name: 'FabIndia Craft Direct (ONDC Buyer App)',
-    channel: 'ONDC',
-    order_type: 'ondc',
-    item_title: 'Handcrafted Blue Pottery Ceramic Coasters (Set of 6)',
-    quantity: 10,
-    unit_price_inr: 450,
-    total_amount: 4500,
-    total_price_inr: 4500,
-    status: 'pending',
-    shipping_address: 'Indiranagar 100ft Road, Bengaluru, Karnataka - 560038',
-    city: 'Bengaluru',
-    payment_mode: 'ONDC Protocol Settlement via UPI',
-    notes: 'Beckn B2C Retail Order fulfillment',
-  },
-];
+
 
 // Static demo institutional orders matching production seed
 const STATIC_ORDERS = [
@@ -312,12 +246,10 @@ export default function Orders() {
   const { language } = useLanguage();
   const [orders, setOrders] = useState(STATIC_ORDERS);
   const [activeFilter, setActiveFilter] = useState('ALL');
-  const [isSimulating, setIsSimulating] = useState(false);
   const [showTendersSection, setShowTendersSection] = useState(true);
   const [toastMsg, setToastMsg] = useState('');
   const [realtimeConnected, setRealtimeConnected] = useState(false);
   const channelRef = useRef(null);
-  const templateIndexRef = useRef(0);
 
   const showToast = (msg) => {
     setToastMsg(msg);
@@ -456,72 +388,7 @@ export default function Orders() {
     }
   };
 
-  // 5. Simulate an incoming GeM / ONDC Purchase Order
-  const handleSimulateOrder = async (targetType) => {
-    setIsSimulating(true);
-    try {
-      let filteredTemplates = ORDER_TEMPLATES;
-      if (targetType) {
-        const matching = ORDER_TEMPLATES.filter(
-          (t) =>
-            t.order_type?.toLowerCase() === targetType.toLowerCase() ||
-            t.channel?.toLowerCase().includes(targetType.toLowerCase())
-        );
-        if (matching.length > 0) filteredTemplates = matching;
-      }
-      const template = filteredTemplates[templateIndexRef.current % filteredTemplates.length];
-      templateIndexRef.current += 1;
 
-      const authUser = (await supabase.auth.getUser()).data?.user || user;
-      const authUserId = authUser?.id || user?.id || null;
-      const userPhone = artisanProfile?.phone || authUser?.phone || user?.phone || null;
-      const total = template.total_amount || (template.quantity * template.unit_price_inr);
-      const uniqueSuffix = Date.now().toString().slice(-4);
-      const generatedOrderId = `${template.order_type === 'gem' ? 'GEM-PO' : 'ONDC-PO'}-${uniqueSuffix}`;
-
-      const orderPayload = {
-        order_id: template.order_id ? `${template.order_id}-${uniqueSuffix}` : generatedOrderId,
-        buyer_name: template.buyer_name,
-        channel: template.channel,
-        order_type: template.order_type,
-        item_title: template.item_title,
-        quantity: template.quantity,
-        total_amount: total,
-        unit_price_inr: template.unit_price_inr,
-        total_price_inr: total,
-        status: 'pending',
-        shipping_address: template.shipping_address,
-        payment_mode: template.payment_mode,
-        notes: template.notes || template.item_title,
-        city: template.city,
-        user_id: authUserId,
-        artisan_user_id: authUserId,
-        user_phone: userPhone,
-      };
-
-      const { error } = await supabase.from('orders').insert([orderPayload]).select().single();
-
-      if (error) {
-        // Realtime insert fallback — simulate locally for demo
-        console.warn('[Simulate] Supabase insert failed, using local simulation:', error.message);
-        const localOrder = mapOrderRecord({
-          id: `sim-${Date.now()}`,
-          ...orderPayload,
-          created_at: new Date().toISOString(),
-        });
-        setOrders((prev) => [localOrder, ...prev]);
-        showToast(`⚡ ${template.channel} — नया आर्डर! ₹${total.toLocaleString('en-IN')}`);
-        speakOrder({ ...localOrder });
-      } else {
-        showToast(`✅ ${template.channel} PO inserted — Realtime will fire! ₹${total.toLocaleString('en-IN')}`);
-      }
-    } catch (err) {
-      console.error('[Simulate] Error:', err);
-      showToast('Simulation failed. Please retry.');
-    } finally {
-      setIsSimulating(false);
-    }
-  };
 
   // 7. Handle 1-Click Institutional Tender Bid & Acceptance
   const handleAcceptTender = (tender) => {
@@ -644,7 +511,7 @@ export default function Orders() {
             </div>
           </div>
 
-          {/* Order Channel Filters & Compact Demo Simulation Triggers */}
+          {/* Order Channel Filters */}
           <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
             {/* Left side: Order Filter Chips */}
             <div className="flex items-center gap-2 overflow-x-auto py-1 scrollbar-none">
@@ -680,24 +547,6 @@ export default function Orders() {
                 }`}
               >
                 ONDC Orders / रिटेल
-              </button>
-            </div>
-
-            {/* Right side: Compact Demo Triggers */}
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => handleSimulateOrder('GEM')}
-                className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 active:scale-95 transition-all shadow-sm cursor-pointer"
-              >
-                + Sim GeM
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSimulateOrder('ONDC')}
-                className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-indigo-300 bg-indigo-50 text-indigo-800 hover:bg-indigo-100 active:scale-95 transition-all shadow-sm cursor-pointer"
-              >
-                + Sim ONDC
               </button>
             </div>
           </div>
@@ -839,24 +688,6 @@ export default function Orders() {
         </div>
       )}
 
-      {/* Floating Demo Mode Pill */}
-      <button
-        id="simulate-order-btn"
-        aria-label="Demo Mode: Trigger PO"
-        className="fixed bottom-4 right-4 z-50 bg-gray-800 text-white px-4 py-2 rounded-full shadow-lg opacity-50 hover:opacity-100 text-xs font-bold flex items-center gap-2 transition-all cursor-pointer active:scale-95 disabled:opacity-30"
-        type="button"
-        onClick={handleSimulateOrder}
-        disabled={isSimulating}
-      >
-        <span className="material-symbols-outlined text-[16px]">
-          {isSimulating ? 'hourglass_top' : 'bolt'}
-        </span>
-        <span>
-          {isSimulating 
-            ? (language === 'hi' ? 'जोड़ रहे हैं...' : 'Inserting...') 
-            : (language === 'hi' ? 'डेमो: नया ऑर्डर बनाएं ⚡' : 'Demo Mode: Trigger PO ⚡')}
-        </span>
-      </button>
     </div>
   );
 }

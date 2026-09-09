@@ -69,7 +69,7 @@ const JUDGE_INSURANCE_PAYLOAD = {
       make_in_india: "true",
       digital_escrow_enabled: "true",
       escrow_protocol: "ONDC_RSP_BECKN_ESCROW",
-      bpp_id: "kala-sangam.artisan.in",
+      bpp_id: "shilp-setu.artisan.in",
     },
   },
   // Standardized GeM Procurement Schema
@@ -725,7 +725,7 @@ Return ONLY a valid JSON object matching this exact schema:
           make_in_india: "true",
           digital_escrow_enabled: "true",
           escrow_protocol: "ONDC_RSP_BECKN_ESCROW",
-          bpp_id: "kala-sangam.artisan.in",
+          bpp_id: "shilp-setu.artisan.in",
         },
       };
 

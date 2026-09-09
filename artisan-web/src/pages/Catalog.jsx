@@ -270,15 +270,15 @@ export default function Catalog() {
               action: 'on_search',
               core_version: '1.2.0',
               bap_id: 'ondc.buyer.app',
-              bpp_id: 'artisan.seller.hub',
+              bpp_id: 'shilp-setu.seller.hub',
             },
             message: {
               catalog: {
-                'bpp/descriptor': { name: 'Artisan Heritage Collective' },
+                'bpp/descriptor': { name: 'Shilp Setu Collective' },
                 'bpp/providers': [
                   {
-                    id: 'artisan-provider-1',
-                    descriptor: { name: 'Heritage Artisans of India' },
+                    id: 'shilp-setu-provider-1',
+                    descriptor: { name: 'Shilp Setu Artisans of India' },
                     items: products.map((p) => ({
                       id: String(p.id),
                       descriptor: { name: p.title, images: [p.image_url] },
@@ -296,12 +296,12 @@ export default function Catalog() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'artisan-ondc-catalog.json';
+        a.download = 'shilp-setu-ondc-catalog.json';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        showToast('✅ ONDC Beckn (JSON) downloaded: artisan-ondc-catalog.json');
+        showToast('✅ ONDC Beckn (JSON) downloaded: shilp-setu-ondc-catalog.json');
       }
     } catch (err) {
       console.error(`[Export ${format}]`, err);
@@ -391,7 +391,7 @@ export default function Catalog() {
                     <span className="material-symbols-outlined text-[18px] text-emerald-600">hub</span>
                     <div>
                       <span className="block text-[13px] font-bold">{exportingFormat === 'ondc' ? (language === 'hi' ? 'डाउनलोड हो रहा है...' : 'Downloading...') : '📥 ONDC Beckn (JSON)'}</span>
-                      <span className="block text-[11px] text-gray-500">artisan-ondc-catalog.json</span>
+                      <span className="block text-[11px] text-gray-500">shilp-setu-ondc-catalog.json</span>
                     </div>
                   </button>
                   <button

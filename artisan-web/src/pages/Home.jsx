@@ -75,7 +75,9 @@ export default function Home() {
                     </div>
                     <h2 className="text-[24px] font-bold text-primary flex items-center gap-2">
                         {language === 'hi' ? 'नमस्ते, रामेश!' : 'Namaste, Ramesh!'}
-                        <span className="text-[14px] font-medium text-on-surface-variant font-normal">कला संगम शॉप</span>
+                        <span className="text-[14px] font-medium text-on-surface-variant font-normal">
+                            {language === 'hi' ? 'शिल्प सेतु शॉप' : 'Shilp Setu Shop'}
+                        </span>
                     </h2>
                 </div>
                 
@@ -119,7 +121,7 @@ export default function Home() {
                             </div>
                             <h3 className="text-[28px] font-bold text-white tracking-tight leading-tight mt-1">Add New Product & Instant Catalog Listing</h3>
                             <p className="text-[15px] text-[#e6e2dc] leading-relaxed">
-                                Point your camera and speak naturally in your voice. Kala Sangam AI writes title, tags, description and suggests fair marketplace prices in seconds.
+                                Point your camera and speak naturally in your voice. Shilp Setu AI writes title, tags, description and suggests fair marketplace prices in seconds.
                             </p>
                             <div className="flex items-center gap-6 mt-2 text-[13px] text-[#d4c3ba]">
                                 <span className="flex items-center gap-1.5">

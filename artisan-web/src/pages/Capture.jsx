@@ -1,12 +1,11 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Camera, Upload } from 'lucide-react';
-import { removeBackground } from '@imgly/background-removal';
+import imageCompression from 'browser-image-compression';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import LanguageToggle from '../components/LanguageToggle';
 import LanguageSelectorModal, { getDialectBadgeText } from '../components/LanguageSelectorModal';
-import { clearCorruptedStorage, isStorageQuotaError } from '../utils/storageCleanup';
 
 const blobToBase64 = (blob) =>
   new Promise((resolve, reject) => {
@@ -24,153 +23,30 @@ const blobToBase64 = (blob) =>
   });
 
 /**
- * Downscales and compresses high-res camera photos to max 1024px.
- * Prevents mobile WebAssembly LevelDB / out-of-memory crashes in @imgly/background-removal.
+ * Compresses incoming camera photos to a maximum dimension of 1024px
+ * using browser-image-compression before upload, ensuring lightning-fast uploads
+ * and zero device lockups.
  */
-const optimizeImage = (file, maxDimension = 1024, quality = 0.85) => {
-  return new Promise((resolve) => {
-    if (file.type === 'image/svg+xml' || file.size < 120000) {
-      resolve(file);
-      return;
-    }
+const compressImage = async (file, maxDimension = 1024, quality = 0.85) => {
+  if (!file) return file;
+  if (file.type === 'image/svg+xml') return file;
 
-    const img = new Image();
-    const tempUrl = URL.createObjectURL(file);
+  const options = {
+    maxSizeMB: 1,
+    maxWidthOrHeight: maxDimension,
+    useWebWorker: true,
+    fileType: 'image/jpeg',
+    initialQuality: quality,
+  };
 
-    img.onload = () => {
-      URL.revokeObjectURL(tempUrl);
-      let { width, height } = img;
-
-      if (width > maxDimension || height > maxDimension) {
-        if (width > height) {
-          height = Math.round((height * maxDimension) / width);
-          width = maxDimension;
-        } else {
-          width = Math.round((width * maxDimension) / height);
-          height = maxDimension;
-        }
-      }
-
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        resolve(file);
-        return;
-      }
-
-      ctx.drawImage(img, 0, 0, width, height);
-      canvas.toBlob(
-        (blob) => {
-          resolve(blob || file);
-        },
-        'image/jpeg',
-        quality
-      );
-    };
-
-    img.onerror = () => {
-      URL.revokeObjectURL(tempUrl);
-      resolve(file);
-    };
-
-    img.src = tempUrl;
-  });
+  try {
+    return await imageCompression(file, options);
+  } catch (error) {
+    console.warn('[Capture] browser-image-compression fallback:', error);
+    return file;
+  }
 };
 
-/**
- * Takes an isolated transparent craft image blob, centers it onto a pure white (#FFFFFF)
- * studio canvas (1024x1024), applies a subtle ambient ground shadow under the base,
- * and exports as an optimized JPEG blob (< 150KB).
- */
-const centerOnStudioCanvas = (craftBlob, targetDimension = 1024, quality = 0.88) => {
-  return new Promise((resolve) => {
-    const img = new Image();
-    const tempUrl = URL.createObjectURL(craftBlob);
-
-    img.onload = () => {
-      URL.revokeObjectURL(tempUrl);
-
-      const canvas = document.createElement('canvas');
-      canvas.width = targetDimension;
-      canvas.height = targetDimension;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        resolve(craftBlob);
-        return;
-      }
-
-      // 1. Fill pure white studio background
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(0, 0, targetDimension, targetDimension);
-
-      // 2. Proportional fit within 82% bounding box
-      const maxBound = targetDimension * 0.82;
-      const srcW = img.naturalWidth || img.width;
-      const srcH = img.naturalHeight || img.height;
-
-      const scale = Math.min(maxBound / srcW, maxBound / srcH);
-      const drawW = srcW * scale;
-      const drawH = srcH * scale;
-
-      const drawX = (targetDimension - drawW) / 2;
-      const drawY = (targetDimension - drawH) / 2 - (targetDimension * 0.015);
-
-      // 3. Render subtle ambient ground shadow
-      const shadowCenterX = targetDimension / 2;
-      const shadowCenterY = drawY + drawH + 4;
-      const shadowRadiusX = Math.min(drawW * 0.42, targetDimension * 0.36);
-      const shadowRadiusY = 14;
-
-      ctx.save();
-      const shadowGrad = ctx.createRadialGradient(
-        shadowCenterX,
-        shadowCenterY,
-        0,
-        shadowCenterX,
-        shadowCenterY,
-        shadowRadiusX
-      );
-      shadowGrad.addColorStop(0, 'rgba(0, 0, 0, 0.18)');
-      shadowGrad.addColorStop(0.4, 'rgba(0, 0, 0, 0.06)');
-      shadowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-
-      ctx.beginPath();
-      ctx.ellipse(
-        shadowCenterX,
-        shadowCenterY,
-        shadowRadiusX,
-        shadowRadiusY,
-        0,
-        0,
-        2 * Math.PI
-      );
-      ctx.fillStyle = shadowGrad;
-      ctx.fill();
-      ctx.restore();
-
-      // 4. Draw craft centered
-      ctx.drawImage(img, drawX, drawY, drawW, drawH);
-
-      // 5. Export as JPEG blob
-      canvas.toBlob(
-        (studioBlob) => {
-          resolve(studioBlob || craftBlob);
-        },
-        'image/jpeg',
-        quality
-      );
-    };
-
-    img.onerror = () => {
-      URL.revokeObjectURL(tempUrl);
-      resolve(craftBlob);
-    };
-
-    img.src = tempUrl;
-  });
-};
 
 const CRAFT_SUGGESTION_CHIPS = [
   {
@@ -220,6 +96,7 @@ export default function Capture() {
   const [processedPreview, setProcessedPreview] = useState(null);
   const [imageBase64, setImageBase64] = useState(null);
   const [imageUrl, setImageUrl] = useState(null);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [bgRemovalStatus, setBgRemovalStatus] = useState('idle'); // idle | processing | done | error
 
   // Object URL tracking to prevent memory leaks
@@ -229,7 +106,9 @@ export default function Capture() {
   useEffect(() => {
     return () => {
       if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
-      if (processedPreviewRef.current) URL.revokeObjectURL(processedPreviewRef.current);
+      if (processedPreviewRef.current && processedPreviewRef.current.startsWith('blob:')) {
+        URL.revokeObjectURL(processedPreviewRef.current);
+      }
     };
   }, []);
 
@@ -258,7 +137,7 @@ export default function Capture() {
   const [errorMsg, setErrorMsg] = useState('');
 
   // ════════════════════════════════════════════
-  // IMAGE SELECTION & OPTIMIZATION
+  // IMAGE SELECTION & OPTIMISTIC AI PIPELINE
   // ════════════════════════════════════════════
 
   const handleFileSelect = useCallback(async (e) => {
@@ -267,117 +146,156 @@ export default function Capture() {
 
     // Reset input value so re-capturing the same or new file always triggers onChange
     e.target.value = '';
-
     setSelectedFile(file);
 
-    // 1. Revoke previous URLs
+    // 1. Revoke previous preview URLs
     if (previewUrlRef.current) {
       URL.revokeObjectURL(previewUrlRef.current);
       previewUrlRef.current = null;
     }
-    if (processedPreviewRef.current) {
+    if (processedPreviewRef.current && processedPreviewRef.current.startsWith('blob:')) {
       URL.revokeObjectURL(processedPreviewRef.current);
       processedPreviewRef.current = null;
     }
 
+    setIsProcessingImage(true);
     setBgRemovalStatus('processing');
-    setAiStatusText(language === 'hi' ? 'शिल्प तस्वीर को अनुकूलित किया जा रहा है...' : 'Optimizing craft photo...');
+    setAiStatusText(
+      language === 'hi'
+        ? 'शिल्प तस्वीर अनुकूलित की जा रही है...'
+        : 'Compressing craft photo...'
+    );
     setErrorMsg('');
 
-    // 2. Pre-scale to max 1024px to prevent mobile WASM memory crashes
+    // 2. Compress camera/gallery image to maximum width/height of 1024px
     let workingBlob = file;
     try {
-      workingBlob = await optimizeImage(file, 1024, 0.85);
+      workingBlob = await compressImage(file, 1024, 0.85);
     } catch (optErr) {
-      console.warn('Image pre-scaling fallback:', optErr);
+      console.warn('[Capture] Image compression fallback:', optErr);
     }
 
+    // 3. OPTIMISTIC UI: Immediately display raw compressed image so user can continue filling out form
     const localUrl = URL.createObjectURL(workingBlob);
     previewUrlRef.current = localUrl;
     setPreviewUrl(localUrl);
     setProcessedPreview(null);
     setImageUrl(null);
 
-    // Generate immediate base64 representation
+    // Generate immediate base64 representation of the compressed image
+    let base64String = '';
     try {
-      const initialBase64 = await blobToBase64(workingBlob);
-      setImageBase64(initialBase64);
+      base64String = await blobToBase64(workingBlob);
+      setImageBase64(base64String);
     } catch (e) {
-      console.warn('Initial photo base64 fallback:', e);
+      console.warn('[Capture] Photo base64 encoding error:', e);
     }
 
-    setAiStatusText(language === 'hi' ? 'एआई स्टूडियो द्वारा बैकग्राउंड हटाया जा रहा है...' : 'Removing background locally via AI Studio...');
+    setAiStatusText(
+      language === 'hi'
+        ? 'एआई लाइफस्टाइल दृश्य तैयार किया जा रहा है...'
+        : 'Generating lifestyle scene via Photoroom AI...'
+    );
 
-    try {
-      // Background removal using @imgly/background-removal on optimized blob
-      const transparentBlob = await removeBackground(workingBlob);
+    // 4. Asynchronously invoke Supabase Edge Function without blocking the user interface
+    (async () => {
+      try {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+        const { data: sessionData } = await supabase.auth.getSession();
+        let token = sessionData?.session?.access_token;
+        if (!token) {
+          const { data: anonData } = await supabase.auth.signInAnonymously();
+          token = anonData?.session?.access_token;
+        }
+        const activeAuth = token
+          ? `Bearer ${token}`
+          : `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`;
 
-      setAiStatusText(language === 'hi' ? 'शुद्ध सफ़ेद कैनवास पर छायांकन तैयार किया जा रहा है...' : 'Centering craft on pure white studio canvas...');
-      const studioBlob = await centerOnStudioCanvas(transparentBlob, 1024, 0.88);
-
-      const processedUrl = URL.createObjectURL(studioBlob);
-      processedPreviewRef.current = processedUrl;
-      setProcessedPreview(processedUrl);
-
-      const base64String = await blobToBase64(studioBlob);
-      setImageBase64(base64String);
-
-      // Upload studio JPEG to Supabase Storage
-      const fileName = `craft_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('artisan-images')
-        .upload(fileName, studioBlob, {
-          contentType: 'image/jpeg',
-          upsert: false,
+        const response = await fetch(`${supabaseUrl}/functions/v1/generate-lifestyle-image`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: activeAuth,
+          },
+          body: JSON.stringify({
+            imageBase64: base64String,
+          }),
         });
 
-      if (uploadError) {
-        console.error('Storage upload error:', uploadError);
-      } else if (uploadData) {
-        const { data: urlData } = supabase.storage
-          .from('artisan-images')
-          .getPublicUrl(uploadData.path);
-        setImageUrl(urlData.publicUrl);
-      }
-
-      setBgRemovalStatus('done');
-      setAiStatusText(language === 'hi' ? 'स्टूडियो फ़ोटो तैयार (सफ़ेद कैनवास ✓)' : 'Studio photo ready (Pure White Canvas ✓)');
-    } catch (err) {
-      console.error('Background removal fallback activated:', err);
-
-      if (isStorageQuotaError(err)) {
-        console.warn('[Capture] Storage quota note. Purging temporary caches...');
-        clearCorruptedStorage().catch(() => {});
-      }
-
-      setBgRemovalStatus('error');
-      setAiStatusText(language === 'hi' ? 'मानक फ़ोटो सफ़ेद कैनवास पर तैयार...' : 'Optimizing standard photo on white studio canvas...');
-
-      try {
-        const fallbackStudioBlob = await centerOnStudioCanvas(workingBlob, 1024, 0.85);
-        const fallbackUrl = URL.createObjectURL(fallbackStudioBlob);
-        processedPreviewRef.current = fallbackUrl;
-        setProcessedPreview(fallbackUrl);
-
-        const base64String = await blobToBase64(fallbackStudioBlob);
-        setImageBase64(base64String);
-      } catch (fallbackErr) {
-        console.error('Fallback studio error:', fallbackErr);
-        try {
-          const base64String = await blobToBase64(workingBlob);
-          setImageBase64(base64String);
-        } catch (e2) {
-          console.error('Last resort base64 error:', e2);
+        if (!response.ok) {
+          const errText = await response.text();
+          throw new Error(`Edge function returned HTTP ${response.status}: ${errText}`);
         }
+
+        const data = await response.json();
+        if (data?.imageUrl) {
+          setImageUrl(data.imageUrl);
+          setProcessedPreview(data.imageUrl);
+          setBgRemovalStatus('done');
+          setAiStatusText(
+            language === 'hi'
+              ? 'लाइफस्टाइल फ़ोटो तैयार ✓'
+              : 'Lifestyle scene ready ✓'
+          );
+          if (showToast) {
+            showToast(
+              language === 'hi'
+                ? '✨ लाइफस्टाइल बैकग्राउंड तैयार!'
+                : '✨ AI lifestyle background generated!'
+            );
+          }
+        } else {
+          throw new Error(data?.error || data?.message || 'No image URL received from Edge Function');
+        }
+      } catch (cloudErr) {
+        console.warn('[Capture] Photoroom Edge Function fallback activated:', cloudErr);
+        setBgRemovalStatus('error');
+        setAiStatusText(
+          language === 'hi'
+            ? 'मूल फ़ोटो सुरक्षित की गई'
+            : 'Original photo preserved'
+        );
+
+        // Fallback: Upload compressed raw image to Supabase Storage bucket product-images
+        try {
+          const fileName = `craft_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('product-images')
+            .upload(fileName, workingBlob, {
+              contentType: 'image/jpeg',
+              upsert: false,
+            });
+
+          if (!uploadError && uploadData) {
+            const { data: urlData } = supabase.storage
+              .from('product-images')
+              .getPublicUrl(uploadData.path);
+            setImageUrl(urlData.publicUrl);
+          }
+        } catch (storageErr) {
+          console.warn('[Capture] Storage fallback upload skipped:', storageErr);
+        }
+
+        if (showToast) {
+          showToast(
+            language === 'hi'
+              ? 'मूल फ़ोटो उपयोग की जा रही है'
+              : 'Using original photo (fallback active)'
+          );
+        }
+      } finally {
+        setIsProcessingImage(false);
       }
-    }
-  }, [language]);
+    })();
+  }, [language, showToast]);
 
   const handleImageSelection = handleFileSelect;
 
   const handleRetake = useCallback(() => {
     if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
-    if (processedPreviewRef.current) URL.revokeObjectURL(processedPreviewRef.current);
+    if (processedPreviewRef.current && processedPreviewRef.current.startsWith('blob:')) {
+      URL.revokeObjectURL(processedPreviewRef.current);
+    }
     previewUrlRef.current = null;
     processedPreviewRef.current = null;
 
@@ -386,6 +304,7 @@ export default function Capture() {
     setProcessedPreview(null);
     setImageBase64(null);
     setImageUrl(null);
+    setIsProcessingImage(false);
     setBgRemovalStatus('idle');
     setAiStatusText('');
   }, []);
@@ -660,8 +579,8 @@ export default function Capture() {
 
   const displayImage = processedPreview || previewUrl;
   const isProcessing = aiStatus === 'transcribing' || aiStatus === 'analyzing';
-  const isOptimizing = bgRemovalStatus === 'processing';
-  const isLoading = isProcessing || isOptimizing;
+  const isOptimizing = isProcessingImage || bgRemovalStatus === 'processing';
+  const isLoading = isProcessing; // Do NOT block the user when image is optimizing (optimistic UI)
 
   return (
     <div className="w-full">
@@ -730,7 +649,9 @@ export default function Capture() {
                   <img
                     src={displayImage}
                     alt="Craft capture"
-                    className="w-full h-full object-contain p-3 sm:p-5"
+                    className={`w-full h-full object-contain p-3 sm:p-5 transition-all duration-500 ${
+                      isOptimizing ? 'blur-[3px] scale-[0.98] opacity-85' : 'blur-none scale-100 opacity-100'
+                    }`}
                   />
                   {/* Viewfinder reticle with subtle edge-scan pulse animation */}
                   <div className="absolute inset-3 sm:inset-5 rounded-2xl border-2 border-[#ff9062]/80 shadow-[0_0_20px_rgba(255,144,98,0.4)] animate-pulse pointer-events-none z-10">
@@ -742,7 +663,9 @@ export default function Capture() {
                     </svg>
                   </div>
                   {/* AI Scanning laser line across craft edges */}
-                  <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#ff9062] to-transparent shadow-[0_0_15px_#ff9062] animate-scan pointer-events-none z-20" />
+                  {isOptimizing && (
+                    <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#ff9062] to-transparent shadow-[0_0_15px_#ff9062] animate-scan pointer-events-none z-20" />
+                  )}
                 </div>
               ) : (
                 <div
@@ -797,18 +720,24 @@ export default function Capture() {
               {/* Center Overlay Badges */}
               {displayImage && (
                 <div className="relative z-20 my-auto flex flex-col items-center pointer-events-none">
-                  {bgRemovalStatus === 'processing' && (
-                    <div className="bg-[#191312]/80 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-[#ff9062]/40 flex items-center gap-2.5 shadow-xl">
+                  {isOptimizing && (
+                    <div className="bg-[#191312]/85 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-[#ff9062]/50 flex items-center gap-2.5 shadow-2xl animate-pulse">
                       <div className="w-5 h-5 border-2 border-[#ff9062] border-t-transparent rounded-full animate-spin" />
-                      <span className="text-xs font-bold text-[#ffdeaa] animate-pulse">
-                        {language === 'hi' ? 'एआई बैकग्राउंड रिमूवल सक्रिय...' : 'AI Background Removal in progress...'}
+                      <span className="text-xs font-bold text-[#ffdeaa]">
+                        {language === 'hi' ? 'एआई जीवनशैली दृश्य तैयार किया जा रहा है...' : 'Generating Lifestyle Scene...'}
                       </span>
                     </div>
                   )}
-                  {bgRemovalStatus === 'done' && (
+                  {!isOptimizing && bgRemovalStatus === 'done' && (
                     <div className="bg-emerald-950/90 text-emerald-300 px-4 py-1.5 rounded-full border border-emerald-500/40 text-xs font-bold shadow-lg flex items-center gap-2 backdrop-blur-md">
                       <span className="material-symbols-outlined text-[16px] text-emerald-400">check_circle</span>
-                      <span>{language === 'hi' ? 'सफ़ेद बैकग्राउंड तैयार' : 'Studio Background Ready'}</span>
+                      <span>{language === 'hi' ? 'लाइफस्टाइल बैकग्राउंड तैयार' : 'Lifestyle Scene Ready'}</span>
+                    </div>
+                  )}
+                  {!isOptimizing && bgRemovalStatus === 'error' && (
+                    <div className="bg-stone-900/90 text-stone-300 px-4 py-1.5 rounded-full border border-stone-600/40 text-xs font-medium shadow-lg flex items-center gap-2 backdrop-blur-md">
+                      <span className="material-symbols-outlined text-[16px] text-amber-400">check</span>
+                      <span>{language === 'hi' ? 'मूल तस्वीर सुरक्षित' : 'Original Photo Preserved'}</span>
                     </div>
                   )}
                 </div>
@@ -819,12 +748,12 @@ export default function Capture() {
                 <div className="relative z-20 flex items-center justify-center">
                   <button
                     id="retake-photo-btn"
-                    disabled={isLoading}
+                    disabled={isProcessing}
                     onClick={() => {
-                      if (!isLoading) handleRetake();
+                      if (!isProcessing) handleRetake();
                     }}
                     className={`flex items-center gap-1.5 text-xs font-bold px-5 py-2.5 rounded-xl border transition-all shadow-lg ${
-                      isLoading
+                      isProcessing
                         ? 'text-red-300/40 bg-red-950/30 border-red-500/20 cursor-not-allowed'
                         : 'text-red-300 bg-red-950/80 hover:bg-red-900/80 border-red-500/40 cursor-pointer active:scale-95'
                     }`}
@@ -854,10 +783,10 @@ export default function Capture() {
                 <span className="material-symbols-outlined text-[20px] text-[#9c441c]">palette</span>
                 <div>
                   <p className="text-[11px] font-bold text-[#180f0a]">
-                    {language === 'hi' ? 'सफ़ेद स्टूडियो कैनवास' : 'Pure White Canvas'}
+                    {language === 'hi' ? 'एआई लाइफस्टाइल स्टूडियो' : 'AI Lifestyle Studio'}
                   </p>
                   <p className="text-[10px] text-[#80756f]">
-                    {language === 'hi' ? 'GeM व ONDC मानक अनुरूप' : 'GeM & ONDC compliant'}
+                    {language === 'hi' ? 'मार्केट-रेडी जीवनशैली दृश्य' : 'Photoroom GenAI scene'}
                   </p>
                 </div>
               </div>
@@ -1091,10 +1020,8 @@ export default function Capture() {
                   type="button"
                 >
                   <span>
-                    {isLoading
-                      ? isOptimizing
-                        ? (language === 'hi' ? 'फोटो अनुकूलित हो रही है...' : 'Optimizing Photo...')
-                        : (language === 'hi' ? 'कैटलॉग बन रहा है...' : 'Generating Listing...')
+                    {isProcessing
+                      ? (language === 'hi' ? 'कैटलॉग बन रहा है...' : 'Generating Listing...')
                       : (language === 'hi' ? 'एआई कैटलॉग बनाएं' : 'Process with AI')}
                   </span>
                   <span className="material-symbols-outlined text-[22px]">

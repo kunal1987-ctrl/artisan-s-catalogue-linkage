@@ -1,5 +1,6 @@
 import React from 'react';
-import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, useLocation, Link } from 'react-router-dom';
+import { HelpCircle } from 'lucide-react';
 import { useAuth } from './context/AuthContext';
 import NotificationBar from './components/NotificationBar';
 import LanguageToggle from './components/LanguageToggle';
@@ -101,13 +102,17 @@ export default function DashboardLayout() {
 
         {/* Bottom Sidebar Profile & Help */}
         <div className="flex flex-col gap-4 pt-4 border-t border-[#d1c4bd]/40">
-          <a
-            href="tel:1800-SHILP"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:text-primary hover:bg-[#ebe8e2] transition-colors text-[13px] font-medium"
+          <Link
+            to="/support"
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-[13px] font-semibold cursor-pointer ${
+              location.pathname === '/support'
+                ? 'bg-[#2e241e] text-white shadow-xs'
+                : 'text-on-surface-variant hover:text-primary hover:bg-[#ebe8e2]'
+            }`}
           >
-            <span className="material-symbols-outlined text-[19px]">help</span>
-            <span>{language === 'hi' ? 'सहायता केंद्र (1800-SHILP)' : 'Support Center (1800-SHILP)'}</span>
-          </a>
+            <HelpCircle className="w-[18px] h-[18px] shrink-0" />
+            <span>{language === 'hi' ? 'सहायता एवं समर्थन' : 'Help & Support'}</span>
+          </Link>
           <div 
             onClick={() => isVerified ? navigate('/success') : openAuthModal()}
             className="flex items-center gap-3 p-2.5 rounded-xl bg-[#ebe8e2]/60 border border-[#d1c4bd]/30 cursor-pointer hover:bg-[#ebe8e2] transition-all"

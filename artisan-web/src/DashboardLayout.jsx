@@ -30,8 +30,8 @@ export default function DashboardLayout() {
       {/* Desktop Left Sidebar */}
       <aside className="w-64 bg-[#fdf9f3] border-r border-[#d1c4bd]/40 flex flex-col justify-between p-4 shrink-0 hidden lg:flex sticky top-0 h-screen overflow-y-auto">
         <div className="flex flex-col gap-6">
-          {/* Studio Brand Header */}
-          <div className="flex items-center justify-between px-2 pt-2">
+          {/* Brand Header */}
+          <div className="flex items-center px-2 pt-2">
             <div 
               onClick={() => navigate('/home')}
               className="flex items-center gap-3 cursor-pointer group"
@@ -39,17 +39,9 @@ export default function DashboardLayout() {
               <div className="w-10 h-10 rounded-xl bg-[#2e241e] flex items-center justify-center text-[#ffdeaa] shadow-md group-hover:scale-105 transition-transform">
                 <span className="material-symbols-outlined text-[24px]">storefront</span>
               </div>
-              <div className="flex flex-col">
-                <span className="font-bold text-[17px] text-primary tracking-tight leading-tight">Shilp Setu</span>
-                <span className="text-[12px] text-secondary font-medium tracking-wide">
-                  {language === 'hi' ? 'शिल्प सेतु स्टूडियो' : 'Shilp Setu Studio'}
-                </span>
-              </div>
-            </div>
-            {/* Sync Badge */}
-            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10px] font-bold">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
-              <span>{language === 'hi' ? 'सिंक' : 'Sync'}</span>
+              <span className="font-bold text-[18px] text-primary tracking-tight leading-tight">
+                Shilp Setu
+              </span>
             </div>
           </div>
 

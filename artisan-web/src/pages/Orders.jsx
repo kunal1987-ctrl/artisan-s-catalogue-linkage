@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import { useAuth } from '../context/AuthContext';
+import POSlipModal from '../components/POSlipModal';
 import { useLanguage } from '../context/LanguageContext';
 import InstitutionalTenderCard, { ACTIVE_INSTITUTIONAL_TENDERS } from '../components/InstitutionalTenderCard';
 
@@ -26,6 +26,7 @@ const STATIC_ORDERS = [
     city: 'New Delhi',
     payment_mode: 'GeM PFMS Verified Institutional Escrow (Auto-settlement on Dispatch)',
     notes: 'Urgent institutional procurement for National Tourism Conclave 2026',
+    hsn_code: '69120010',
     created_at: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
   },
   {
@@ -45,6 +46,7 @@ const STATIC_ORDERS = [
     city: 'Noida',
     payment_mode: 'ONDC Protocol Settlement via UPI / BharatQR',
     notes: 'Tribal & Artisan Heritage Retail Distribution',
+    hsn_code: '69139000',
     created_at: new Date(Date.now() - 75 * 60 * 1000).toISOString(),
   },
 ];
@@ -77,10 +79,9 @@ function formatTimeAgo(isoDate) {
   return `${Math.floor(diff / 3600)}h ago`;
 }
 
-function OrderCard({ order, onAcceptPO, onDispatchPO }) {
+function OrderCard({ order, onAcceptPO, onDispatchPO, setSelectedPO }) {
   const { language } = useLanguage();
   const isGem = order.order_type === 'gem';
-  const navigate = useNavigate();
   const currentStatus = order.status || 'pending';
 
   return (
@@ -226,7 +227,7 @@ function OrderCard({ order, onAcceptPO, onDispatchPO }) {
             aria-label="Download or view packaging slip"
             className="min-h-[44px] h-[44px] px-3 rounded-full text-secondary hover:text-primary font-bold text-xs flex items-center gap-1.5 active:bg-surface-container transition-colors cursor-pointer"
             type="button"
-            onClick={() => navigate('/success', { state: { ...order } })}
+            onClick={() => setSelectedPO(order)}
           >
             <span className="material-symbols-outlined text-[18px]">receipt_long</span>
             <span>{language === 'hi' ? 'पर्ची देखें' : 'View PO Slip'}</span>
@@ -246,8 +247,8 @@ export default function Orders() {
   const [orders, setOrders] = useState(STATIC_ORDERS);
   const [activeFilter, setActiveFilter] = useState('ALL');
   const [showTenders, setShowTenders] = useState(false);
+  const [selectedPO, setSelectedPO] = useState(null);
   const [toastMsg, setToastMsg] = useState('');
-  const [realtimeConnected, setRealtimeConnected] = useState(false);
   const channelRef = useRef(null);
 
   const showToast = (msg) => {
@@ -274,6 +275,7 @@ export default function Orders() {
     city: item.city || item.shipping_address || 'New Delhi',
     payment_mode: item.payment_mode || (item.order_type === 'gem' ? 'GeM PFMS Institutional Escrow' : 'ONDC Escrow RSP Prepaid'),
     notes: item.notes || item.item_title || 'Institutional Purchase Order',
+    hsn_code: item.hsn_code || '69120010',
     created_at: item.created_at || new Date().toISOString(),
   });
 
@@ -325,10 +327,7 @@ export default function Orders() {
       )
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-          setRealtimeConnected(true);
           console.log('[Realtime] Subscribed to orders channel.');
-        } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-          setRealtimeConnected(false);
         }
       });
 
@@ -442,6 +441,137 @@ export default function Orders() {
     }
   };
 
+  // 8. Webhook Simulators: Realtime Inbound Order Simulation
+  const simulateONDCOrder = () => {
+    const timestamp = Date.now();
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    const mockONDCItems = [
+      {
+        title: 'Handcrafted Terracotta Earthen Pitcher (Surahi)',
+        price: 450,
+        hsn: '69120010',
+        qty: 2,
+        buyer: 'Priya Sharma (Bengaluru)',
+        address: 'Flat 402, Green Glen Layout, Bellandur, Bengaluru, Karnataka - 560103',
+        city: 'Bengaluru',
+        app: 'Paytm Mall BAP',
+      },
+      {
+        title: 'GI-Certified Jaipur Blue Pottery Decorative Wall Plate (10 Inch)',
+        price: 1250,
+        hsn: '69139000',
+        qty: 1,
+        buyer: 'Amitabh Sen (Kolkata)',
+        address: '14B Lake Temple Road, Southern Avenue, Kolkata, West Bengal - 700029',
+        city: 'Kolkata',
+        app: 'PhonePe Pincode',
+      },
+      {
+        title: 'Handwoven Banarasi Pure Silk Brocade Stole',
+        price: 1850,
+        hsn: '52085290',
+        qty: 1,
+        buyer: 'Meenakshi Sundaram (Chennai)',
+        address: 'A-12 Besant Nagar Sea Breeze Apts, Chennai, Tamil Nadu - 600090',
+        city: 'Chennai',
+        app: 'Mystore Network',
+      },
+    ];
+    const item = mockONDCItems[Math.floor(Math.random() * mockONDCItems.length)];
+    const total = item.price * item.qty;
+    const generatedOrderId = `ONDC-BECKN-${timestamp.toString().slice(-4)}-${randomSuffix}`;
+
+    const newOrder = mapOrderRecord({
+      id: `ondc-sim-${timestamp}`,
+      order_id: generatedOrderId,
+      buyer_name: item.buyer,
+      channel: `ONDC Network (${item.app})`,
+      order_type: 'ondc',
+      item_title: item.title,
+      product_title: item.title,
+      quantity: item.qty,
+      unit_price_inr: item.price,
+      total_amount: total,
+      total_price_inr: total,
+      status: 'pending',
+      shipping_address: item.address,
+      city: item.city,
+      payment_mode: 'ONDC Protocol Escrow (RSP Settlement via UPI)',
+      notes: 'Customer direct purchase order via ONDC network buyer application.',
+      hsn_code: item.hsn,
+      created_at: new Date().toISOString(),
+    });
+
+    setOrders((prev) => [newOrder, ...prev]);
+    showToast(`⚡ नया ONDC आर्डर प्राप्त! ${newOrder.buyer_name} — ₹${total}`);
+    speakOrder(newOrder);
+  };
+
+  const simulateGeMOrder = () => {
+    const timestamp = Date.now();
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    const mockGeMItems = [
+      {
+        title: 'Handcrafted Terracotta Earthen Pitcher (Surahi)',
+        price: 260,
+        hsn: '69120010',
+        qty: 60,
+        buyer: 'Ministry of Tourism & Culture (Govt. of India)',
+        address: 'Central State Guest House, Chanakyapuri, New Delhi - 110021',
+        city: 'New Delhi',
+        notes: 'Institutional hospitality procurement for National Tourism Conclave',
+      },
+      {
+        title: 'GI-Certified Jaipur Blue Pottery Decorative Wall Plate (10 Inch)',
+        price: 780,
+        hsn: '69139000',
+        qty: 30,
+        buyer: 'TRIFED - Tribal Co-operative Marketing Federation',
+        address: 'TRIFED Central Warehouse, Sector 62, Noida, Uttar Pradesh - 201309',
+        city: 'Noida',
+        notes: 'State emporium consignment batch under Aatmanirbhar Bharat Artisan Scheme',
+      },
+      {
+        title: 'Handwoven Chanderi Silk-Cotton Zari Border Stole',
+        price: 1150,
+        hsn: '52085290',
+        qty: 45,
+        buyer: 'Ministry of Textiles (Office of DC Handlooms)',
+        address: 'Room 312, Udyog Bhawan, Rafi Marg, New Delhi - 110011',
+        city: 'New Delhi',
+        notes: 'Institutional gift procurement for National Handloom Day delegates',
+      },
+    ];
+    const item = mockGeMItems[Math.floor(Math.random() * mockGeMItems.length)];
+    const total = item.price * item.qty;
+    const generatedOrderId = `GEM-PO-2026-${randomSuffix}`;
+
+    const newOrder = mapOrderRecord({
+      id: `gem-sim-${timestamp}`,
+      order_id: generatedOrderId,
+      buyer_name: item.buyer,
+      channel: 'GeM Institutional PO',
+      order_type: 'gem',
+      item_title: item.title,
+      product_title: item.title,
+      quantity: item.qty,
+      unit_price_inr: item.price,
+      total_amount: total,
+      total_price_inr: total,
+      status: 'pending',
+      shipping_address: item.address,
+      city: item.city,
+      payment_mode: 'GeM PFMS Verified Institutional Escrow (Auto-settlement on Dispatch)',
+      notes: item.notes,
+      hsn_code: item.hsn,
+      created_at: new Date().toISOString(),
+    });
+
+    setOrders((prev) => [newOrder, ...prev]);
+    showToast(`🏛️ नया GeM सरकारी खरीद PO प्राप्त! ${newOrder.buyer_name} — ₹${total.toLocaleString('en-IN')}`);
+    speakOrder(newOrder);
+  };
+
   // Merge static demo orders if real orders list is empty or prepend, filtered by activeFilter
   const allOrders = orders.length > 0 ? orders : STATIC_ORDERS;
   const displayedOrders = allOrders.filter((order) => {
@@ -483,34 +613,15 @@ export default function Orders() {
                   <span className="text-xs font-bold text-secondary tracking-wider uppercase">
                     {language === 'hi' ? 'ऑर्डर प्रोसेसिंग' : 'Order Processing'}
                   </span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-secondary"></span>
-                  <span className={`text-xs font-medium flex items-center gap-1 ${realtimeConnected ? 'text-emerald-600' : 'text-outline'}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full inline-block ${realtimeConnected ? 'bg-emerald-500 animate-pulse' : 'bg-outline'}`}></span>
-                    {realtimeConnected 
-                      ? (language === 'hi' ? 'ONDC रीयलटाइम लाइव' : 'ONDC Realtime Live') 
-                      : (language === 'hi' ? 'ONDC नेटवर्क' : 'ONDC Network')}
-                  </span>
                 </div>
                 <h1 className="text-xl sm:text-2xl font-extrabold text-espresso-deep tracking-tight mt-0.5">
                   {language === 'hi' ? 'आर्डर इनबॉक्स' : 'Order Inbox'}
                 </h1>
               </div>
             </div>
-
-            {/* Header Actions */}
-            <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-center">
-              <button
-                aria-label="Refresh Orders"
-                onClick={() => window.location.reload()}
-                className="min-w-[44px] min-h-[44px] w-[44px] h-[44px] rounded-full bg-surface-container-low hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors cursor-pointer"
-                type="button"
-              >
-                <span className="material-symbols-outlined text-[20px]">refresh</span>
-              </button>
-            </div>
           </div>
 
-          {/* Order Channel Filters */}
+          {/* Order Channel Filters & Webhook Simulator Buttons */}
           <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
             {/* Left side: Order Filter Chips */}
             <div className="flex items-center gap-2 overflow-x-auto py-1 scrollbar-none">
@@ -546,6 +657,28 @@ export default function Orders() {
                 }`}
               >
                 ONDC Orders / रिटेल
+              </button>
+            </div>
+
+            {/* Right side: Inline Webhook Simulator Pill Buttons */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={simulateONDCOrder}
+                className="px-3 py-1.5 rounded-full text-xs font-bold bg-[#ff9062]/15 text-[#9c441c] hover:bg-[#ff9062]/25 border border-[#ff9062]/40 transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 shadow-2xs"
+                title="Simulate incoming real-time ONDC order webhook"
+              >
+                <span className="material-symbols-outlined text-[15px]">hub</span>
+                <span>+ Sim ONDC</span>
+              </button>
+              <button
+                type="button"
+                onClick={simulateGeMOrder}
+                className="px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border border-emerald-300 transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 shadow-2xs"
+                title="Simulate incoming real-time GeM tender purchase order webhook"
+              >
+                <span className="material-symbols-outlined text-[15px]">account_balance</span>
+                <span>+ Sim GeM</span>
               </button>
             </div>
           </div>
@@ -658,6 +791,7 @@ export default function Orders() {
                   order={order}
                   onAcceptPO={handleAcceptPO}
                   onDispatchPO={handleDispatchPO}
+                  setSelectedPO={setSelectedPO}
                 />
               ))
             )}
@@ -681,6 +815,14 @@ export default function Orders() {
           </div>
         </div>
       </main>
+
+      {/* Active Purchase Order Slip Modal */}
+      {selectedPO && (
+        <POSlipModal
+          order={selectedPO}
+          onClose={() => setSelectedPO(null)}
+        />
+      )}
 
       {/* Live Toast Notification */}
       {toastMsg && (

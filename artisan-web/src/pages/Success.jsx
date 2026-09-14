@@ -31,6 +31,7 @@ export default function Success() {
   const [toastMessage, setToastMessage] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [ondcEnabled, setOndcEnabled] = useState(true);
+  const [copied, setCopied] = useState(false);
 
   const triggerToast = (msg) => {
     setToastMessage(msg);
@@ -38,16 +39,33 @@ export default function Success() {
     setTimeout(() => setShowToast(false), 3000);
   };
 
-  const copyLink = () => {
-    const shareUrl = `${window.location.origin}/product/${product.id || 'ss-8492'}`;
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(shareUrl);
+  const copyLink = async () => {
+    const productId = product.id || 'a1b2c3d4-0001-4000-8000-000000000001';
+    const shareUrl = `${window.location.origin}/product/${productId}`;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(shareUrl);
+      } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = shareUrl;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
+      setCopied(true);
+      triggerToast(language === 'hi' ? 'उत्पाद लिंक कॉपी हो गया' : 'Product link copied to clipboard');
+      setTimeout(() => {
+        setCopied(false);
+      }, 2500);
+    } catch (err) {
+      console.error('Failed to copy product link:', err);
     }
-    triggerToast(language === 'hi' ? 'उत्पाद लिंक कॉपी हो गया' : 'Product link copied to clipboard');
   };
 
   const shareWhatsApp = () => {
-    const shareUrl = `${window.location.origin}/product/${product.id || 'ss-8492'}`;
+    const productId = product.id || 'a1b2c3d4-0001-4000-8000-000000000001';
+    const shareUrl = `${window.location.origin}/product/${productId}`;
     const displayTitle = language === 'hi' ? titleHi : title;
     const text = encodeURIComponent(
       `नमस्ते! शिल्प सेतु पर हमारा नया हस्तशिल्प "${displayTitle}" अब लाइव है।\n\n` +
@@ -280,15 +298,20 @@ export default function Success() {
                 <div className="flex items-center gap-2 truncate">
                   <span className="material-symbols-outlined text-secondary text-[20px]">link</span>
                   <span className="text-xs text-stone-600 font-mono truncate">
-                    shilpsetu.in/product/{product.id || 'ss-8492'}
+                    shilpsetu.in/product/{product.id || 'a1b2c3d4-0001-4000-8000-000000000001'}
                   </span>
                 </div>
                 <button
                   type="button"
+                  id="copy-product-link-btn"
                   onClick={copyLink}
-                  className="px-3.5 py-1.5 bg-white hover:bg-stone-50 text-xs font-bold rounded-xl border border-[#d1c4bd]/80 text-primary shadow-xs cursor-pointer active:scale-95 transition-all shrink-0"
+                  className={`px-3.5 py-1.5 text-xs font-bold rounded-xl border shadow-xs cursor-pointer active:scale-95 transition-all shrink-0 ${
+                    copied
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                      : 'bg-white hover:bg-stone-50 text-primary border-[#d1c4bd]/80'
+                  }`}
                 >
-                  {language === 'hi' ? 'कॉपी करें' : 'Copy Link'}
+                  {copied ? 'Copied! ✅' : 'Copy Link'}
                 </button>
               </div>
             </div>

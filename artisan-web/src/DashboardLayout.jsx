@@ -114,7 +114,7 @@ export default function DashboardLayout() {
             <span>{language === 'hi' ? 'सहायता एवं समर्थन' : 'Help & Support'}</span>
           </Link>
           <div 
-            onClick={() => isVerified ? navigate('/success') : openAuthModal()}
+            onClick={() => navigate('/catalog')}
             className="flex items-center gap-3 p-2.5 rounded-xl bg-[#ebe8e2]/60 border border-[#d1c4bd]/30 cursor-pointer hover:bg-[#ebe8e2] transition-all"
           >
             <div className="relative">

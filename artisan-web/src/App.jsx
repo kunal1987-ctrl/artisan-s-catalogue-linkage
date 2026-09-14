@@ -16,6 +16,7 @@ import Review from './pages/Review.jsx';
 import Success from './pages/Success.jsx';
 import Details from './pages/Details.jsx';
 import ProductDetail from './pages/ProductDetail.jsx';
+import PublicProduct from './pages/PublicProduct.jsx';
 import Support from './pages/Support.jsx';
 
 export default function App() {
@@ -27,12 +28,14 @@ export default function App() {
         <BrowserRouter>
         <AuthModal />
         <Routes>
-          {/* Fullscreen Root Flow */}
+          {/* Fullscreen Root & Public Flows */}
           <Route path="/" element={<Auth />} />
           <Route path="/login" element={<Login />} />
           <Route path="/capture" element={<Capture />} />
           <Route path="/review" element={<Review />} />
           <Route path="/success" element={<Success />} />
+          {/* Public buyer-facing PDP (shareable via WhatsApp, accessible without auth) */}
+          <Route path="/product/:id" element={<PublicProduct />} />
 
           {/* Persistent Dashboard Layout Flow */}
           <Route element={<DashboardLayout />}>
@@ -42,8 +45,6 @@ export default function App() {
             <Route path="/orders" element={<Orders />} />
             <Route path="/details/:id" element={<Details />} />
             <Route path="/details" element={<Details />} />
-            {/* Public buyer-facing PDP (shareable via WhatsApp) */}
-            <Route path="/product/:productId" element={<ProductDetail />} />
             <Route path="/support" element={<Support />} />
           </Route>
 

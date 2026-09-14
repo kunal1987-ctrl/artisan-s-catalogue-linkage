@@ -38,7 +38,7 @@ export const INITIAL_PRODUCTS = [
     craft_origin: 'Jaipur, Rajasthan',
     image_url: 'https://images.unsplash.com/photo-1610701596007-11502861dcfa?auto=format&fit=crop&w=800&q=80',
     is_gem_ready: true,
-    status: 'live',
+    status: 'draft',
     category: 'Ceramics & Pottery',
     qty: 25,
   },
@@ -57,7 +57,7 @@ export const INITIAL_PRODUCTS = [
     craft_origin: 'Chanderi, Madhya Pradesh',
     image_url: 'https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?auto=format&fit=crop&w=800&q=80',
     is_gem_ready: true,
-    status: 'live',
+    status: 'sold_out',
     category: 'Textiles & Handloom',
     qty: 20,
   }
@@ -68,7 +68,7 @@ const EXPORT_CATALOG_URL = 'https://jrkrdlalnqswvwabktce.supabase.co/functions/v
 export default function Catalog() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { language } = useAuth();
+  const { language, user } = useAuth();
   const [products, setProducts] = useState(INITIAL_PRODUCTS);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all'); // all | live | draft | sold_out
@@ -101,14 +101,15 @@ export default function Catalog() {
     }
   }, [location.state?.editProductId, products]);
 
-  // Fetch real products from Supabase
+  // Fetch ALL products belonging to the logged-in artisan from Supabase
   useEffect(() => {
     async function loadSupabaseProducts() {
       try {
-        const { data, error } = await supabase
-          .from('products')
-          .select('*')
-          .order('created_at', { ascending: false });
+        let query = supabase.from('products').select('*');
+        if (user?.id) {
+          query = query.eq('artisan_id', user.id);
+        }
+        const { data, error } = await query.order('created_at', { ascending: false });
 
         if (!error && data && data.length > 0) {
           const mapped = data.map((item) => ({
@@ -126,12 +127,37 @@ export default function Catalog() {
             craft_origin: item.craft_origin || 'India',
             image_url: item.image_url || 'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?w=800&auto=format&fit=crop',
             is_gem_ready: item.is_gem_ready ?? true,
-            status: item.status === 'published' ? 'live' : item.status || 'live',
+            status: item.status === 'published' ? 'live' : (item.status || 'live'),
             category: item.category || item.gem_category || 'Handicrafts',
             qty: item.stock || item.min_order_quantity || item.moq || 1,
           }));
-          // Replace with live products from Supabase
-          if (mapped.length > 0) {
+          setProducts(mapped);
+        } else if (user?.id) {
+          // If specific artisan has no records yet, fallback to all catalog items
+          const { data: allData } = await supabase
+            .from('products')
+            .select('*')
+            .order('created_at', { ascending: false });
+          if (allData && allData.length > 0) {
+            const mapped = allData.map((item) => ({
+              id: item.id,
+              title: item.title,
+              hindi_title: item.hindi_title || item.title_hi || '',
+              description: item.description || '',
+              hindi_description: item.hindi_description || item.description_hi || '',
+              price: Number(item.price || 0),
+              bulk_price: Number(item.bulk_price || item.wholesale_price || Math.round((item.price || 0) * 0.72)),
+              min_order_quantity: Number(item.min_order_quantity || item.moq || 1),
+              gem_category: item.gem_category || item.category || 'Handicrafts',
+              hsn_code: item.hsn_code || '69120010',
+              unspsc_code: item.unspsc_code || '60121002',
+              craft_origin: item.craft_origin || 'India',
+              image_url: item.image_url || 'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?w=800&auto=format&fit=crop',
+              is_gem_ready: item.is_gem_ready ?? true,
+              status: item.status === 'published' ? 'live' : (item.status || 'live'),
+              category: item.category || item.gem_category || 'Handicrafts',
+              qty: item.stock || item.min_order_quantity || item.moq || 1,
+            }));
             setProducts(mapped);
           }
         }
@@ -140,7 +166,7 @@ export default function Catalog() {
       }
     }
     loadSupabaseProducts();
-  }, []);
+  }, [user]);
 
   // Handle product status toggle (live / draft / sold_out)
   const handleToggleStatus = async (productId, newStatus) => {

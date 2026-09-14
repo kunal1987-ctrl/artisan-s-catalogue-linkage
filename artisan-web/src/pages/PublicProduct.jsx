@@ -224,9 +224,11 @@ export default function PublicProduct() {
       {/* ── Top Public Header ─────────────────────────────────────────────── */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200 px-4 sm:px-8 py-3.5 flex items-center justify-between shadow-xs">
         <Link to="/home" className="flex items-center gap-2.5 group">
-          <div className="w-9 h-9 rounded-xl bg-[#2e241e] flex items-center justify-center text-[#ffdeaa] shadow-sm group-hover:scale-105 transition-transform">
-            <span className="material-symbols-outlined text-[20px]">storefront</span>
-          </div>
+          <img
+            src="/shilp-setu-logo.png"
+            alt="Shilp Setu"
+            className="h-10 w-auto object-contain group-hover:scale-105 transition-transform"
+          />
           <div className="flex flex-col">
             <span className="font-bold text-base text-stone-900 tracking-tight leading-tight">
               Shilp Setu

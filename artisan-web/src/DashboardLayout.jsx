@@ -81,9 +81,11 @@ export default function DashboardLayout() {
               onClick={() => navigate('/home')}
               className="flex items-center gap-3 cursor-pointer group"
             >
-              <div className="w-10 h-10 rounded-xl bg-[#2e241e] flex items-center justify-center text-[#ffdeaa] shadow-md group-hover:scale-105 transition-transform">
-                <span className="material-symbols-outlined text-[24px]">storefront</span>
-              </div>
+              <img
+                src="/shilp-setu-logo.png"
+                alt="Shilp Setu"
+                className="h-10 w-auto object-contain drop-shadow-sm group-hover:scale-105 transition-transform"
+              />
               <span className="font-bold text-[18px] text-primary tracking-tight leading-tight">
                 Shilp Setu
               </span>
@@ -195,9 +197,14 @@ export default function DashboardLayout() {
           {/* Left-Side: Branding */}
           <div 
             onClick={() => navigate('/home')} 
-            className="flex items-center gap-2 cursor-pointer group"
+            className="flex items-center gap-2.5 cursor-pointer group"
             title={language === 'hi' ? 'शिल्प सेतु' : 'Shilp Setu'}
           >
+            <img
+              src="/shilp-setu-logo.png"
+              alt="Shilp Setu"
+              className="h-10 w-auto object-contain group-hover:scale-105 transition-transform"
+            />
             <h1 className="text-lg font-bold text-gray-800 group-hover:text-primary transition-colors">
               {language === 'hi' ? 'शिल्प सेतु' : 'Shilp Setu'}
             </h1>

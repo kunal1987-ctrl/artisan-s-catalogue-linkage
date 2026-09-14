@@ -193,10 +193,12 @@ export default function Login() {
     <div className="min-h-screen w-full bg-[#fdf9f3] font-sans text-on-surface antialiased flex flex-col justify-center items-center p-4 sm:p-6 lg:p-8">
       {/* Top Header bar with Language Toggle */}
       <div className="w-full max-w-md flex justify-between items-center mb-4">
-        <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-xl bg-[#2e241e] flex items-center justify-center text-[#ffdeaa] shadow-xs">
-            <span className="material-symbols-outlined text-[20px]">storefront</span>
-          </div>
+        <div className="flex items-center gap-2.5">
+          <img
+            src="/shilp-setu-logo.png"
+            alt="Shilp Setu"
+            className="h-10 w-auto object-contain"
+          />
           <span className="font-bold text-lg text-primary tracking-tight">
             {language === 'hi' ? 'शिल्प सेतु' : 'Shilp Setu'}
           </span>

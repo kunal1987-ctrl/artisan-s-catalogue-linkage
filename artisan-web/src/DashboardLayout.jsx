@@ -1,6 +1,7 @@
-import React from 'react';
-import { Outlet, NavLink, useNavigate, useLocation, Link } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Outlet, NavLink, useNavigate, useLocation, Link, Navigate } from 'react-router-dom';
 import { HelpCircle } from 'lucide-react';
+import { supabase } from './supabaseClient';
 import { useAuth } from './context/AuthContext';
 import NotificationBar from './components/NotificationBar';
 import LanguageSwitcher from './components/LanguageSwitcher';
@@ -16,15 +17,58 @@ export default function DashboardLayout() {
     language,
     toggleNotifications,
     unreadCount,
+    isLoading,
+    showToast,
   } = useAuth();
+
+  const isVerified = Boolean(artisanProfile?.verified);
+
+  // Production-grade logout workflow
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error('[Header Logout] Supabase signOut fallback notice:', err);
+    } finally {
+      // Clear local user storage & caches
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch (storageErr) {
+        console.warn('[Header Logout] Storage clear notice:', storageErr);
+      }
+
+      // Reset global auth context state
+      await signOut();
+
+      // High-contrast localized feedback toast
+      showToast?.(
+        language === 'hi'
+          ? 'सफलतापूर्वक लॉगआउट हो गया (Logged out successfully)'
+          : 'Logged out successfully'
+      );
+
+      // Immediate replace redirect to prevent hitting browser back button
+      navigate('/login', { replace: true });
+    }
+  };
+
+  // Immediate route protection guard: redirect unauthenticated access to /login
+  useEffect(() => {
+    if (!isLoading && !isVerified) {
+      navigate('/login', { replace: true });
+    }
+  }, [isLoading, isVerified, navigate]);
+
+  if (!isLoading && !isVerified) {
+    return <Navigate to="/login" replace />;
+  }
 
   const navItems = [
     { to: '/home', label: language === 'hi' ? 'आवास' : 'Home', icon: 'cottage' },
     { to: '/catalog', label: language === 'hi' ? 'कैटलॉग' : 'Catalog', icon: 'inventory_2', badge: '12' },
     { to: '/orders', label: language === 'hi' ? 'ऑर्डर्स' : 'Orders', icon: 'receipt_long', badge: language === 'hi' ? '3 नए' : '3 New', badgeColor: 'bg-[#ff9062]/20 text-[#9c441c]' },
   ];
-
-  const isVerified = !!artisanProfile?.verified;
 
   return (
     <div className="flex min-h-screen bg-[#fdf9f3] text-on-surface font-sans selection:bg-[#ffdbce]">
@@ -181,7 +225,8 @@ export default function DashboardLayout() {
             {/* Profile / Logout */}
             {isVerified ? (
               <button
-                onClick={signOut}
+                id="header-logout-btn"
+                onClick={handleLogout}
                 className="w-9 h-9 rounded-full bg-gray-100 hover:bg-red-50 text-gray-700 hover:text-red-600 flex items-center justify-center transition-all cursor-pointer active:scale-95 border border-gray-200"
                 title={language === 'hi' ? 'लॉगआउट' : 'Sign Out'}
                 aria-label="Sign Out"

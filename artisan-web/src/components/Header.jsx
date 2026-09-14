@@ -1,6 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { supabase } from '../supabaseClient';
+import { useAuth } from '../context/AuthContext';
 import LanguageSwitcher from './LanguageSwitcher';
 
 /**
@@ -11,6 +13,30 @@ import LanguageSwitcher from './LanguageSwitcher';
 export default function Header({ showLanguageSwitcher = true }) {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { signOut, artisanProfile, language, showToast } = useAuth();
+  const isVerified = Boolean(artisanProfile?.verified);
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error('[Header Logout] Supabase signOut fallback notice:', err);
+    } finally {
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch (storageErr) {
+        console.warn('[Header Logout] Storage clear error:', storageErr);
+      }
+      await signOut();
+      showToast?.(
+        language === 'hi'
+          ? 'सफलतापूर्वक लॉगआउट हो गया (Logged out successfully)'
+          : 'Logged out successfully'
+      );
+      navigate('/login', { replace: true });
+    }
+  };
 
   return (
     <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#2e241e] via-[#3d2e24] to-[#1e1713] p-6 lg:p-8 text-white shadow-xl">
@@ -30,6 +56,18 @@ export default function Header({ showLanguageSwitcher = true }) {
               <span className="material-symbols-outlined text-[15px]">translate</span>
               Hindi, Gujarati, Tamil +9 supported
             </span>
+            {isVerified && (
+              <button
+                type="button"
+                id="header-signout-btn"
+                onClick={handleLogout}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/20 text-red-200 hover:bg-red-500/30 border border-red-400/40 text-[11px] font-bold transition-all cursor-pointer active:scale-95"
+                title={language === 'hi' ? 'लॉगआउट' : 'Sign Out'}
+              >
+                <span className="material-symbols-outlined text-[15px]">logout</span>
+                <span>{language === 'hi' ? 'लॉगआउट' : 'Sign Out'}</span>
+              </button>
+            )}
             {showLanguageSwitcher && (
               <div className="sm:hidden mt-1">
                 <LanguageSwitcher />

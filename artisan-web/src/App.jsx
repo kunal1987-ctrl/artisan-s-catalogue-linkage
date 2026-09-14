@@ -18,6 +18,7 @@ import Details from './pages/Details.jsx';
 import ProductDetail from './pages/ProductDetail.jsx';
 import PublicProduct from './pages/PublicProduct.jsx';
 import Support from './pages/Support.jsx';
+import AuthGuard from './components/AuthGuard.jsx';
 
 export default function App() {
   return (
@@ -37,8 +38,14 @@ export default function App() {
           {/* Public buyer-facing PDP (shareable via WhatsApp, accessible without auth) */}
           <Route path="/product/:id" element={<PublicProduct />} />
 
-          {/* Persistent Dashboard Layout Flow */}
-          <Route element={<DashboardLayout />}>
+          {/* Protected Dashboard Layout Flow */}
+          <Route
+            element={
+              <AuthGuard>
+                <DashboardLayout />
+              </AuthGuard>
+            }
+          >
             <Route path="/home" element={<Home />} />
             <Route path="/catalog" element={<Catalog />} />
             <Route path="/catalogue" element={<Navigate to="/catalog" replace />} />

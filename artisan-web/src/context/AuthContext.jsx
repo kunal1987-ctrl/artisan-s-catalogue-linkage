@@ -41,6 +41,7 @@ const INITIAL_NOTIFICATIONS = [
 const AuthContext = createContext({
   user: null,
   session: null,
+  isAuthenticated: false,
   artisanName: 'रामेश कुम्हार (Jaipur Craft Cluster)',
   artisanStudio: 'शिल्प सेतु स्टूडियो',
   artisanProfile: {
@@ -298,24 +299,30 @@ export function AuthProvider({ children }) {
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
+    } catch (err) {
+      console.error('[Auth] signOut error fallback:', err);
+    } finally {
       try {
-        localStorage.removeItem('artisan_verified_phone');
-      } catch {}
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch (storageErr) {
+        console.warn('[Auth] Storage clear error:', storageErr);
+      }
 
-      // Refresh with fresh anonymous session
-      const { data } = await supabase.auth.signInAnonymously();
-      setUser(data?.user || null);
-      setSession(data?.session || null);
+      setUser(null);
+      setSession(null);
       setArtisanProfile({
-        name: 'रामेश कुम्हार',
+        name: '',
         phone: null,
-        cluster: 'Jaipur Terracotta Cluster',
+        cluster: '',
         verified: false,
       });
 
-      showToast(language === 'hi' ? 'लॉग आउट किया गया (Logged out)' : 'Logged out successfully');
-    } catch (err) {
-      console.error('[Auth] signOut error:', err);
+      showToast(
+        language === 'hi'
+          ? 'सफलतापूर्वक लॉगआउट हो गया (Logged out successfully)'
+          : 'Logged out successfully'
+      );
     }
   };
 
@@ -398,9 +405,17 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
+  const isAuthenticated = Boolean(
+    artisanProfile?.verified ||
+    user?.is_phone_verified ||
+    (user && !user.is_anonymous) ||
+    session
+  );
+
   const value = {
     user,
     session,
+    isAuthenticated,
     artisanName,
     artisanStudio,
     artisanProfile,

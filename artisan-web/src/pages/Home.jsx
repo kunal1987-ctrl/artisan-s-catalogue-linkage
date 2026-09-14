@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import Header from '../components/Header';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -98,59 +99,8 @@ export default function Home() {
             </div>
             <div className="px-8 py-6 flex flex-col gap-6 max-w-7xl mx-auto w-full">
                 
-                {/* Hero AI Studio Banner */}
-                <div className="relative overflow-hidden rounded-2xl bg-[#2e241e] text-on-primary shadow-xl p-8">
-                    <div
-                        className="absolute -right-12 -top-12 w-64 h-64 rounded-full bg-[#9c441c]/20 blur-3xl pointer-events-none">
-                    </div>
-                    <div
-                        className="absolute left-1/3 -bottom-16 w-72 h-72 rounded-full bg-[#f1be65]/15 blur-3xl pointer-events-none">
-                    </div>
-                    <div
-                        className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                        <div className="flex flex-col gap-2 max-w-2xl">
-                            <div className="flex items-center gap-3">
-                                <div
-                                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-[#ffdeaa] backdrop-blur-md">
-                                    <span className="material-symbols-outlined text-[16px]">auto_awesome</span>
-                                    <span className="text-[11px] font-bold tracking-wider uppercase">Instant AI Cataloger</span>
-                                </div>
-                                <span className="text-[12px] text-[#ffdeaa] flex items-center gap-1">
-                                    <span className="material-symbols-outlined text-[15px]">translate</span> Hindi, Gujarati, Tamil +9 supported
-                                </span>
-                            </div>
-                            <h3 className="text-[28px] font-bold text-white tracking-tight leading-tight mt-1">Add New Product & Instant Catalog Listing</h3>
-                            <p className="text-[15px] text-[#e6e2dc] leading-relaxed">
-                                Point your camera and speak naturally in your voice. Shilp Setu AI writes title, tags, description and suggests fair marketplace prices in seconds.
-                            </p>
-                            <div className="flex items-center gap-6 mt-2 text-[13px] text-[#d4c3ba]">
-                                <span className="flex items-center gap-1.5">
-                                    <span className="material-symbols-outlined text-[18px] text-[#ffb599]">record_voice_over</span>
-                                    Artisanal dialect transcription
-                                </span>
-                                <span className="flex items-center gap-1.5">
-                                    <span className="material-symbols-outlined text-[18px] text-[#ffb599]">bolt</span> 10 second creation
-                                </span>
-                            </div>
-                        </div>
-                        <div className="flex flex-col gap-3 shrink-0">
-                            <button
-                                onClick={() => navigate('/capture')}
-                                className="px-7 py-4 rounded-full bg-white text-[#2e241e] font-bold text-[15px] flex items-center justify-center gap-3 shadow-lg hover:bg-[#f7f3ed] active:scale-95 transition-all cursor-pointer"
-                                type="button"
-                            >
-                                <div className="w-9 h-9 rounded-full bg-[#2e241e] text-white flex items-center justify-center">
-                                    <span className="material-symbols-outlined text-[20px]">photo_camera</span>
-                                </div>
-                                <span>Start Camera & Voice Capture</span>
-                                <span className="material-symbols-outlined text-[20px] text-[#9c441c]">arrow_forward</span>
-                            </button>
-                            <p className="text-center text-[12px] text-[#d4c3ba] font-medium flex items-center justify-center gap-1">
-                                <span className="material-symbols-outlined text-[15px]">mic</span> Voice Ready: Speak into laptop or phone
-                            </p>
-                        </div>
-                    </div>
-                </div>
+                {/* Hero AI Studio Banner (Internationalized Header) */}
+                <Header />
                 
                 {/* Metric Summary Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

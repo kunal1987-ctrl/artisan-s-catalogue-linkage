@@ -1,14 +1,27 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function LanguageToggle({ className = '', variant = 'dark' }) {
-  const { language, toggleLanguage } = useLanguage();
+  const { i18n } = useTranslation();
+  const { language, toggleLanguage, setLanguage } = useLanguage();
 
-  const isHindi = language === 'hi';
-  // Display the inactive language to invite user action
+  const currentLang = (i18n.resolvedLanguage || i18n.language || language || 'en').startsWith('hi') ? 'hi' : 'en';
+  const isHindi = currentLang === 'hi';
+
   const nextLanguageLabel = isHindi ? 'English' : 'हिन्दी';
   const nextLanguageChar = isHindi ? 'A' : 'अ';
   const tooltipText = isHindi ? 'Switch to English' : 'हिन्दी में बदलें';
+
+  const handleToggle = () => {
+    const nextLang = isHindi ? 'en' : 'hi';
+    i18n.changeLanguage(nextLang);
+    if (setLanguage) {
+      setLanguage(nextLang);
+    } else if (toggleLanguage) {
+      toggleLanguage();
+    }
+  };
 
   const baseStyles = variant === 'light'
     ? 'bg-surface-container-high/80 hover:bg-surface-container-highest text-primary border-outline-variant/50'
@@ -16,7 +29,7 @@ export default function LanguageToggle({ className = '', variant = 'dark' }) {
 
   return (
     <button
-      onClick={toggleLanguage}
+      onClick={handleToggle}
       type="button"
       title={tooltipText}
       aria-label={tooltipText}

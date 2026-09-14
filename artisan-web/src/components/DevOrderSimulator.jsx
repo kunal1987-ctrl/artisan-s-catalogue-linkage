@@ -123,9 +123,6 @@ const ONDC_RETAIL_ORDERS = [
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function DevOrderSimulator() {
-  // Render nothing in production
-  if (!import.meta.env.DEV) return null;
-
   const [isOpen, setIsOpen] = useState(false);
   const [status, setStatus] = useState(null); // { type: 'success'|'error', msg: string }
   const [isLoading, setIsLoading] = useState(false);
@@ -204,6 +201,8 @@ export default function DevOrderSimulator() {
     const template = ONDC_RETAIL_ORDERS[Math.floor(Math.random() * ONDC_RETAIL_ORDERS.length)];
     insertOrder(template);
   }, [insertOrder]);
+
+  if (!import.meta.env.DEV) return null;
 
   return (
     <div

@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate, useLocation, Link } from 'react-router-do
 import { HelpCircle } from 'lucide-react';
 import { useAuth } from './context/AuthContext';
 import NotificationBar from './components/NotificationBar';
-import LanguageToggle from './components/LanguageToggle';
+import LanguageSwitcher from './components/LanguageSwitcher';
 
 export default function DashboardLayout() {
   const navigate = useNavigate();
@@ -161,8 +161,8 @@ export default function DashboardLayout() {
 
           {/* Right-Side: Essential Controls Only */}
           <div className="flex items-center gap-3 sm:gap-4">
-            {/* Language Toggle */}
-            <LanguageToggle variant="light" />
+            {/* Language Switcher using react-i18next */}
+            <LanguageSwitcher />
 
             {/* Notifications */}
             <button

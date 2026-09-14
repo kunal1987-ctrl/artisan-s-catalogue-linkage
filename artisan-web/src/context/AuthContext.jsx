@@ -112,6 +112,10 @@ export function AuthProvider({ children }) {
     fallbackArtisanName
   );
 
+  // Modal & Callback state
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authSuccessCallback, setAuthSuccessCallback] = useState(null);
+
   // Notifications state
   const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);

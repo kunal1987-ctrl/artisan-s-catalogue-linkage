@@ -10,10 +10,15 @@ import { useAuth } from '../context/AuthContext';
  * ─────────────────────────────────────────────────────────────────────────────
  */
 export default function AuthGuard({ children }) {
-  const { artisanProfile, isLoading } = useAuth();
+  const { artisanProfile, isLoading, isAuthenticated, user, session } = useAuth();
   const location = useLocation();
 
-  const isAuthed = Boolean(artisanProfile?.verified);
+  const isAuthed = Boolean(
+    artisanProfile?.verified ||
+    isAuthenticated ||
+    (user && !user.is_anonymous) ||
+    session
+  );
 
   if (isLoading) {
     return null;

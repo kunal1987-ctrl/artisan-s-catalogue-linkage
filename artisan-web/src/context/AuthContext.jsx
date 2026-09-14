@@ -339,6 +339,14 @@ export function AuthProvider({ children }) {
               phone: initialSession.user.phone || savedPhone || null,
               is_phone_verified: !!(initialSession.user.phone || savedPhone),
             });
+            if (!initialSession.user.is_anonymous) {
+              setArtisanProfile((prev) => ({
+                ...prev,
+                name: initialSession.user.user_metadata?.artisan_name || initialSession.user.email?.split('@')[0] || prev?.name || 'रामेश कुम्हार',
+                phone: initialSession.user.phone || savedPhone || prev?.phone || null,
+                verified: true,
+              }));
+            }
             setIsLoading(false);
           }
           return;
@@ -383,15 +391,24 @@ export function AuthProvider({ children }) {
       if (mounted) {
         setSession(currentSession);
         const savedPhone = localStorage.getItem('artisan_verified_phone');
+        const currentUser = currentSession?.user;
         setUser(
-          currentSession?.user
+          currentUser
             ? {
-                ...currentSession.user,
-                phone: currentSession.user.phone || savedPhone || null,
-                is_phone_verified: !!(currentSession.user.phone || savedPhone),
+                ...currentUser,
+                phone: currentUser.phone || savedPhone || null,
+                is_phone_verified: !!(currentUser.phone || savedPhone),
               }
             : null
         );
+        if (currentUser && !currentUser.is_anonymous) {
+          setArtisanProfile((prev) => ({
+            ...prev,
+            name: currentUser.user_metadata?.artisan_name || currentUser.email?.split('@')[0] || prev?.name || 'रामेश कुम्हार',
+            phone: currentUser.phone || savedPhone || prev?.phone || null,
+            verified: true,
+          }));
+        }
         setIsLoading(false);
       }
     });

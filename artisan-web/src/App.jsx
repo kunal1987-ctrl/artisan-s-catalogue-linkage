@@ -47,6 +47,7 @@ export default function App() {
             }
           >
             <Route path="/home" element={<Home />} />
+            <Route path="/dashboard" element={<Home />} />
             <Route path="/catalog" element={<Catalog />} />
             <Route path="/catalogue" element={<Navigate to="/catalog" replace />} />
             <Route path="/orders" element={<Orders />} />

@@ -1,87 +1,77 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import LanguageToggle from '../components/LanguageToggle';
 
 /**
  * Login Component for Shilp Setu
- * Built specifically for rural artisans: Zero-literacy, voice-first, 10-digit mobile number input,
- * and a simple mock 4-digit OTP verification screen. No email/password fields.
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Production-ready Supabase Email OTP Authentication Flow:
+ * - State 1 ('email_input'): User enters email address to receive 6-digit OTP.
+ * - State 2 ('otp_verification'): User inputs 6-digit code with auto-focus & resend.
+ * - Navigates immediately to /dashboard upon successful verification.
+ * ─────────────────────────────────────────────────────────────────────────────
  */
 export default function Login() {
   const navigate = useNavigate();
-  const { artisanProfile, sendOtp, verifyOtp, language } = useAuth();
+  const { session, user, artisanProfile, language, showToast } = useAuth();
 
-  const [step, setStep] = useState(1); // 1 = Phone Number, 2 = 4-Digit Mock OTP
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [otpDigits, setOtpDigits] = useState(['', '', '', '']);
+  // Distinct UI States: 'email_input' | 'otp_verification'
+  const [authState, setAuthState] = useState('email_input');
+  const [email, setEmail] = useState('');
+  const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const [countdown, setCountdown] = useState(30);
+  const [countdown, setCountdown] = useState(0);
 
-  const phoneInputRef = useRef(null);
+  const emailInputRef = useRef(null);
   const otpRefs = useRef([]);
 
-  // If already authenticated, redirect straight to home dashboard
+  // If session is already verified, redirect straight to /dashboard
   useEffect(() => {
-    if (artisanProfile?.verified) {
-      navigate('/home');
+    const isAuthed = Boolean(
+      (user && !user.is_anonymous) ||
+      session ||
+      artisanProfile?.verified
+    );
+    if (isAuthed) {
+      navigate('/dashboard', { replace: true });
     }
-  }, [artisanProfile, navigate]);
+  }, [session, user, artisanProfile, navigate]);
 
-  // Focus input on step change
+  // Focus management based on active authState
   useEffect(() => {
-    if (step === 1) {
-      phoneInputRef.current?.focus();
-    } else if (step === 2) {
-      otpRefs.current[0]?.focus();
+    if (authState === 'email_input') {
+      setTimeout(() => emailInputRef.current?.focus(), 100);
+    } else if (authState === 'otp_verification') {
+      setTimeout(() => otpRefs.current[0]?.focus(), 100);
     }
-  }, [step]);
+  }, [authState]);
 
-  // Resend countdown timer
+  // Countdown timer for OTP resend fallback
   useEffect(() => {
     let timer;
-    if (step === 2 && countdown > 0) {
+    if (countdown > 0) {
       timer = setInterval(() => {
         setCountdown((prev) => prev - 1);
       }, 1000);
     }
     return () => clearInterval(timer);
-  }, [step, countdown]);
+  }, [countdown]);
 
-  // Voice recognition for speaking phone number
-  const handleVoiceInput = () => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      const recognition = new SpeechRecognition();
-      recognition.lang = language === 'hi' ? 'hi-IN' : 'en-IN';
-      recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript.replace(/\D/g, '');
-        if (transcript) {
-          const clean = transcript.length > 10 ? transcript.slice(-10) : transcript;
-          setPhoneNumber(clean);
-        }
-      };
-      recognition.start();
-    } else {
-      setErrorMsg(
-        language === 'hi'
-          ? 'बोलकर नंबर दर्ज करने के लिए कृपया माइक्रोफ़ोन की अनुमति दें।'
-          : 'Please enable microphone or type your 10-digit mobile number.'
-      );
-    }
-  };
-
-  // Step 1: Send OTP
+  // ── State 1: Send OTP to Email ──────────────────────────────────────────────
   const handleSendOtp = async (e) => {
     if (e) e.preventDefault();
-    const clean = phoneNumber.replace(/\D/g, '');
-    if (clean.length < 10) {
-      setErrorMsg(
-        language === 'hi'
-          ? 'कृपया 10 अंकों का वैध मोबाइल नंबर दर्ज करें।'
-          : 'Please enter a valid 10-digit mobile number.'
-      );
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (!cleanEmail || !cleanEmail.includes('@') || !cleanEmail.includes('.')) {
+      const msg = language === 'hi' 
+        ? 'कृपया एक मान्य ईमेल पता दर्ज करें' 
+        : 'Please enter a valid email address';
+      setErrorMsg(msg);
+      showToast?.(msg);
+      emailInputRef.current?.focus();
       return;
     }
 
@@ -89,115 +79,173 @@ export default function Login() {
     setErrorMsg('');
 
     try {
-      await sendOtp(clean);
-      setStep(2);
-      setCountdown(30);
-      if (clean === '9999999999') {
-        setOtpDigits(['1', '2', '3', '4']);
+      const { error } = await supabase.auth.signInWithOtp({
+        email: cleanEmail,
+        options: {
+          shouldCreateUser: true,
+        },
+      });
+
+      if (error) throw error;
+
+      setAuthState('otp_verification');
+      setOtpDigits(['', '', '', '', '', '']);
+      setCountdown(60);
+
+      showToast?.(
+        language === 'hi'
+          ? '6-अंकीय लॉगिन कोड आपके ईमेल पर भेजा गया'
+          : '6-digit login code sent to your email'
+      );
+    } catch (err) {
+      console.error('[Login] signInWithOtp error:', err);
+      const msg = err.message || (
+        language === 'hi' 
+          ? 'लॉगिन कोड भेजने में विफल। कृपया पुनः प्रयास करें।' 
+          : 'Failed to send login code. Please try again.'
+      );
+      setErrorMsg(msg);
+      showToast?.(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ── State 2: Verify 6-digit OTP Token ───────────────────────────────────────
+  const handleVerifyOtp = async (e) => {
+    if (e) e.preventDefault();
+    const otpString = otpDigits.join('').trim();
+
+    if (otpString.length !== 6) {
+      const msg = language === 'hi'
+        ? 'कृपया पूरा 6-अंकीय कोड दर्ज करें'
+        : 'Please enter the complete 6-digit code';
+      setErrorMsg(msg);
+      showToast?.(msg);
+      return;
+    }
+
+    setIsLoading(true);
+    setErrorMsg('');
+
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({
+        email: email.trim().toLowerCase(),
+        token: otpString,
+        type: 'email',
+      });
+
+      if (error) throw error;
+
+      if (data?.session || data?.user) {
+        showToast?.(
+          language === 'hi'
+            ? 'लॉगिन सफल! डैशबोर्ड पर भेजा जा रहा है...'
+            : 'Login successful! Redirecting to dashboard...'
+        );
+        // Immediate redirection to /dashboard
+        navigate('/dashboard', { replace: true });
       }
     } catch (err) {
-      setErrorMsg(err.message || 'Failed to send OTP. Please try again.');
+      console.error('[Login] verifyOtp error:', err);
+      const msg = language === 'hi'
+        ? 'अमान्य कोड, कृपया पुनः प्रयास करें'
+        : 'Invalid code, try again';
+      setErrorMsg(msg);
+      showToast?.(msg);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Step 1: 1-Click Demo Pass for Evaluators
-  const handleDemoPass = async () => {
-    setPhoneNumber('9999999999');
-    setErrorMsg('');
+  // ── State 2: Resend Code Fallback ───────────────────────────────────────────
+  const handleResendCode = async () => {
+    if (countdown > 0 || isLoading) return;
+
     setIsLoading(true);
+    setErrorMsg('');
+
     try {
-      await sendOtp('9999999999');
-      setStep(2);
-      setCountdown(30);
-      setOtpDigits(['1', '2', '3', '4']);
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email.trim().toLowerCase(),
+        options: {
+          shouldCreateUser: true,
+        },
+      });
+
+      if (error) throw error;
+
+      setCountdown(60);
+      setOtpDigits(['', '', '', '', '', '']);
+      otpRefs.current[0]?.focus();
+
+      showToast?.(
+        language === 'hi'
+          ? 'नया कोड आपके ईमेल पर भेजा गया है'
+          : 'New login code resent to your email'
+      );
     } catch (err) {
-      setErrorMsg(err.message || 'Demo initialization failed');
+      console.error('[Login] resend error:', err);
+      const msg = err.message || (
+        language === 'hi' ? 'कोड पुनः भेजने में विफल' : 'Failed to resend code'
+      );
+      setErrorMsg(msg);
+      showToast?.(msg);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Step 2: Handle OTP input box changes
+  // ── OTP Keyboard & Paste Navigation Handlers ───────────────────────────────
   const handleOtpChange = (index, value) => {
-    const cleanChar = value.replace(/\D/g, '').slice(-1);
+    const cleanDigit = value.replace(/\D/g, '').slice(-1);
     const newDigits = [...otpDigits];
-    newDigits[index] = cleanChar;
+    newDigits[index] = cleanDigit;
     setOtpDigits(newDigits);
 
-    if (cleanChar && index < 3) {
+    if (cleanDigit && index < 5) {
       otpRefs.current[index + 1]?.focus();
     }
   };
 
-  // Step 2: Handle OTP backspace & navigation
   const handleOtpKeyDown = (index, e) => {
     if (e.key === 'Backspace' && !otpDigits[index] && index > 0) {
       otpRefs.current[index - 1]?.focus();
     } else if (e.key === 'ArrowLeft' && index > 0) {
       otpRefs.current[index - 1]?.focus();
-    } else if (e.key === 'ArrowRight' && index < 3) {
+    } else if (e.key === 'ArrowRight' && index < 5) {
       otpRefs.current[index + 1]?.focus();
     }
   };
 
-  // Step 2: Handle Paste of 4-digit OTP
   const handleOtpPaste = (e) => {
     e.preventDefault();
-    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 4);
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
     if (!pasted) return;
 
     const newDigits = [...otpDigits];
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 6; i++) {
       newDigits[i] = pasted[i] || '';
     }
     setOtpDigits(newDigits);
-    const focusIndex = Math.min(pasted.length, 3);
-    otpRefs.current[focusIndex]?.focus();
-  };
 
-  // Step 2: Verify OTP
-  const handleVerifyOtp = async (e) => {
-    if (e) e.preventDefault();
-    const token = otpDigits.join('');
-    if (token.length < 4) {
-      setErrorMsg(
-        language === 'hi'
-          ? 'कृपया पूरा 4-अंकीय ओटीपी दर्ज करें।'
-          : 'Please enter the complete 4-digit OTP.'
-      );
-      return;
-    }
-
-    setIsLoading(true);
-    setErrorMsg('');
-
-    try {
-      const res = await verifyOtp(phoneNumber, token);
-      if (res?.error) throw res.error;
-      navigate('/home');
-    } catch (err) {
-      setErrorMsg(
-        err.message ||
-          (language === 'hi'
-            ? 'अमान्य ओटीपी कोड। कृपया पुनः प्रयास करें।'
-            : 'Invalid OTP. Please try again.')
-      );
-    } finally {
-      setIsLoading(false);
-    }
+    const nextIndex = Math.min(pasted.length, 5);
+    otpRefs.current[nextIndex]?.focus();
   };
 
   return (
     <div className="min-h-screen w-full bg-[#fdf9f3] font-sans text-on-surface antialiased flex flex-col justify-center items-center p-4 sm:p-6 lg:p-8">
-      {/* Top Header bar with Language Toggle */}
-      <div className="w-full max-w-md flex justify-between items-center mb-4">
-        <div className="flex items-center gap-2.5">
+      {/* Top Header bar with Logo & Language Toggle */}
+      <div className="w-full max-w-md flex justify-between items-center mb-6">
+        <div 
+          onClick={() => navigate('/home')}
+          className="flex items-center gap-2.5 cursor-pointer group"
+          title="Shilp Setu"
+        >
           <img
             src="/shilp-setu-logo.png"
             alt="Shilp Setu"
-            className="h-10 w-auto object-contain"
+            className="h-10 w-auto object-contain group-hover:scale-105 transition-transform"
           />
           <span className="font-bold text-lg text-primary tracking-tight">
             {language === 'hi' ? 'शिल्प सेतु' : 'Shilp Setu'}
@@ -206,245 +254,180 @@ export default function Login() {
         <LanguageToggle variant="light" />
       </div>
 
-      {/* Main Card */}
-      <div className="w-full max-w-md bg-white rounded-3xl p-6 sm:p-8 shadow-md border border-[#d1c4bd]/50 flex flex-col gap-5">
-        {/* Header Title */}
-        <div className="flex items-center justify-between pb-3 border-b border-[#d1c4bd]/40">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-black text-espresso-deep">
-              {step === 1
-                ? (language === 'hi' ? 'कारीगर लॉगिन' : 'Artisan Sign In')
-                : (language === 'hi' ? 'ओटीपी सत्यापन' : 'Verify Mobile OTP')}
-            </h1>
-            <p className="text-xs text-outline font-medium mt-0.5">
-              {step === 1
-                ? (language === 'hi' ? '10-अंकीय मोबाइल नंबर से सुरक्षित प्रवेश' : 'Secure instant sign in with mobile number')
-                : (language === 'hi' ? `+91 ${phoneNumber} पर भेजा गया 4-अंकीय कोड` : `4-digit code sent to +91 ${phoneNumber}`)}
-            </p>
-          </div>
-          <span className="text-[11px] uppercase tracking-wider font-bold text-secondary bg-secondary-fixed/50 px-2.5 py-1 rounded-full">
-            OTP Secure
-          </span>
-        </div>
-
-        {/* Error notification banner */}
-        {errorMsg && (
-          <div className="p-3 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-150">
-            <span className="material-symbols-outlined text-[18px]">error</span>
-            <span>{errorMsg}</span>
-          </div>
-        )}
-
-        {/* STEP 1: MOBILE NUMBER INPUT */}
-        {step === 1 && (
-          <form onSubmit={handleSendOtp} className="flex flex-col gap-4">
-            {/* 1-Click Evaluator Pass */}
-            <div className="p-3.5 rounded-2xl bg-[#ffede6] border border-[#ff9062]/40 flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-[#9c441c] uppercase tracking-wider flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[15px]">bolt</span>
-                  <span>Evaluator Instant Pass</span>
-                </span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#ff9062] text-white">
-                  Demo
-                </span>
+      {/* Main Authentication Card */}
+      <div className="w-full max-w-md bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-[#d1c4bd]/50 flex flex-col gap-6">
+        
+        {/* ─────────────────────────────────────────────────────────────────── */}
+        {/* STATE 1: EMAIL INPUT */}
+        {/* ─────────────────────────────────────────────────────────────────── */}
+        {authState === 'email_input' && (
+          <form onSubmit={handleSendOtp} className="flex flex-col gap-5">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#ff9062]/15 text-[#9c441c] text-xs font-bold mb-3">
+                <span className="material-symbols-outlined text-[16px]">mail</span>
+                <span>{language === 'hi' ? 'सुरक्षित ईमेल लॉगिन' : 'Passwordless Email Login'}</span>
               </div>
-              <button
-                type="button"
-                onClick={handleDemoPass}
-                className="w-full py-2.5 px-3 rounded-xl bg-white hover:bg-[#fff7f4] border border-[#ff9062]/50 text-[#1e140e] text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition-all active:scale-[0.98] cursor-pointer"
-              >
-                <span>⚡</span>
-                <span>Demo Artisan (+91 99999 99999 / OTP: 1234)</span>
-              </button>
+              <h1 className="text-2xl font-black text-espresso-deep tracking-tight">
+                {language === 'hi' ? 'ईमेल से लॉग इन करें' : 'Sign In with Email'}
+              </h1>
+              <p className="text-sm text-stone-600 mt-1 leading-relaxed">
+                {language === 'hi'
+                  ? 'सुरक्षित 6-अंकीय लॉगिन कोड प्राप्त करने के लिए अपना ईमेल दर्ज करें।'
+                  : 'Enter your email address to receive a secure 6-digit one-time login code.'}
+              </p>
             </div>
 
-            {/* Mobile number label & input */}
+            {errorMsg && (
+              <div className="p-3.5 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs font-medium flex items-center gap-2">
+                <span className="material-symbols-outlined text-[18px] shrink-0 text-red-600">error</span>
+                <span>{errorMsg}</span>
+              </div>
+            )}
+
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-outline uppercase tracking-wider" htmlFor="phone-input">
-                {language === 'hi' ? 'मोबाइल नंबर' : 'Mobile Number'}
+              <label htmlFor="email-input" className="text-xs font-bold uppercase tracking-wider text-stone-700">
+                {language === 'hi' ? 'ईमेल पता' : 'Email Address'}
               </label>
-
-              <div className="flex items-center gap-2.5">
-                <div className="flex items-center gap-1.5 px-3.5 min-h-[52px] bg-[#f1ede7] rounded-2xl shrink-0 border border-[#d1c4bd]/60">
-                  <span className="text-lg leading-none">🇮🇳</span>
-                  <span className="font-bold text-base text-primary tracking-normal">+91</span>
-                </div>
-
-                <div className="relative flex-1 flex items-center">
-                  <input
-                    ref={phoneInputRef}
-                    id="phone-input"
-                    inputMode="numeric"
-                    maxLength={10}
-                    placeholder={language === 'hi' ? '10-अंकों का नंबर लिखें' : 'Enter 10-digit number'}
-                    type="tel"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                    className="w-full min-h-[52px] bg-[#f1ede7] pl-4 pr-12 py-3.5 rounded-2xl font-bold text-base text-primary placeholder:text-outline/50 focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:bg-white transition-all border border-[#d1c4bd]/60"
-                  />
-
-                  <button
-                    aria-label="Voice Input"
-                    className="absolute right-2 w-10 h-10 rounded-xl flex items-center justify-center text-secondary hover:bg-stone-200 active:scale-90 transition-all cursor-pointer"
-                    onClick={handleVoiceInput}
-                    title={language === 'hi' ? 'बोलकर नंबर दर्ज करें' : 'Speak mobile number'}
-                    type="button"
-                  >
-                    <span className="material-symbols-outlined text-[22px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                      mic
-                    </span>
-                  </button>
-                </div>
+              <div className="relative flex items-center">
+                <span className="material-symbols-outlined absolute left-3.5 text-stone-400 text-[20px] pointer-events-none">
+                  alternate_email
+                </span>
+                <input
+                  id="email-input"
+                  ref={emailInputRef}
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (errorMsg) setErrorMsg('');
+                  }}
+                  placeholder="artisan@craftcluster.in"
+                  disabled={isLoading}
+                  className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-[#f7f3ed] border border-[#d1c4bd] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#2e241e] text-stone-900 font-medium text-sm transition-all"
+                  required
+                />
               </div>
             </div>
 
-            <p className="text-[12px] text-outline px-1">
-              {language === 'hi'
-                ? 'अपना 10-अंकीय नंबर लिखें या माइक बटन दबाकर बोलें।'
-                : 'Enter your 10-digit number or tap the mic to speak.'}
-            </p>
-
-            {/* Send OTP CTA */}
             <button
               type="submit"
-              disabled={isLoading || phoneNumber.length < 10}
-              className={`w-full py-4 px-6 rounded-full font-bold text-sm tracking-wider uppercase shadow-md flex items-center justify-center gap-2 group transition-all cursor-pointer active:scale-98 ${
-                isLoading || phoneNumber.length < 10
-                  ? 'bg-stone-300 text-stone-500 cursor-not-allowed'
-                  : 'bg-primary text-on-primary hover:bg-[#2e241e]'
-              }`}
+              disabled={isLoading || !email.trim()}
+              className="w-full py-4 px-6 rounded-full bg-[#2e241e] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg hover:bg-[#443831] active:scale-98 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {isLoading ? (
-                <span>{language === 'hi' ? 'ओटीपी भेजा जा रहा है...' : 'Sending OTP...'}</span>
+                <>
+                  <span className="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
+                  <span>{language === 'hi' ? 'कोड भेजा जा रहा है...' : 'Sending Code...'}</span>
+                </>
               ) : (
                 <>
-                  <span>{language === 'hi' ? 'ओटीपी प्राप्त करें' : 'Get OTP'}</span>
-                  <span className="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">
-                    arrow_forward
-                  </span>
+                  <span>{language === 'hi' ? 'लॉगिन कोड भेजें' : 'Send Login Code'}</span>
+                  <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
                 </>
               )}
             </button>
           </form>
         )}
 
-        {/* STEP 2: MOCK 4-DIGIT OTP VERIFICATION SCREEN */}
-        {step === 2 && (
+        {/* ─────────────────────────────────────────────────────────────────── */}
+        {/* STATE 2: OTP VERIFICATION */}
+        {/* ─────────────────────────────────────────────────────────────────── */}
+        {authState === 'otp_verification' && (
           <form onSubmit={handleVerifyOtp} className="flex flex-col gap-5">
-            {/* Active Phone review */}
-            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[#f1ede7] border border-[#d1c4bd]/60">
-              <div className="flex items-center gap-2.5">
-                <span className="material-symbols-outlined text-emerald-700 text-[22px]">sms</span>
-                <div>
-                  <span className="text-[11px] text-stone-500 block leading-tight">
-                    {language === 'hi' ? 'एसएमएस कोड भेजा गया' : 'SMS Code Sent To'}
-                  </span>
-                  <span className="text-sm font-bold text-stone-900">
-                    +91 {phoneNumber}
-                  </span>
-                </div>
-              </div>
+            <div>
               <button
                 type="button"
                 onClick={() => {
-                  setStep(1);
+                  setAuthState('email_input');
                   setErrorMsg('');
                 }}
-                className="text-xs font-bold text-[#9c441c] hover:underline cursor-pointer"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#9c441c] hover:underline mb-2 cursor-pointer"
               >
-                {language === 'hi' ? 'बदलें' : 'Change'}
+                <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+                <span>{language === 'hi' ? 'ईमेल बदलें' : 'Change email'}</span>
               </button>
+              <h1 className="text-2xl font-black text-espresso-deep tracking-tight">
+                {language === 'hi' ? '6-अंकीय कोड दर्ज करें' : 'Enter 6-Digit Code'}
+              </h1>
+              <p className="text-sm text-stone-600 mt-1 leading-relaxed">
+                {language === 'hi' ? 'हमने 6-अंकीय कोड इस पते पर भेजा है:' : 'We sent a 6-digit code to:'}{' '}
+                <span className="font-bold text-[#2e241e] break-all">{email}</span>
+              </p>
             </div>
 
-            {/* Quick Demo OTP Auto-fill Chip */}
-            <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between">
-              <div className="flex items-center gap-1.5 font-semibold">
-                <span className="text-base">⚡</span>
-                <span>{language === 'hi' ? 'डेमो ओटीपी कोड: 1234' : 'Mock Demo OTP: 1234'}</span>
+            {errorMsg && (
+              <div className="p-3.5 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs font-medium flex items-center gap-2">
+                <span className="material-symbols-outlined text-[18px] shrink-0 text-red-600">error</span>
+                <span>{errorMsg}</span>
               </div>
-              <button
-                type="button"
-                onClick={() => setOtpDigits(['1', '2', '3', '4'])}
-                className="px-3 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs cursor-pointer active:scale-95 transition-all"
-              >
-                Auto-Fill
-              </button>
-            </div>
+            )}
 
-            {/* 4 Digit Boxes */}
+            {/* 6 Individual Numeric Digits */}
             <div className="flex flex-col gap-2">
-              <label className="text-xs font-bold text-stone-700 uppercase tracking-wider text-center">
-                {language === 'hi' ? '4-अंकीय ओटीपी दर्ज करें' : 'Enter 4-Digit OTP Code'}
+              <label className="text-xs font-bold uppercase tracking-wider text-stone-700 text-center">
+                {language === 'hi' ? 'सत्यापन कोड' : 'Verification Code'}
               </label>
-
-              <div className="flex items-center justify-center gap-3.5" onPaste={handleOtpPaste}>
+              <div className="flex justify-between items-center gap-2">
                 {otpDigits.map((digit, idx) => (
                   <input
                     key={idx}
                     ref={(el) => (otpRefs.current[idx] = el)}
                     type="text"
                     inputMode="numeric"
+                    pattern="[0-9]*"
                     maxLength={1}
                     value={digit}
                     onChange={(e) => handleOtpChange(idx, e.target.value)}
                     onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                    className="w-14 h-16 sm:w-16 sm:h-18 text-center font-black text-2xl sm:text-3xl bg-[#f1ede7] rounded-2xl border-2 border-[#d1c4bd]/80 focus:border-[#ff9062] focus:ring-2 focus:ring-[#ff9062]/40 focus:bg-white text-stone-900 shadow-xs transition-all"
+                    onPaste={handleOtpPaste}
+                    disabled={isLoading}
+                    className="w-11 h-13 sm:w-12 sm:h-14 text-center text-xl sm:text-2xl font-black rounded-xl bg-[#f7f3ed] border border-[#d1c4bd] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#2e241e] text-stone-900 transition-all shadow-xs"
                   />
                 ))}
               </div>
             </div>
 
-            {/* Resend OTP & Status */}
-            <div className="flex items-center justify-between text-xs px-1">
+            {/* Verify & Login Button */}
+            <button
+              type="submit"
+              disabled={isLoading || otpDigits.join('').length !== 6}
+              className="w-full py-4 px-6 rounded-full bg-[#2e241e] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg hover:bg-[#443831] active:scale-98 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              {isLoading ? (
+                <>
+                  <span className="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
+                  <span>{language === 'hi' ? 'सत्यापित किया जा रहा है...' : 'Verifying Code...'}</span>
+                </>
+              ) : (
+                <>
+                  <span className="material-symbols-outlined text-[18px]">verified_user</span>
+                  <span>{language === 'hi' ? 'सत्यापित करें और लॉग इन करें' : 'Verify & Login'}</span>
+                </>
+              )}
+            </button>
+
+            {/* Resend Code Fallback */}
+            <div className="text-center pt-1 border-t border-stone-100 flex items-center justify-center gap-1.5 text-xs text-stone-500">
+              <span>{language === 'hi' ? 'कोड नहीं मिला?' : "Didn't receive code?"}</span>
               {countdown > 0 ? (
-                <span className="text-stone-500 font-medium">
-                  ⏳ {language === 'hi' ? `पुनः भेजें: ${countdown}s` : `Resend in ${countdown}s`}
+                <span className="font-semibold text-stone-700">
+                  {language === 'hi' ? `${countdown}s में पुनः भेजें` : `Resend in ${countdown}s`}
                 </span>
               ) : (
                 <button
                   type="button"
-                  onClick={handleSendOtp}
+                  onClick={handleResendCode}
                   disabled={isLoading}
-                  className="text-[#9c441c] font-bold hover:underline cursor-pointer"
+                  className="font-bold text-[#9c441c] hover:underline cursor-pointer disabled:opacity-50"
                 >
-                  {language === 'hi' ? 'ओटीपी पुनः भेजें' : 'Resend OTP'}
+                  {language === 'hi' ? 'कोड पुनः भेजें' : 'Resend Code'}
                 </button>
               )}
-              <span className="text-[11px] text-stone-400">Mock SMS Ready</span>
             </div>
-
-            {/* Verify Button */}
-            <button
-              type="submit"
-              disabled={isLoading || otpDigits.join('').length < 4}
-              className={`w-full py-4 px-6 rounded-full font-bold text-sm tracking-wider uppercase shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-98 ${
-                isLoading || otpDigits.join('').length < 4
-                  ? 'bg-stone-300 text-stone-500 cursor-not-allowed'
-                  : 'bg-[#9c441c] hover:bg-[#7e3514] text-white'
-              }`}
-            >
-              {isLoading ? (
-                <span>{language === 'hi' ? 'सत्यापित किया जा रहा है...' : 'Verifying...'}</span>
-              ) : (
-                <>
-                  <span className="material-symbols-outlined text-[20px]">verified</span>
-                  <span>{language === 'hi' ? 'सत्यापित करें और प्रवेश करें' : 'Verify & Enter'}</span>
-                </>
-              )}
-            </button>
           </form>
         )}
 
-        {/* Footer Security Notice */}
-        <div className="pt-2 border-t border-[#d1c4bd]/40 flex items-center justify-center gap-1.5 text-stone-500 text-[11px] text-center">
-          <span className="material-symbols-outlined text-[15px] text-emerald-700">lock</span>
-          <span>
-            {language === 'hi'
-              ? 'राष्ट्रीय ई-मार्केटप्लेस (GeM) एवं ONDC सुरक्षित प्रमाणीकरण'
-              : 'Secure OTP Auth • GeM & ONDC Compliant'}
-          </span>
-        </div>
       </div>
     </div>
   );

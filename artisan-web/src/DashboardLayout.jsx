@@ -19,9 +19,17 @@ export default function DashboardLayout() {
     unreadCount,
     isLoading,
     showToast,
+    user,
+    session,
+    isAuthenticated,
   } = useAuth();
 
-  const isVerified = Boolean(artisanProfile?.verified);
+  const isVerified = Boolean(
+    artisanProfile?.verified ||
+    isAuthenticated ||
+    (user && !user.is_anonymous) ||
+    session
+  );
 
   // Production-grade logout workflow
   const handleLogout = async () => {

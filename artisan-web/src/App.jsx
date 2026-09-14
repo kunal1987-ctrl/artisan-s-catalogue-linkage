@@ -14,6 +14,7 @@ import Capture from './pages/Capture.jsx';
 import Review from './pages/Review.jsx';
 import Success from './pages/Success.jsx';
 import Details from './pages/Details.jsx';
+import ProductDetail from './pages/ProductDetail.jsx';
 import Support from './pages/Support.jsx';
 
 export default function App() {
@@ -39,7 +40,8 @@ export default function App() {
             <Route path="/orders" element={<Orders />} />
             <Route path="/details/:id" element={<Details />} />
             <Route path="/details" element={<Details />} />
-            <Route path="/product/:id" element={<Details />} />
+            {/* Public buyer-facing PDP (shareable via WhatsApp) */}
+            <Route path="/product/:productId" element={<ProductDetail />} />
             <Route path="/support" element={<Support />} />
           </Route>
 

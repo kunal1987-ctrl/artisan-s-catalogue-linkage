@@ -1,6 +1,17 @@
 {
   "rewrites": [
     {
+      "source": "/product/:productId",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(whatsapp|facebookexternalhit|facebot|twitterbot|telegrambot|slackbot|discordbot|linkedinbot|embedly|pinterest|redditbot|skypeuripreview|vkshare|w3c_validator).*"
+        }
+      ],
+      "destination": "/api/product-og?productId=:productId"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

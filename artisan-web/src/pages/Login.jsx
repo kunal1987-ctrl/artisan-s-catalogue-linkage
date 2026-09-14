@@ -19,12 +19,14 @@ export default function Login() {
 
   // Distinct UI States: 'email_input' | 'otp_verification'
   const [authState, setAuthState] = useState('email_input');
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [countdown, setCountdown] = useState(0);
 
+  const nameInputRef = useRef(null);
   const emailInputRef = useRef(null);
   const otpRefs = useRef([]);
 
@@ -43,7 +45,7 @@ export default function Login() {
   // Focus management based on active authState
   useEffect(() => {
     if (authState === 'email_input') {
-      setTimeout(() => emailInputRef.current?.focus(), 100);
+      setTimeout(() => nameInputRef.current?.focus(), 100);
     } else if (authState === 'otp_verification') {
       setTimeout(() => otpRefs.current[0]?.focus(), 100);
     }
@@ -63,7 +65,18 @@ export default function Login() {
   // ── State 1: Send OTP to Email ──────────────────────────────────────────────
   const handleSendOtp = async (e) => {
     if (e) e.preventDefault();
+    const cleanName = name.trim();
     const cleanEmail = email.trim().toLowerCase();
+
+    if (!cleanName) {
+      const msg = language === 'hi'
+        ? 'कृपया अपना पूरा नाम दर्ज करें'
+        : 'Please enter your full name';
+      setErrorMsg(msg);
+      showToast?.(msg);
+      nameInputRef.current?.focus();
+      return;
+    }
 
     if (!cleanEmail || !cleanEmail.includes('@') || !cleanEmail.includes('.')) {
       const msg = language === 'hi' 
@@ -82,7 +95,9 @@ export default function Login() {
       const { error } = await supabase.auth.signInWithOtp({
         email: cleanEmail,
         options: {
-          shouldCreateUser: true,
+          data: {
+            full_name: cleanName,
+          },
         },
       });
 
@@ -284,6 +299,33 @@ export default function Login() {
               </div>
             )}
 
+            {/* Full Name Input Field */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="name-input" className="text-xs font-bold uppercase tracking-wider text-stone-700">
+                {language === 'hi' ? 'पूरा नाम' : 'Full Name'}
+              </label>
+              <div className="relative flex items-center">
+                <span className="material-symbols-outlined absolute left-3.5 text-stone-400 text-[20px] pointer-events-none">
+                  badge
+                </span>
+                <input
+                  id="name-input"
+                  ref={nameInputRef}
+                  type="text"
+                  autoComplete="name"
+                  value={name}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    if (errorMsg) setErrorMsg('');
+                  }}
+                  placeholder="Your Full Name / आपका नाम"
+                  disabled={isLoading}
+                  className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-[#f7f3ed] border border-[#d1c4bd] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#2e241e] text-stone-900 font-medium text-sm transition-all"
+                  required
+                />
+              </div>
+            </div>
+
             <div className="flex flex-col gap-1.5">
               <label htmlFor="email-input" className="text-xs font-bold uppercase tracking-wider text-stone-700">
                 {language === 'hi' ? 'ईमेल पता' : 'Email Address'}
@@ -312,7 +354,7 @@ export default function Login() {
 
             <button
               type="submit"
-              disabled={isLoading || !email.trim()}
+              disabled={isLoading || !name.trim() || !email.trim()}
               className="w-full py-4 px-6 rounded-full bg-[#2e241e] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg hover:bg-[#443831] active:scale-98 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {isLoading ? (

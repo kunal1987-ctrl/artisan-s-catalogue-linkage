@@ -9,6 +9,7 @@ import DashboardLayout from './DashboardLayout.jsx';
 import Auth from './pages/Auth.jsx';
 import Login from './pages/Login.jsx';
 import Home from './pages/Home.jsx';
+import Dashboard from './pages/Dashboard.jsx';
 import Catalog from './pages/Catalog.jsx';
 import Orders from './pages/Orders.jsx';
 import Capture from './pages/Capture.jsx';
@@ -47,7 +48,7 @@ export default function App() {
             }
           >
             <Route path="/home" element={<Home />} />
-            <Route path="/dashboard" element={<Home />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/catalog" element={<Catalog />} />
             <Route path="/catalogue" element={<Navigate to="/catalog" replace />} />
             <Route path="/orders" element={<Orders />} />

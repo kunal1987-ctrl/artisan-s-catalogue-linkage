@@ -182,13 +182,13 @@ export default function DashboardLayout() {
             <div className="flex flex-col min-w-0 flex-1">
               <span className="font-bold text-[13px] text-primary truncate">
                 {isVerified 
-                  ? (artisanProfile.phone || artisanName.split('(')[0].trim()) 
+                  ? (session?.user?.user_metadata?.full_name || artisanProfile.phone || artisanName.split('(')[0].trim()) 
                   : (language === 'hi' ? 'रामेश कुम्हार (अतिथि)' : 'Ramesh Kumar (Guest)')}
               </span>
               <span className="text-[11px] text-secondary truncate">
                 {isVerified 
-                  ? (language === 'hi' ? '✓ फ़ोन सत्यापित' : '✓ Phone Verified') 
-                  : (language === 'hi' ? 'फ़ोन सत्यापन करें' : 'Tap to Verify Phone')}
+                  ? (session?.user?.email || (language === 'hi' ? '✓ सत्यापित' : '✓ Verified')) 
+                  : (language === 'hi' ? 'सत्यापन करें' : 'Tap to Sign In')}
               </span>
             </div>
             <span className={`material-symbols-outlined text-[18px] ${isVerified ? 'text-emerald-700' : 'text-amber-600'}`}>

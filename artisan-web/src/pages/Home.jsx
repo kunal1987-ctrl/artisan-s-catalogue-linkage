@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
 
-export default function Home() {
+export default function Home({ customArtisanName } = {}) {
   const navigate = useNavigate();
-  const { language, showToast } = useAuth();
+  const { language, showToast, session } = useAuth();
+  const artisanName = customArtisanName || session?.user?.user_metadata?.full_name || 'Artisan';
 
   // Metric Card Interactive States
   const [showInsightsModal, setShowInsightsModal] = useState(false);
@@ -74,8 +75,8 @@ export default function Home() {
                         <span>/</span>
                         <span>{language === 'hi' ? 'शिल्पकार डैशबोर्ड' : 'Artisan Dashboard'}</span>
                     </div>
-                    <h2 className="text-[24px] font-bold text-primary flex items-center gap-2">
-                        {language === 'hi' ? 'नमस्ते, रामेश!' : 'Namaste, Ramesh!'}
+                    <h2 className="text-[24px] font-bold text-primary flex flex-wrap items-center gap-2">
+                        <span>Namaste, {artisanName}! (नमस्ते, {artisanName}!)</span>
                         <span className="text-[14px] font-medium text-on-surface-variant font-normal">
                             {language === 'hi' ? 'शिल्प सेतु शॉप' : 'Shilp Setu Shop'}
                         </span>

@@ -4,6 +4,7 @@ import { LanguageProvider } from './context/LanguageContext.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import AuthModal from './components/AuthModal.jsx';
 
+import DevOrderSimulator from './components/DevOrderSimulator.jsx';
 import DashboardLayout from './DashboardLayout.jsx';
 import Auth from './pages/Auth.jsx';
 import Home from './pages/Home.jsx';
@@ -19,6 +20,8 @@ export default function App() {
   return (
     <LanguageProvider>
       <AuthProvider>
+        {/* Dev-only floating order simulator — stripped in production build */}
+        <DevOrderSimulator />
         <BrowserRouter>
         <AuthModal />
         <Routes>

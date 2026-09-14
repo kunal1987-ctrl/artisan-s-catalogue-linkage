@@ -173,7 +173,7 @@ export default function DashboardLayout() {
           >
             <div className="relative">
               <img
-                alt="Ramesh Kumar"
+                alt={artisanName}
                 className="w-10 h-10 rounded-full object-cover shadow-sm"
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmvGYszZXuA45tASeKKSeAVzVfFnHtKAGtNsa4IB8eSEDv7aMN2Dj5pKYYgdmAj_qpHqPikrwnevchRmdRCCcuMRXPRl7fhyfOt-_XjOQic4K5XzVtP9-UCofnVEe570fnmUd_GNT4uQVrjHGKIIoPPyo1B2RZ4vXYFmloLyQfCyNa2hjDllGlTqYSywEQevMYAYPK6K6FMsX9YfKjc5nGMVc5iOINi_PYrPZd2lLY5bqH9AK1mI1L"
               />
@@ -181,9 +181,7 @@ export default function DashboardLayout() {
             </div>
             <div className="flex flex-col min-w-0 flex-1">
               <span className="font-bold text-[13px] text-primary truncate">
-                {isVerified 
-                  ? (session?.user?.user_metadata?.full_name || artisanProfile.phone || artisanName.split('(')[0].trim()) 
-                  : (language === 'hi' ? 'रामेश कुम्हार (अतिथि)' : 'Ramesh Kumar (Guest)')}
+                {artisanName}
               </span>
               <span className="text-[11px] text-secondary truncate">
                 {isVerified 

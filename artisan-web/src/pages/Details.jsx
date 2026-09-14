@@ -8,7 +8,7 @@ export default function Details() {
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const { language, showToast } = useAuth();
+  const { language, showToast, artisanName } = useAuth();
 
   const [product, setProduct] = useState(() => {
     // 1. First priority: Passed in router state
@@ -237,7 +237,7 @@ export default function Details() {
                   </div>
                   <div>
                     <h4 className="text-sm font-bold text-primary">
-                      {language === 'hi' ? 'रामेश कुम्हार • मास्टर शिल्पकार' : 'Ramesh Kumar • Master Artisan'}
+                      {language === 'hi' ? `${artisanName} • मास्टर शिल्पकार` : `${artisanName} • Master Artisan`}
                     </h4>
                     <p className="text-xs text-secondary font-medium">
                       {language === 'hi' ? 'राष्ट्रीय शिल्पकार पुरस्कार से सम्मानित' : 'Shilp Setu Certified Artisan Studio'}

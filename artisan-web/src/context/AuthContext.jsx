@@ -42,10 +42,10 @@ const AuthContext = createContext({
   user: null,
   session: null,
   isAuthenticated: false,
-  artisanName: 'रामेश कुम्हार (Jaipur Craft Cluster)',
+  artisanName: 'कारीगर',
   artisanStudio: 'शिल्प सेतु स्टूडियो',
   artisanProfile: {
-    name: 'रामेश कुम्हार',
+    name: 'कारीगर',
     phone: null,
     cluster: 'Jaipur Terracotta Cluster',
     verified: false,
@@ -74,16 +74,20 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [session, setSession] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [artisanName] = useState('रामेश कुम्हार (Jaipur Craft Cluster)');
   const [artisanStudio] = useState('शिल्प सेतु स्टूडियो');
 
-  // Artisan phone verification profile
+  // Global Language state (synced with LanguageContext)
+  const { language, setLanguage: setGlobalLang, toggleLanguage: toggleGlobalLang } = useLanguage();
+
+  const fallbackArtisanName = language === 'hi' ? 'कारीगर' : 'Artisan';
+
+  // Artisan verification profile
   const [artisanProfile, setArtisanProfile] = useState(() => {
     try {
       const savedPhone = localStorage.getItem('artisan_verified_phone');
       if (savedPhone) {
         return {
-          name: 'रामेश कुम्हार',
+          name: fallbackArtisanName,
           phone: savedPhone,
           cluster: 'Jaipur Terracotta Cluster',
           verified: true,
@@ -91,19 +95,22 @@ export function AuthProvider({ children }) {
       }
     } catch {}
     return {
-      name: 'रामेश कुम्हार',
+      name: fallbackArtisanName,
       phone: null,
       cluster: 'Jaipur Terracotta Cluster',
       verified: false,
     };
   });
 
-  // Modal & Callback state
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [authSuccessCallback, setAuthSuccessCallback] = useState(null);
-
-  // Global Language state (synced with LanguageContext)
-  const { language, setLanguage: setGlobalLang, toggleLanguage: toggleGlobalLang } = useLanguage();
+  // Dynamically resolve artisanName from user_metadata.full_name, user_metadata.name, or fallback
+  const artisanName = (
+    user?.user_metadata?.full_name ||
+    user?.user_metadata?.name ||
+    session?.user?.user_metadata?.full_name ||
+    session?.user?.user_metadata?.name ||
+    (artisanProfile?.name && artisanProfile.name !== 'कारीगर' && artisanProfile.name !== 'Artisan' ? artisanProfile.name : '') ||
+    fallbackArtisanName
+  );
 
   // Notifications state
   const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
@@ -195,18 +202,18 @@ export function AuthProvider({ children }) {
       token === '1111' ||
       token === '0000'
     ) {
-      const { data: anonData } = await supabase.auth.signInAnonymously();
+      const defaultName = fallbackArtisanName;
       const verifiedDemoUser = {
         ...(anonData?.user || {}),
         id: anonData?.user?.id || 'd3b07384-d113-4696-a885-3b984852d0b6',
         phone: formattedPhone,
-        user_metadata: { phone: formattedPhone, artisan_name: 'रामेश कुम्हार' },
+        user_metadata: { phone: formattedPhone, artisan_name: defaultName, full_name: defaultName },
         is_phone_verified: true,
       };
 
       setUser(verifiedDemoUser);
       setArtisanProfile({
-        name: 'रामेश कुम्हार (Jaipur Craft Cluster)',
+        name: defaultName,
         phone: formattedPhone,
         cluster: 'Jaipur Terracotta Cluster',
         verified: true,
@@ -245,7 +252,7 @@ export function AuthProvider({ children }) {
           };
           setUser(fallbackUser);
           setArtisanProfile({
-            name: 'रामेश कुम्हार (Jaipur Craft Cluster)',
+            name: defaultName,
             phone: formattedPhone,
             cluster: 'Jaipur Terracotta Cluster',
             verified: true,
@@ -268,8 +275,13 @@ export function AuthProvider({ children }) {
         };
         setUser(verifiedUser);
         setSession(data.session);
+        const resolvedName =
+          data.user.user_metadata?.full_name ||
+          data.user.user_metadata?.name ||
+          data.user.user_metadata?.artisan_name ||
+          fallbackArtisanName;
         setArtisanProfile({
-          name: data.user.user_metadata?.artisan_name || 'रामेश कुम्हार (Jaipur Craft Cluster)',
+          name: resolvedName,
           phone: formattedPhone,
           cluster: 'Jaipur Terracotta Cluster',
           verified: true,
@@ -329,21 +341,34 @@ export function AuthProvider({ children }) {
     async function initAuth() {
       try {
         const { data: { session: initialSession } } = await supabase.auth.getSession();
+        let activeUser = initialSession?.user;
 
-        if (initialSession?.user) {
+        try {
+          const { data: userData } = await supabase.auth.getUser();
+          if (userData?.user) {
+            activeUser = userData.user;
+          }
+        } catch {}
+
+        if (activeUser) {
           if (mounted) {
             setSession(initialSession);
             const savedPhone = localStorage.getItem('artisan_verified_phone');
             setUser({
-              ...initialSession.user,
-              phone: initialSession.user.phone || savedPhone || null,
-              is_phone_verified: !!(initialSession.user.phone || savedPhone),
+              ...activeUser,
+              phone: activeUser.phone || savedPhone || null,
+              is_phone_verified: !!(activeUser.phone || savedPhone),
             });
-            if (!initialSession.user.is_anonymous) {
+            if (!activeUser.is_anonymous) {
+              const dynName = activeUser.user_metadata?.full_name ||
+                              activeUser.user_metadata?.name ||
+                              activeUser.user_metadata?.artisan_name ||
+                              activeUser.email?.split('@')[0] ||
+                              fallbackArtisanName;
               setArtisanProfile((prev) => ({
                 ...prev,
-                name: initialSession.user.user_metadata?.artisan_name || initialSession.user.email?.split('@')[0] || prev?.name || 'रामेश कुम्हार',
-                phone: initialSession.user.phone || savedPhone || prev?.phone || null,
+                name: dynName,
+                phone: activeUser.phone || savedPhone || prev?.phone || null,
                 verified: true,
               }));
             }
@@ -402,9 +427,14 @@ export function AuthProvider({ children }) {
             : null
         );
         if (currentUser && !currentUser.is_anonymous) {
+          const dynName = currentUser.user_metadata?.full_name ||
+                          currentUser.user_metadata?.name ||
+                          currentUser.user_metadata?.artisan_name ||
+                          currentUser.email?.split('@')[0] ||
+                          (language === 'hi' ? 'कारीगर' : 'Artisan');
           setArtisanProfile((prev) => ({
             ...prev,
-            name: currentUser.user_metadata?.artisan_name || currentUser.email?.split('@')[0] || prev?.name || 'रामेश कुम्हार',
+            name: dynName,
             phone: currentUser.phone || savedPhone || prev?.phone || null,
             verified: true,
           }));

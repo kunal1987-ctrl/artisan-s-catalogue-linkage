@@ -12,8 +12,7 @@ import { useAuth } from '../context/AuthContext';
  * ─────────────────────────────────────────────────────────────────────────────
  */
 export default function Dashboard() {
-  const { session } = useAuth();
-  const artisanName = session?.user?.user_metadata?.full_name || 'Artisan';
+  const { artisanName } = useAuth();
 
   return <Home customArtisanName={artisanName} />;
 }

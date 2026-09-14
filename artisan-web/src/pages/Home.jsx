@@ -5,8 +5,14 @@ import Header from '../components/Header';
 
 export default function Home({ customArtisanName } = {}) {
   const navigate = useNavigate();
-  const { language, showToast, session } = useAuth();
-  const artisanName = customArtisanName || session?.user?.user_metadata?.full_name || 'Artisan';
+  const { language, showToast, session, artisanName: contextArtisanName } = useAuth();
+  const fallback = language === 'hi' ? 'कारीगर' : 'Artisan';
+  const artisanName =
+    customArtisanName ||
+    contextArtisanName ||
+    session?.user?.user_metadata?.full_name ||
+    session?.user?.user_metadata?.name ||
+    fallback;
 
   // Metric Card Interactive States
   const [showInsightsModal, setShowInsightsModal] = useState(false);
@@ -358,7 +364,7 @@ export default function Home({ customArtisanName } = {}) {
                     </div>
                 </div>
 
-                {/* Ramesh's Daily Tip */}
+                {/* Artisan's Daily Tip */}
                 {!dismissTip && (
                     <div className="p-5 rounded-2xl bg-[#ffdbce]/40 border border-[#ffdbce] flex items-center justify-between shadow-sm mt-2">
                         <div className="flex items-center gap-4">
@@ -367,7 +373,7 @@ export default function Home({ customArtisanName } = {}) {
                             </div>
                             <div>
                                 <p className="text-[16px] font-bold text-primary flex items-center gap-2">
-                                    {language === 'hi' ? 'रामेश के लिए आज का सुझाव' : "Ramesh's Daily Tip"}
+                                    {language === 'hi' ? `${artisanName} के लिए आज का सुझाव` : `${artisanName}'s Daily Tip`}
                                     <span className="text-[11px] font-semibold text-[#9c441c] bg-white px-2 py-0.5 rounded-full">
                                         {language === 'hi' ? 'कारीगर उत्तम अभ्यास' : 'Artisan Best Practice'}
                                     </span>

@@ -24,7 +24,11 @@ export default function Details() {
     return INITIAL_PRODUCTS[0];
   });
 
-  const [loading, setLoading] = useState(!location.state?.product);
+  const [loading, setLoading] = useState(() => {
+    if (location.state?.product) return false;
+    if (id && INITIAL_PRODUCTS.some((p) => String(p.id) === String(id))) return false;
+    return true;
+  });
   const [copied, setCopied] = useState(false);
   const [isOndcListed, setIsOndcListed] = useState(() => {
     const prod = location.state?.product || product;
@@ -35,7 +39,7 @@ export default function Details() {
     return Boolean(prod?.is_gem_ready ?? true);
   });
 
-  // Fetch product from Supabase if not found in memory
+  // Fetch product from Supabase if updated or dynamically loaded
   useEffect(() => {
     async function fetchProduct() {
       if (!id) return;
@@ -44,7 +48,7 @@ export default function Details() {
           .from('products')
           .select('*')
           .eq('id', id)
-          .single();
+          .maybeSingle();
 
         if (!error && data) {
           setProduct({

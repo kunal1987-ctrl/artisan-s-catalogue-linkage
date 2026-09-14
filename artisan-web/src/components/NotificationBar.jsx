@@ -19,8 +19,8 @@ export default function NotificationBar() {
       {/* Toast Notification Banner */}
       {toast && (
         <div className="fixed top-3 right-4 z-50 animate-bounce transition-all duration-300">
-          <div className="bg-[#180f0a] text-[#ffdeaa] px-4 py-2.5 rounded-2xl shadow-2xl border border-[#ff9062]/40 text-xs font-bold flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#ff9062] animate-ping" />
+          <div className="bg-green-600 text-white px-4 py-2.5 rounded-2xl shadow-xl border border-green-500/40 text-xs font-bold flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-white animate-ping" />
             <span>{toast}</span>
           </div>
         </div>

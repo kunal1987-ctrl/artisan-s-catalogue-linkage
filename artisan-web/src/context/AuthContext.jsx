@@ -216,7 +216,6 @@ export function AuthProvider({ children }) {
         localStorage.setItem('artisan_verified_phone', formattedPhone);
       } catch {}
 
-      showToast(language === 'hi' ? 'सफलतापूर्वक लॉग इन किया गया' : 'Authenticated successfully ✓');
       closeAuthModal();
 
       if (authSuccessCallback) {
@@ -254,7 +253,6 @@ export function AuthProvider({ children }) {
           try {
             localStorage.setItem('artisan_verified_phone', formattedPhone);
           } catch {}
-          showToast(language === 'hi' ? 'सफलतापूर्वक लॉग इन किया गया' : 'Authenticated successfully ✓');
           closeAuthModal();
           if (authSuccessCallback) authSuccessCallback();
           return { success: true, data: { user: fallbackUser } };
@@ -282,7 +280,6 @@ export function AuthProvider({ children }) {
         } catch {}
       }
 
-      showToast(language === 'hi' ? 'सफलतापूर्वक लॉग इन किया गया (Authenticated via Supabase)' : 'Authenticated via Supabase ✓');
       closeAuthModal();
 
       if (authSuccessCallback) {

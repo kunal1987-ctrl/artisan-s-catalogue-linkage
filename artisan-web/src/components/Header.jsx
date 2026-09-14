@@ -60,23 +60,20 @@ export default function Header({ showLanguageSwitcher = true }) {
           </div>
         </div>
 
-        {/* Action Button & Voice Status */}
-        <div className="flex flex-col gap-3 shrink-0 w-full sm:w-auto">
+        {/* Action Button */}
+        <div className="flex flex-col shrink-0 w-full sm:w-auto">
           <button
             onClick={() => navigate('/capture')}
-            className="px-7 py-4 rounded-full bg-white text-[#2e241e] font-bold text-[15px] flex items-center justify-center gap-3 shadow-lg hover:bg-[#f7f3ed] active:scale-95 transition-all cursor-pointer"
+            className="px-7 py-4 rounded-full bg-white text-[#2e241e] font-bold text-[15px] sm:text-[16px] flex items-center justify-center gap-3.5 shadow-xl hover:bg-[#f7f3ed] active:scale-95 transition-all cursor-pointer group"
             type="button"
           >
-            <div className="w-9 h-9 rounded-full bg-[#2e241e] text-white flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-[#2e241e] text-white flex items-center justify-center gap-0.5 shadow-md group-hover:scale-105 transition-transform">
               <span className="material-symbols-outlined text-[20px]">photo_camera</span>
+              <span className="material-symbols-outlined text-[17px] text-[#ffb599] -ml-1">mic</span>
             </div>
-            <span>{t('button_text')}</span>
-            <span className="material-symbols-outlined text-[20px] text-[#9c441c]">arrow_forward</span>
+            <span className="font-extrabold text-[15px] sm:text-[16px] tracking-tight">{t('button_text')}</span>
+            <span className="material-symbols-outlined text-[22px] text-[#9c441c] group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
           </button>
-          <p className="text-center text-[12px] text-[#d4c3ba] font-medium flex items-center justify-center gap-1">
-            <span className="material-symbols-outlined text-[15px]">mic</span>
-            {t('voice_status')}
-          </p>
         </div>
       </div>
     </div>

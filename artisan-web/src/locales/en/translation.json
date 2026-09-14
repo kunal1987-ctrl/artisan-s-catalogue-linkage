@@ -1,8 +1,7 @@
 {
-  "title": "Add New Product & Instant Catalog Listing",
-  "subtitle": "Point your camera and speak naturally in your voice. Shilp Setu AI writes title, tags, description and suggests fair marketplace prices in seconds.",
-  "feature_1": "Artisanal dialect transcription",
-  "feature_2": "10 second creation",
-  "button_text": "Start Camera & Voice Capture",
-  "voice_status": "Voice Ready: Speak into laptop or phone"
+  "title": "Add Your Craft",
+  "subtitle": "Take a photo and describe your item in your own language. We'll handle the rest.",
+  "feature_1": "Speaks Your Language",
+  "feature_2": "Ready in 10 seconds",
+  "button_text": "Start Camera & Mic"
 }

@@ -185,7 +185,7 @@ export default function DashboardLayout() {
               </span>
               <span className="text-[11px] text-secondary truncate">
                 {isVerified 
-                  ? (session?.user?.email || (language === 'hi' ? '✓ सत्यापित' : '✓ Verified')) 
+                  ? (language === 'hi' ? '✓ सत्यापित' : '✓ Verified') 
                   : (language === 'hi' ? 'सत्यापन करें' : 'Tap to Sign In')}
               </span>
             </div>

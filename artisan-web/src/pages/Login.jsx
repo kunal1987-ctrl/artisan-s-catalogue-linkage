@@ -98,6 +98,7 @@ export default function Login() {
           data: {
             full_name: cleanName,
           },
+          emailRedirectTo: window.location.origin,
         },
       });
 
@@ -185,6 +186,10 @@ export default function Login() {
         email: email.trim().toLowerCase(),
         options: {
           shouldCreateUser: true,
+          data: {
+            full_name: name.trim(),
+          },
+          emailRedirectTo: window.location.origin,
         },
       });
 

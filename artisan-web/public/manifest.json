@@ -1,0 +1,24 @@
+{
+  "name": "Shilp Setu - Artisan Catalogue & Commerce Hub",
+  "short_name": "Shilp Setu",
+  "description": "Voice-first, zero-literacy cataloging & commerce platform for Indian artisans.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fdf9f3",
+  "theme_color": "#2e241e",
+  "icons": [
+    {
+      "src": "/logo192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

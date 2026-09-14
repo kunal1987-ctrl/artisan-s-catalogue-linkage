@@ -163,11 +163,7 @@ export default function ProductDetail() {
   if (loading && !product) {
     return (
       <div className="w-full min-h-screen bg-[#fdf9f3] flex flex-col items-center justify-center gap-3">
-        <div
-          className="w-10 h-10 border-3 border-[#9c441c] border-t-transparent rounded-full animate-spin"
-          role="status"
-          aria-label={isHi ? 'लोड हो रहा है' : 'Loading'}
-        />
+        <span className="material-symbols-outlined text-[36px] text-[#ff9062] animate-pulse">auto_awesome</span>
         <p className="text-sm font-semibold text-stone-500">
           {isHi ? 'शिल्प विवरण लोड हो रहा है...' : 'Loading craft details...'}
         </p>
@@ -369,7 +365,7 @@ export default function ProductDetail() {
               {/* Secondary: Institutional / Bulk Price alongside MOQ */}
               <div className="sm:border-l border-t sm:border-t-0 border-stone-200 bg-[#f4faf7] sm:w-[48%] p-5 flex flex-col justify-center">
                 <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider block mb-1">
-                  {isHi ? 'संस्थागत / थोक मूल्य' : 'INSTITUTIONAL / BULK PRICE'}
+                  {isHi ? 'संस्थागत थोक मूल्य' : 'INSTITUTIONAL BULK PRICE'}
                 </span>
                 <div className="flex items-baseline gap-2 flex-wrap">
                   <span className="text-2xl lg:text-3xl font-bold text-emerald-700">

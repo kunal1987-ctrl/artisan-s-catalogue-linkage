@@ -12,7 +12,7 @@ export default function AuthModal() {
 
   const [step, setStep] = useState(1); // 1 = Phone Input, 2 = OTP Input
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
+  const [otpDigits, setOtpDigits] = useState(['', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [countdown, setCountdown] = useState(30);
@@ -26,7 +26,7 @@ export default function AuthModal() {
     if (isAuthModalOpen) {
       setStep(1);
       setPhoneNumber('');
-      setOtpDigits(['', '', '', '', '', '']);
+      setOtpDigits(['', '', '', '']);
       setErrorMsg('');
       setCountdown(30);
       setIsDemoMode(false);
@@ -67,9 +67,9 @@ export default function AuthModal() {
       await sendOtp('9999999999');
       setStep(2);
       setCountdown(30);
-      setOtpDigits(['1', '2', '3', '4', '5', '6']);
+      setOtpDigits(['1', '2', '3', '4']);
       setTimeout(() => {
-        otpRefs.current[5]?.focus();
+        otpRefs.current[3]?.focus();
       }, 200);
     } catch (err) {
       setErrorMsg(err.message || 'Demo initialization failed');
@@ -122,7 +122,7 @@ export default function AuthModal() {
       setCountdown(30);
       if (clean === '9999999999') {
         setIsDemoMode(true);
-        setOtpDigits(['1', '2', '3', '4', '5', '6']);
+        setOtpDigits(['1', '2', '3', '4']);
       }
       setTimeout(() => {
         otpRefs.current[0]?.focus();
@@ -141,7 +141,7 @@ export default function AuthModal() {
     newDigits[index] = cleanChar;
     setOtpDigits(newDigits);
 
-    if (cleanChar && index < 5) {
+    if (cleanChar && index < 3) {
       otpRefs.current[index + 1]?.focus();
     }
   };
@@ -152,23 +152,23 @@ export default function AuthModal() {
       otpRefs.current[index - 1]?.focus();
     } else if (e.key === 'ArrowLeft' && index > 0) {
       otpRefs.current[index - 1]?.focus();
-    } else if (e.key === 'ArrowRight' && index < 5) {
+    } else if (e.key === 'ArrowRight' && index < 3) {
       otpRefs.current[index + 1]?.focus();
     }
   };
 
-  // Step 2: Handle Paste of 6-digit OTP
+  // Step 2: Handle Paste of 4-digit OTP
   const handleOtpPaste = (e) => {
     e.preventDefault();
-    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 4);
     if (!pasted) return;
 
     const newDigits = [...otpDigits];
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 4; i++) {
       newDigits[i] = pasted[i] || '';
     }
     setOtpDigits(newDigits);
-    const focusIndex = Math.min(pasted.length, 5);
+    const focusIndex = Math.min(pasted.length, 3);
     otpRefs.current[focusIndex]?.focus();
   };
 
@@ -176,10 +176,10 @@ export default function AuthModal() {
   const handleVerifyOtpSubmit = async (e) => {
     if (e) e.preventDefault();
     const token = otpDigits.join('');
-    if (token.length < 6) {
+    if (token.length < 4) {
       setErrorMsg(language === 'hi' 
-        ? 'कृपया पूरा 6-अंकीय ओटीपी दर्ज करें।' 
-        : 'Please enter complete 6-digit OTP.');
+        ? 'कृपया पूरा 4-अंकीय ओटीपी दर्ज करें।' 
+        : 'Please enter complete 4-digit OTP.');
       return;
     }
 
@@ -363,10 +363,7 @@ export default function AuthModal() {
                 }`}
               >
                 {isLoading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    <span>{language === 'hi' ? 'ओटीपी भेजा जा रहा है...' : 'Sending OTP...'}</span>
-                  </>
+                  <span>{language === 'hi' ? 'ओटीपी भेजा जा रहा है...' : 'Sending OTP...'}</span>
                 ) : (
                   <>
                     <span>{language === 'hi' ? 'ओटीपी भेजें' : 'Send OTP'}</span>
@@ -377,7 +374,7 @@ export default function AuthModal() {
             </form>
           )}
 
-          {/* STEP 2: 6-Digit OTP Entry */}
+          {/* STEP 2: 4-Digit Mock OTP Entry */}
           {step === 2 && (
             <form onSubmit={handleVerifyOtpSubmit} className="space-y-5">
               <div className="flex items-center justify-between p-3 rounded-2xl bg-[#f1ede7] border border-[#d1c4bd]/60">
@@ -405,26 +402,24 @@ export default function AuthModal() {
               </div>
 
               {/* Demo autofill helper in Step 2 */}
-              {isDemoMode && (
-                <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between">
-                  <span className="font-semibold">⚡ Demo Code Ready: 123456</span>
-                  <button
-                    type="button"
-                    onClick={() => setOtpDigits(['1', '2', '3', '4', '5', '6'])}
-                    className="px-2 py-0.5 rounded-md bg-amber-600 text-white font-bold text-[11px]"
-                  >
-                    Auto-Fill
-                  </button>
-                </div>
-              )}
+              <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between">
+                <span className="font-semibold">⚡ Demo Code: 1234</span>
+                <button
+                  type="button"
+                  onClick={() => setOtpDigits(['1', '2', '3', '4'])}
+                  className="px-2.5 py-1 rounded-md bg-amber-600 text-white font-bold text-[11px] cursor-pointer active:scale-95"
+                >
+                  Auto-Fill
+                </button>
+              </div>
 
               <div>
                 <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-2 text-center">
-                  {language === 'hi' ? '6-अंकीय ओटीपी दर्ज करें' : 'Enter 6-Digit OTP'}
+                  {language === 'hi' ? '4-अंकीय ओटीपी दर्ज करें' : 'Enter 4-Digit OTP'}
                 </label>
 
-                {/* 6 OTP Input Boxes */}
-                <div className="flex items-center justify-between gap-2 on-paste-target" onPaste={handleOtpPaste}>
+                {/* 4 OTP Input Boxes */}
+                <div className="flex items-center justify-center gap-3 on-paste-target" onPaste={handleOtpPaste}>
                   {otpDigits.map((digit, idx) => (
                     <input
                       key={idx}
@@ -435,7 +430,7 @@ export default function AuthModal() {
                       value={digit}
                       onChange={(e) => handleOtpChange(idx, e.target.value)}
                       onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                      className="w-12 h-14 text-center font-extrabold text-xl bg-[#f1ede7] rounded-2xl border border-[#d1c4bd]/80 focus:border-[#ff9062] focus:ring-2 focus:ring-[#ff9062]/50 focus:bg-white text-stone-900 shadow-xs transition-all"
+                      className="w-14 h-16 text-center font-extrabold text-2xl bg-[#f1ede7] rounded-2xl border border-[#d1c4bd]/80 focus:border-[#ff9062] focus:ring-2 focus:ring-[#ff9062]/50 focus:bg-white text-stone-900 shadow-xs transition-all"
                     />
                   ))}
                 </div>
@@ -454,30 +449,27 @@ export default function AuthModal() {
                     disabled={isLoading}
                     className="text-[#9c441c] font-bold hover:underline cursor-pointer"
                   >
-                    🔄 {language === 'hi' ? 'पुनः ओटीपी भेजें' : 'Resend OTP'}
+                    {language === 'hi' ? 'ओटीपी पुनः भेजें' : 'Resend OTP'}
                   </button>
                 )}
 
-                <span className="text-stone-400 text-[11px]">
-                  {language === 'hi' ? 'एसएमएस द्वारा प्राप्त' : 'Via Supabase SMS'}
+                <span className="text-[11px] text-stone-400">
+                  Mock SMS Ready
                 </span>
               </div>
 
-              {/* Verify Button */}
+              {/* Submit Button */}
               <button
                 type="submit"
-                disabled={isLoading || otpDigits.join('').length < 6}
-                className={`w-full py-3.5 px-5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 shadow-md transition-all active:scale-[0.99] cursor-pointer ${
-                  isLoading || otpDigits.join('').length < 6
+                disabled={isLoading || otpDigits.join('').length < 4}
+                className={`w-full py-3.5 px-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 shadow-md transition-all active:scale-98 cursor-pointer ${
+                  isLoading || otpDigits.join('').length < 4
                     ? 'bg-stone-300 text-stone-500 cursor-not-allowed'
-                    : 'bg-emerald-700 hover:bg-emerald-800 text-white'
+                    : 'bg-[#9c441c] hover:bg-[#7e3514] text-white'
                 }`}
               >
                 {isLoading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    <span>{language === 'hi' ? 'सत्यापित किया जा रहा है...' : 'Verifying...'}</span>
-                  </>
+                  <span>{language === 'hi' ? 'सत्यापित किया जा रहा है...' : 'Verifying...'}</span>
                 ) : (
                   <>
                     <span className="material-symbols-outlined text-[18px]">verified</span>

@@ -216,17 +216,26 @@ export default function Home() {
                             <span className="text-[11px] font-bold uppercase tracking-wider text-[#9c441c] block">
                                 {language === 'hi' ? 'स्टॉक चेतावनी' : 'Inventory Alert'}
                             </span>
-                            <div className="flex items-baseline justify-between mt-1">
-                                <span className="text-[22px] font-bold text-primary">
+                            <div className="mt-1.5 flex flex-col items-start gap-2.5">
+                                <span className="text-[22px] font-bold text-primary leading-none">
                                     {stockQty <= 2
                                         ? (language === 'hi' ? '1 अल्प स्टॉक' : '1 Low Stock')
                                         : (language === 'hi' ? `${stockQty} स्टॉक में` : `${stockQty} In Stock`)}
                                 </span>
-                                <span className="text-[12px] font-bold text-[#9c441c] hover:underline">
-                                    {stockQty <= 2
-                                        ? (language === 'hi' ? 'सुराही स्टॉक बढ़ाएं →' : 'Restock Surahi →')
-                                        : (language === 'hi' ? 'स्टॉक बदलें →' : 'Adjust Stock →')}
-                                </span>
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setShowRestockModal(true);
+                                    }}
+                                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#9c441c] hover:bg-[#7e3514] text-white text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
+                                >
+                                    <span>
+                                        {stockQty <= 2
+                                            ? (language === 'hi' ? 'सुराही स्टॉक बढ़ाएं →' : 'Restock Surahi →')
+                                            : (language === 'hi' ? 'स्टॉक बदलें →' : 'Adjust Stock →')}
+                                    </span>
+                                </button>
                             </div>
                         </div>
                     </div>

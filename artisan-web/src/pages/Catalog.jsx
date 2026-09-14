@@ -366,12 +366,14 @@ export default function Catalog() {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
             {/* Left Side: Title & Add Button */}
             <div className="flex flex-wrap items-center gap-4">
-              <h2 className="text-xl font-bold text-gray-800">My Catalog / मेरी सूची</h2>
+              <h2 className="text-xl font-bold text-gray-800">
+                {language === 'hi' ? 'मेरी शिल्प सूची' : 'My Catalog'}
+              </h2>
               <button
                 onClick={() => navigate('/capture')}
                 className="bg-emerald-600 text-white px-4 py-2 rounded-lg shadow-sm hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:outline-none flex items-center gap-2 text-sm font-medium transition-colors cursor-pointer"
               >
-                📸 + 🎙️ नया उत्पाद (Add New)
+                {language === 'hi' ? '📸 + 🎙️ नया उत्पाद' : '📸 + 🎙️ Add Product'}
               </button>
             </div>
 
@@ -575,7 +577,7 @@ export default function Catalog() {
                     onClick={() => navigate(`/details/${p.id}`, { state: { product: p } })}
                     className="product-item flex flex-col bg-surface-container-lowest rounded-2xl p-3 border border-surface-container shadow-xs group relative hover:shadow-xl hover:border-secondary/40 transition-all cursor-pointer"
                   >
-                    <div className="relative aspect-[4/5] w-full rounded-xl overflow-hidden bg-surface-container-low mb-2">
+                    <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-surface-container-low mb-2">
                       <img
                         alt={p.title}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"

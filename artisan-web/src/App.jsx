@@ -7,6 +7,7 @@ import AuthModal from './components/AuthModal.jsx';
 import DevOrderSimulator from './components/DevOrderSimulator.jsx';
 import DashboardLayout from './DashboardLayout.jsx';
 import Auth from './pages/Auth.jsx';
+import Login from './pages/Login.jsx';
 import Home from './pages/Home.jsx';
 import Catalog from './pages/Catalog.jsx';
 import Orders from './pages/Orders.jsx';
@@ -28,6 +29,7 @@ export default function App() {
         <Routes>
           {/* Fullscreen Root Flow */}
           <Route path="/" element={<Auth />} />
+          <Route path="/login" element={<Login />} />
           <Route path="/capture" element={<Capture />} />
           <Route path="/review" element={<Review />} />
           <Route path="/success" element={<Success />} />

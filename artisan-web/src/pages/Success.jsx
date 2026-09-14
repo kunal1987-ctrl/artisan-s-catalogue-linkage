@@ -1,23 +1,32 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import LanguageToggle from '../components/LanguageToggle';
 
+/**
+ * Celebratory Success State Component post-upload
+ * Displays the finalized Photoroom-enhanced image, multi-channel GeM & ONDC linkage badges,
+ * and a massive green "Share to WhatsApp" button for rural artisans.
+ */
 export default function Success() {
   const navigate = useNavigate();
   const location = useLocation();
   const { language } = useLanguage();
   const product = location.state || {};
 
-  const title = product.title || 'Handwoven Blue Pure Silk Saree';
-  const titleHi = product.titleHi || 'वाराणसी हस्तनिर्मित बनारसी रेशम साड़ी';
-  const price = product.price || 1200;
-  const wholesalePrice = product.wholesalePrice || 880;
+  const title = product.title || 'Handcrafted Terracotta Decorative Pitcher';
+  const titleHi = product.titleHi || product.title_hi || 'हस्तनिर्मित टेराकोटा सजावटी सुराही';
+  const price = product.price || 450;
+  const wholesalePrice = product.wholesalePrice || product.bulk_price || 280;
   const moq = product.moq || 50;
-  const gemCategory = product.gemCategory || 'Handloom / Silk Sarees';
-  const category = product.category || 'Textiles & Sarees';
+  const gemCategory = product.gemCategory || product.gem_category || 'Handicrafts - Traditional Art & Decor';
+  const category = product.category || product.craft_category || 'Pottery & Terracotta';
+  const hsnCode = product.hsn_code || '69120010';
   const imageUrl =
+    product.enhancedImageUrl ||
     product.imageUrl ||
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuAlrPAyvNl_t4YKO8w_w-8U9DRhBPBK1zXyAqaEGSTKfIgX9zbFdVqhUz24eNyhzT-VuM5wuhWPS4TD0e650W0LH_Zpq2DGYrdxnIdJZLQBWy8sa4I0ePgxqBXrAITaOFKziX8se_79awuadNxGCAfRP4s5tsSwv_d8MhZMbiXzK4ft7mKRWbTud1DZzH0Kxt8B1sQRlVgDX7pzayDRDxTV-AbsRb-IF1Ryu3Q6xhv9GW2JC3B8yXoX';
+    product.image_url ||
+    'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=800&q=80';
 
   const [toastMessage, setToastMessage] = useState('');
   const [showToast, setShowToast] = useState(false);
@@ -30,595 +39,307 @@ export default function Success() {
   };
 
   const copyLink = () => {
+    const shareUrl = `${window.location.origin}/product/${product.id || 'ss-8492'}`;
     if (navigator.clipboard) {
-      navigator.clipboard.writeText('https://shilpsetu.in/s/ss-8492');
+      navigator.clipboard.writeText(shareUrl);
     }
-    triggerToast(language === 'hi' ? 'लिंक कॉपी हो गया' : 'Link copied to clipboard');
+    triggerToast(language === 'hi' ? 'उत्पाद लिंक कॉपी हो गया' : 'Product link copied to clipboard');
   };
 
   const shareWhatsApp = () => {
+    const shareUrl = `${window.location.origin}/product/${product.id || 'ss-8492'}`;
+    const displayTitle = language === 'hi' ? titleHi : title;
     const text = encodeURIComponent(
-      `नमस्ते! शिल्प सेतु पर हमारा नया हस्तशिल्प "${title}" (${titleHi}) अब लाइव है।\n` +
-      `खुदरा मूल्य: ₹${price} | थोक/संस्थागत (MOQ ${moq}): ₹${wholesalePrice}/यूनिट\n` +
+      `नमस्ते! शिल्प सेतु पर हमारा नया हस्तशिल्प "${displayTitle}" अब लाइव है।\n\n` +
+      `खुदरा मूल्य: ₹${price.toLocaleString('en-IN')}\n` +
+      `थोक व संस्थागत मूल्य (न्यूनतम ${moq} पीस): ₹${wholesalePrice.toLocaleString('en-IN')}/यूनिट\n` +
       `GeM श्रेणी: ${gemCategory}\n` +
-      `देखें और ऑर्डर करें: https://shilpsetu.in/s/ss-8492`
+      `HSN कोड: ${hsnCode}\n\n` +
+      `यहाँ देखें और सीधा ऑर्डर करें: ${shareUrl}`
     );
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
 
   return (
-    <div className="min-h-screen bg-background font-sans text-on-surface antialiased selection:bg-secondary-fixed selection:text-on-secondary-fixed">
-      {/* Quick Top Bar */}
-      <div className="bg-[#180f0a] text-white px-6 py-3 flex items-center justify-between sticky top-0 z-40 shadow-md">
+    <div className="min-h-screen bg-[#fdf9f3] font-sans text-on-surface antialiased flex flex-col">
+      {/* Top Header Bar */}
+      <header className="bg-[#191312] text-white px-4 sm:px-8 py-3.5 flex items-center justify-between sticky top-0 z-40 shadow-lg border-b border-white/10">
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate('/home')}
-            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+            className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all cursor-pointer active:scale-95"
+            title={language === 'hi' ? 'वापस जाएं' : 'Back to Home'}
           >
-            <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+            <span className="material-symbols-outlined text-[20px]">arrow_back</span>
           </button>
-          <span className="font-bold text-sm">Shilp Setu • Multi-Channel Market Linkage</span>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="font-bold text-sm tracking-wide">
+              {language === 'hi' ? 'शिल्प सेतु • बहु-चैनल बाज़ार संपर्क' : 'Shilp Setu • Multi-Channel Market Linkage'}
+            </span>
+          </div>
         </div>
+
         <div className="flex items-center gap-3">
+          <LanguageToggle variant="dark" />
           <button
             onClick={() => navigate('/catalog')}
-            className="px-3.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold transition-colors"
+            className="px-4 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-xs font-bold transition-all cursor-pointer hidden sm:inline-flex"
           >
-            Catalog
+            {language === 'hi' ? 'कैटलॉग' : 'Catalog'}
           </button>
           <button
             onClick={() => navigate('/home')}
-            className="px-3.5 py-1 rounded-full bg-[#ff9062] text-[#180f0a] font-bold text-xs hover:bg-[#ff804a] transition-colors"
+            className="px-4 py-1.5 rounded-full bg-[#ff9062] text-[#180f0a] font-bold text-xs hover:bg-[#ff804a] transition-all cursor-pointer"
           >
-            Dashboard
+            {language === 'hi' ? 'डैशबोर्ड' : 'Dashboard'}
           </button>
         </div>
-      </div>
+      </header>
 
-      <div className="flex min-h-[calc(100vh-52px)]">
-        {/* Sidebar */}
-        <aside className="w-64 flex-shrink-0 bg-surface-container-low border-r border-outline-variant/50 flex flex-col justify-between select-none z-30 hidden lg:flex">
-          <div className="flex flex-col">
-            <div className="p-5 border-b border-outline-variant/40 flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-secondary-container text-on-secondary-container flex items-center justify-center shadow-sm flex-shrink-0">
-                <span className="material-symbols-outlined text-[24px]">palette</span>
-              </div>
-              <div className="flex flex-col min-w-0">
-                <span className="text-xs font-semibold tracking-wider text-secondary uppercase">शिल्प सेतु</span>
-                <span className="font-bold text-primary text-base leading-tight truncate">Shilp Setu</span>
-              </div>
-            </div>
-
-            <nav className="p-4 space-y-1.5">
-              <button
-                onClick={() => navigate('/home')}
-                className="w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-medium text-sm text-left"
-              >
-                <span className="material-symbols-outlined text-[20px]">roofing</span>
-                <span>{language === 'hi' ? 'आवास' : 'Home'}</span>
-              </button>
-              <button
-                onClick={() => navigate('/catalog')}
-                className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-primary text-on-primary font-semibold text-sm shadow-sm text-left"
-              >
-                <div className="flex items-center gap-3.5">
-                  <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                    inventory_2
-                  </span>
-                  <span>{language === 'hi' ? 'कैटलॉग' : 'Catalog'}</span>
-                </div>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-primary-container text-primary-fixed-dim">13</span>
-              </button>
-              <button
-                onClick={() => navigate('/orders')}
-                className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-medium text-sm text-left"
-              >
-                <div className="flex items-center gap-3.5">
-                  <span className="material-symbols-outlined text-[20px]">shopping_bag</span>
-                  <span>{language === 'hi' ? 'ऑर्डर्स' : 'Orders'}</span>
-                </div>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed font-bold">
-                  {language === 'hi' ? '3 नए' : '3 New'}
-                </span>
-              </button>
-            </nav>
-          </div>
-
-          <div className="p-4 border-t border-outline-variant/40 space-y-3">
-            <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/40 flex items-center gap-3">
-              <div className="relative">
-                <div className="w-10 h-10 rounded-full bg-primary-container text-white flex items-center justify-center font-bold text-sm">
-                  RK
-                </div>
-                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white"></span>
-              </div>
-              <div className="flex flex-col min-w-0">
-                <span className="text-xs font-bold text-primary truncate leading-tight">Ramesh Kumar</span>
-                <span className="text-[11px] text-on-surface-variant truncate">Master Artisan • Varanasi</span>
-              </div>
-            </div>
-          </div>
-        </aside>
-
-        {/* Main Content */}
-        <main className="flex-1 p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto overflow-y-auto">
-          {/* Header Banner */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-secondary-fixed/40 via-surface-container-low to-surface-container p-6 md:p-8 border border-outline-variant/40 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            <div className="absolute -top-12 -left-12 w-48 h-48 bg-secondary-container/20 rounded-full blur-2xl pointer-events-none"></div>
-            <div className="absolute -bottom-10 right-24 w-40 h-40 bg-tertiary-fixed/30 rounded-full blur-xl pointer-events-none"></div>
-
-            <div className="flex items-center gap-5 relative z-10">
-              <div className="relative">
-                <div className="w-16 h-16 rounded-2xl bg-secondary-container flex items-center justify-center shadow-md">
-                  <div className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center">
-                    <span className="material-symbols-outlined text-on-primary text-[28px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                      check_circle
-                    </span>
-                  </div>
-                </div>
-                <span className="absolute -top-2 -right-2 text-xl select-none animate-bounce">✨</span>
-              </div>
-              <div className="flex flex-col">
-                <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-xs font-semibold w-max mb-1.5 border border-secondary/20">
-                  <span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                    auto_awesome
-                  </span>
-                  <span>{language === 'hi' ? 'शिल्प सेतु प्रमाणित शिल्पकला • लाइव' : 'Shilp Setu Certified Craft • Multi-Channel Live'}</span>
-                </div>
-                <h1 className="text-2xl lg:text-3xl font-bold text-primary tracking-tight">
-                  {language === 'hi' ? 'बधाई हो! उत्पाद लाइव एवं प्रकाशित हो चुका है!' : 'Congratulations! Product is Live & Published!'}
-                </h1>
-                <p className="text-sm text-on-surface-variant mt-1">
-                  {language === 'hi' 
-                    ? 'आपका शिल्प अब ONDC उपभोक्ता नेटवर्क और सरकारी ई-मार्केटप्लेस (GeM) दोनों से जुड़ चुका है।'
-                    : 'Your craft is now mapped to both ONDC Consumer Network and Government e-Marketplace (GeM).'}
-                </p>
-              </div>
-            </div>
-
-            <div className="relative z-10 w-full md:w-auto flex-shrink-0">
-              <button
-                className="w-full md:w-auto px-4 py-3 rounded-2xl bg-surface-container-lowest/90 border border-outline-variant/50 shadow-sm hover:shadow-md hover:bg-surface-container-lowest transition-all flex items-center gap-3 text-left"
-                id="audio-hint-btn"
-                type="button"
-              >
-                <div className="w-9 h-9 rounded-full bg-secondary text-on-secondary flex items-center justify-center flex-shrink-0">
-                  <span className="material-symbols-outlined text-[20px] animate-pulse">volume_up</span>
-                </div>
-                <div className="flex flex-col">
-                  <p className="text-xs text-on-surface font-medium leading-tight">
-                    <span className="font-bold text-secondary">
-                      {language === 'hi' ? 'सुनिए:' : 'Listen:'}
-                    </span>{' '}
-                    {language === 'hi'
-                      ? '"व्हाट्सएप व GeM पर लिस्टिंग सफल हुई..."'
-                      : '"Listing published to WhatsApp & GeM..."'}
-                  </p>
-                  <span className="text-[11px] text-on-surface-variant font-semibold mt-0.5">
-                    {language === 'hi' ? 'मार्गदर्शन सुनने के लिए क्लिक करें' : 'Click to play voice guide'}
-                  </span>
-                </div>
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* ── Left Column: Craft Summary Card ── */}
-            <div className="lg:col-span-5 flex flex-col gap-6">
-              <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/50 p-6 shadow-sm flex flex-col justify-between h-full">
-                <div>
-                  <div className="flex items-center justify-between pb-4 border-b border-outline-variant/30 mb-4">
-                    <span className="text-xs font-bold uppercase tracking-wider text-secondary">
-                      {language === 'hi' ? 'प्रकाशित शिल्प प्रोफाइल' : 'Published Craft Profile'}
-                    </span>
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium border border-emerald-200">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
-                      {language === 'hi' ? 'दोहरा चैनल सक्रिय' : 'Dual-Channel Active'}
-                    </span>
-                  </div>
-
-                  <div className="flex gap-4 items-start">
-                    <div className="w-28 h-28 rounded-2xl overflow-hidden bg-white relative shadow-sm flex-shrink-0 border border-outline-variant/40 p-1 flex items-center justify-center">
-                      <img alt={title} className="w-full h-full object-contain" src={imageUrl} />
-                      <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-primary-container/90 text-on-primary text-[10px] font-bold">
-                        Studio
-                      </span>
-                    </div>
-                    <div className="flex flex-col flex-1 min-w-0">
-                      <h2 className="text-lg font-bold text-primary leading-snug">
-                        {(language === 'hi' && titleHi) ? titleHi : title}
-                      </h2>
-                      <p className="text-xs text-on-surface-variant mt-0.5">
-                        {language === 'hi' ? 'श्रेणी' : 'Category'}: {category} • {gemCategory}
-                      </p>
-                      <div className="flex items-baseline gap-2 mt-2">
-                        <span className="text-2xl font-bold text-secondary">₹{price.toLocaleString('en-IN')}</span>
-                        <span className="text-xs text-on-surface-variant line-through">
-                          ₹{Math.round(price * 1.4).toLocaleString('en-IN')}
-                        </span>
-                        <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
-                          {language === 'hi' ? '30% छूट' : '30% OFF'}
-                        </span>
-                      </div>
-                      <span className="text-xs text-on-surface-variant font-mono mt-1">
-                        {language === 'hi'
-                          ? `GeM प्रमाणित • न्यूनतम आर्डर: ${moq} इकाइयां`
-                          : `GeM Ready: Certified • MOQ: ${moq} units`}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2.5 mt-5 bg-surface-container-low rounded-xl p-3 text-center border border-outline-variant/30">
-                    <div className="flex flex-col items-center">
-                      <span className="text-[11px] font-medium text-on-surface-variant">
-                        {language === 'hi' ? 'शिपिंग' : 'Shipping'}
-                      </span>
-                      <span className="text-xs font-bold text-primary mt-0.5">
-                        {language === 'hi' ? 'अखिल भारतीय निःशुल्क' : 'Free Pan-India'}
-                      </span>
-                    </div>
-                    <div className="flex flex-col items-center border-x border-outline-variant/30">
-                      <span className="text-[11px] font-medium text-on-surface-variant">
-                        {language === 'hi' ? 'डिस्पैच समय' : 'Dispatch Time'}
-                      </span>
-                      <span className="text-xs font-bold text-primary mt-0.5">
-                        {language === 'hi' ? '24-48 घंटे' : '24-48 Hours'}
-                      </span>
-                    </div>
-                    <div className="flex flex-col items-center">
-                      <span className="text-[11px] font-medium text-on-surface-variant">
-                        {language === 'hi' ? 'कमीशन' : 'Commission'}
-                      </span>
-                      <span className="text-xs font-bold text-emerald-700 mt-0.5">
-                        {language === 'hi' ? '0% सीधा' : '0% Direct'}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 p-3 rounded-xl bg-surface-container/60 flex items-center justify-between gap-3 border border-outline-variant/30">
-                    <div className="flex items-center gap-2.5 truncate">
-                      <span className="material-symbols-outlined text-secondary text-[20px]">link</span>
-                      <span className="text-xs text-on-surface-variant font-mono truncate">
-                        shilpsetu.in/s/ss-8492
-                      </span>
-                    </div>
-                    <button
-                      onClick={copyLink}
-                      type="button"
-                      className="px-3 py-1 bg-surface-container-lowest hover:bg-surface text-xs font-semibold rounded-lg border border-outline-variant/40 text-primary shadow-xs cursor-pointer"
-                    >
-                      {language === 'hi' ? 'कॉपी करें' : 'Copy'}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-3 mt-6 pt-4 border-t border-outline-variant/30">
-                  <button
-                    className="flex-1 min-h-[44px] px-4 rounded-xl bg-surface-container text-on-surface font-semibold text-xs flex items-center justify-center gap-2 hover:bg-surface-container-high transition-colors shadow-xs"
-                    type="button"
-                    onClick={() => navigate('/catalog')}
-                  >
-                    <span className="material-symbols-outlined text-[18px]">storefront</span>
-                    <span>{language === 'hi' ? 'दुकान में देखें' : 'View Catalog'}</span>
-                  </button>
-                  <button
-                    className="flex-1 min-h-[44px] px-4 rounded-xl bg-primary text-on-primary font-semibold text-xs flex items-center justify-center gap-2 hover:bg-primary-container transition-colors shadow-sm"
-                    type="button"
-                    onClick={() => navigate('/capture')}
-                  >
-                    <span className="material-symbols-outlined text-[18px]">add_a_photo</span>
-                    <span>{language === 'hi' ? 'नया शिल्प जोड़ें' : 'Add Another Craft'}</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* ── Right Column: Multi-Channel Linkages ── */}
-            <div className="lg:col-span-7 flex flex-col gap-6">
-              {/* WhatsApp Sharing Hub */}
-              <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/50 p-6 shadow-sm flex flex-col gap-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-[#25D366]/15 flex items-center justify-center text-[#1e7e45]">
-                      <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                        chat
-                      </span>
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold text-primary">
-                        {language === 'hi' ? 'सीधा व्हाट्सएप साझा केंद्र' : 'Direct WhatsApp Sharing Hub'}
-                      </h3>
-                      <p className="text-xs text-on-surface-variant">
-                        {language === 'hi'
-                          ? 'स्थानीय ग्राहकों और कारीगर समूहों तक तुरंत पहुंचें'
-                          : 'Reach recurring local patrons and village artisan collectives'}
-                      </p>
-                    </div>
-                  </div>
-                  <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800">
-                    {language === 'hi' ? 'द्रुत बिक्री' : 'Fastest Sales'}
-                  </span>
-                </div>
-
-                <button
-                  onClick={shareWhatsApp}
-                  className="w-full py-4 px-6 rounded-2xl bg-[#1e7e45] text-white flex items-center justify-between shadow-md hover:bg-[#19693a] active:scale-[0.99] transition-all group cursor-pointer"
-                  id="share-whatsapp-btn"
-                  type="button"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-11 h-11 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                      <span className="material-symbols-outlined text-[24px] text-white" style={{ fontVariationSettings: "'FILL' 1" }}>
-                        send
-                      </span>
-                    </div>
-                    <div className="flex flex-col text-left">
-                      <span className="text-base font-bold text-white tracking-wide leading-tight">
-                        {language === 'hi' ? 'व्हाट्सएप पर शेयर करें' : 'Share to WhatsApp'}
-                      </span>
-                      <span className="text-xs text-white/90 leading-tight mt-0.5">
-                        {language === 'hi'
-                          ? `फ़ोटो, खुदरा मूल्य (₹${price}), व न्यूनतम मात्रा विवरण स्वतः चैट में जुड़ेंगे`
-                          : `Pre-fills photo, retail price (₹${price}), and bulk MOQ details into chat`}
-                      </span>
-                    </div>
-                  </div>
-                  <span className="material-symbols-outlined text-[24px] text-white/90 group-hover:translate-x-1 transition-transform">
-                    arrow_forward
-                  </span>
-                </button>
-
-                <div className="flex items-center justify-center gap-2 py-1 text-xs text-on-surface-variant bg-surface-container-low rounded-xl p-2">
-                  <span className="material-symbols-outlined text-[18px] text-secondary">trending_up</span>
-                  <span>
-                    {language === 'hi' ? (
-                      <>कारीगरों को व्हाट्सएप ग्रुप में शेयर करने पर <strong>3.4 गुना तेज़ी से</strong> ऑर्डर मिलते हैं।</>
-                    ) : (
-                      <>Artisans receive inquiries <strong>3.4x faster</strong> when shared directly in WhatsApp customer groups.</>
-                    )}
-                  </span>
-                </div>
-              </div>
-
-              {/* ONDC Channel Card */}
-              <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/50 p-6 shadow-sm flex flex-col gap-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex gap-3.5">
-                    <div className="w-11 h-11 rounded-2xl bg-secondary-fixed text-on-secondary-fixed flex items-center justify-center flex-shrink-0 shadow-sm">
-                      <span className="material-symbols-outlined text-[24px]">hub</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-2.5">
-                        <h3 className="text-base font-bold text-primary">
-                          List on Open Network for Digital Commerce (ONDC)
-                        </h3>
-                        <span className="px-2 py-0.5 rounded-md bg-primary-container text-primary-fixed-dim text-[10px] font-bold uppercase tracking-wider">
-                          Govt of India
-                        </span>
-                      </div>
-                      <p className="text-xs text-on-surface-variant mt-0.5">
-                        {language === 'hi'
-                          ? 'ओएनडीसी नेटवर्क पर लाइव रखें • सभी प्रमुख उपभोक्ता ऐप्स पर दृश्यमान'
-                          : 'Keep Live on ONDC Network • Seamless buyer discovery across major apps'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <label className="relative inline-flex items-center cursor-pointer flex-shrink-0 mt-1" htmlFor="ondc-toggle">
-                    <input
-                      checked={ondcEnabled}
-                      onChange={(e) => setOndcEnabled(e.target.checked)}
-                      className="sr-only peer"
-                      id="ondc-toggle"
-                      type="checkbox"
-                    />
-                    <div className="w-11 h-6 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
-                  </label>
-                </div>
-                <p className="text-xs text-on-surface-variant leading-relaxed">
-                  Discoverable across <strong className="text-primary font-semibold">Paytm, Mystore, PhonePe Pincode, Magicpin & Tata Neu</strong> automatically with zero added platform fee. Single unit retail orders route directly to your studio.
-                </p>
-
-                <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-outline-variant/30">
-                  <span className="text-[11px] font-bold text-on-surface-variant mr-1">Active Connected Apps:</span>
-                  <span className="px-3 py-1 rounded-full bg-surface-container text-on-surface text-xs font-semibold border border-outline-variant/40 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-blue-500"></span> Paytm
-                  </span>
-                  <span className="px-3 py-1 rounded-full bg-surface-container text-on-surface text-xs font-semibold border border-outline-variant/40 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-orange-500"></span> Mystore
-                  </span>
-                  <span className="px-3 py-1 rounded-full bg-surface-container text-on-surface text-xs font-semibold border border-outline-variant/40 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-purple-600"></span> PhonePe Pincode
-                  </span>
-                  <span className="px-3 py-1 rounded-full bg-surface-container text-on-surface text-xs font-semibold border border-outline-variant/40 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Magicpin
-                  </span>
-                  <span className="px-3 py-1 rounded-full bg-surface-container text-on-surface text-xs font-semibold border border-outline-variant/40 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-indigo-600"></span> Tata Neu
-                  </span>
-                </div>
-              </div>
-
-              {/* ── GeM Institutional & B2B Procurement Card ── */}
-              <div className="bg-gradient-to-br from-[#121c24] to-[#1c2934] text-white rounded-2xl border border-[#2b3e50] p-6 shadow-md flex flex-col gap-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex gap-3.5">
-                    <div className="w-11 h-11 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0 shadow-sm border border-emerald-500/30">
-                      <span className="material-symbols-outlined text-[24px]">account_balance</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-2.5">
-                        <h3 className="text-base font-bold text-white">
-                          Government e-Marketplace (GeM) Institutional Linkage
-                        </h3>
-                        <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[10px] font-bold uppercase tracking-wider border border-emerald-500/40">
-                          GeM Verified
-                        </span>
-                      </div>
-                      <p className="text-xs text-[#9bb0c4] mt-0.5">
-                        {language === 'hi' 
-                          ? 'सरकारी ई-मार्केटप्लेस • संस्थागत थोक खरीद व सार्वजनिक टेंडर'
-                          : 'Government e-Marketplace • Institutional Bulk Procurement & Public Sector Tenders'}
-                      </p>
-                    </div>
-                  </div>
-                  <span className="px-3 py-1 rounded-full bg-emerald-600/90 text-white text-[11px] font-bold shadow-xs">
-                    Live on GeM
-                  </span>
-                </div>
-
-                <p className="text-xs text-[#d0dbe5] leading-relaxed">
-                  Your craft is classified under the official <strong className="text-white font-semibold">{gemCategory}</strong> GeM catalogue. Eligible for direct order placement under the mandatory 25% public procurement quota from MSE artisans.
-                </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 bg-[#101820] rounded-xl border border-[#2b3e50]">
-                  <div>
-                    <span className="text-[11px] font-medium text-[#9bb0c4] block">Institutional Wholesale Price</span>
-                    <span className="text-base font-bold text-emerald-400 mt-0.5 block">
-                      ₹ {wholesalePrice.toLocaleString('en-IN')} / unit
-                    </span>
-                  </div>
-                  <div className="sm:border-x border-[#2b3e50] sm:px-3">
-                    <span className="text-[11px] font-medium text-[#9bb0c4] block">Minimum Order Qty (MOQ)</span>
-                    <span className="text-base font-bold text-white mt-0.5 block">{moq} Units Batch</span>
-                  </div>
-                  <div>
-                    <span className="text-[11px] font-medium text-[#9bb0c4] block">Guaranteed Batch Value</span>
-                    <span className="text-base font-bold text-white mt-0.5 block">
-                      ₹ {(wholesalePrice * moq).toLocaleString('en-IN')}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-white/10">
-                  <span className="text-[11px] font-bold text-[#9bb0c4] mr-1">Institutional Buyer Desks:</span>
-                  <span className="px-3 py-1 rounded-full bg-[#101820] text-[#d0dbe5] text-xs font-semibold border border-white/10 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400"></span> GeM 4.0 Portal
-                  </span>
-                  <span className="px-3 py-1 rounded-full bg-[#101820] text-[#d0dbe5] text-xs font-semibold border border-white/10 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-amber-400"></span> TRIFED Tribal Direct
-                  </span>
-                  <span className="px-3 py-1 rounded-full bg-[#101820] text-[#d0dbe5] text-xs font-semibold border border-white/10 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-blue-400"></span> Central Cottage Industries (CCIC)
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Active Catalog Showcase */}
-          <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/50 p-6 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-secondary text-[22px]">grid_view</span>
-                <h3 className="text-base font-bold text-primary">
-                  {language === 'hi' ? 'आपकी सक्रिय शिल्प दुकान' : 'Your Active Studio Catalog'}
-                </h3>
-              </div>
-              <button
-                onClick={() => navigate('/catalog')}
-                className="text-xs font-bold text-secondary hover:underline flex items-center gap-1 cursor-pointer"
-              >
-                <span>{language === 'hi' ? 'सभी शिल्प देखें' : 'View All Catalog Items'}</span>
-                <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-              </button>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="p-3 rounded-xl bg-surface-container-low border-2 border-secondary/40 flex flex-col relative group">
-                <div className="w-full h-36 rounded-lg overflow-hidden bg-white relative p-1 flex items-center justify-center">
-                  <img
-                    alt={title}
-                    className="w-full h-full object-contain group-hover:scale-105 transition-transform"
-                    src={imageUrl}
-                  />
-                  <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-bold">
-                    {language === 'hi' ? 'अभी प्रकाशित' : 'Just Published'}
-                  </span>
-                </div>
-                <h4 className="text-xs font-bold text-primary mt-2 truncate">
-                  {(language === 'hi' && titleHi) ? titleHi : title}
-                </h4>
-                <div className="flex items-center justify-between mt-1 text-xs">
-                  <span className="font-bold text-secondary">₹{price.toLocaleString('en-IN')}</span>
-                  <span className="text-on-surface-variant text-[11px]">
-                    {language === 'hi' ? `न्यूनतम आर्डर: ${moq}` : `GeM MOQ: ${moq}`}
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-3 rounded-xl bg-surface-container-low border border-outline-variant/30 flex flex-col group">
-                <div className="w-full h-36 rounded-lg overflow-hidden bg-surface-container relative">
-                  <img
-                    alt="Terracotta Vase"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuBBXVcOxFxwBEDIK0tQlH9EmtW8RrwrhO2BJsOCdii-dvPo1PaUJgypRxjyuo-cxircM61oBo9W0HM6jwknClyX17OFAO16oN4rTPkj1IvgR63oEfIzIrKYHpNpvVFI-SGcFtQM5yzYimFYBL9nZYvQuvq_l2bwI7A3nSDxruVj45Y84tpK_eDv16o-3Ev3yia0gaBXaFz7f8jIr4tLZXKCvSfhouiSOHCaY9s8I3txO-q_uMSeg6gx"
-                  />
-                  <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-surface/90 text-primary text-[10px] font-bold">
-                    {language === 'hi' ? 'मिट्टी कला' : 'Pottery'}
-                  </span>
-                </div>
-                <h4 className="text-xs font-bold text-primary mt-2 truncate">
-                  {language === 'hi' ? 'हस्तनिर्मित टेराकोटा फूलदान' : 'Hand-carved Terracotta Vase'}
-                </h4>
-                <div className="flex items-center justify-between mt-1 text-xs">
-                  <span className="font-bold text-secondary">₹850</span>
-                  <span className="text-on-surface-variant text-[11px]">
-                    {language === 'hi' ? '4 स्टॉक में' : '4 in stock'}
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-3 rounded-xl bg-surface-container-low border border-outline-variant/30 flex flex-col group">
-                <div className="w-full h-36 rounded-lg overflow-hidden bg-surface-container relative">
-                  <img
-                    alt="Jute Tote"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuALVDefdl5uMsFe_V7uX6cplbhUNdecBGdjVi4gZ_WZITmIzbTKGGHmSxgfVfmsFOExt6ZpTB2uFtlPY4dEMcwlv0ICntXAfrwdLk5GG_HdPRs1DrasS2BHL1yEMKeovpkBlgXBoAFSCjWa3vI0uo2uhVu0nkxC7JgYEDNIK2L9AnUywuirLhpvhNiVegfbW5KUI79udVgCoVUKHL_EQ9dpUBVTaeSkK3E1m_yJmb32Pg6INj-JGne0"
-                  />
-                  <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-surface/90 text-primary text-[10px] font-bold">
-                    {language === 'hi' ? 'प्राकृतिक जूट' : 'Eco Fiber'}
-                  </span>
-                </div>
-                <h4 className="text-xs font-bold text-primary mt-2 truncate">
-                  {language === 'hi' ? 'प्राकृतिक बुना हुआ जूट बैग' : 'Natural Braided Jute Tote'}
-                </h4>
-                <div className="flex items-center justify-between mt-1 text-xs">
-                  <span className="font-bold text-secondary">₹620</span>
-                  <span className="text-on-surface-variant text-[11px]">
-                    {language === 'hi' ? '8 स्टॉक में' : '8 in stock'}
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-3 rounded-xl bg-surface-container-low border border-outline-variant/30 flex flex-col group">
-                <div className="w-full h-36 rounded-lg overflow-hidden bg-surface-container relative">
-                  <img
-                    alt="Brass Diya"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUWGiPORBN3hRVYrn_CFLtwfGgkO0QlyHsUyR5-TD7178ndv5oxEdXeXyjaZx4D723W-wVdotWoLKO46mQa-DnlxE8_6ANpKn95PZdMneb0bZQfedUFN25tN0_Bh1imU0KUPWDU6csA_Au0kAnzf_rNbtms38oEOJOws-FZumIrPWorDzcDfxYbF_B_N_-Cs9lxfTJwlKrNsNefaXL41tDwfnE56gagss2LymxGedouotskPBHW5Um"
-                  />
-                  <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-surface/90 text-primary text-[10px] font-bold">
-                    Metalcraft
-                  </span>
-                </div>
-                <h4 className="text-xs font-bold text-primary mt-2 truncate">Engraved Peepal Brass Diya</h4>
-                <div className="flex items-center justify-between mt-1 text-xs">
-                  <span className="font-bold text-secondary">₹1,450</span>
-                  <span className="text-on-surface-variant text-[11px]">2 in stock</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </main>
-      </div>
-
-      {/* Floating Toast Notification */}
+      {/* Floating Notification Toast */}
       {showToast && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#180f0a] text-white px-5 py-3 rounded-2xl shadow-2xl border border-white/20 flex items-center gap-3 animate-bounce">
-          <span className="material-symbols-outlined text-emerald-400 text-[20px]">check_circle</span>
-          <span className="text-xs font-bold">{toastMessage}</span>
+        <div className="fixed bottom-6 right-6 z-50 px-4 py-2.5 rounded-2xl bg-[#191312] text-white text-xs font-bold shadow-2xl border border-[#ff9062]/50 animate-in fade-in slide-in-from-bottom-2 duration-200 flex items-center gap-2">
+          <span className="material-symbols-outlined text-[18px] text-emerald-400">check_circle</span>
+          <span>{toastMessage}</span>
         </div>
       )}
+
+      <main className="flex-1 w-full max-w-5xl mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
+        {/* ── CELEBRATION HERO BANNER ────────────────────────────────────────── */}
+        <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#2e241e] via-[#3d2e24] to-[#1e1713] text-white p-6 sm:p-8 shadow-2xl border border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+          <div className="flex items-start gap-4 sm:gap-5 z-10">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-emerald-500/20 border-2 border-emerald-400/50 flex items-center justify-center shrink-0 shadow-lg">
+              <span className="material-symbols-outlined text-emerald-400 text-[32px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                verified
+              </span>
+            </div>
+            <div className="flex flex-col">
+              <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-emerald-900/60 border border-emerald-500/40 text-emerald-300 text-xs font-bold w-max mb-1.5">
+                <span className="material-symbols-outlined text-[14px]">auto_awesome</span>
+                <span>{language === 'hi' ? 'प्रमाणित शिल्पकला • लाइव' : 'Certified Craft • Published Live'}</span>
+              </div>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight leading-tight">
+                {language === 'hi' ? '🎉 बधाई हो! उत्पाद लाइव एवं प्रकाशित हो चुका है!' : '🎉 Congratulations! Your Craft is Live & Published!'}
+              </h1>
+              <p className="text-xs sm:text-sm text-[#e6e2dc] mt-1 leading-relaxed">
+                {language === 'hi'
+                  ? 'फोटो का लाइफस्टाइल दृश्य तैयार किया गया है और यह ONDC उपभोक्ता नेटवर्क एवं सरकारी GeM पोर्टल पर सक्रिय हो चुका है।'
+                  : 'Enhanced with Photoroom AI Studio cutout & synced directly across ONDC buyer apps and Government e-Marketplace.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex sm:flex-col items-center gap-2 shrink-0 z-10 w-full sm:w-auto">
+            <span className="px-3.5 py-1.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-500/40 w-full sm:w-auto text-center">
+              ✓ 100% GeM Ready
+            </span>
+            <span className="px-3.5 py-1.5 rounded-full bg-blue-500/20 text-blue-300 text-xs font-bold border border-blue-500/40 w-full sm:w-auto text-center">
+              ✓ ONDC Connected
+            </span>
+          </div>
+        </section>
+
+        {/* ── CORE SHOWCASE & WHATSAPP ACTION SECTION ────────────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Left Column: Finalized Photoroom-Enhanced Image Card */}
+          <div className="lg:col-span-6 flex flex-col gap-4">
+            <div className="bg-white rounded-3xl p-5 shadow-md border border-[#d1c4bd]/60 flex flex-col gap-4">
+              <div className="flex items-center justify-between pb-3 border-b border-[#d1c4bd]/40">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#9c441c]">
+                  {language === 'hi' ? 'अंतिम उन्नत उत्पाद छवि' : 'Finalized Studio Image'}
+                </span>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                  {language === 'hi' ? 'लाइव कैटलॉग' : 'Live in Catalog'}
+                </span>
+              </div>
+
+              {/* Large, Prominent Aspect-Square Image Showcase */}
+              <div className="relative aspect-square w-full rounded-2xl overflow-hidden bg-[#180f0a] border-2 border-[#ff9062]/30 shadow-inner group">
+                <img
+                  src={imageUrl}
+                  alt={title}
+                  className="w-full h-full object-contain p-4 transition-transform duration-500 group-hover:scale-105"
+                />
+
+                {/* Floating Photoroom Badge */}
+                <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-black/75 backdrop-blur-md border border-white/20 text-white text-[11px] font-bold flex items-center gap-1.5 shadow-lg">
+                  <span className="material-symbols-outlined text-[15px] text-[#ff9062]">auto_awesome</span>
+                  <span>{language === 'hi' ? 'फोटो-स्टूडियो उन्नत' : 'Photoroom AI Enhanced'}</span>
+                </div>
+
+                {/* Live Status Badge */}
+                <div className="absolute bottom-3 right-3 px-3 py-1 rounded-full bg-emerald-950/80 backdrop-blur-md border border-emerald-500/50 text-emerald-300 text-[11px] font-bold flex items-center gap-1.5 shadow-lg">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>GeM & ONDC Active</span>
+                </div>
+              </div>
+
+              {/* Product Meta Overview */}
+              <div className="flex flex-col gap-2 pt-1">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h2 className="text-lg font-black text-primary leading-snug">
+                      {language === 'hi' ? titleHi : title}
+                    </h2>
+                    <p className="text-xs text-stone-500 font-medium mt-0.5">
+                      {category} • {gemCategory}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <span className="text-2xl font-black text-[#9c441c] block">
+                      ₹{price.toLocaleString('en-IN')}
+                    </span>
+                    <span className="text-[11px] font-bold text-stone-400">
+                      {language === 'hi' ? 'खुदरा मूल्य' : 'Retail Price'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Wholesale & MOQ Grid */}
+                <div className="grid grid-cols-2 gap-2 mt-2 p-3 rounded-2xl bg-[#f1ede7] border border-[#d1c4bd]/60 text-xs">
+                  <div>
+                    <span className="text-stone-500 font-medium block">
+                      {language === 'hi' ? 'संस्थागत थोक दर' : 'Institutional Bulk Rate'}
+                    </span>
+                    <span className="font-bold text-emerald-700 text-sm mt-0.5 block">
+                      ₹{wholesalePrice.toLocaleString('en-IN')} / {language === 'hi' ? 'पीस' : 'unit'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-stone-500 font-medium block">
+                      {language === 'hi' ? 'न्यूनतम आदेश (MOQ)' : 'Minimum Order (MOQ)'}
+                    </span>
+                    <span className="font-bold text-stone-800 text-sm mt-0.5 block">
+                      {moq} {language === 'hi' ? 'पीस' : 'Units'} (HSN: {hsnCode})
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Massive Green "Share to WhatsApp" Button & Quick Actions */}
+          <div className="lg:col-span-6 flex flex-col gap-5">
+            {/* ── MASSIVE GREEN SHARE TO WHATSAPP CARD ── */}
+            <div className="bg-white rounded-3xl p-6 sm:p-7 shadow-xl border-2 border-[#25D366]/40 flex flex-col gap-4 relative overflow-hidden">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-2xl bg-[#25D366]/15 flex items-center justify-center text-[#1e7e45]">
+                    <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                      chat
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-primary">
+                      {language === 'hi' ? 'सीधा व्हाट्सएप साझा केंद्र' : 'Direct WhatsApp Sharing Hub'}
+                    </h3>
+                    <p className="text-xs text-stone-500">
+                      {language === 'hi' ? 'स्थानीय ग्राहकों एवं थोक खरीदारों को भेजें' : 'Instant 1-tap sharing with customer groups'}
+                    </p>
+                  </div>
+                </div>
+                <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-100 text-emerald-800">
+                  {language === 'hi' ? 'तेज़ बिक्री' : 'Fastest Sales'}
+                </span>
+              </div>
+
+              {/* THE MASSIVE GREEN WHATSAPP BUTTON */}
+              <button
+                id="share-whatsapp-btn"
+                type="button"
+                onClick={shareWhatsApp}
+                className="w-full py-5 px-6 rounded-2xl sm:rounded-3xl bg-[#25D366] hover:bg-[#20ba59] active:bg-[#1caa50] text-white shadow-xl shadow-[#25D366]/25 hover:shadow-2xl hover:shadow-[#25D366]/40 flex items-center justify-between gap-4 transition-all transform active:scale-98 cursor-pointer group"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                    <svg className="w-7 h-7 fill-current" viewBox="0 0 24 24">
+                      <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z" />
+                    </svg>
+                  </div>
+                  <div className="flex flex-col text-left">
+                    <span className="text-lg sm:text-xl font-black text-white tracking-wide leading-tight">
+                      {language === 'hi' ? 'व्हाट्सएप पर शेयर करें' : 'Share to WhatsApp'}
+                    </span>
+                    <span className="text-xs sm:text-sm text-white/90 leading-tight mt-0.5">
+                      {language === 'hi'
+                        ? 'तस्वीर, खुदरा मूल्य व थोक विवरण स्वतः चैट में जुड़ेंगे'
+                        : 'Pre-fills product card, price, and bulk MOQ directly into chat'}
+                    </span>
+                  </div>
+                </div>
+
+                <span className="material-symbols-outlined text-[28px] text-white group-hover:translate-x-1.5 transition-transform">
+                  arrow_forward
+                </span>
+              </button>
+
+              {/* Direct Link Copy Row */}
+              <div className="p-3 rounded-2xl bg-[#f1ede7] border border-[#d1c4bd]/60 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 truncate">
+                  <span className="material-symbols-outlined text-secondary text-[20px]">link</span>
+                  <span className="text-xs text-stone-600 font-mono truncate">
+                    shilpsetu.in/product/{product.id || 'ss-8492'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={copyLink}
+                  className="px-3.5 py-1.5 bg-white hover:bg-stone-50 text-xs font-bold rounded-xl border border-[#d1c4bd]/80 text-primary shadow-xs cursor-pointer active:scale-95 transition-all shrink-0"
+                >
+                  {language === 'hi' ? 'कॉपी करें' : 'Copy Link'}
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Navigation Buttons */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => navigate('/catalog')}
+                className="py-3.5 px-4 rounded-2xl bg-white hover:bg-[#f7f3ed] border border-[#d1c4bd]/80 text-primary font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-all active:scale-95 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[20px] text-secondary">inventory_2</span>
+                <span>{language === 'hi' ? 'मेरी शिल्प सूची देखें' : 'View My Catalog'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => navigate('/capture')}
+                className="py-3.5 px-4 rounded-2xl bg-primary hover:bg-[#2e241e] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[20px]">add_a_photo</span>
+                <span>{language === 'hi' ? '+ नया शिल्प जोड़ें' : '+ Add Another Craft'}</span>
+              </button>
+            </div>
+
+            {/* ONDC & GeM Dual Sync Status Card */}
+            <div className="p-4 rounded-3xl bg-white border border-[#d1c4bd]/60 shadow-xs flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-stone-800 flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-emerald-700 text-[18px]">verified</span>
+                  <span>{language === 'hi' ? 'मंच एकीकरण स्थिति' : 'Platform Integration Status'}</span>
+                </span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                  {language === 'hi' ? 'सक्रिय' : 'Active'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="p-2.5 rounded-xl bg-[#f1ede7] border border-[#d1c4bd]/40">
+                  <span className="font-bold text-primary block">ONDC Network</span>
+                  <span className="text-[11px] text-stone-500">Paytm, Mystore, Pincode</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-[#f1ede7] border border-[#d1c4bd]/40">
+                  <span className="font-bold text-primary block">GeM 4.0 Portal</span>
+                  <span className="text-[11px] text-stone-500">Public MSE Quota Eligible</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }

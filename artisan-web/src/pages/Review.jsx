@@ -158,10 +158,19 @@ export default function Review() {
 
       if (error) throw error;
 
-      // 3. Show success toast and redirect to /catalog
-      navigate('/catalog', {
+      // 3. Navigate to celebratory /success screen with enhanced image and WhatsApp share details
+      navigate('/success', {
         state: {
-          toast: '🎉 Product published successfully to ONDC & GeM Network!',
+          ...payload,
+          title: payload.title || craftTitle,
+          titleHi: payload.title_hi || craftTitleHi,
+          price: payload.price || price,
+          wholesalePrice: payload.bulk_price || wholesalePrice,
+          moq: payload.moq || moq,
+          gemCategory: payload.gem_category || gemCategory,
+          category: payload.category || craftCategory,
+          imageUrl: finalImageUrl,
+          enhancedImageUrl: finalImageUrl,
         },
       });
     } catch (err) {
@@ -277,7 +286,7 @@ export default function Review() {
             >
               {isPublishing ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-[#180f0a] border-t-transparent rounded-full animate-spin" />
+                  <span className="material-symbols-outlined text-[16px] text-[#ffdeaa] animate-pulse">auto_awesome</span>
                   <span>{language === 'hi' ? 'प्रकाशित हो रहा है...' : 'Publishing...'}</span>
                 </>
               ) : (
@@ -924,7 +933,7 @@ export default function Review() {
                     >
                       {isPublishing ? (
                         <>
-                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <span className="material-symbols-outlined text-[18px] text-[#ffdeaa] animate-pulse">auto_awesome</span>
                           <span>Publishing to ONDC & GeM Network...</span>
                         </>
                       ) : (

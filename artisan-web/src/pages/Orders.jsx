@@ -18,6 +18,7 @@
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { CheckCircle2 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import POSlipModal from '../components/POSlipModal';
 import { useLanguage } from '../context/LanguageContext';
@@ -27,6 +28,12 @@ import {
   buildOrderAnnouncementText,
   unlockAudio,
 } from '../utils/audioAnnouncer';
+import {
+  notifyOrderAccepted,
+  notifyOrderPacked,
+  notifyOrderDispatched,
+  triggerHapticConfirmation,
+} from '../utils/fulfillmentNotifications';
 
 // ── Static demo data (shown while Supabase loads / when empty) ────────────────
 const STATIC_ORDERS = [
@@ -103,13 +110,23 @@ function getProductImage(order) {
   return DEFAULT_CRAFT_IMAGE;
 }
 
-// ── Utility: time formatting ──────────────────────────────────────────────────
+// ── Utility: time formatting ─────────────────────────────────────────────
 function formatTimeAgo(isoDate) {
-  if (!isoDate) return 'just now';
+  if (!isoDate) return 'Just now';
   const diff = Math.floor((Date.now() - new Date(isoDate).getTime()) / 1000);
-  if (diff < 60) return `${diff}s ago`;
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  return `${Math.floor(diff / 3600)}h ago`;
+  if (diff < 30) return 'Just now';
+  if (diff < 120) return '2 min ago';
+  if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
+  const date = new Date(isoDate);
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  const isYesterday = date.toDateString() === yesterday.toDateString();
+  const timeStr = date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+  if (isToday) return `Today, ${timeStr}`;
+  if (isYesterday) return `Yesterday, ${timeStr}`;
+  return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + `, ${timeStr}`;
 }
 
 // ── Utility: normalize any DB row to frontend model ───────────────────────────
@@ -327,7 +344,7 @@ function OrderCard({ order, onMarkPacked, onAcceptPO, onDispatchPO, setSelectedP
         </div>
       )}
 
-      {/* ── ACTION BUTTONS ───────────────────────────────────────────────────── */}
+      {/* ── ACTION BUTTONS ────────────────────────────────────────────────     */}
       <div className="flex flex-col gap-2 px-4 pb-4 pt-2 border-t border-gray-100">
 
         {/* Terminal states */}
@@ -348,7 +365,7 @@ function OrderCard({ order, onMarkPacked, onAcceptPO, onDispatchPO, setSelectedP
         {isShipped && !isDelivered && !isCancelled && (
           <div className="w-full min-h-[52px] rounded-2xl bg-sky-50 border border-sky-200 text-sky-800 text-sm font-bold flex items-center justify-center gap-2 py-2.5">
             <span className="material-symbols-outlined text-[22px]">local_shipping</span>
-            {language === 'hi' ? 'डिस्पैच हो गया (In Transit)' : 'Dispatched — In Transit'}
+            {language === 'hi' ? 'डिस्पैच हो गया' : 'Dispatched — In Transit'}
           </div>
         )}
 
@@ -358,10 +375,13 @@ function OrderCard({ order, onMarkPacked, onAcceptPO, onDispatchPO, setSelectedP
             type="button"
             aria-label={`Dispatch order ${order.order_id || order.id}`}
             className="w-full min-h-[56px] h-[56px] rounded-2xl bg-sky-600 hover:bg-sky-700 text-white text-sm font-black flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all cursor-pointer"
-            onClick={() => onDispatchPO(order.order_id || order.id)}
+            onClick={() => {
+              triggerHapticConfirmation([100, 50, 100]);
+              onDispatchPO(order.order_id || order.id);
+            }}
           >
             <span className="material-symbols-outlined text-[24px]">local_shipping</span>
-            {language === 'hi' ? 'कूरियर को दे दिया (Mark Shipped)' : 'Mark Shipped'}
+            {language === 'hi' ? 'कूरियर को दे दिया' : 'Mark Shipped'}
           </button>
         )}
 
@@ -372,12 +392,13 @@ function OrderCard({ order, onMarkPacked, onAcceptPO, onDispatchPO, setSelectedP
             aria-label={`Mark order as packed ${order.order_id || order.id}`}
             className="w-full min-h-[56px] h-[56px] rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-black flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all cursor-pointer"
             onClick={() => {
+              triggerHapticConfirmation([100, 50, 100]);
               unlockAudio();
               onMarkPacked(order.order_id || order.id);
             }}
           >
             <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>inventory_2</span>
-            {language === 'hi' ? 'सामान पैक हो गया (Mark as Packed)' : 'Mark as Packed'}
+            {language === 'hi' ? 'सामान पैक हो गया' : 'Mark as Packed'}
           </button>
         )}
 
@@ -388,17 +409,18 @@ function OrderCard({ order, onMarkPacked, onAcceptPO, onDispatchPO, setSelectedP
             aria-label={`Accept order ${order.order_id || order.id}`}
             className="w-full min-h-[56px] h-[56px] rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-black flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all cursor-pointer"
             onClick={() => {
+              triggerHapticConfirmation([100, 50, 100]);
               unlockAudio();
               onAcceptPO(order.order_id || order.id);
             }}
           >
             <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-            {language === 'hi' ? 'आर्डर स्वीकार करें (Accept Order)' : 'Accept Order'}
+            {language === 'hi' ? 'आर्डर स्वीकार करें' : 'Accept Order'}
           </button>
         )}
 
         {/* Secondary row */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-start">
           <button
             type="button"
             aria-label="View PO slip"
@@ -407,17 +429,6 @@ function OrderCard({ order, onMarkPacked, onAcceptPO, onDispatchPO, setSelectedP
           >
             <span className="material-symbols-outlined text-[18px]">receipt_long</span>
             {language === 'hi' ? 'पर्ची देखें' : 'View PO Slip'}
-          </button>
-
-          {/* Per-card voice button (alternative placement, text-only) */}
-          <button
-            type="button"
-            aria-label="Speak order details in Hindi"
-            className="min-h-[40px] px-3 rounded-full text-gray-500 hover:text-blue-700 font-bold text-xs flex items-center gap-1.5 hover:bg-blue-50 transition-colors cursor-pointer"
-            onClick={handleSpeak}
-          >
-            <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>record_voice_over</span>
-            {language === 'hi' ? 'सुनें' : 'Listen'}
           </button>
         </div>
       </div>
@@ -435,6 +446,7 @@ export default function Orders() {
   const [selectedPO, setSelectedPO] = useState(null);
   const [toastMsg, setToastMsg] = useState('');
   const [toastType, setToastType] = useState('info'); // 'info' | 'success' | 'new-order'
+  const [showDevSims, setShowDevSims] = useState(false); // hidden by default; Ctrl+Shift+O to reveal
   const channelRef = useRef(null);
   const toastTimerRef = useRef(null);
 
@@ -444,6 +456,18 @@ export default function Orders() {
     setToastMsg(msg);
     setToastType(type);
     toastTimerRef.current = setTimeout(() => setToastMsg(''), 5000);
+  }, []);
+
+  // ── Ctrl+Shift+O: Toggle hidden dev simulator buttons ───────────────────
+  useEffect(() => {
+    const handleKeyCombo = (e) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'O') {
+        e.preventDefault();
+        setShowDevSims((v) => !v);
+      }
+    };
+    window.addEventListener('keydown', handleKeyCombo);
+    return () => window.removeEventListener('keydown', handleKeyCombo);
   }, []);
 
   // ── 1. Initial Supabase load ────────────────────────────────────────────────
@@ -551,30 +575,20 @@ export default function Orders() {
   // ── 3. Accept PO ────────────────────────────────────────────────────────────
   const handleAcceptPO = useCallback(async (orderId) => {
     await updateOrderStatus(orderId, 'accepted');
-    showToast(`✅ आर्डर स्वीकार किया गया — #${String(orderId).slice(0, 16)}`, 'success');
+    notifyOrderAccepted(showToast);
   }, [updateOrderStatus, showToast]);
 
   // ── 4. Mark as Packed ───────────────────────────────────────────────────────
   const handleMarkPacked = useCallback(async (orderId) => {
     await updateOrderStatus(orderId, 'packed');
-    showToast(
-      language === 'hi'
-        ? `📦 सामान पैक हो गया! — #${String(orderId).slice(0, 16)}`
-        : `📦 Marked as Packed — #${String(orderId).slice(0, 16)}`,
-      'success'
-    );
-  }, [updateOrderStatus, showToast, language]);
+    notifyOrderPacked(showToast);
+  }, [updateOrderStatus, showToast]);
 
   // ── 5. Dispatch / Ship ──────────────────────────────────────────────────────
   const handleDispatchPO = useCallback(async (orderId) => {
     await updateOrderStatus(orderId, 'shipped');
-    showToast(
-      language === 'hi'
-        ? `🚚 कूरियर को दे दिया — #${String(orderId).slice(0, 16)}`
-        : `🚚 Dispatched — #${String(orderId).slice(0, 16)}`,
-      'success'
-    );
-  }, [updateOrderStatus, showToast, language]);
+    notifyOrderDispatched(showToast);
+  }, [updateOrderStatus, showToast]);
 
   // ── 6. Institutional Tender acceptance ─────────────────────────────────────
   const handleAcceptTender = useCallback((tender) => {
@@ -607,8 +621,8 @@ export default function Orders() {
 
     showToast(
       language === 'hi'
-        ? `🏆 सरकारी निविदा स्वीकृत! GeM PO #${generatedOrderId} — ₹${tender.total_budget_inr.toLocaleString('en-IN')}`
-        : `🏆 GeM Tender Awarded! PO #${generatedOrderId} — ₹${tender.total_budget_inr.toLocaleString('en-IN')}`,
+        ? 'सरकारी निविदा स्वीकृत कर ली गई है'
+        : 'Government Tender Accepted',
       'success'
     );
 
@@ -798,9 +812,9 @@ export default function Orders() {
             {/* Filter chips */}
             <div className="flex items-center gap-2 overflow-x-auto py-1 scrollbar-none">
               {[
-                { key: 'ALL', label: 'All / सभी' },
-                { key: 'GEM', label: 'GeM Orders / सरकारी' },
-                { key: 'ONDC', label: 'ONDC Orders / रिटेल' },
+                { key: 'ALL', label: language === 'hi' ? 'सभी आर्डर' : 'All Orders' },
+                { key: 'GEM', label: language === 'hi' ? 'सरकारी आर्डर (GeM)' : 'GeM Orders' },
+                { key: 'ONDC', label: language === 'hi' ? 'रिटेल आर्डर (ONDC)' : 'ONDC Orders' },
               ].map(({ key, label }) => (
                 <button
                   key={key}
@@ -817,27 +831,29 @@ export default function Orders() {
               ))}
             </div>
 
-            {/* Local simulators */}
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={simulateONDCOrder}
-                className="px-3 py-1.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800 hover:bg-indigo-200 border border-indigo-300 transition-all cursor-pointer flex items-center gap-1.5 active:scale-95"
-                title="Simulate incoming real-time ONDC order"
-              >
-                <span className="material-symbols-outlined text-[15px]">hub</span>
-                + Sim ONDC
-              </button>
-              <button
-                type="button"
-                onClick={simulateGeMOrder}
-                className="px-3 py-1.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-300 transition-all cursor-pointer flex items-center gap-1.5 active:scale-95"
-                title="Simulate incoming real-time GeM tender PO"
-              >
-                <span className="material-symbols-outlined text-[15px]">account_balance</span>
-                + Sim GeM
-              </button>
-            </div>
+            {/* Local simulators — hidden by default. Ctrl+Shift+O to reveal. */}
+            {showDevSims && (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={simulateONDCOrder}
+                  className="px-3 py-1.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800 hover:bg-indigo-200 border border-indigo-300 transition-all cursor-pointer flex items-center gap-1.5 active:scale-95"
+                  title="Simulate incoming real-time ONDC order"
+                >
+                  <span className="material-symbols-outlined text-[15px]">hub</span>
+                  + Sim ONDC
+                </button>
+                <button
+                  type="button"
+                  onClick={simulateGeMOrder}
+                  className="px-3 py-1.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-300 transition-all cursor-pointer flex items-center gap-1.5 active:scale-95"
+                  title="Simulate incoming real-time GeM tender PO"
+                >
+                  <span className="material-symbols-outlined text-[15px]">account_balance</span>
+                  + Sim GeM
+                </button>
+              </div>
+            )}
           </div>
 
           {/* ── ACTIVE INSTITUTIONAL TENDERS ────────────────────────────── */}
@@ -850,7 +866,7 @@ export default function Orders() {
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-base sm:text-lg font-bold text-stone-900">
-                      {language === 'hi' ? '🏛️ सक्रिय सरकारी खरीद निविदाएं (GeM B2B Tenders)' : '🏛️ Active Government Procurement Tenders (GeM)'}
+                      {language === 'hi' ? '🏛️ सक्रिय सरकारी खरीद निविदाएं' : '🏛️ Active Government Procurement Tenders (GeM)'}
                     </h3>
                     <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-900 text-[10px] font-bold">
                       {ACTIVE_INSTITUTIONAL_TENDERS.length} {language === 'hi' ? 'सक्रिय' : 'Live'}
@@ -989,18 +1005,24 @@ export default function Orders() {
       {/* ── Live Toast Notification ───────────────────────────────────────────── */}
       {toastMsg && (
         <div
-          className={`fixed top-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-sm font-bold shadow-2xl flex items-center gap-2.5 transition-all max-w-xs sm:max-w-sm text-center animate-in fade-in slide-in-from-top-2 ${
-            toastType === 'new-order'
-              ? 'bg-emerald-600 text-white border-2 border-emerald-400'
-              : toastType === 'success'
-              ? 'bg-blue-700 text-white border-2 border-blue-500'
-              : 'bg-gray-900 text-white'
+          role="status"
+          aria-live="polite"
+          className={`fixed top-6 left-1/2 -translate-x-1/2 z-50 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3.5 transition-all max-w-md w-[92%] sm:w-auto text-left animate-in fade-in slide-in-from-top-3 ${
+            toastType === 'success'
+              ? 'bg-green-600 border-2 border-green-400 text-white text-base sm:text-lg font-bold shadow-green-900/30'
+              : toastType === 'new-order'
+              ? 'bg-emerald-600 text-white border-2 border-emerald-400 font-bold text-sm sm:text-base'
+              : 'bg-gray-900 text-white font-bold text-sm'
           }`}
         >
-          <span className="material-symbols-outlined text-[20px] shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>
-            {toastType === 'new-order' ? 'notification_important' : toastType === 'success' ? 'check_circle' : 'bolt'}
-          </span>
-          <span>{toastMsg}</span>
+          {toastType === 'success' ? (
+            <CheckCircle2 className="w-8 h-8 sm:w-9 sm:h-9 text-white shrink-0 stroke-[2.5]" />
+          ) : (
+            <span className="material-symbols-outlined text-[24px] shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>
+              {toastType === 'new-order' ? 'notification_important' : 'bolt'}
+            </span>
+          )}
+          <span className="leading-snug">{toastMsg}</span>
         </div>
       )}
     </div>

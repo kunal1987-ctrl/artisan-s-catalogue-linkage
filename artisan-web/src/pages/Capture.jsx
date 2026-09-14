@@ -81,6 +81,24 @@ const CRAFT_SUGGESTION_CHIPS = [
   },
 ];
 
+/**
+ * Uses browser SpeechSynthesis to read a Hindi error message aloud.
+ * Triggered when Groq Whisper returns 500 or audio transcription fails.
+ */
+const speakHindi = (text = 'माफ करें, आवाज़ साफ नहीं आई। कृपया दोबारा बोलें।') => {
+  try {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utt = new SpeechSynthesisUtterance(text);
+    utt.lang = 'hi-IN';
+    utt.rate = 0.92;
+    utt.pitch = 1.05;
+    window.speechSynthesis.speak(utt);
+  } catch (e) {
+    console.warn('[speakHindi] SpeechSynthesis unavailable:', e);
+  }
+};
+
 export default function Capture() {
   const navigate = useNavigate();
   const { user, artisanProfile, openAuthModal, showToast, language, toggleNotifications, unreadCount } = useAuth();
@@ -120,6 +138,7 @@ export default function Capture() {
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [micUnavailable, setMicUnavailable] = useState(false);
   const [customTranscript, setCustomTranscript] = useState('');
+  const [showAdvancedText, setShowAdvancedText] = useState(false);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const timerRef = useRef(null);
@@ -500,7 +519,15 @@ export default function Capture() {
         if (!error && data && !data.error) {
           listingData = data;
         } else {
+          const errDetail = error?.message || data?.error || '';
+          const isAudioError = errDetail.toLowerCase().includes('whisper') ||
+            errDetail.includes('500') ||
+            errDetail.toLowerCase().includes('transcrib') ||
+            errDetail.toLowerCase().includes('audio');
           console.warn('Edge Function returned non-2xx or error payload:', error || data?.error);
+          if (isAudioError) {
+            speakHindi('माफ करें, आवाज़ साफ नहीं आई। कृपया दोबारा बोलें।');
+          }
           if (showToast) {
             showToast(
               language === 'hi'
@@ -569,9 +596,19 @@ export default function Capture() {
     } catch (fatalErr) {
       console.error('Fatal generation error:', fatalErr);
       const errMsg = fatalErr?.message || 'Processing failed. Please try again.';
-      setErrorMsg(errMsg);
-      if (showToast) {
-        showToast(`❌ ${errMsg}`);
+      const isAudioError = errMsg.toLowerCase().includes('whisper') ||
+        errMsg.includes('500') ||
+        errMsg.toLowerCase().includes('transcrib') ||
+        errMsg.toLowerCase().includes('audio');
+      if (isAudioError) {
+        speakHindi('माफ करें, आवाज़ साफ नहीं आई। कृपया दोबारा बोलें।');
+        // Do not display red error text for voice issues — audio prompt instructs artisan
+        setErrorMsg('');
+      } else {
+        setErrorMsg(errMsg);
+        if (showToast) {
+          showToast(`❌ ${errMsg}`);
+        }
       }
       setAiStatus('error');
     }
@@ -649,22 +686,45 @@ export default function Capture() {
                   <img
                     src={displayImage}
                     alt="Craft capture"
-                    className={`w-full h-full object-contain p-3 sm:p-5 transition-all duration-500 ${
-                      isOptimizing ? 'blur-[3px] scale-[0.98] opacity-85' : 'blur-none scale-100 opacity-100'
+                    className={`w-full h-full object-contain p-3 sm:p-5 transition-all duration-700 ${
+                      (isOptimizing || isProcessing) ? 'blur-md scale-[0.97] opacity-80' : 'blur-none scale-100 opacity-100'
                     }`}
                   />
                   {/* Viewfinder reticle with subtle edge-scan pulse animation */}
-                  <div className="absolute inset-3 sm:inset-5 rounded-2xl border-2 border-[#ff9062]/80 shadow-[0_0_20px_rgba(255,144,98,0.4)] animate-pulse pointer-events-none z-10">
-                    <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none" viewBox="0 0 100 100">
-                      <path d="M 0 14 L 0 0 L 14 0" fill="none" stroke="#ff9062" strokeLinecap="round" strokeWidth="3" />
-                      <path d="M 86 0 L 100 0 L 100 14" fill="none" stroke="#ff9062" strokeLinecap="round" strokeWidth="3" />
-                      <path d="M 0 86 L 0 100 L 14 100" fill="none" stroke="#ff9062" strokeLinecap="round" strokeWidth="3" />
-                      <path d="M 86 100 L 100 100 L 100 86" fill="none" stroke="#ff9062" strokeLinecap="round" strokeWidth="3" />
-                    </svg>
-                  </div>
-                  {/* AI Scanning laser line across craft edges */}
-                  {isOptimizing && (
-                    <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#ff9062] to-transparent shadow-[0_0_15px_#ff9062] animate-scan pointer-events-none z-20" />
+                  {!isOptimizing && !isProcessing && (
+                    <div className="absolute inset-3 sm:inset-5 rounded-2xl border-2 border-[#ff9062]/80 shadow-[0_0_20px_rgba(255,144,98,0.4)] animate-pulse pointer-events-none z-10">
+                      <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none" viewBox="0 0 100 100">
+                        <path d="M 0 14 L 0 0 L 14 0" fill="none" stroke="#ff9062" strokeLinecap="round" strokeWidth="3" />
+                        <path d="M 86 0 L 100 0 L 100 14" fill="none" stroke="#ff9062" strokeLinecap="round" strokeWidth="3" />
+                        <path d="M 0 86 L 0 100 L 14 100" fill="none" stroke="#ff9062" strokeLinecap="round" strokeWidth="3" />
+                        <path d="M 86 100 L 100 100 L 100 86" fill="none" stroke="#ff9062" strokeLinecap="round" strokeWidth="3" />
+                      </svg>
+                    </div>
+                  )}
+                  {/* "AI is enhancing your image..." overlay — replaces all standard spinners */}
+                  {(isOptimizing || isProcessing) && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center z-20 pointer-events-none bg-black/40 backdrop-blur-xs">
+                      <div className="bg-[#191312]/90 backdrop-blur-md px-6 py-4 rounded-3xl border border-[#ff9062]/50 flex flex-col items-center gap-2.5 shadow-2xl">
+                        <div className="flex items-center gap-2.5">
+                          <span className="material-symbols-outlined text-[24px] text-[#ff9062] animate-pulse">auto_awesome</span>
+                          <span className="text-sm font-bold text-[#ffdeaa] tracking-wide">
+                            {language === 'hi' ? 'एआई आपकी छवि को बेहतर बना रहा है...' : 'AI is enhancing your image...'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          {[0, 1, 2, 3, 4].map((i) => (
+                            <div
+                              key={i}
+                              className="w-1.5 rounded-full bg-[#ff9062]"
+                              style={{
+                                height: `${8 + (i % 3) * 6}px`,
+                                animation: `pulse 0.8s ease-in-out ${i * 0.15}s infinite alternate`,
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                   )}
                 </div>
               ) : (
@@ -720,21 +780,13 @@ export default function Capture() {
               {/* Center Overlay Badges */}
               {displayImage && (
                 <div className="relative z-20 my-auto flex flex-col items-center pointer-events-none">
-                  {isOptimizing && (
-                    <div className="bg-[#191312]/85 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-[#ff9062]/50 flex items-center gap-2.5 shadow-2xl animate-pulse">
-                      <div className="w-5 h-5 border-2 border-[#ff9062] border-t-transparent rounded-full animate-spin" />
-                      <span className="text-xs font-bold text-[#ffdeaa]">
-                        {language === 'hi' ? 'एआई जीवनशैली दृश्य तैयार किया जा रहा है...' : 'Generating Lifestyle Scene...'}
-                      </span>
-                    </div>
-                  )}
-                  {!isOptimizing && bgRemovalStatus === 'done' && (
+                  {!isOptimizing && !isProcessing && bgRemovalStatus === 'done' && (
                     <div className="bg-emerald-950/90 text-emerald-300 px-4 py-1.5 rounded-full border border-emerald-500/40 text-xs font-bold shadow-lg flex items-center gap-2 backdrop-blur-md">
                       <span className="material-symbols-outlined text-[16px] text-emerald-400">check_circle</span>
                       <span>{language === 'hi' ? 'लाइफस्टाइल बैकग्राउंड तैयार' : 'Lifestyle Scene Ready'}</span>
                     </div>
                   )}
-                  {!isOptimizing && bgRemovalStatus === 'error' && (
+                  {!isOptimizing && !isProcessing && bgRemovalStatus === 'error' && (
                     <div className="bg-stone-900/90 text-stone-300 px-4 py-1.5 rounded-full border border-stone-600/40 text-xs font-medium shadow-lg flex items-center gap-2 backdrop-blur-md">
                       <span className="material-symbols-outlined text-[16px] text-amber-400">check</span>
                       <span>{language === 'hi' ? 'मूल तस्वीर सुरक्षित' : 'Original Photo Preserved'}</span>
@@ -827,24 +879,33 @@ export default function Capture() {
                   </button>
                 </div>
 
-                {/* Animated Waveform indicator with dynamic audio level feedback */}
-                <div className="w-full h-10 px-2 flex items-center justify-center gap-1.5 my-4 overflow-hidden">
-                  {[4, 8, 12, 16, 9, 14, 18, 10, 6, 3, 7, 12, 5].map((h, i) => {
-                    const dynamicHeight = isRecording
-                      ? Math.max(6, Math.min(36, (audioLevel / 100) * 32 + ((i * 5) % 12) + 6))
-                      : Math.max(4, h * 0.5);
-                    return (
-                      <div
-                        key={i}
-                        className={`w-1.5 rounded-full transition-all duration-150 ${
-                          isRecording ? 'animate-pulse' : ''
-                        } ${i % 3 === 0 ? 'bg-[#ff9062]/40' : i % 3 === 1 ? 'bg-[#ff9062]' : 'bg-white'}`}
-                        style={{
-                          height: `${dynamicHeight}px`,
-                        }}
-                      />
-                    );
-                  })}
+                {/* Audio Visualizer: CSS-animated waveform activates ONLY when recording */}
+                <div className="w-full h-12 flex items-center justify-center my-3 overflow-hidden">
+                  {isRecording ? (
+                    <div className="flex items-center justify-center gap-1.5 px-4 animate-in fade-in duration-200">
+                      {[12, 20, 32, 16, 26, 40, 34, 22, 38, 18, 28, 32, 14].map((baseH, i) => {
+                        const dynamicHeight = Math.max(
+                          8,
+                          Math.min(46, (audioLevel / 100) * 40 + ((i * 7) % 20) + 8)
+                        );
+                        return (
+                          <div
+                            key={i}
+                            className="w-1.5 rounded-full bg-gradient-to-t from-[#ff6b35] via-[#ff9062] to-[#ffdeaa] transition-all duration-75"
+                            style={{
+                              height: `${dynamicHeight}px`,
+                              animation: `pulse 0.5s ease-in-out ${i * 0.05}s infinite alternate`,
+                            }}
+                          />
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[11px] text-white/50">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500/80" />
+                      <span>{language === 'hi' ? 'माइक तैयार • बोलने हेतु दबाएं' : 'Mic ready • tap to speak'}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Clean, Mobile-Friendly Recording Helper Text Block */}
@@ -856,12 +917,13 @@ export default function Capture() {
                   )}
                 </div>
 
-                {/* Microphone Button with visual feedback */}
-                <div className="relative my-2 flex items-center justify-center">
+                {/* Microphone Button with visual feedback and pulsing ripple effect */}
+                <div className="relative my-3 flex items-center justify-center">
                   {isRecording && (
                     <>
-                      <div className="absolute w-28 h-28 rounded-full bg-red-600/20 animate-ping duration-1000" />
-                      <div className="absolute w-24 h-24 rounded-full bg-red-600/30 animate-pulse" />
+                      <div className="absolute w-36 h-36 rounded-full bg-red-500/20 animate-ping duration-1000" />
+                      <div className="absolute w-28 h-28 rounded-full bg-red-500/30 animate-pulse" />
+                      <div className="absolute w-24 h-24 rounded-full border-2 border-red-400/80 animate-ping" />
                     </>
                   )}
                   <button
@@ -933,8 +995,8 @@ export default function Capture() {
                 <div className="mt-5 pt-4 border-t border-white/10 flex flex-col gap-2.5">
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-bold text-[#ffdeaa] flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[15px]">edit_note</span>
-                      <span>{language === 'hi' ? 'त्वरित शिल्प विवरण चुनें या टाइप करें' : 'Quick Craft Presets or Type Note'}</span>
+                      <span className="material-symbols-outlined text-[15px]">auto_awesome</span>
+                      <span>{language === 'hi' ? 'त्वरित शिल्प विवरण चुनें' : 'Quick Craft Presets'}</span>
                     </span>
                     {micUnavailable && (
                       <span className="text-[10px] text-amber-300 font-semibold bg-amber-950/60 px-2 py-0.5 rounded-md border border-amber-500/30">
@@ -971,18 +1033,43 @@ export default function Capture() {
                     })}
                   </div>
 
-                  {/* Custom Description Text Input */}
-                  <textarea
-                    rows={2}
-                    value={customTranscript}
-                    onChange={(e) => setCustomTranscript(e.target.value)}
-                    placeholder={
-                      language === 'hi'
-                        ? 'या शिल्प का विवरण यहाँ लिखें (सामग्री, आकार, निर्माण का समय)...'
-                        : 'Or type custom craft details (materials, dimensions, labor hours)...'
-                    }
-                    className="w-full mt-1 bg-[#2e241e] border border-white/15 rounded-xl p-2.5 text-xs text-white placeholder-white/40 focus:outline-none focus:border-[#ff9062] transition-colors resize-none"
-                  />
+                  {/* Advanced: Type manually toggle (hidden by default) */}
+                  <button
+                    type="button"
+                    onClick={() => setShowAdvancedText((v) => !v)}
+                    disabled={isLoading}
+                    className={`self-start inline-flex items-center gap-1 text-[11px] font-semibold rounded-full px-3 py-1 border transition-all cursor-pointer ${
+                      isLoading
+                        ? 'opacity-40 cursor-not-allowed border-white/10 text-white/30'
+                        : showAdvancedText
+                        ? 'bg-[#ff9062]/20 border-[#ff9062]/50 text-[#ff9062]'
+                        : 'bg-transparent border-white/20 text-white/60 hover:text-white hover:border-white/40'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[14px]">
+                      {showAdvancedText ? 'expand_less' : 'edit_note'}
+                    </span>
+                    <span>
+                      {showAdvancedText
+                        ? (language === 'hi' ? 'पाठ क्षेत्र बंद करें' : 'Hide text input')
+                        : (language === 'hi' ? 'मैन्युअल रूप से टाइप करें (Advanced)' : 'Type manually (Advanced)')}
+                    </span>
+                  </button>
+
+                  {/* Custom Description Text Input — hidden until toggle */}
+                  {showAdvancedText && (
+                    <textarea
+                      rows={2}
+                      value={customTranscript}
+                      onChange={(e) => setCustomTranscript(e.target.value)}
+                      placeholder={
+                        language === 'hi'
+                          ? 'शिल्प का विवरण यहाँ लिखें (सामग्री, आकार, निर्माण का समय)...'
+                          : 'Type craft details (materials, dimensions, labor hours)...'
+                      }
+                      className="w-full mt-1 bg-[#2e241e] border border-white/15 rounded-xl p-2.5 text-xs text-white placeholder-white/40 focus:outline-none focus:border-[#ff9062] transition-colors resize-none animate-in fade-in duration-200"
+                    />
+                  )}
                 </div>
               </div>
 
@@ -996,11 +1083,11 @@ export default function Capture() {
                   </div>
                 )}
 
-                {/* AI Progress Indicator */}
+                {/* AI Progress Indicator (without standard loading spinner) */}
                 {isProcessing && (
-                  <div className="p-3.5 rounded-xl bg-[#2e241e] border border-[#ff9062]/40 flex items-center gap-3">
-                    <div className="w-5 h-5 border-2 border-[#ff9062] border-t-transparent rounded-full animate-spin" />
-                    <span className="text-xs font-semibold text-[#ff9062] animate-pulse">{aiStatusText}</span>
+                  <div className="p-3.5 rounded-xl bg-[#2e241e] border border-[#ff9062]/40 flex items-center gap-3 shadow-lg">
+                    <span className="material-symbols-outlined text-[20px] text-[#ff9062] animate-pulse">auto_awesome</span>
+                    <span className="text-xs font-semibold text-[#ffdeaa] tracking-wide">{aiStatusText}</span>
                   </div>
                 )}
 

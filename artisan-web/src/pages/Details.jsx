@@ -190,7 +190,7 @@ export default function Details() {
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <div className="w-10 h-10 border-3 border-primary border-t-transparent rounded-full animate-spin"></div>
+            <span className="material-symbols-outlined text-[36px] text-secondary animate-pulse">auto_awesome</span>
             <p className="text-sm font-semibold text-secondary">
               {language === 'hi' ? 'शिल्प विवरण लोड हो रहा है...' : 'Loading craft details...'}
             </p>

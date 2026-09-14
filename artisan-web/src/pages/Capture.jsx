@@ -108,8 +108,8 @@ export default function Capture() {
   const cameraRef = useRef(null);
   const galleryRef = useRef(null);
 
-  // ── Image State ──
-  const [_selectedFile, setSelectedFile] = useState(null);
+  // ── Multi-Modal Input State (Image & Description Dependencies) ──
+  const [imageFile, setImageFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [processedPreview, setProcessedPreview] = useState(null);
   const [imageBase64, setImageBase64] = useState(null);
@@ -137,6 +137,7 @@ export default function Capture() {
   const [_audioBlob, setAudioBlob] = useState(null);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [micUnavailable, setMicUnavailable] = useState(false);
+  const [audioTranscript, setAudioTranscript] = useState('');
   const [customTranscript, setCustomTranscript] = useState('');
   const [showAdvancedText, setShowAdvancedText] = useState(false);
   const mediaRecorderRef = useRef(null);
@@ -155,6 +156,12 @@ export default function Capture() {
   const [aiStatusText, setAiStatusText] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
+  // ── Multi-Modal State Dependency Flags ──
+  const hasImage = Boolean(imageFile || imageBase64 || imageUrl || processedPreview || previewUrl);
+  const textDescription = (audioTranscript || customTranscript || '').trim();
+  const hasDescription = Boolean(textDescription.length > 0 || Boolean(audioBase64) || Boolean(_audioBlob));
+  const isReadyToProcess = Boolean(hasImage && hasDescription);
+
   // ════════════════════════════════════════════
   // IMAGE SELECTION & OPTIMISTIC AI PIPELINE
   // ════════════════════════════════════════════
@@ -165,7 +172,7 @@ export default function Capture() {
 
     // Reset input value so re-capturing the same or new file always triggers onChange
     e.target.value = '';
-    setSelectedFile(file);
+    setImageFile(file);
 
     // 1. Revoke previous preview URLs
     if (previewUrlRef.current) {
@@ -318,7 +325,7 @@ export default function Capture() {
     previewUrlRef.current = null;
     processedPreviewRef.current = null;
 
-    setSelectedFile(null);
+    setImageFile(null);
     setPreviewUrl(null);
     setProcessedPreview(null);
     setImageBase64(null);
@@ -452,17 +459,6 @@ export default function Capture() {
     }
   }, [isRecording, startRecording, stopRecording]);
 
-  const handleUseSampleSpeech = useCallback(() => {
-    const sampleText = language === 'hi'
-      ? 'हाथ से बना हुआ शुद्ध बनारसी रेशम साड़ी, शुद्ध ज़री बॉर्डर, 4 दिन की हस्तनिर्मित बुनाई। उचित मूल्य ₹1,200।'
-      : 'Handwoven pure Banarasi silk saree with authentic golden zari border work, taking 4 days on wooden handloom. Fair price ₹1,200.';
-    setCustomTranscript(sampleText);
-    setAudioBase64('UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
-    setRecordingDuration(4);
-    if (showToast) {
-      showToast(language === 'hi' ? '🎙️ नमूना शिल्प आवाज़ विवरण सेट किया गया!' : '🎙️ Sample craft speech loaded!');
-    }
-  }, [language, showToast]);
 
   const formatDuration = (secs) => {
     const m = Math.floor(secs / 60).toString().padStart(2, '0');
@@ -475,13 +471,51 @@ export default function Capture() {
   // ════════════════════════════════════════════
 
   const handleGenerateListing = useCallback(async () => {
+    const hasImg = Boolean(imageFile || imageBase64 || imageUrl || processedPreview || previewUrl);
+    const activeText = (audioTranscript || customTranscript || '').trim();
+    const hasDesc = Boolean(activeText.length > 0 || Boolean(audioBase64) || Boolean(_audioBlob));
+
+    // ── Strict Sequential Validation (Image & Description Dependency) ──
+    // Scenario A: Voice/Text only, No Image
+    if (!hasImg && hasDesc) {
+      const msg = language === 'hi'
+        ? 'कृपया पहले उत्पाद की फ़ोटो लें या अपलोड करें ताकि एआई शिल्प की गुणवत्ता और सामग्री का मूल्यांकन कर सके। (Please capture or upload a product image first so the AI can evaluate its craft quality and material.)'
+        : 'Please capture or upload a product image first so the AI can evaluate its craft quality and material.';
+      setErrorMsg(msg);
+      if (showToast) showToast(msg);
+      return;
+    }
+
+    // Scenario B: Image only, No Description/Voice
+    if (hasImg && !hasDesc) {
+      const msg = language === 'hi'
+        ? 'कृपया अपने शिल्प का विवरण दें या एक वॉयस नोट रिकॉर्ड करें (सामग्री या अपेक्षित मूल्य बताएं) ताकि एआई सटीक मूल्य की गणना कर सके। (Please describe your craft or record a voice note (mentioning materials or expected price) so the AI can calculate accurate pricing.)'
+        : 'Please describe your craft or record a voice note (mentioning materials or expected price) so the AI can calculate accurate pricing.';
+      setErrorMsg(msg);
+      if (showToast) showToast(msg);
+      return;
+    }
+
+    // Neither input provided
+    if (!hasImg && !hasDesc) {
+      const msg = language === 'hi'
+        ? 'कृपया पहले उत्पाद की फ़ोटो लें या अपलोड करें ताकि एआई शिल्प की गुणवत्ता और सामग्री का मूल्यांकन कर सके। (Please capture or upload a product image first so the AI can evaluate its craft quality and material.)'
+        : 'Please capture or upload a product image first so the AI can evaluate its craft quality and material.';
+      setErrorMsg(msg);
+      if (showToast) showToast(msg);
+      return;
+    }
+
     let targetImageBase64 = imageBase64;
     let targetImageUrl = imageUrl || processedPreview || previewUrl;
 
-    // If no custom photo captured yet, use the featured Varanasi Silk sample so the demo remains 100% resilient
-    if (!targetImageBase64) {
-      targetImageBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
-      targetImageUrl = targetImageUrl || 'https://lh3.googleusercontent.com/aida-public/AB6AXuBV3-xCzN9TdTuHufN2Eugbk_EZBDJA_VggGkHJFBe14GOnP9jvtR6Ee9vNq-Aw1XP7TDBVxytmQRP9igWfX9KFvxyeutdk5zYrrX_dgvibmIohF6cCEOqXwbxZiarLCs_p9eDtD_QU3cljge8SkKKNWcep6mY5_T-xCnBJj2niY32GH3Pk3XlykQMu8lqIg701PTDGB7sn-cna7dpzkjeV1gVX7Ke_l5Q6i0XTqcNXl1n8Gjv10NB9';
+    if (!targetImageBase64 && imageFile) {
+      try {
+        targetImageBase64 = await blobToBase64(imageFile);
+        setImageBase64(targetImageBase64);
+      } catch (err) {
+        console.warn('[handleGenerateListing] Base64 encoding fallback:', err);
+      }
     }
 
     setAiStatus('transcribing');
@@ -510,7 +544,7 @@ export default function Capture() {
           body: {
             audioBase64: audioBase64 || null,
             imageBase64: targetImageBase64,
-            customTranscript: customTranscript || null,
+            customTranscript: activeText || null,
             language: transcriptionLang,
           },
           headers: activeToken ? { Authorization: `Bearer ${activeToken}` } : {},
@@ -550,21 +584,22 @@ export default function Capture() {
       // Safe local fallback if remote Edge Function is unreachable
       if (!listingData) {
         console.info('Using resilient local AI craft profile fallback');
+        const resolvedText = activeText;
         listingData = {
-          title: customTranscript?.includes('सिल्क') || customTranscript?.includes('साड़ी')
+          title: resolvedText?.includes('सिल्क') || resolvedText?.includes('साड़ी')
             ? "Varanasi Handwoven Heritage Silk Saree"
-            : customTranscript?.includes('दीया')
+            : resolvedText?.includes('दीया')
             ? "Handcrafted Brass Hanging Temple Diya"
             : "Handcrafted Terracotta Decorative Pot",
-          title_hi: customTranscript?.includes('सिल्क') || customTranscript?.includes('साड़ी')
+          title_hi: resolvedText?.includes('सिल्क') || resolvedText?.includes('साड़ी')
             ? "वाराणसी हस्तनिर्मित बनारसी रेशम साड़ी"
-            : customTranscript?.includes('दीया')
+            : resolvedText?.includes('दीया')
             ? "हस्तनिर्मित पीतल मंदिर दीया"
             : "हस्तनिर्मित टेराकोटा सजावटी बर्तन",
-          description: customTranscript
-            ? `${customTranscript}. Exquisitely handcrafted using traditional heritage techniques.`
+          description: resolvedText
+            ? `${resolvedText}. Exquisitely handcrafted using traditional heritage techniques.`
             : "Exquisitely hand-thrown and kiln-fired natural clay pot with traditional motifs.",
-          description_hi: customTranscript || "स्थानीय मिट्टी से हाथ से बनाया गया सुंदर टेराकोटा बर्तन।",
+          description_hi: resolvedText || "स्थानीय मिट्टी से हाथ से बनाया गया सुंदर टेराकोटा बर्तन।",
           artisan_expected_price: 380,
           price: 450,
           bulk_price: 280,
@@ -612,7 +647,21 @@ export default function Capture() {
       }
       setAiStatus('error');
     }
-  }, [audioBase64, imageBase64, imageUrl, processedPreview, previewUrl, customTranscript, transcriptionLang, language, navigate, showToast]);
+  }, [
+    imageFile,
+    imageBase64,
+    imageUrl,
+    processedPreview,
+    previewUrl,
+    audioBase64,
+    _audioBlob,
+    audioTranscript,
+    customTranscript,
+    transcriptionLang,
+    language,
+    navigate,
+    showToast,
+  ]);
 
   const displayImage = processedPreview || previewUrl;
   const isProcessing = aiStatus === 'transcribing' || aiStatus === 'analyzing';
@@ -967,29 +1016,6 @@ export default function Capture() {
                   </p>
                 </div>
 
-                {/* Instant "Use Sample Craft Speech" fallback button */}
-                <div className="flex justify-center mt-3">
-                  <button
-                    id="sample-speech-btn"
-                    type="button"
-                    disabled={isLoading}
-                    onClick={() => {
-                      if (!isLoading) handleUseSampleSpeech();
-                    }}
-                    className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full border text-xs font-bold transition-all shadow-xs ${
-                      isLoading
-                        ? 'bg-[#ff9062]/5 text-[#ff9062]/30 border-[#ff9062]/20 cursor-not-allowed'
-                        : 'bg-[#ff9062]/15 hover:bg-[#ff9062]/25 text-[#ff9062] border-[#ff9062]/40 cursor-pointer active:scale-95'
-                    }`}
-                  >
-                    <span className="material-symbols-outlined text-[16px]">record_voice_over</span>
-                    <span>
-                      {language === 'hi'
-                        ? '🎙️ नमूना शिल्प आवाज़ का उपयोग करें'
-                        : '🎙️ Use Sample Craft Speech'}
-                    </span>
-                  </button>
-                </div>
 
                 {/* ── Fallback Text & 1-Tap Craft Chips ── */}
                 <div className="mt-5 pt-4 border-t border-white/10 flex flex-col gap-2.5">
@@ -1010,13 +1036,17 @@ export default function Capture() {
                     {CRAFT_SUGGESTION_CHIPS.map((chip, idx) => {
                       const chipLabel = language === 'hi' ? chip.label_hi : chip.label_en;
                       const chipText = language === 'hi' ? chip.text_hi : chip.text_en;
-                      const isSelected = customTranscript === chip.text_hi || customTranscript === chip.text_en;
+                      const isSelected = (audioTranscript || customTranscript) === chip.text_hi || (audioTranscript || customTranscript) === chip.text_en;
                       return (
                         <button
                           key={idx}
                           disabled={isLoading}
                           onClick={() => {
-                            if (!isLoading) setCustomTranscript(chipText);
+                            if (!isLoading) {
+                              setCustomTranscript(chipText);
+                              setAudioTranscript(chipText);
+                              setErrorMsg('');
+                            }
                           }}
                           className={`text-[11px] px-2.5 py-1 rounded-lg border transition-all text-left ${
                             isLoading
@@ -1060,8 +1090,13 @@ export default function Capture() {
                   {showAdvancedText && (
                     <textarea
                       rows={2}
-                      value={customTranscript}
-                      onChange={(e) => setCustomTranscript(e.target.value)}
+                      value={audioTranscript || customTranscript}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setCustomTranscript(val);
+                        setAudioTranscript(val);
+                        setErrorMsg('');
+                      }}
                       placeholder={
                         language === 'hi'
                           ? 'शिल्प का विवरण यहाँ लिखें (सामग्री, आकार, निर्माण का समय)...'
@@ -1092,29 +1127,50 @@ export default function Capture() {
                 )}
 
                 {/* Primary Button */}
-                <button
-                  id="process-ai-btn"
-                  aria-label="Process with AI"
-                  disabled={isLoading}
+                <div
                   onClick={() => {
-                    if (!isLoading) handleGenerateListing();
+                    if (!isReadyToProcess && !isLoading) {
+                      handleGenerateListing();
+                    }
                   }}
-                  className={`w-full h-14 rounded-2xl font-bold text-base tracking-wide flex items-center justify-center gap-2 shadow-xl transition-all ${
-                    isLoading
-                      ? 'bg-[#ff9062]/50 text-[#180f0a]/50 cursor-not-allowed'
-                      : 'bg-[#ff9062] hover:bg-[#ff804a] text-[#180f0a] cursor-pointer active:scale-95'
-                  }`}
-                  type="button"
+                  className="w-full"
                 >
-                  <span>
-                    {isProcessing
-                      ? (language === 'hi' ? 'कैटलॉग बन रहा है...' : 'Generating Listing...')
-                      : (language === 'hi' ? 'एआई कैटलॉग बनाएं' : 'Process with AI')}
-                  </span>
-                  <span className="material-symbols-outlined text-[22px]">
-                    {isLoading ? 'hourglass_top' : 'auto_awesome'}
-                  </span>
-                </button>
+                  <button
+                    id="process-ai-btn"
+                    aria-label="Process with AI"
+                    disabled={isLoading || !isReadyToProcess}
+                    onClick={() => {
+                      if (!isLoading) handleGenerateListing();
+                    }}
+                    className={`w-full h-14 rounded-2xl font-bold text-base tracking-wide flex items-center justify-center gap-2 shadow-xl transition-all ${
+                      isLoading || !isReadyToProcess
+                        ? 'bg-[#ff9062]/40 text-[#180f0a]/50 cursor-not-allowed pointer-events-none'
+                        : 'bg-[#ff9062] hover:bg-[#ff804a] text-[#180f0a] cursor-pointer active:scale-95'
+                    }`}
+                    type="button"
+                  >
+                    <span>
+                      {isProcessing
+                        ? (language === 'hi' ? 'कैटलॉग बन रहा है...' : 'Generating Listing...')
+                        : (language === 'hi' ? 'एआई कैटलॉग बनाएं' : 'Process with AI')}
+                    </span>
+                    <span className="material-symbols-outlined text-[22px]">
+                      {isLoading ? 'hourglass_top' : 'auto_awesome'}
+                    </span>
+                  </button>
+                </div>
+
+                {!isReadyToProcess && !isLoading && (
+                  <div className="flex items-center justify-center gap-1.5 text-xs text-[#d4c3ba]/70">
+                    {!hasImage && !hasDescription ? (
+                      <span>{language === 'hi' ? '• फ़ोटो और शिल्प विवरण दोनों आवश्यक हैं' : '• Both craft photo and description required'}</span>
+                    ) : !hasImage ? (
+                      <span className="text-[#ffb599] font-medium">{language === 'hi' ? '📷 कृपया जारी रखने के लिए उत्पाद की फ़ोटो लें' : '📷 Please capture product photo to proceed'}</span>
+                    ) : (
+                      <span className="text-[#ffb599] font-medium">{language === 'hi' ? '🎙️ कृपया शिल्प का विवरण या वॉयस नोट जोड़ें' : '🎙️ Please add craft description or voice note to proceed'}</span>
+                    )}
+                  </div>
+                )}
 
                 <div className="flex items-center justify-center gap-1.5 text-[#d4c3ba] text-[11px] text-center px-2">
                   <span className="material-symbols-outlined text-[14px] text-[#ff9062]">bolt</span>

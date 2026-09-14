@@ -367,7 +367,6 @@ export function AuthProvider({ children }) {
               const dynName = activeUser.user_metadata?.full_name ||
                               activeUser.user_metadata?.name ||
                               activeUser.user_metadata?.artisan_name ||
-                              activeUser.email?.split('@')[0] ||
                               fallbackArtisanName;
               setArtisanProfile((prev) => ({
                 ...prev,
@@ -434,7 +433,6 @@ export function AuthProvider({ children }) {
           const dynName = currentUser.user_metadata?.full_name ||
                           currentUser.user_metadata?.name ||
                           currentUser.user_metadata?.artisan_name ||
-                          currentUser.email?.split('@')[0] ||
                           (language === 'hi' ? 'कारीगर' : 'Artisan');
           setArtisanProfile((prev) => ({
             ...prev,

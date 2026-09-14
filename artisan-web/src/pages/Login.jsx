@@ -154,6 +154,18 @@ export default function Login() {
       if (error) throw error;
 
       if (data?.session || data?.user) {
+        // Persist the typed name to Supabase user_metadata (handles stale/existing users)
+        const cleanName = name.trim();
+        if (cleanName) {
+          try {
+            await supabase.auth.updateUser({
+              data: { full_name: cleanName },
+            });
+          } catch (updateErr) {
+            console.warn('[Login] updateUser metadata notice:', updateErr);
+          }
+        }
+
         showToast?.(
           language === 'hi'
             ? 'लॉगिन सफल! डैशबोर्ड पर भेजा जा रहा है...'

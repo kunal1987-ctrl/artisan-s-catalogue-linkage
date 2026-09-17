@@ -211,12 +211,12 @@ export default function Review() {
     <div className="min-h-screen bg-[#fdf9f3] text-on-surface font-sans flex flex-col">
       {/* Top Full-Width Navigation Bar */}
       <header className="sticky top-0 z-40 bg-[#180f0a] text-white border-b border-white/10 shadow-md w-full">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3 flex items-center justify-between gap-2 sm:gap-4">
           {/* Far Left: Back button & Breadcrumb / Logo */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button
               onClick={() => navigate('/capture')}
-              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors cursor-pointer"
+              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors cursor-pointer shrink-0"
               title="Back to Capture"
               type="button"
             >
@@ -224,7 +224,7 @@ export default function Review() {
             </button>
             <div 
               onClick={() => navigate('/home')}
-              className="flex items-center gap-2 cursor-pointer group"
+              className="flex items-center gap-2 cursor-pointer group shrink-0"
               title="Go to Home"
             >
               <div className="w-8 h-8 rounded-lg bg-[#2e241e] text-[#ffdeaa] flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
@@ -233,33 +233,33 @@ export default function Review() {
               <span className="font-bold text-sm text-white tracking-tight hidden sm:inline">Shilp Setu</span>
             </div>
             <div className="h-4 w-[1px] bg-white/20 mx-0.5 hidden sm:block" />
-            <div className="flex items-center gap-1.5 text-xs font-bold text-white/70">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-white/70 truncate">
               <span
                 onClick={() => navigate('/home')}
-                className="cursor-pointer hover:text-white transition-colors"
+                className="cursor-pointer hover:text-white transition-colors hidden sm:inline"
               >
                 {language === 'hi' ? 'आवास' : 'HOME'}
               </span>
-              <span className="text-[10px]">/</span>
+              <span className="text-[10px] hidden sm:inline">/</span>
               <span
                 onClick={() => navigate('/catalog')}
-                className="cursor-pointer hover:text-white transition-colors"
+                className="cursor-pointer hover:text-white transition-colors hidden sm:inline"
               >
                 {language === 'hi' ? 'कैटलॉग' : 'CATALOG'}
               </span>
-              <span className="text-[10px]">/</span>
-              <span className="text-[#ff9062] font-black">
+              <span className="text-[10px] hidden sm:inline">/</span>
+              <span className="text-[#ff9062] font-black truncate">
                 {language === 'hi' ? 'समीक्षा एवं ड्राफ्ट' : 'REVIEW & DRAFT'}
               </span>
             </div>
           </div>
 
           {/* Far Right: Language Switcher, Auth Status & Publish Button */}
-          <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             <LanguageToggle variant="dark" />
 
             {isPhoneVerified ? (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950 border border-emerald-500/50 text-emerald-300 text-[11px] font-bold shadow-2xs">
+              <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950 border border-emerald-500/50 text-emerald-300 text-[11px] font-bold shadow-2xs">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                 <span>{language === 'hi' ? 'सत्यापित' : 'Verified'}</span>
               </span>
@@ -267,17 +267,17 @@ export default function Review() {
               <button
                 type="button"
                 onClick={() => openAuthModal()}
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-stone-950 text-[11px] font-bold cursor-pointer transition-all active:scale-95 animate-pulse shadow-xs"
+                className="hidden md:inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-stone-950 text-[11px] font-bold cursor-pointer transition-all active:scale-95 animate-pulse shadow-xs"
               >
                 <span className="material-symbols-outlined text-[14px]">login</span>
-                <span>📲 {language === 'hi' ? 'फ़ोन सत्यापन करें' : 'Verify Phone'}</span>
+                <span>📲 {language === 'hi' ? 'फ़ोन सत्यापन' : 'Verify'}</span>
               </button>
             )}
 
             <button
               onClick={handlePublish}
               disabled={isPublishing}
-              className={`px-4 py-2 rounded-full font-bold text-xs flex items-center gap-2 shadow-lg transition-all cursor-pointer ${
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-bold text-xs flex items-center gap-1.5 sm:gap-2 shadow-lg transition-all cursor-pointer ${
                 isPublishing
                   ? 'bg-[#ff9062]/50 text-[#180f0a]/50 cursor-wait'
                   : 'bg-[#ff9062] text-[#180f0a] hover:bg-[#ff804a] active:scale-95'
@@ -287,11 +287,13 @@ export default function Review() {
               {isPublishing ? (
                 <>
                   <span className="material-symbols-outlined text-[16px] text-[#ffdeaa] animate-pulse">auto_awesome</span>
-                  <span>{language === 'hi' ? 'प्रकाशित हो रहा है...' : 'Publishing...'}</span>
+                  <span className="hidden sm:inline">{language === 'hi' ? 'प्रकाशित हो रहा है...' : 'Publishing...'}</span>
+                  <span className="sm:hidden">{language === 'hi' ? 'प्रतीक्षा...' : 'Saving...'}</span>
                 </>
               ) : (
                 <>
-                  <span>{language === 'hi' ? 'GeM व ONDC पर प्रकाशित करें' : 'Publish to ONDC & GeM'}</span>
+                  <span className="hidden sm:inline">{language === 'hi' ? 'GeM व ONDC पर प्रकाशित करें' : 'Publish to ONDC & GeM'}</span>
+                  <span className="sm:hidden">{language === 'hi' ? 'प्रकाशित करें' : 'Publish'}</span>
                   <span className="material-symbols-outlined text-[16px]">rocket_launch</span>
                 </>
               )}
@@ -303,22 +305,22 @@ export default function Review() {
       {/* AI Data Banner */}
       {hasAiData && (
         <div className="bg-emerald-50 border-b border-emerald-200 w-full">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-3">
+          <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-2.5 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
             <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-[18px] text-emerald-700">auto_awesome</span>
-              <span className="text-[13px] font-semibold text-emerald-900">
+              <span className="material-symbols-outlined text-[18px] text-emerald-700 shrink-0">auto_awesome</span>
+              <span className="text-[12px] sm:text-[13px] font-semibold text-emerald-900">
                 {language === 'hi'
-                  ? 'एआई लिंकेज सक्रिय: जेमिनी व व्हिस्पर द्वारा विवरण तैयार। GeM अनुरूपता प्रमाणित।'
-                  : 'AI Market Linkage Active: Descriptions generated via Gemini Vision & Groq Whisper. GeM readiness certified.'}
+                  ? 'एआई लिंकेज सक्रिय: जेमिनी व व्हिस्पर द्वारा विवरण तैयार।'
+                  : 'AI Market Linkage Active: Descriptions generated via Gemini Vision & Whisper.'}
               </span>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-200/80 text-emerald-900">
                 <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
                 GeM Ready • MOQ {moq}
               </span>
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800">
-                ONDC D2C Ready
+                ONDC Ready
               </span>
             </div>
           </div>
@@ -326,9 +328,9 @@ export default function Review() {
       )}
 
       {/* Main Split-Screen Desktop Workspace */}
-      <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col lg:flex-row gap-8 items-start">
+      <main className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 flex flex-col lg:flex-row gap-5 lg:gap-8 items-start">
         {/* ── Left Column: Studio Photo Preview & Linkage Badges ── */}
-        <section className="w-full lg:w-1/2 flex flex-col gap-5">
+        <section className="w-full lg:w-1/2 flex flex-col gap-4 sm:gap-5">
                 <div className="relative w-full rounded-2xl overflow-hidden bg-white border border-outline-variant/40 shadow-sm group">
                   <div className="relative w-full aspect-square bg-[#FFFFFF] flex items-center justify-center overflow-hidden p-3">
                     <img
@@ -338,7 +340,7 @@ export default function Review() {
                     />
                     <div className="absolute top-3 left-3 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container-lowest/95 backdrop-blur-md shadow-sm border border-outline-variant/30">
                       <span className="material-symbols-outlined text-[15px] text-[#ff9062]">auto_awesome</span>
-                      <span className="text-[11px] font-bold text-primary tracking-wider uppercase">Studio Canvas (White)</span>
+                      <span className="text-[11px] font-bold text-primary tracking-wider uppercase">Studio Canvas</span>
                     </div>
                     <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-700 text-white shadow-sm text-[11px] font-bold">
                       <span className="material-symbols-outlined text-[14px]">verified</span>
@@ -352,20 +354,20 @@ export default function Review() {
                   <div className="px-4 py-3 bg-surface-container-low border-t border-outline-variant/30 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-[16px] text-emerald-700">task_alt</span>
-                      <span className="text-[12px] text-on-surface-variant font-medium">Pure white studio canvas • Optimized &lt;150KB</span>
+                      <span className="text-[12px] text-on-surface-variant font-medium">Studio canvas • Optimized &lt;150KB</span>
                     </div>
                     <span className="text-[11px] font-bold text-secondary uppercase tracking-wider">High-Res</span>
                   </div>
                 </div>
 
                 {/* Market Channels Snapshot Card */}
-                <div className="rounded-2xl p-5 bg-surface-container-lowest border border-outline-variant/40 shadow-sm flex flex-col gap-3">
+                <div className="rounded-2xl p-4 sm:p-5 bg-surface-container-lowest border border-outline-variant/40 shadow-sm flex flex-col gap-3">
                   <div className="flex items-center justify-between pb-2 border-b border-outline-variant/30">
                     <span className="text-[12px] font-bold text-primary tracking-wide uppercase">Market Linkage Channels</span>
                     <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">Dual Active</span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="p-3 rounded-xl bg-blue-50/70 border border-blue-200/60 flex flex-col">
                       <div className="flex items-center gap-1.5 text-blue-900 text-[11px] font-bold uppercase tracking-wider mb-1">
                         <span className="material-symbols-outlined text-[15px]">shopping_bag</span>
@@ -398,7 +400,7 @@ export default function Review() {
                 )}
 
                 {/* ── 1. PRODUCT TITLE ── */}
-                <div className="rounded-2xl p-6 bg-surface-container-lowest border border-outline-variant/40 shadow-sm transition-all hover:border-outline">
+                <div className="rounded-2xl p-4 sm:p-6 bg-surface-container-lowest border border-outline-variant/40 shadow-sm transition-all hover:border-outline">
                   <div className="flex items-center justify-between gap-4 mb-3">
                     <div className="flex items-center gap-2">
                       <span className="px-3 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed text-[11px] font-bold tracking-wider uppercase">
@@ -480,7 +482,7 @@ export default function Review() {
                 </div>
 
                 {/* ── 2. DEDICATED INSTITUTIONAL & B2B MARKET LINKAGE (GeM) SECTION ── */}
-                <div className="rounded-2xl p-6 bg-gradient-to-br from-[#121c24] to-[#1c2934] text-white border border-[#2b3e50] shadow-xl relative overflow-hidden">
+                <div className="rounded-2xl p-4 sm:p-6 bg-gradient-to-br from-[#121c24] to-[#1c2934] text-white border border-[#2b3e50] shadow-xl relative overflow-hidden">
                   {/* Decorative emblem badge */}
                   <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-white/10">
                     <div className="flex items-center gap-2.5">
@@ -686,7 +688,7 @@ export default function Review() {
                 </div>
 
                 {/* ── 3. RETAIL PRICING (ONDC D2C) ── */}
-                <div className="rounded-2xl p-6 bg-surface-container-lowest border border-outline-variant/40 shadow-sm transition-all hover:border-outline">
+                <div className="rounded-2xl p-4 sm:p-6 bg-surface-container-lowest border border-outline-variant/40 shadow-sm transition-all hover:border-outline">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 mb-1">
@@ -755,7 +757,7 @@ export default function Review() {
                 </div>
 
                 {/* ── 4. CRAFT CATEGORY ── */}
-                <div className="rounded-2xl p-6 bg-surface-container-lowest border border-outline-variant/40 shadow-sm transition-all hover:border-outline">
+                <div className="rounded-2xl p-4 sm:p-6 bg-surface-container-lowest border border-outline-variant/40 shadow-sm transition-all hover:border-outline">
                   <div className="flex items-center gap-1.5 mb-2">
                     <span className="material-symbols-outlined text-[16px] text-secondary">category</span>
                     <span className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
@@ -784,7 +786,7 @@ export default function Review() {
                 </div>
 
                 {/* ── 5. CRAFT STORY & SPECIFICATIONS ── */}
-                <div className="rounded-2xl p-6 bg-surface-container-lowest border border-outline-variant/40 shadow-sm transition-all hover:border-outline">
+                <div className="rounded-2xl p-4 sm:p-6 bg-surface-container-lowest border border-outline-variant/40 shadow-sm transition-all hover:border-outline">
                   <div className="flex items-center justify-between pb-3 border-b border-outline-variant/30 mb-4">
                     <div className="flex items-center gap-1.5">
                       <span className="material-symbols-outlined text-[16px] text-secondary">auto_stories</span>
@@ -860,7 +862,7 @@ export default function Review() {
                 </div>
 
                 {/* ── 6. TAGS & METADATA ── */}
-                <div className="rounded-2xl p-6 bg-surface-container-lowest border border-outline-variant/40 shadow-sm transition-all hover:border-outline flex flex-col gap-3">
+                <div className="rounded-2xl p-4 sm:p-6 bg-surface-container-lowest border border-outline-variant/40 shadow-sm transition-all hover:border-outline flex flex-col gap-3">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest">
                       Product Tags & Search Attributes
@@ -911,11 +913,11 @@ export default function Review() {
                 </div>
 
                 {/* ── 7. PUBLISH ACTIONS ── */}
-                <div className="rounded-2xl p-6 bg-surface-container-lowest border border-outline-variant/40 shadow-md flex flex-col gap-3 mt-2">
+                <div className="rounded-2xl p-4 sm:p-6 bg-surface-container-lowest border border-outline-variant/40 shadow-md flex flex-col gap-3 mt-2">
                   <div className="flex flex-col sm:flex-row items-center gap-3">
                     <button
                       onClick={() => navigate('/capture')}
-                      className="w-full sm:w-auto h-13 py-3 px-5 rounded-full bg-surface-container-low border border-outline-variant/50 text-primary flex items-center justify-center gap-2 hover:bg-surface-container transition-all shrink-0 font-bold text-[14px]"
+                      className="w-full sm:w-auto h-12 sm:h-13 py-3 px-5 rounded-full bg-surface-container-low border border-outline-variant/50 text-primary flex items-center justify-center gap-2 hover:bg-surface-container transition-all shrink-0 font-bold text-sm sm:text-[14px]"
                       type="button"
                     >
                       <span className="material-symbols-outlined text-[19px]">replay</span>
@@ -924,7 +926,7 @@ export default function Review() {
                     <button
                       onClick={handlePublish}
                       disabled={isPublishing}
-                      className={`w-full sm:flex-1 h-13 py-3.5 px-6 rounded-full flex items-center justify-center gap-2.5 shadow-xl active:scale-[0.99] transition-all font-bold text-[15px] tracking-wide ${
+                      className={`w-full sm:flex-1 h-auto min-h-12 py-3 px-4 sm:px-6 rounded-full flex items-center justify-center gap-2 shadow-xl active:scale-[0.99] transition-all font-bold text-sm sm:text-[15px] tracking-wide text-center ${
                         isPublishing
                           ? 'bg-primary-container/60 text-white/60 cursor-wait'
                           : 'bg-[#180f0a] hover:bg-black text-white'
@@ -946,7 +948,7 @@ export default function Review() {
                     </button>
                   </div>
                   <div className="flex items-center justify-center gap-2 text-on-surface-variant text-[12px] text-center pt-1">
-                    <span className="material-symbols-outlined text-[15px] text-emerald-700">verified_user</span>
+                    <span className="material-symbols-outlined text-[15px] text-emerald-700 shrink-0">verified_user</span>
                     <span>Direct sync to ONDC buyer apps & Government e-Marketplace with is_gem_ready: true</span>
                   </div>
                 </div>

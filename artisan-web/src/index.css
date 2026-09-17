@@ -69,3 +69,42 @@
 .animate-scan {
   animation: scan 2.6s ease-in-out infinite;
 }
+
+/* Mobile-First Global Resets & Anti-Overflow Rules */
+html,
+body {
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Hide scrollbar utility for sleek mobile horizontal scroll carousels/pills */
+.no-scrollbar::-webkit-scrollbar,
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar,
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

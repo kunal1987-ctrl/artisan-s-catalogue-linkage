@@ -221,7 +221,7 @@ export default function AuthModal() {
       role="dialog"
       aria-modal="true"
       onKeyDown={handleKeyDown}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto"
     >
       {/* Click outside to close */}
       <div 
@@ -230,10 +230,10 @@ export default function AuthModal() {
       />
 
       {/* Modal Container */}
-      <div className="relative w-full max-w-md bg-[#fdf9f3] text-stone-900 rounded-3xl shadow-2xl border border-[#d1c4bd]/60 overflow-hidden z-10 transition-all">
+      <div className="relative w-full max-w-md bg-[#fdf9f3] text-stone-900 rounded-t-3xl sm:rounded-3xl shadow-2xl border border-[#d1c4bd]/60 overflow-hidden z-10 transition-all max-h-[90vh] flex flex-col">
         
         {/* Header Banner */}
-        <div className="bg-[#1e140e] text-white p-5 border-b border-white/10 relative">
+        <div className="bg-[#1e140e] text-white p-4 sm:p-5 border-b border-white/10 relative shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -251,7 +251,7 @@ export default function AuthModal() {
             </button>
           </div>
 
-          <h2 className="text-xl font-bold text-white mt-2 leading-tight">
+          <h2 className="text-lg sm:text-xl font-bold text-white mt-2 leading-tight">
             {language === 'hi' ? 'कारीगर मोबाइल सत्यापन' : 'Artisan Phone OTP Login'}
           </h2>
           <p className="text-xs text-stone-300 mt-0.5">
@@ -262,7 +262,7 @@ export default function AuthModal() {
         </div>
 
         {/* Modal Body */}
-        <div className="p-6">
+        <div className="p-4 sm:p-6 overflow-y-auto no-scrollbar">
 
           {/* Quick Evaluator Demo Badge */}
           <div className="mb-4 p-3 rounded-2xl bg-[#ffede6] border border-[#ff9062]/40 flex flex-col gap-1.5">
@@ -419,7 +419,7 @@ export default function AuthModal() {
                 </label>
 
                 {/* 4 OTP Input Boxes */}
-                <div className="flex items-center justify-center gap-3 on-paste-target" onPaste={handleOtpPaste}>
+                <div className="flex items-center justify-center gap-2 sm:gap-3 on-paste-target" onPaste={handleOtpPaste}>
                   {otpDigits.map((digit, idx) => (
                     <input
                       key={idx}
@@ -430,7 +430,7 @@ export default function AuthModal() {
                       value={digit}
                       onChange={(e) => handleOtpChange(idx, e.target.value)}
                       onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                      className="w-14 h-16 text-center font-extrabold text-2xl bg-[#f1ede7] rounded-2xl border border-[#d1c4bd]/80 focus:border-[#ff9062] focus:ring-2 focus:ring-[#ff9062]/50 focus:bg-white text-stone-900 shadow-xs transition-all"
+                      className="w-11 h-13 sm:w-14 sm:h-16 text-center font-extrabold text-xl sm:text-2xl bg-[#f1ede7] rounded-xl sm:rounded-2xl border border-[#d1c4bd]/80 focus:border-[#ff9062] focus:ring-2 focus:ring-[#ff9062]/50 focus:bg-white text-stone-900 shadow-xs transition-all p-0"
                     />
                   ))}
                 </div>

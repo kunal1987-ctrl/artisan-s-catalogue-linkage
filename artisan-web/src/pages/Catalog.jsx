@@ -386,30 +386,30 @@ export default function Catalog() {
   return (
     <div className="w-full">
       <main className="flex-1 flex flex-col relative w-full bg-surface min-h-screen">
-        <div className="flex flex-col w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="flex flex-col w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
           
           {/* Top Administrative Toolbar (Spacing & Alignment) */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
             {/* Left Side: Title & Add Button */}
-            <div className="flex flex-wrap items-center gap-4">
-              <h2 className="text-xl font-bold text-gray-800">
+            <div className="flex flex-wrap items-center gap-2.5 sm:gap-4 w-full sm:w-auto justify-between sm:justify-start">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-800">
                 {language === 'hi' ? 'मेरी शिल्प सूची' : 'My Catalog'}
               </h2>
               <button
                 onClick={() => navigate('/capture')}
-                className="bg-emerald-600 text-white px-4 py-2 rounded-lg shadow-sm hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:outline-none flex items-center gap-2 text-sm font-medium transition-colors cursor-pointer"
+                className="bg-emerald-600 text-white px-3.5 sm:px-4 py-2 rounded-xl shadow-xs hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:outline-none flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium transition-colors cursor-pointer active:scale-95"
               >
                 {language === 'hi' ? '📸 + 🎙️ नया उत्पाद' : '📸 + 🎙️ Add Product'}
               </button>
             </div>
 
             {/* Right Side: Export Controls */}
-            <div className="relative">
+            <div className="relative w-full sm:w-auto">
               <button
                 id="export-protocols-btn"
                 aria-label="Export Protocols"
                 onClick={() => setExportMenuOpen((prev) => !prev)}
-                className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm shadow-sm hover:bg-gray-50 transition-colors flex items-center gap-2 shrink-0 cursor-pointer"
+                className="w-full sm:w-auto bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-xl text-xs sm:text-sm shadow-xs hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shrink-0 cursor-pointer"
                 type="button"
               >
                 <span className="material-symbols-outlined text-[17px] text-gray-600">download</span>
@@ -417,7 +417,7 @@ export default function Catalog() {
               </button>
 
               {exportMenuOpen && (
-                <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-200 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+                <div className="absolute right-0 mt-2 w-72 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-xl border border-gray-200 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
                   <button
                     id="export-ondc-btn"
                     onClick={() => { handleExportCatalog('ondc'); setExportMenuOpen(false); }}
@@ -530,7 +530,7 @@ export default function Catalog() {
             </div>
 
             {/* Filter Pills */}
-            <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1" id="filterPillsContainer">
+            <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1 no-scrollbar scroll-smooth" id="filterPillsContainer">
               <div className="flex items-center gap-2">
                 <button
                   className={`shrink-0 h-10 px-4 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer ${
@@ -830,42 +830,42 @@ export default function Catalog() {
                 <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
                   {language === 'hi' ? 'उत्पाद स्थिति' : 'Product Status'}
                 </label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
                   <button
                     type="button"
                     onClick={() => handleToggleStatus(selectedProduct.id, 'live')}
-                    className={`py-2 px-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                    className={`py-2 px-1.5 sm:px-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer active:scale-95 ${
                       selectedProduct.status === 'live'
-                        ? 'bg-emerald-700 text-white shadow-sm'
+                        ? 'bg-emerald-700 text-white shadow-xs'
                         : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
                     }`}
                   >
-                    <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                    <span>{language === 'hi' ? 'सक्रिय' : 'Live'}</span>
+                    <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-400 shrink-0"></span>
+                    <span className="truncate">{language === 'hi' ? 'सक्रिय' : 'Live'}</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => handleToggleStatus(selectedProduct.id, 'draft')}
-                    className={`py-2 px-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                    className={`py-2 px-1.5 sm:px-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer active:scale-95 ${
                       selectedProduct.status === 'draft'
-                        ? 'bg-amber-600 text-white shadow-sm'
+                        ? 'bg-amber-600 text-white shadow-xs'
                         : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
                     }`}
                   >
-                    <span className="w-2 h-2 rounded-full bg-amber-300"></span>
-                    <span>{language === 'hi' ? 'समीक्षा' : 'Review'}</span>
+                    <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-amber-300 shrink-0"></span>
+                    <span className="truncate">{language === 'hi' ? 'समीक्षा' : 'Review'}</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => handleToggleStatus(selectedProduct.id, 'sold_out')}
-                    className={`py-2 px-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                    className={`py-2 px-1.5 sm:px-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer active:scale-95 ${
                       selectedProduct.status === 'sold_out'
-                        ? 'bg-red-600 text-white shadow-sm'
+                        ? 'bg-red-600 text-white shadow-xs'
                         : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
                     }`}
                   >
-                    <span className="w-2 h-2 rounded-full bg-red-300"></span>
-                    <span>{language === 'hi' ? 'बिक गया' : 'Sold Out'}</span>
+                    <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-red-300 shrink-0"></span>
+                    <span className="truncate">{language === 'hi' ? 'बिक गया' : 'Sold Out'}</span>
                   </button>
                 </div>
               </div>

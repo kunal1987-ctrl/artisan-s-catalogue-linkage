@@ -74,7 +74,7 @@ export default function LanguageSwitcher({ className = '', variant = 'compact' }
       onClick={handleToggle}
       title={isHindi ? 'Switch to English' : 'हिन्दी में बदलें'}
       aria-label={isHindi ? 'Switch to English' : 'Switch to Hindi'}
-      className={`group inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-gray-200 bg-white/90 hover:bg-white text-gray-800 shadow-xs hover:shadow-sm active:scale-95 transition-all cursor-pointer backdrop-blur-md ${className}`}
+      className={`group inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full border border-gray-200 bg-white/90 hover:bg-white text-gray-800 shadow-xs hover:shadow-sm active:scale-95 transition-all cursor-pointer backdrop-blur-md ${className}`}
     >
       <span className="w-5 h-5 rounded-full bg-[#9c441c]/15 text-[#9c441c] flex items-center justify-center text-[11px] font-extrabold group-hover:bg-[#9c441c] group-hover:text-white transition-colors">
         {isHindi ? 'अ' : 'A'}
@@ -82,7 +82,7 @@ export default function LanguageSwitcher({ className = '', variant = 'compact' }
       <span className="text-xs font-bold tracking-wide">
         {isHindi ? 'हिन्दी' : 'English'}
       </span>
-      <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider pl-1 border-l border-gray-200">
+      <span className="hidden sm:inline text-[10px] text-gray-400 font-semibold uppercase tracking-wider pl-1 border-l border-gray-200">
         {isHindi ? 'EN' : 'HI'}
       </span>
     </button>

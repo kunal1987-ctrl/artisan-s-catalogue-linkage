@@ -71,25 +71,25 @@ export default function Home({ customArtisanName } = {}) {
   return (
     <div className="w-full">
       <main className="flex-1 flex flex-col relative w-full min-h-screen bg-[#fdf9f3] overflow-y-auto">
-        <div className="flex flex-col w-full px-gutter-mobile pb-space-lg">
+        <div className="flex flex-col w-full pb-10">
             <div
-                className="border-b border-[#d1c4bd]/40 px-4 sm:px-8 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                className="border-b border-[#d1c4bd]/40 px-3 sm:px-6 lg:px-8 py-3.5 sm:py-4 flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
                 <div className="flex flex-col">
                     <div
-                        className="flex items-center gap-2 text-[12px] font-semibold text-secondary uppercase tracking-wider">
+                        className="flex items-center gap-2 text-[11px] sm:text-[12px] font-semibold text-secondary uppercase tracking-wider">
                         <span>{language === 'hi' ? 'आवास' : 'Home'}</span>
                         <span>/</span>
                         <span>{language === 'hi' ? 'शिल्पकार डैशबोर्ड' : 'Artisan Dashboard'}</span>
                     </div>
-                    <h2 className="text-[24px] font-bold text-primary flex flex-wrap items-center gap-2">
+                    <h2 className="text-xl sm:text-[24px] font-bold text-primary flex flex-wrap items-center gap-2 mt-0.5">
                         <span>Namaste, {artisanName}! (नमस्ते, {artisanName}!)</span>
-                        <span className="text-[14px] font-medium text-on-surface-variant font-normal">
+                        <span className="text-xs sm:text-[14px] font-medium text-on-surface-variant">
                             {language === 'hi' ? 'शिल्प सेतु शॉप' : 'Shilp Setu Shop'}
                         </span>
                     </h2>
                 </div>
                 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 w-full md:w-auto">
                     <div className="relative w-full sm:w-80">
                         <span
                             className="material-symbols-outlined absolute left-3.5 top-2.5 text-[19px] text-[#80756f]">search</span>
@@ -104,7 +104,7 @@ export default function Home({ customArtisanName } = {}) {
                     </div>
                 </div>
             </div>
-            <div className="px-8 py-6 flex flex-col gap-6 max-w-7xl mx-auto w-full">
+            <div className="px-3 sm:px-6 lg:px-8 py-4 sm:py-6 flex flex-col gap-6 max-w-7xl mx-auto w-full">
                 
                 {/* Hero AI Studio Banner (Internationalized Header) */}
                 <Header />
@@ -249,12 +249,12 @@ export default function Home({ customArtisanName } = {}) {
                 </div>
                 
                 {/* Recent Uploads Section */}
-                <div className="flex items-center justify-between mt-4">
-                    <div className="flex items-center gap-3">
-                        <h3 className="text-[22px] font-bold text-primary">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-4">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                        <h3 className="text-lg sm:text-[22px] font-bold text-primary">
                             {language === 'hi' ? 'हाल ही में जोड़े गए शिल्प' : 'Recent Uploads'}
                         </h3>
-                        <span className="px-2.5 py-0.5 rounded-full bg-[#ebe8e2] text-secondary font-bold text-[12px]">
+                        <span className="px-2.5 py-0.5 rounded-full bg-[#ebe8e2] text-secondary font-bold text-[11px] sm:text-[12px]">
                             {language === 'hi' ? '3 सक्रिय शिल्प' : '3 Active Crafts'}
                         </span>
                         <span className="text-[13px] text-on-surface-variant hidden md:inline">
@@ -263,7 +263,7 @@ export default function Home({ customArtisanName } = {}) {
                     </div>
                     <button
                         onClick={() => navigate('/catalog')}
-                        className="text-[14px] text-secondary hover:text-primary font-bold flex items-center gap-1 transition-colors cursor-pointer bg-transparent border-0"
+                        className="text-[13px] sm:text-[14px] text-secondary hover:text-primary font-bold flex items-center gap-1 transition-colors cursor-pointer bg-transparent border-0 self-start sm:self-auto"
                         type="button"
                     >
                         <span>{language === 'hi' ? 'सभी शिल्प देखें' : 'View All Catalog Items'}</span>
@@ -366,19 +366,19 @@ export default function Home({ customArtisanName } = {}) {
 
                 {/* Artisan's Daily Tip */}
                 {!dismissTip && (
-                    <div className="p-5 rounded-2xl bg-[#ffdbce]/40 border border-[#ffdbce] flex items-center justify-between shadow-sm mt-2">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center text-[#9c441c] shrink-0 shadow-sm">
-                                <span className="material-symbols-outlined text-[26px]">lightbulb</span>
+                    <div className="p-4 sm:p-5 rounded-2xl bg-[#ffdbce]/40 border border-[#ffdbce] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm mt-2">
+                        <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white flex items-center justify-center text-[#9c441c] shrink-0 shadow-sm mt-0.5 sm:mt-0">
+                                <span className="material-symbols-outlined text-[22px] sm:text-[26px]">lightbulb</span>
                             </div>
-                            <div>
-                                <p className="text-[16px] font-bold text-primary flex items-center gap-2">
-                                    {language === 'hi' ? `${artisanName} के लिए आज का सुझाव` : `${artisanName}'s Daily Tip`}
-                                    <span className="text-[11px] font-semibold text-[#9c441c] bg-white px-2 py-0.5 rounded-full">
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm sm:text-[16px] font-bold text-primary flex flex-wrap items-center gap-2">
+                                    <span>{language === 'hi' ? `${artisanName} के लिए आज का सुझाव` : `${artisanName}'s Daily Tip`}</span>
+                                    <span className="text-[10px] sm:text-[11px] font-semibold text-[#9c441c] bg-white px-2 py-0.5 rounded-full">
                                         {language === 'hi' ? 'कारीगर उत्तम अभ्यास' : 'Artisan Best Practice'}
                                     </span>
                                 </p>
-                                <p className="text-[14px] text-on-surface-variant mt-0.5">
+                                <p className="text-xs sm:text-[14px] text-on-surface-variant mt-0.5 leading-relaxed">
                                     {language === 'hi'
                                         ? 'सुबह की प्राकृतिक धूप में साड़ियों के रेशमी धागे और मिट्टी के बर्तनों की नक्काशी सबसे स्पष्ट और आकर्षक दिखती है।'
                                         : "Natural morning light brings out your saree's pure silk threads and clay etching highlights."}
@@ -387,12 +387,13 @@ export default function Home({ customArtisanName } = {}) {
                         </div>
                         <button aria-label="Dismiss tip"
                             onClick={() => setDismissTip(true)}
-                            className="text-on-surface-variant hover:text-primary p-2 rounded-full hover:bg-white/60 transition-colors cursor-pointer"
+                            className="text-on-surface-variant hover:text-primary p-1.5 rounded-full hover:bg-white/60 transition-colors cursor-pointer self-end sm:self-auto shrink-0"
                             type="button">
-                            <span className="material-symbols-outlined text-[20px]">close</span>
+                            <span className="material-symbols-outlined text-[18px] sm:text-[20px]">close</span>
                         </button>
                     </div>
                 )}
+
             </div>
         </div>
 

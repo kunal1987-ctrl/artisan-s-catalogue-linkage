@@ -92,26 +92,27 @@ export default function POSlipModal({ order, onClose }) {
       <div
         id="po-slip-print-area"
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-3xl bg-white text-stone-900 rounded-3xl shadow-2xl border border-stone-200 overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200"
+        className="relative w-full max-w-3xl bg-white text-stone-900 rounded-2xl sm:rounded-3xl shadow-2xl border border-stone-200 overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200"
       >
         {/* Top Header Controls (Hidden during print) */}
-        <div className="no-print bg-stone-900 text-white px-6 py-3.5 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[20px] text-amber-400">receipt_long</span>
-            <span id="po-modal-title" className="font-bold text-sm tracking-wide">
-              {isGem ? 'GeM Institutional Purchase Order Slip' : 'ONDC Digital Commerce Invoice Slip'}
+        <div className="no-print bg-stone-900 text-white px-3 sm:px-6 py-2.5 sm:py-3.5 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+            <span className="material-symbols-outlined text-[18px] sm:text-[20px] text-amber-400 shrink-0">receipt_long</span>
+            <span id="po-modal-title" className="font-bold text-xs sm:text-sm tracking-wide truncate">
+              {isGem ? 'GeM Purchase Order Slip' : 'ONDC Invoice Slip'}
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               onClick={handlePrint}
               type="button"
-              className="px-4 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer active:scale-95"
+              className="px-3 sm:px-4 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer active:scale-95"
               title="Print Purchase Order Slip"
             >
-              <span className="material-symbols-outlined text-[16px]">print</span>
-              <span>Print PO Slip</span>
+              <span className="material-symbols-outlined text-[15px] sm:text-[16px]">print</span>
+              <span className="hidden sm:inline">Print PO Slip</span>
+              <span className="sm:hidden">Print</span>
             </button>
             <button
               onClick={onClose}
@@ -126,7 +127,7 @@ export default function POSlipModal({ order, onClose }) {
         </div>
 
         {/* Printable PO Slip Document Content */}
-        <div className="p-6 sm:p-8 flex flex-col gap-6 bg-white">
+        <div className="p-4 sm:p-8 flex flex-col gap-5 sm:gap-6 bg-white">
           {/* Marketplace / Platform Brand Header */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b-2 border-stone-800">
             {/* Logo and Marketplace Identity */}
@@ -229,16 +230,16 @@ export default function POSlipModal({ order, onClose }) {
           </div>
 
           {/* Itemized Products Table */}
-          <div className="overflow-hidden rounded-2xl border border-stone-200">
-            <table className="w-full text-left border-collapse text-xs">
+          <div className="overflow-x-auto w-full rounded-2xl border border-stone-200 no-scrollbar">
+            <table className="w-full min-w-[480px] text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-stone-100 text-stone-700 uppercase font-extrabold tracking-wider border-b border-stone-200">
-                  <th className="py-3 px-4 w-12 text-center">#</th>
-                  <th className="py-3 px-4">Item & Craft Description</th>
-                  <th className="py-3 px-3 text-center">HSN Code</th>
-                  <th className="py-3 px-3 text-center">Qty</th>
-                  <th className="py-3 px-4 text-right">Unit Price</th>
-                  <th className="py-3 px-4 text-right">Total (INR)</th>
+                  <th className="py-3 px-3 sm:px-4 w-10 sm:w-12 text-center">#</th>
+                  <th className="py-3 px-3 sm:px-4">Item & Craft Description</th>
+                  <th className="py-3 px-2 sm:px-3 text-center">HSN</th>
+                  <th className="py-3 px-2 sm:px-3 text-center">Qty</th>
+                  <th className="py-3 px-3 sm:px-4 text-right">Unit Price</th>
+                  <th className="py-3 px-3 sm:px-4 text-right">Total (INR)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-200 bg-white">

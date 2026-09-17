@@ -70,7 +70,7 @@ export default function InstitutionalTenderCard({ tender, onAcceptTender }) {
   const isHindi = language === 'hi';
 
   return (
-    <div className="bg-white border border-[#d1c4bd]/70 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between gap-4">
+    <div className="bg-white border border-[#d1c4bd]/70 rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between gap-4">
       {/* Top Meta */}
       <div className="flex flex-col gap-2">
         <div className="flex items-start justify-between gap-2 flex-wrap">
@@ -95,12 +95,12 @@ export default function InstitutionalTenderCard({ tender, onAcceptTender }) {
         </div>
 
         {/* Tender Item Title */}
-        <h4 className="text-base font-bold text-stone-900 leading-snug mt-1">
+        <h4 className="text-sm sm:text-base font-bold text-stone-900 leading-snug mt-1">
           {isHindi ? tender.title_hi : tender.title}
         </h4>
 
         {/* Budget & Quantity Grid */}
-        <div className="grid grid-cols-2 gap-2 p-3 rounded-2xl bg-[#fdfaf6] border border-[#d1c4bd]/40 mt-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 rounded-xl sm:rounded-2xl bg-[#fdfaf6] border border-[#d1c4bd]/40 mt-1">
           <div>
             <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500 block">
               {isHindi ? 'आवश्यक मात्रा' : 'Required Qty'}

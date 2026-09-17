@@ -206,7 +206,7 @@ export default function DevOrderSimulator() {
 
   return (
     <div
-      className="fixed bottom-4 right-4 z-[9999] flex flex-col items-end gap-2"
+      className="fixed bottom-20 right-3 sm:right-4 lg:bottom-4 z-[9999] flex flex-col items-end gap-2"
       style={{ fontFamily: 'system-ui, sans-serif' }}
     >
       {/* Expanded Panel */}

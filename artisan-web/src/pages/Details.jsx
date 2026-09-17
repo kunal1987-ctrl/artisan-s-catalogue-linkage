@@ -163,28 +163,29 @@ export default function Details() {
 
   return (
     <div className="w-full min-h-screen bg-[#fdf9f3] text-on-surface">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
         {/* Top Breadcrumb & Navigation */}
-        <div className="flex items-center justify-between gap-4 mb-6">
-          <div className="flex items-center gap-2 text-xs font-semibold text-secondary uppercase tracking-wider">
-            <Link to="/home" className="hover:text-primary transition-colors">
+        <div className="flex items-center justify-between gap-2 sm:gap-4 mb-4 sm:mb-6">
+          <div className="flex items-center gap-2 text-xs font-semibold text-secondary uppercase tracking-wider min-w-0">
+            <Link to="/home" className="hover:text-primary transition-colors shrink-0">
               {language === 'hi' ? 'आवास' : 'Home'}
             </Link>
             <span>/</span>
-            <Link to="/catalog" className="hover:text-primary transition-colors">
+            <Link to="/catalog" className="hover:text-primary transition-colors shrink-0">
               {language === 'hi' ? 'कैटलॉग' : 'Catalog'}
             </Link>
             <span>/</span>
-            <span className="text-primary truncate max-w-xs">{title}</span>
+            <span className="text-primary truncate max-w-[8rem] sm:max-w-xs">{title}</span>
           </div>
 
           <button
             onClick={() => navigate('/catalog')}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-primary font-bold text-xs transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-primary font-bold text-xs transition-colors cursor-pointer shrink-0"
             type="button"
           >
             <span className="material-symbols-outlined text-[16px]">arrow_back</span>
-            <span>{language === 'hi' ? 'कैटलॉग पर वापस जाएं' : 'Back to Catalog'}</span>
+            <span className="hidden sm:inline">{language === 'hi' ? 'कैटलॉग पर वापस जाएं' : 'Back to Catalog'}</span>
+            <span className="sm:hidden">{language === 'hi' ? 'वापस' : 'Back'}</span>
           </button>
         </div>
 
@@ -196,14 +197,14 @@ export default function Details() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
             {/* ── Left Column: Large Hero Image ── */}
             <div className="lg:col-span-6 flex flex-col gap-4">
-              <div className="relative w-full aspect-square rounded-3xl overflow-hidden bg-[#191312] border border-[#d1c4bd]/40 shadow-xl group">
+              <div className="relative w-full aspect-square rounded-2xl sm:rounded-3xl overflow-hidden bg-[#191312] border border-[#d1c4bd]/40 shadow-xl group">
                 <img
                   src={image}
                   alt={title}
-                  className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-500"
+                  className="w-full h-full object-contain p-3 sm:p-4 group-hover:scale-105 transition-transform duration-500"
                 />
 
                 {/* Status Badges Overlay */}
@@ -277,7 +278,7 @@ export default function Details() {
               </div>
 
               {/* Price Display Card */}
-              <div className="p-5 rounded-2xl bg-white border border-[#d1c4bd]/40 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="p-4 sm:p-5 rounded-2xl bg-white border border-[#d1c4bd]/40 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <span className="text-xs font-bold text-secondary uppercase tracking-wider block mb-0.5">
                     {language === 'hi' ? 'खुदरा मूल्य (Retail Price)' : 'Direct Retail Price'}
@@ -342,7 +343,7 @@ export default function Details() {
               </div>
 
               {/* ── Prominent Market Linkage Action Hub: List to ONDC & List to GeM Portal ── */}
-              <div className="p-5 rounded-2xl bg-white border border-[#d1c4bd]/60 shadow-sm flex flex-col gap-4">
+              <div className="p-4 sm:p-5 rounded-2xl bg-white border border-[#d1c4bd]/60 shadow-sm flex flex-col gap-4">
                 <div className="flex items-center justify-between gap-2 border-b border-[#d1c4bd]/30 pb-3">
                   <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-primary text-[22px]">hub</span>

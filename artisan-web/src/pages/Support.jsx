@@ -81,14 +81,14 @@ export default function Support() {
   return (
     <div className="w-full min-h-screen bg-[#fdf9f3] text-stone-900 pb-16">
       {/* Top Breadcrumb Header */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 pb-4">
-        <div className="flex items-center justify-between gap-4 mb-6">
-          <div className="flex items-center gap-2 text-xs font-semibold text-stone-500 uppercase tracking-wider">
-            <Link to="/home" className="hover:text-stone-900 transition-colors">
+      <div className="max-w-5xl mx-auto px-3 sm:px-6 pt-4 sm:pt-6 pb-4">
+        <div className="flex items-center justify-between gap-2 sm:gap-4 mb-4 sm:mb-6">
+          <div className="flex items-center gap-2 text-xs font-semibold text-stone-500 uppercase tracking-wider truncate">
+            <Link to="/home" className="hover:text-stone-900 transition-colors shrink-0">
               {language === 'hi' ? 'आवास' : 'Home'}
             </Link>
             <span>/</span>
-            <span className="text-stone-900 font-bold">
+            <span className="text-stone-900 font-bold truncate">
               {language === 'hi' ? 'सहायता एवं समर्थन' : 'Help & Support'}
             </span>
           </div>
@@ -96,7 +96,7 @@ export default function Support() {
           <button
             onClick={() => navigate(-1)}
             type="button"
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs transition-colors cursor-pointer shrink-0"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>{language === 'hi' ? 'वापस जाएं' : 'Back'}</span>
@@ -104,60 +104,60 @@ export default function Support() {
         </div>
 
         {/* Hero Header */}
-        <div className="text-center py-6 sm:py-8 flex flex-col items-center">
-          <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-900 flex items-center justify-center mb-3 shadow-xs">
-            <HelpCircle className="w-7 h-7 text-[#9c441c]" />
+        <div className="text-center py-4 sm:py-8 flex flex-col items-center">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-amber-100 text-amber-900 flex items-center justify-center mb-3 shadow-xs">
+            <HelpCircle className="w-6 h-6 sm:w-7 sm:h-7 text-[#9c441c]" />
           </div>
-          <h1 className="text-2xl sm:text-4xl font-black text-stone-900 tracking-tight">
+          <h1 className="text-xl sm:text-4xl font-black text-stone-900 tracking-tight leading-tight">
             {language === 'hi' ? 'आज हम आपकी क्या मदद कर सकते हैं?' : 'How can we help you today?'}
           </h1>
-          <p className="text-sm sm:text-base text-stone-600 mt-2 max-w-xl">
+          <p className="text-xs sm:text-base text-stone-600 mt-2 max-w-xl">
             {language === 'hi'
               ? 'शिल्प सेतु सहायता केंद्र • ओएनडीसी लिस्टिंग, सरकारी GeM टेंडर व भुगतान समाधान'
               : 'Shilp Setu Artisan Help Desk • Instant answers for ONDC listings, GeM tenders, and payouts.'}
           </p>
 
           {/* Quick FAQ Search Bar */}
-          <div className="relative w-full max-w-lg mt-6">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" />
+          <div className="relative w-full max-w-lg mt-5 sm:mt-6">
+            <Search className="absolute left-3.5 sm:left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-stone-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={language === 'hi' ? 'समस्या या प्रश्न खोजें...' : 'Search for questions, orders, or topics...'}
-              className="w-full pl-11 pr-4 py-3 rounded-2xl bg-white border border-[#d1c4bd]/60 focus:border-[#9c441c] focus:outline-none focus:ring-2 focus:ring-[#9c441c]/20 text-sm shadow-xs transition-all"
+              className="w-full pl-10 sm:pl-11 pr-4 py-2.5 sm:py-3 rounded-2xl bg-white border border-[#d1c4bd]/60 focus:border-[#9c441c] focus:outline-none focus:ring-2 focus:ring-[#9c441c]/20 text-xs sm:text-sm shadow-xs transition-all"
             />
           </div>
         </div>
 
         {/* Quick Contact Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-6 sm:my-8">
           {/* Card 1: Call Us */}
           <a
             href="tel:1800-SHILP"
-            className="p-6 rounded-3xl bg-white border border-[#d1c4bd]/60 shadow-xs hover:shadow-md hover:border-[#9c441c]/40 transition-all group flex flex-col justify-between gap-4 cursor-pointer"
+            className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-[#d1c4bd]/60 shadow-xs hover:shadow-md hover:border-[#9c441c]/40 transition-all group flex flex-col justify-between gap-4 cursor-pointer"
           >
             <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-amber-50 group-hover:bg-[#ffdbce] text-[#9c441c] flex items-center justify-center transition-colors">
-                  <Phone className="w-6 h-6" />
+              <div className="flex items-center gap-3 sm:gap-3.5 min-w-0">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-amber-50 group-hover:bg-[#ffdbce] text-[#9c441c] flex items-center justify-center transition-colors shrink-0">
+                  <Phone className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
-                <div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-stone-400 block">
+                <div className="min-w-0">
+                  <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-stone-400 block truncate">
                     {language === 'hi' ? 'सीधा संपर्क' : 'Toll-Free Hotline'}
                   </span>
-                  <h3 className="text-lg font-black text-stone-900">
+                  <h3 className="text-base sm:text-lg font-black text-stone-900 truncate">
                     {language === 'hi' ? 'हमें कॉल करें' : 'Call Us'}
                   </h3>
                 </div>
               </div>
-              <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 text-[10px] font-extrabold uppercase tracking-wider border border-emerald-200">
+              <span className="px-2 sm:px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 text-[10px] font-extrabold uppercase tracking-wider border border-emerald-200 shrink-0">
                 24x7 Active
               </span>
             </div>
 
             <div>
-              <span className="text-2xl sm:text-3xl font-black font-mono text-[#9c441c] tracking-tight block">
+              <span className="text-xl sm:text-3xl font-black font-mono text-[#9c441c] tracking-tight block">
                 1800-SHILP
               </span>
               <p className="text-xs text-stone-500 mt-1">
@@ -178,29 +178,29 @@ export default function Support() {
             href="https://wa.me/919876543210?text=Hello%20Shilp%20Setu%20Support,%20I%20need%20help%20with%20my%20craft%20orders."
             target="_blank"
             rel="noopener noreferrer"
-            className="p-6 rounded-3xl bg-white border border-[#d1c4bd]/60 shadow-xs hover:shadow-md hover:border-emerald-500/40 transition-all group flex flex-col justify-between gap-4 cursor-pointer"
+            className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-[#d1c4bd]/60 shadow-xs hover:shadow-md hover:border-emerald-500/40 transition-all group flex flex-col justify-between gap-4 cursor-pointer"
           >
             <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-50 group-hover:bg-emerald-100 text-emerald-700 flex items-center justify-center transition-colors">
-                  <MessageCircle className="w-6 h-6" />
+              <div className="flex items-center gap-3 sm:gap-3.5 min-w-0">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-emerald-50 group-hover:bg-emerald-100 text-emerald-700 flex items-center justify-center transition-colors shrink-0">
+                  <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
-                <div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-stone-400 block">
+                <div className="min-w-0">
+                  <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-stone-400 block truncate">
                     {language === 'hi' ? 'त्वरित चैट' : 'Live Chat'}
                   </span>
-                  <h3 className="text-lg font-black text-stone-900">
+                  <h3 className="text-base sm:text-lg font-black text-stone-900 truncate">
                     {language === 'hi' ? 'व्हाट्सएप सहायता' : 'WhatsApp Support'}
                   </h3>
                 </div>
               </div>
-              <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold uppercase tracking-wider border border-emerald-300">
+              <span className="px-2 sm:px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold uppercase tracking-wider border border-emerald-300 shrink-0">
                 Instant Reply
               </span>
             </div>
 
             <div>
-              <span className="text-2xl sm:text-3xl font-black font-mono text-emerald-700 tracking-tight block">
+              <span className="text-xl sm:text-3xl font-black font-mono text-emerald-700 tracking-tight block">
                 +91 98765 43210
               </span>
               <p className="text-xs text-stone-500 mt-1">

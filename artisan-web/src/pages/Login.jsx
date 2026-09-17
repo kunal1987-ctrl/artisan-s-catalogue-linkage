@@ -266,20 +266,20 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#fdf9f3] font-sans text-on-surface antialiased flex flex-col justify-center items-center p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen w-full bg-[#fdf9f3] font-sans text-on-surface antialiased flex flex-col justify-center items-center p-3 sm:p-6 lg:p-8">
       {/* Top Header bar with Logo & Language Toggle */}
-      <div className="w-full max-w-md flex justify-between items-center mb-6">
+      <div className="w-full max-w-md flex justify-between items-center mb-5 sm:mb-6">
         <div 
           onClick={() => navigate('/home')}
-          className="flex items-center gap-2.5 cursor-pointer group"
+          className="flex items-center gap-2 sm:gap-2.5 cursor-pointer group min-w-0"
           title="Shilp Setu"
         >
           <img
             src="/shilp-setu-logo.png"
             alt="Shilp Setu"
-            className="h-10 w-auto object-contain group-hover:scale-105 transition-transform"
+            className="h-8 sm:h-10 w-auto object-contain group-hover:scale-105 transition-transform shrink-0"
           />
-          <span className="font-bold text-lg text-primary tracking-tight">
+          <span className="font-bold text-base sm:text-lg text-primary tracking-tight truncate">
             {language === 'hi' ? 'शिल्प सेतु' : 'Shilp Setu'}
           </span>
         </div>
@@ -287,7 +287,7 @@ export default function Login() {
       </div>
 
       {/* Main Authentication Card */}
-      <div className="w-full max-w-md bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-[#d1c4bd]/50 flex flex-col gap-6">
+      <div className="w-full max-w-md bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-xl border border-[#d1c4bd]/50 flex flex-col gap-5 sm:gap-6">
         
         {/* ─────────────────────────────────────────────────────────────────── */}
         {/* STATE 1: EMAIL INPUT */}
@@ -427,7 +427,7 @@ export default function Login() {
               <label className="text-xs font-bold uppercase tracking-wider text-stone-700 text-center">
                 {language === 'hi' ? 'सत्यापन कोड' : 'Verification Code'}
               </label>
-              <div className="flex justify-between items-center gap-2">
+              <div className="flex justify-between items-center gap-1 sm:gap-2">
                 {otpDigits.map((digit, idx) => (
                   <input
                     key={idx}
@@ -441,7 +441,7 @@ export default function Login() {
                     onKeyDown={(e) => handleOtpKeyDown(idx, e)}
                     onPaste={handleOtpPaste}
                     disabled={isLoading}
-                    className="w-11 h-13 sm:w-12 sm:h-14 text-center text-xl sm:text-2xl font-black rounded-xl bg-[#f7f3ed] border border-[#d1c4bd] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#2e241e] text-stone-900 transition-all shadow-xs"
+                    className="w-9 h-11 sm:w-12 sm:h-14 text-center text-lg sm:text-2xl font-black rounded-lg sm:rounded-xl bg-[#f7f3ed] border border-[#d1c4bd] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#2e241e] text-stone-900 transition-all shadow-xs p-0"
                   />
                 ))}
               </div>

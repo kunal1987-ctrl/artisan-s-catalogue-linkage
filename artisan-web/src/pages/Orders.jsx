@@ -269,13 +269,10 @@ function OrderCard({ order, onMarkPacked, onAcceptPO, onDispatchPO, setSelectedP
       </div>
 
       {/* ── PRODUCT SHOWCASE ─────────────────────────────────────────────────── */}
-      <div className="flex items-stretch gap-0 p-4 pb-3">
-        {/* Product Image — large for visual-first artisan UX */}
-        <div className="shrink-0 mr-4">
-          <div
-            className="rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 shadow-sm"
-            style={{ width: 140, height: 140 }}
-          >
+      <div className="flex items-stretch gap-0 p-3.5 sm:p-4 pb-3">
+        {/* Product Image — responsive sizing for mobile viewports */}
+        <div className="shrink-0 mr-3 sm:mr-4">
+          <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-[140px] md:h-[140px] rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 shadow-xs">
             <img
               src={productImg}
               alt={order.product_title || order.item_title || 'Product'}
@@ -289,13 +286,13 @@ function OrderCard({ order, onMarkPacked, onAcceptPO, onDispatchPO, setSelectedP
         </div>
 
         {/* Product Info */}
-        <div className="flex flex-col justify-between flex-1 min-w-0 gap-2">
+        <div className="flex flex-col justify-between flex-1 min-w-0 gap-1.5 sm:gap-2">
           <div>
-            <h2 className="text-sm font-bold text-gray-900 leading-snug line-clamp-2">
+            <h2 className="text-xs sm:text-sm font-bold text-gray-900 leading-snug line-clamp-2">
               {order.product_title || order.item_title || 'Artisan Craft Product'}
             </h2>
             {order.buyer_name && (
-              <p className="text-[11px] text-gray-500 mt-0.5 line-clamp-1 font-medium">
+              <p className="text-[10px] sm:text-[11px] text-gray-500 mt-0.5 line-clamp-1 font-medium">
                 {order.buyer_name}
               </p>
             )}
@@ -304,27 +301,27 @@ function OrderCard({ order, onMarkPacked, onAcceptPO, onDispatchPO, setSelectedP
           {/* ── GIANT QUANTITY DISPLAY ──────────────────────────────────────── */}
           <div className="flex items-center gap-2 flex-wrap">
             <div
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-black text-xl leading-none ${
+              className={`inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl font-black text-base sm:text-xl leading-none ${
                 isGem
                   ? 'bg-amber-100 text-amber-900'
                   : 'bg-indigo-100 text-indigo-900'
               }`}
             >
-              <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>inventory_2</span>
+              <span className="material-symbols-outlined text-[16px] sm:text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>inventory_2</span>
               {order.quantity.toLocaleString('en-IN')}
-              <span className="text-sm font-bold ml-0.5">पीस</span>
+              <span className="text-xs sm:text-sm font-bold ml-0.5">पीस</span>
             </div>
           </div>
 
           {/* ── MASSIVE PAYOUT BADGE ────────────────────────────────────────── */}
           <div className="flex items-center gap-1.5">
-            <span className="text-3xl font-black text-emerald-700 tracking-tight leading-none">
+            <span className="text-xl sm:text-3xl font-black text-emerald-700 tracking-tight leading-none">
               ₹{(order.total_payout || order.total_amount || 0).toLocaleString('en-IN')}
             </span>
             <span className="flex flex-col gap-0.5">
-              <span className="text-[10px] font-bold text-emerald-600 leading-none">कुल</span>
-              <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-700 leading-none">
-                <span className="material-symbols-outlined text-[12px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+              <span className="text-[9px] sm:text-[10px] font-bold text-emerald-600 leading-none">कुल</span>
+              <span className="inline-flex items-center gap-0.5 text-[9px] sm:text-[10px] font-bold text-emerald-700 leading-none">
+                <span className="material-symbols-outlined text-[10px] sm:text-[12px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
                 सुरक्षित
               </span>
             </span>
@@ -759,7 +756,7 @@ export default function Orders() {
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div className="w-full">
-      <main className="flex-1 w-full bg-background min-h-screen p-4 sm:p-6 lg:p-10 flex flex-col gap-6">
+      <main className="flex-1 w-full bg-background min-h-screen p-3 sm:p-6 lg:p-10 flex flex-col gap-5 sm:gap-6">
         <div className="flex flex-col gap-6 max-w-7xl mx-auto w-full">
 
           {/* ── TOP NAV BAR ───────────────────────────────────────────────── */}

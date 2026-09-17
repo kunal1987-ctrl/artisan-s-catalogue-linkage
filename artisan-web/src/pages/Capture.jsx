@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Camera, Upload } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 import { supabase } from '../supabaseClient';
@@ -101,6 +102,7 @@ const speakHindi = (text = 'माफ करें, आवाज़ साफ �
 
 export default function Capture() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { user, artisanProfile, openAuthModal, showToast, language, toggleNotifications, unreadCount } = useAuth();
   const isVerified = Boolean(artisanProfile?.verified || user?.is_phone_verified);
 
@@ -692,7 +694,7 @@ export default function Capture() {
               {isVerified ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold text-[11px] shadow-2xs">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                  <span className="hidden sm:inline">{language === 'hi' ? 'सत्यापित शिल्पकार' : 'Verified Artisan'}</span>
+                  <span className="hidden sm:inline">{t('nav.verified', 'Verified Artisan')}</span>
                 </span>
               ) : (
                 <button
@@ -701,7 +703,7 @@ export default function Capture() {
                   className="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-stone-950 text-[10px] sm:text-[11px] font-bold cursor-pointer transition-all active:scale-95 animate-pulse shadow-xs"
                 >
                   <span className="material-symbols-outlined text-[13px] sm:text-[14px]">login</span>
-                  <span>{language === 'hi' ? 'लॉगिन' : 'Login'}</span>
+                  <span>{t('nav.sign_in', 'Login')}</span>
                 </button>
               )}
 

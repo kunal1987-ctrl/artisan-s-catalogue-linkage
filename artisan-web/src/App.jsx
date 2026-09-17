@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LanguageProvider } from './context/LanguageContext.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import AuthModal from './components/AuthModal.jsx';
+import AtmLanguageSelector from './components/AtmLanguageSelector.jsx';
 
 import DevOrderSimulator from './components/DevOrderSimulator.jsx';
 import DashboardLayout from './DashboardLayout.jsx';
@@ -28,8 +29,9 @@ export default function App() {
         {/* Dev-only floating order simulator — stripped in production build */}
         <DevOrderSimulator />
         <BrowserRouter>
-        <AuthModal />
-        <Routes>
+          <AuthModal />
+          <AtmLanguageSelector mode="modal" />
+          <Routes>
           {/* Fullscreen Root & Public Flows */}
           <Route path="/" element={<Auth />} />
           <Route path="/login" element={<Login />} />

@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation, Link, Navigate } from 'react-router-dom';
-import { HelpCircle, Menu, X } from 'lucide-react';
+import { HelpCircle, Menu, X, Globe } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { supabase } from './supabaseClient';
 import { useAuth } from './context/AuthContext';
+import { useLanguage } from './context/LanguageContext';
 import NotificationBar from './components/NotificationBar';
 import LanguageSwitcher from './components/LanguageSwitcher';
 
 export default function DashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
+  const { openAtmLanguageModal, currentLanguageConfig } = useLanguage();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const {
     artisanName,
@@ -79,9 +83,9 @@ export default function DashboardLayout() {
   }, [location.pathname]);
 
   const navItems = [
-    { to: '/home', label: language === 'hi' ? 'आवास' : 'Home', icon: 'cottage' },
-    { to: '/catalog', label: language === 'hi' ? 'कैटलॉग' : 'Catalog', icon: 'inventory_2', badge: '12' },
-    { to: '/orders', label: language === 'hi' ? 'ऑर्डर्स' : 'Orders', icon: 'receipt_long', badge: language === 'hi' ? '3 नए' : '3 New', badgeColor: 'bg-[#ff9062]/20 text-[#9c441c]' },
+    { to: '/home', label: t('nav.home', 'Home'), icon: 'cottage' },
+    { to: '/catalog', label: t('nav.catalog', 'Catalog'), icon: 'inventory_2', badge: '12' },
+    { to: '/orders', label: t('nav.orders', 'Orders'), icon: 'receipt_long', badge: t('nav.new_badge', '3 New'), badgeColor: 'bg-[#ff9062]/20 text-[#9c441c]' },
   ];
 
   return (
@@ -101,7 +105,7 @@ export default function DashboardLayout() {
                 className="h-10 w-auto object-contain drop-shadow-sm group-hover:scale-105 transition-transform"
               />
               <span className="font-bold text-[18px] text-primary tracking-tight leading-tight">
-                Shilp Setu
+                {t('nav.brand', 'Shilp Setu')}
               </span>
             </div>
           </div>
@@ -144,20 +148,44 @@ export default function DashboardLayout() {
           <div className="p-3 bg-[#f1ede7] rounded-2xl border border-[#d1c4bd]/40 space-y-2">
             <div className="flex items-center gap-2 text-xs font-bold text-primary">
               <span className="material-symbols-outlined text-secondary text-[18px]">photo_camera</span>
-              <span>{language === 'hi' ? 'एआई स्टूडियो सहायक' : 'AI Studio Assistant'}</span>
+              <span>{t('nav.studio_assistant', 'AI Studio Assistant')}</span>
             </div>
             <p className="text-[11px] text-on-surface-variant leading-relaxed">
-              {language === 'hi'
-                ? 'फ़ोटो लें और 10 सेकंड में शिल्प सूचीबद्ध करें।'
-                : 'Snap photo & speak naturally to list in 10s.'}
+              {t('nav.studio_desc', 'Snap photo & speak naturally to list in 10s.')}
             </p>
             <button
               onClick={() => navigate('/capture')}
               className="w-full py-2 px-3 rounded-xl bg-primary hover:bg-[#2e241e] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
             >
-              <span>{language === 'hi' ? '+ नया शिल्प' : '+ Add Craft'}</span>
+              <span>{t('nav.add_craft', '+ Add Craft')}</span>
             </button>
           </div>
+
+          {/* Desktop ATM Regional Language Selector Card */}
+          <button
+            type="button"
+            onClick={openAtmLanguageModal}
+            className="w-full p-3 rounded-2xl bg-white border border-[#d1c4bd]/70 hover:border-[#9c441c]/50 shadow-xs hover:shadow-md transition-all cursor-pointer group text-left"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <span className="w-8 h-8 rounded-xl bg-[#2e241e] text-[#ffdeaa] flex items-center justify-center text-xs font-black group-hover:scale-105 transition-transform shadow-2xs">
+                  {currentLanguageConfig?.keyChar || 'अ'}
+                </span>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-xs font-bold text-primary truncate">
+                    {currentLanguageConfig?.native || 'हिंदी'}
+                  </span>
+                  <span className="text-[10px] text-secondary font-medium">
+                    ATM Language Keypad
+                  </span>
+                </div>
+              </div>
+              <span className="px-2 py-0.5 rounded-full bg-[#ff9062]/20 text-[#9c441c] text-[10px] font-extrabold tracking-wider">
+                ATM
+              </span>
+            </div>
+          </button>
         </div>
 
         {/* Bottom Sidebar Profile & Help */}
@@ -171,7 +199,7 @@ export default function DashboardLayout() {
             }`}
           >
             <HelpCircle className="w-[18px] h-[18px] shrink-0" />
-            <span>{language === 'hi' ? 'सहायता एवं समर्थन' : 'Help & Support'}</span>
+            <span>{t('nav.support', 'Help & Support')}</span>
           </Link>
           <div 
             onClick={() => navigate('/catalog')}
@@ -191,8 +219,8 @@ export default function DashboardLayout() {
               </span>
               <span className="text-[11px] text-secondary truncate">
                 {isVerified 
-                  ? (language === 'hi' ? '✓ सत्यापित' : '✓ Verified') 
-                  : (language === 'hi' ? 'सत्यापन करें' : 'Tap to Sign In')}
+                  ? `✓ ${t('nav.verified', 'Verified')}`
+                  : t('nav.sign_in', 'Sign In')}
               </span>
             </div>
             <span className={`material-symbols-outlined text-[18px] ${isVerified ? 'text-emerald-700' : 'text-amber-600'}`}>
@@ -226,7 +254,7 @@ export default function DashboardLayout() {
             <div 
               onClick={() => navigate('/home')} 
               className="flex items-center gap-2 cursor-pointer group"
-              title={language === 'hi' ? 'शिल्प सेतु' : 'Shilp Setu'}
+              title={t('nav.brand', 'Shilp Setu')}
             >
               <img
                 src="/shilp-setu-logo.png"
@@ -234,7 +262,7 @@ export default function DashboardLayout() {
                 className="h-8 sm:h-10 w-auto object-contain group-hover:scale-105 transition-transform"
               />
               <h1 className="text-base sm:text-lg font-bold text-gray-800 group-hover:text-primary transition-colors truncate">
-                {language === 'hi' ? 'शिल्प सेतु' : 'Shilp Setu'}
+                {t('nav.brand', 'Shilp Setu')}
               </h1>
             </div>
           </div>
@@ -248,8 +276,8 @@ export default function DashboardLayout() {
             <button
               onClick={toggleNotifications}
               className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 flex items-center justify-center relative transition-all cursor-pointer active:scale-95 border border-gray-200"
-              title={language === 'hi' ? 'सूचनाएं' : 'Notifications'}
-              aria-label="Notifications"
+              title={t('nav.notifications', 'Notifications')}
+              aria-label={t('nav.notifications', 'Notifications')}
               type="button"
             >
               <span className="material-symbols-outlined text-[18px] sm:text-[20px]">notifications</span>
@@ -264,8 +292,8 @@ export default function DashboardLayout() {
                 id="header-logout-btn"
                 onClick={handleLogout}
                 className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gray-100 hover:bg-red-50 text-gray-700 hover:text-red-600 flex items-center justify-center transition-all cursor-pointer active:scale-95 border border-gray-200"
-                title={language === 'hi' ? 'लॉगआउट' : 'Sign Out'}
-                aria-label="Sign Out"
+                title={t('nav.sign_out', 'Sign Out')}
+                aria-label={t('nav.sign_out', 'Sign Out')}
                 type="button"
               >
                 <span className="material-symbols-outlined text-[18px] sm:text-[20px]">logout</span>
@@ -274,8 +302,8 @@ export default function DashboardLayout() {
               <button
                 onClick={() => openAuthModal()}
                 className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-800 flex items-center justify-center transition-all cursor-pointer active:scale-95 border border-amber-200"
-                title={language === 'hi' ? 'लॉगिन' : 'Sign In'}
-                aria-label="Sign In"
+                title={t('nav.sign_in', 'Sign In')}
+                aria-label={t('nav.sign_in', 'Sign In')}
                 type="button"
               >
                 <span className="material-symbols-outlined text-[18px] sm:text-[20px]">account_circle</span>
@@ -348,11 +376,38 @@ export default function DashboardLayout() {
                     </span>
                     <span className="text-[11px] text-secondary truncate">
                       {isVerified
-                        ? (language === 'hi' ? '✓ सत्यापित शिल्पकार' : '✓ Verified Studio')
-                        : (language === 'hi' ? 'लॉगिन करें' : 'Tap to Sign In')}
+                        ? `✓ ${t('nav.verified', 'Verified')}`
+                        : t('nav.sign_in', 'Sign In')}
                     </span>
                   </div>
                 </div>
+
+                {/* Mobile Drawer ATM Regional Language Selector */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    openAtmLanguageModal();
+                  }}
+                  className="w-full flex items-center justify-between p-3 rounded-2xl bg-white border border-[#d1c4bd]/80 hover:border-[#9c441c]/60 shadow-xs transition-all cursor-pointer group text-left"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-8 h-8 rounded-xl bg-[#2e241e] text-[#ffdeaa] flex items-center justify-center text-xs font-black shadow-2xs">
+                      {currentLanguageConfig?.keyChar || 'अ'}
+                    </span>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs font-bold text-primary truncate">
+                        {currentLanguageConfig?.native || 'हिंदी'}
+                      </span>
+                      <span className="text-[10px] text-secondary font-medium">
+                        ATM Language Selector
+                      </span>
+                    </div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full bg-[#ff9062]/20 text-[#9c441c] text-[10px] font-extrabold">
+                    ATM
+                  </span>
+                </button>
 
                 {/* Mobile Navigation Links */}
                 <nav className="flex flex-col gap-1.5">
@@ -401,7 +456,7 @@ export default function DashboardLayout() {
                     }`}
                   >
                     <HelpCircle className="w-[18px] h-[18px] shrink-0" />
-                    <span>{language === 'hi' ? 'सहायता एवं समर्थन' : 'Help & Support'}</span>
+                    <span>{t('nav.support', 'Help & Support')}</span>
                   </Link>
                 </nav>
 
@@ -409,12 +464,10 @@ export default function DashboardLayout() {
                 <div className="p-3 bg-[#f1ede7] rounded-2xl border border-[#d1c4bd]/40 space-y-2">
                   <div className="flex items-center gap-2 text-xs font-bold text-primary">
                     <span className="material-symbols-outlined text-secondary text-[18px]">photo_camera</span>
-                    <span>{language === 'hi' ? 'एआई स्टूडियो सहायक' : 'AI Studio Assistant'}</span>
+                    <span>{t('nav.studio_assistant', 'AI Studio Assistant')}</span>
                   </div>
                   <p className="text-[11px] text-on-surface-variant leading-relaxed">
-                    {language === 'hi'
-                      ? 'फ़ोटो लें और 10 सेकंड में शिल्प सूचीबद्ध करें।'
-                      : 'Snap photo & list craft in 10s.'}
+                    {t('nav.studio_desc', 'Snap photo & speak naturally to list in 10s.')}
                   </p>
                   <button
                     onClick={() => {
@@ -423,7 +476,7 @@ export default function DashboardLayout() {
                     }}
                     className="w-full py-2.5 px-3 rounded-xl bg-primary hover:bg-[#2e241e] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer active:scale-95"
                   >
-                    <span>{language === 'hi' ? '+ नया शिल्प' : '+ Add Craft'}</span>
+                    <span>{t('nav.add_craft', '+ Add Craft')}</span>
                   </button>
                 </div>
               </div>
@@ -439,7 +492,7 @@ export default function DashboardLayout() {
                     className="w-full py-2.5 px-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
                   >
                     <span className="material-symbols-outlined text-[18px]">logout</span>
-                    <span>{language === 'hi' ? 'लॉगआउट करें' : 'Sign Out'}</span>
+                    <span>{t('nav.sign_out', 'Sign Out')}</span>
                   </button>
                 ) : (
                   <button
@@ -450,7 +503,7 @@ export default function DashboardLayout() {
                     className="w-full py-2.5 px-3 rounded-xl bg-[#2e241e] text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
                   >
                     <span className="material-symbols-outlined text-[18px]">login</span>
-                    <span>{language === 'hi' ? 'लॉगिन करें' : 'Sign In'}</span>
+                    <span>{t('nav.sign_in', 'Sign In')}</span>
                   </button>
                 )}
               </div>
@@ -472,7 +525,7 @@ export default function DashboardLayout() {
           }
         >
           <span className="material-symbols-outlined text-[22px]">cottage</span>
-          <span>{language === 'hi' ? 'आवास' : 'Home'}</span>
+          <span>{t('nav.home', 'Home')}</span>
         </NavLink>
         <NavLink
           to="/catalog"
@@ -487,13 +540,13 @@ export default function DashboardLayout() {
           }}
         >
           <span className="material-symbols-outlined text-[22px]">inventory_2</span>
-          <span>{language === 'hi' ? 'कैटलॉग' : 'Catalog'}</span>
+          <span>{t('nav.catalog', 'Catalog')}</span>
         </NavLink>
         {/* Floating Center Capture Button */}
         <button
           onClick={() => navigate('/capture')}
           className="w-12 h-12 -mt-5 rounded-full bg-primary text-white flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-transform border-2 border-white cursor-pointer shrink-0"
-          aria-label="Add Product"
+          aria-label={t('nav.add_craft', 'Add Craft')}
         >
           <span className="material-symbols-outlined text-[24px]">photo_camera</span>
         </button>
@@ -506,7 +559,7 @@ export default function DashboardLayout() {
           }
         >
           <span className="material-symbols-outlined text-[22px]">receipt_long</span>
-          <span>{language === 'hi' ? 'ऑर्डर्स' : 'Orders'}</span>
+          <span>{t('nav.orders', 'Orders')}</span>
           <span className="w-2 h-2 rounded-full bg-[#9c441c] absolute top-1 right-2"></span>
         </NavLink>
       </nav>

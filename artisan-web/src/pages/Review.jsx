@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import LanguageToggle from '../components/LanguageToggle';
@@ -21,6 +22,7 @@ const GEM_CATEGORIES = [
 export default function Review() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
   const { user, artisanProfile, openAuthModal, showToast, language } = useAuth();
 
   // Read AI data passed from Capture.jsx

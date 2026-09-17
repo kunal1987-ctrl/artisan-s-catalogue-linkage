@@ -77,7 +77,16 @@ export function AuthProvider({ children }) {
   const [artisanStudio] = useState('शिल्प सेतु स्टूडियो');
 
   // Global Language state (synced with LanguageContext)
-  const { language, setLanguage: setGlobalLang, toggleLanguage: toggleGlobalLang } = useLanguage();
+  const {
+    language,
+    setLanguage: setGlobalLang,
+    toggleLanguage: toggleGlobalLang,
+    supportedLanguages,
+    currentLanguageConfig,
+    isAtmLanguageModalOpen,
+    openAtmLanguageModal,
+    closeAtmLanguageModal,
+  } = useLanguage();
 
   const fallbackArtisanName = language === 'hi' ? 'कारीगर' : 'Artisan';
 
@@ -132,13 +141,13 @@ export function AuthProvider({ children }) {
 
   const setLanguage = (newLang) => {
     setGlobalLang(newLang);
-    showToast(newLang === 'hi' ? '🇮🇳 भाषा बदलकर हिन्दी की गई' : '🌐 Language switched to English');
+    const langObj = supportedLanguages?.find((l) => l.code === newLang);
+    const label = langObj ? `${langObj.native} (${langObj.name})` : newLang;
+    showToast(`🌐 ${label}`);
   };
 
   const toggleLanguage = () => {
-    const nextLang = language === 'hi' ? 'en' : 'hi';
     toggleGlobalLang();
-    showToast(nextLang === 'hi' ? '🇮🇳 भाषा बदलकर हिन्दी की गई' : '🌐 Language switched to English');
   };
 
   const toggleNotifications = () => {
@@ -469,6 +478,11 @@ export function AuthProvider({ children }) {
     language,
     toggleLanguage,
     setLanguage,
+    supportedLanguages,
+    currentLanguageConfig,
+    isAtmLanguageModalOpen,
+    openAtmLanguageModal,
+    closeAtmLanguageModal,
     notifications,
     isNotificationsOpen,
     toggleNotifications,

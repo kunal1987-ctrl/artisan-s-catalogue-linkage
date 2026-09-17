@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
+import AtmLanguageSelector from '../components/AtmLanguageSelector';
 
 export default function Home({ customArtisanName } = {}) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { language, showToast, session, artisanName: contextArtisanName } = useAuth();
-  const fallback = language === 'hi' ? 'कारीगर' : 'Artisan';
+  const fallback = t('home.welcome', 'Artisan');
   const artisanName =
     customArtisanName ||
     contextArtisanName ||
@@ -77,14 +80,14 @@ export default function Home({ customArtisanName } = {}) {
                 <div className="flex flex-col">
                     <div
                         className="flex items-center gap-2 text-[11px] sm:text-[12px] font-semibold text-secondary uppercase tracking-wider">
-                        <span>{language === 'hi' ? 'आवास' : 'Home'}</span>
+                        <span>{t('nav.home', 'Home')}</span>
                         <span>/</span>
-                        <span>{language === 'hi' ? 'शिल्पकार डैशबोर्ड' : 'Artisan Dashboard'}</span>
+                        <span>{t('home.breadcrumb', 'Artisan Dashboard')}</span>
                     </div>
                     <h2 className="text-xl sm:text-[24px] font-bold text-primary flex flex-wrap items-center gap-2 mt-0.5">
-                        <span>Namaste, {artisanName}! (नमस्ते, {artisanName}!)</span>
+                        <span>{t('home.welcome', 'Namaste')}, {artisanName}!</span>
                         <span className="text-xs sm:text-[14px] font-medium text-on-surface-variant">
-                            {language === 'hi' ? 'शिल्प सेतु शॉप' : 'Shilp Setu Shop'}
+                            {t('home.shop_subtitle', 'Shilp Setu Shop')}
                         </span>
                     </h2>
                 </div>
@@ -95,7 +98,7 @@ export default function Home({ customArtisanName } = {}) {
                             className="material-symbols-outlined absolute left-3.5 top-2.5 text-[19px] text-[#80756f]">search</span>
                         <input
                             className="w-full pl-10 pr-10 py-2 rounded-full bg-[#f1ede7] border border-[#d1c4bd]/60 text-[13px] text-primary placeholder-[#80756f] focus:outline-none focus:ring-2 focus:ring-secondary/40 transition-all"
-                            placeholder={language === 'hi' ? 'शिल्प खोजें या बोलकर बताएं...' : 'Search crafts or speak item name...'} type="text" />
+                            placeholder={t('home.search_placeholder', 'Search crafts or speak item name...')} type="text" />
                         <button aria-label="Voice search"
                             className="absolute right-2.5 top-1.5 w-7 h-7 rounded-full bg-[#e6e2dc] text-primary flex items-center justify-center hover:bg-[#d4c3ba] transition-colors cursor-pointer"
                             type="button">
@@ -106,6 +109,9 @@ export default function Home({ customArtisanName } = {}) {
             </div>
             <div className="px-3 sm:px-6 lg:px-8 py-4 sm:py-6 flex flex-col gap-6 max-w-7xl mx-auto w-full">
                 
+                {/* Prominent ATM-Style Regional Language Selector Board */}
+                <AtmLanguageSelector mode="inline" />
+
                 {/* Hero AI Studio Banner (Internationalized Header) */}
                 <Header />
                 
@@ -122,17 +128,17 @@ export default function Home({ customArtisanName } = {}) {
                             </span>
                             <span className="inline-flex items-center gap-1 text-[#9c441c] font-bold text-[12px] bg-[#ff9062]/15 px-2 py-0.5 rounded-full">
                                 <span className="material-symbols-outlined text-[14px]">trending_up</span>
-                                <span>{language === 'hi' ? '+2 इस हफ़्ते' : '+2 this wk'}</span>
+                                <span>{t('home.this_week', '+2 this wk')}</span>
                             </span>
                         </div>
                         <div className="mt-4">
                             <span className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant block">
-                                {language === 'hi' ? 'सक्रिय शिल्प' : 'Live Products'}
+                                {t('home.live_products', 'Live Products')}
                             </span>
                             <div className="flex items-baseline gap-2 mt-1">
                                 <span className="text-[32px] font-bold text-primary">12</span>
                                 <span className="text-[14px] text-on-surface-variant font-medium">
-                                    {language === 'hi' ? 'दुकान में उपलब्ध' : 'listed in shop'}
+                                    {t('home.in_shop', 'listed in shop')}
                                 </span>
                             </div>
                         </div>
@@ -153,12 +159,12 @@ export default function Home({ customArtisanName } = {}) {
                         </div>
                         <div className="mt-4">
                             <span className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant block">
-                                {language === 'hi' ? 'हालिया दर्शक' : 'Recent Views'}
+                                {t('home.recent_views', 'Recent Views')}
                             </span>
                             <div className="flex items-baseline gap-2 mt-1">
                                 <span className="text-[32px] font-bold text-primary">45</span>
                                 <span className="text-[14px] text-on-surface-variant font-medium">
-                                    {language === 'hi' ? 'ग्राहक पहुंचे' : 'shoppers reached'}
+                                    {t('home.shoppers_reached', 'shoppers reached')}
                                 </span>
                             </div>
                         </div>
@@ -174,16 +180,16 @@ export default function Home({ customArtisanName } = {}) {
                                 <span className="material-symbols-outlined text-[22px]">insights</span>
                             </span>
                             <span className="text-[11px] font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
-                                {language === 'hi' ? 'सक्रिय' : 'Healthy'}
+                                {t('home.healthy', 'Healthy')}
                             </span>
                         </div>
                         <div className="mt-3 flex items-end justify-between">
                             <div>
                                 <span className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant block">
-                                    {language === 'hi' ? 'दुकान सक्रियता' : 'Store Activity'}
+                                    {t('home.store_activity', 'Store Activity')}
                                 </span>
                                 <span className="text-[14px] font-bold text-primary block mt-0.5">
-                                    {language === 'hi' ? '3 नई पूछताछ आज' : '3 Inquiries Today'}
+                                    {t('home.inquiries_today', '3 Inquiries Today')}
                                 </span>
                             </div>
                             <div className="flex items-end gap-1.5 h-8">
@@ -221,13 +227,13 @@ export default function Home({ customArtisanName } = {}) {
                         </div>
                         <div className="mt-4">
                             <span className="text-[11px] font-bold uppercase tracking-wider text-[#9c441c] block">
-                                {language === 'hi' ? 'स्टॉक चेतावनी' : 'Inventory Alert'}
+                                {t('home.inventory_alert', 'Inventory Alert')}
                             </span>
                             <div className="mt-1.5 flex flex-col items-start gap-2.5">
                                 <span className="text-[22px] font-bold text-primary leading-none">
                                     {stockQty <= 2
-                                        ? (language === 'hi' ? '1 अल्प स्टॉक' : '1 Low Stock')
-                                        : (language === 'hi' ? `${stockQty} स्टॉक में` : `${stockQty} In Stock`)}
+                                        ? t('home.low_stock_notice', '1 Low Stock')
+                                        : t('home.in_stock_count', { count: stockQty, defaultValue: `${stockQty} In Stock` })}
                                 </span>
                                 <button
                                     type="button"
@@ -239,8 +245,8 @@ export default function Home({ customArtisanName } = {}) {
                                 >
                                     <span>
                                         {stockQty <= 2
-                                            ? (language === 'hi' ? 'सुराही स्टॉक बढ़ाएं →' : 'Restock Surahi →')
-                                            : (language === 'hi' ? 'स्टॉक बदलें →' : 'Adjust Stock →')}
+                                            ? t('home.restock_button', 'Restock Surahi →')
+                                            : t('home.adjust_stock_button', 'Adjust Stock →')}
                                     </span>
                                 </button>
                             </div>
@@ -252,13 +258,13 @@ export default function Home({ customArtisanName } = {}) {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-4">
                     <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                         <h3 className="text-lg sm:text-[22px] font-bold text-primary">
-                            {language === 'hi' ? 'हाल ही में जोड़े गए शिल्प' : 'Recent Uploads'}
+                            {t('home.recent_uploads', 'Recent Uploads')}
                         </h3>
                         <span className="px-2.5 py-0.5 rounded-full bg-[#ebe8e2] text-secondary font-bold text-[11px] sm:text-[12px]">
-                            {language === 'hi' ? '3 सक्रिय शिल्प' : '3 Active Crafts'}
+                            {t('home.active_crafts', '3 Active Crafts')}
                         </span>
                         <span className="text-[13px] text-on-surface-variant hidden md:inline">
-                            {language === 'hi' ? 'खरीदारों को दिखाने हेतु तैयार' : 'Ready to show international buyers'}
+                            {t('home.ready_buyers', 'Ready to show international buyers')}
                         </span>
                     </div>
                     <button
@@ -266,7 +272,7 @@ export default function Home({ customArtisanName } = {}) {
                         className="text-[13px] sm:text-[14px] text-secondary hover:text-primary font-bold flex items-center gap-1 transition-colors cursor-pointer bg-transparent border-0 self-start sm:self-auto"
                         type="button"
                     >
-                        <span>{language === 'hi' ? 'सभी शिल्प देखें' : 'View All Catalog Items'}</span>
+                        <span>{t('home.view_all_catalog', 'View All Catalog Items')}</span>
                         <span className="material-symbols-outlined text-[18px]">chevron_right</span>
                     </button>
                 </div>
@@ -294,13 +300,13 @@ export default function Home({ customArtisanName } = {}) {
                                             }`}
                                         >
                                             {isLow
-                                                ? (language === 'hi' ? `अल्प स्टॉक (${product.stock})` : `Low Stock (${product.stock})`)
-                                                : (language === 'hi' ? `स्टॉक में (${product.stock})` : `In Stock (${product.stock})`)}
+                                                ? t('home.low_stock_badge', { count: product.stock, defaultValue: `Low Stock (${product.stock})` })
+                                                : t('home.in_stock_badge', { count: product.stock, defaultValue: `In Stock (${product.stock})` })}
                                         </span>
                                     </div>
                                     <button
-                                        aria-label={language === 'hi' ? 'विवरण देखें' : 'View product details'}
-                                        title={language === 'hi' ? 'विवरण देखें' : 'View product details'}
+                                        aria-label={t('home.view', 'View details')}
+                                        title={t('home.view', 'View details')}
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             navigate(`/details/${product.id}`, { state: { product } });
@@ -318,7 +324,7 @@ export default function Home({ customArtisanName } = {}) {
                                                 {language === 'hi' ? product.category_hi : product.category}
                                             </span>
                                             <span className="text-[11px] font-bold text-[#9c441c] flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
-                                                <span>{language === 'hi' ? 'देखें' : 'View'}</span>
+                                                <span>{t('catalog.views', 'View')}</span>
                                                 <span>→</span>
                                             </span>
                                         </div>
@@ -331,7 +337,7 @@ export default function Home({ customArtisanName } = {}) {
                                             ✨ ₹{product.price}
                                         </span>
                                         <span className="text-[12px] text-on-surface-variant font-medium flex items-center gap-1">
-                                            <span className="material-symbols-outlined text-[14px]">visibility</span> {product.views} {language === 'hi' ? 'दृश्य' : 'views'}
+                                            <span className="material-symbols-outlined text-[14px]">visibility</span> {product.views} {t('home.views', { count: product.views, defaultValue: `${product.views} views` })}
                                         </span>
                                     </div>
                                 </div>
@@ -349,17 +355,15 @@ export default function Home({ customArtisanName } = {}) {
                             <span className="material-symbols-outlined text-[30px]">add_a_photo</span>
                         </div>
                         <p className="text-[18px] font-bold text-primary">
-                            {language === 'hi' ? 'नया शिल्प जोड़ें' : 'Add New Craft'}
+                            {t('home.add_new_listing', 'Add New Listing')}
                         </p>
                         <p className="text-[13px] text-on-surface-variant mt-1.5 max-w-[200px]">
-                            {language === 'hi'
-                                ? 'फ़ोटो लें या बोलकर विवरण दर्ज करें'
-                                : 'Tap to snap camera or speak product details'}
+                            {t('home.voice_listing_desc', 'Tap to snap camera or speak product details')}
                         </p>
                         <span
                             className="inline-flex items-center gap-1.5 text-[12px] font-bold text-secondary uppercase tracking-wider mt-4 px-3 py-1 bg-white rounded-full border border-[#d1c4bd]/40 shadow-sm">
                             <span className="material-symbols-outlined text-[16px]">mic</span>
-                            <span>{language === 'hi' ? 'आवाज़ तैयार' : 'Voice Ready'}</span>
+                            <span>{t('capture.start_recording', 'Voice Ready')}</span>
                         </span>
                     </div>
                 </div>
@@ -373,15 +377,13 @@ export default function Home({ customArtisanName } = {}) {
                             </div>
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm sm:text-[16px] font-bold text-primary flex flex-wrap items-center gap-2">
-                                    <span>{language === 'hi' ? `${artisanName} के लिए आज का सुझाव` : `${artisanName}'s Daily Tip`}</span>
+                                    <span>{t('home.artisan_tip_title', 'Pro Artisan Tip')}</span>
                                     <span className="text-[10px] sm:text-[11px] font-semibold text-[#9c441c] bg-white px-2 py-0.5 rounded-full">
-                                        {language === 'hi' ? 'कारीगर उत्तम अभ्यास' : 'Artisan Best Practice'}
+                                        {t('home.breadcrumb', 'Artisan Best Practice')}
                                     </span>
                                 </p>
                                 <p className="text-xs sm:text-[14px] text-on-surface-variant mt-0.5 leading-relaxed">
-                                    {language === 'hi'
-                                        ? 'सुबह की प्राकृतिक धूप में साड़ियों के रेशमी धागे और मिट्टी के बर्तनों की नक्काशी सबसे स्पष्ट और आकर्षक दिखती है।'
-                                        : "Natural morning light brings out your saree's pure silk threads and clay etching highlights."}
+                                    {t('home.artisan_tip_body', 'Clear sunlight photos and mentioning traditional techniques increases buyer interest by 40%.')}
                                 </p>
                             </div>
                         </div>

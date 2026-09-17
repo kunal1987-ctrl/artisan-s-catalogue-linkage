@@ -1,90 +1,46 @@
-import React, { useContext } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
-import LanguageContext from '../context/LanguageContext';
+import { useLanguage, SUPPORTED_LANGUAGES } from '../context/LanguageContext';
+import { Globe, ChevronDown } from 'lucide-react';
 
 /**
  * LanguageSwitcher Component
- * Provides an accessible, dynamic toggle between English ('en') and Hindi ('hi')
- * using react-i18next's i18n.changeLanguage() API.
+ * 
+ * Prominent ATM-style language launcher displayed in top navigation headers.
+ * Clicking triggers the tactile ATM Regional Language Selector modal.
+ * Displays the current active language in its native script with tactile styling.
  */
 export default function LanguageSwitcher({ className = '', variant = 'compact' }) {
-  const { i18n } = useTranslation();
-  const langContext = useContext(LanguageContext);
-  const setContextLanguage = langContext?.setLanguage;
+  const { t, i18n } = useTranslation();
+  const { language, openAtmLanguageModal, currentLanguageConfig } = useLanguage();
 
-  const currentLang = (i18n.resolvedLanguage || i18n.language || 'en').startsWith('hi') ? 'hi' : 'en';
-  const isHindi = currentLang === 'hi';
+  const activeLangCode = language || i18n.resolvedLanguage || 'hi';
+  const langConfig = currentLanguageConfig || SUPPORTED_LANGUAGES.find((l) => l.code === activeLangCode) || SUPPORTED_LANGUAGES[0];
 
-  const switchLanguage = (targetLang) => {
-    i18n.changeLanguage(targetLang);
-    if (setContextLanguage) {
-      setContextLanguage(targetLang);
-    }
-    try {
-      localStorage.setItem('artisan_language', targetLang);
-      document.documentElement.lang = targetLang;
-    } catch {
-      // Ignore storage errors in restricted iframe environments
-    }
-  };
-
-  const handleToggle = () => {
-    switchLanguage(isHindi ? 'en' : 'hi');
-  };
-
-  if (variant === 'segmented') {
-    return (
-      <div 
-        role="group"
-        aria-label="Language selection"
-        className={`inline-flex items-center p-1 rounded-full bg-gray-100 border border-gray-200 shadow-inner ${className}`}
-      >
-        <button
-          type="button"
-          onClick={() => switchLanguage('en')}
-          className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
-            !isHindi
-              ? 'bg-[#2e241e] text-white shadow-xs'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-          aria-pressed={!isHindi}
-        >
-          English
-        </button>
-        <button
-          type="button"
-          onClick={() => switchLanguage('hi')}
-          className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
-            isHindi
-              ? 'bg-[#9c441c] text-white shadow-xs'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-          aria-pressed={isHindi}
-        >
-          हिन्दी
-        </button>
-      </div>
-    );
-  }
-
-  // Default compact toggle switch button
   return (
     <button
       type="button"
-      onClick={handleToggle}
-      title={isHindi ? 'Switch to English' : 'हिन्दी में बदलें'}
-      aria-label={isHindi ? 'Switch to English' : 'Switch to Hindi'}
-      className={`group inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full border border-gray-200 bg-white/90 hover:bg-white text-gray-800 shadow-xs hover:shadow-sm active:scale-95 transition-all cursor-pointer backdrop-blur-md ${className}`}
+      onClick={openAtmLanguageModal}
+      title={`${t('atm.title', 'Select Language')} (${langConfig.native})`}
+      aria-label={`${t('atm.title', 'Select Language')} - ${langConfig.native}`}
+      className={`group inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full border border-[#d1c4bd]/80 bg-white hover:bg-[#fbf7f2] text-gray-900 shadow-xs hover:shadow-md active:scale-95 transition-all cursor-pointer select-none backdrop-blur-md ${className}`}
     >
-      <span className="w-5 h-5 rounded-full bg-[#9c441c]/15 text-[#9c441c] flex items-center justify-center text-[11px] font-extrabold group-hover:bg-[#9c441c] group-hover:text-white transition-colors">
-        {isHindi ? 'अ' : 'A'}
+      {/* ATM Key Initial Badge */}
+      <span className="w-5 h-5 sm:w-5.5 sm:h-5.5 rounded-full bg-[#9c441c]/15 text-[#9c441c] flex items-center justify-center text-[11px] font-black group-hover:bg-[#9c441c] group-hover:text-white transition-colors shadow-2xs">
+        {langConfig.keyChar}
       </span>
-      <span className="text-xs font-bold tracking-wide">
-        {isHindi ? 'हिन्दी' : 'English'}
+
+      {/* Prominent Native Script */}
+      <span className="text-xs sm:text-[13px] font-extrabold tracking-tight text-gray-900 group-hover:text-[#9c441c] transition-colors">
+        {langConfig.native}
       </span>
-      <span className="hidden sm:inline text-[10px] text-gray-400 font-semibold uppercase tracking-wider pl-1 border-l border-gray-200">
-        {isHindi ? 'EN' : 'HI'}
+
+      {/* ATM Tag / Code */}
+      <span className="hidden sm:inline-flex items-center text-[9px] font-extrabold uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-[#2e241e]/10 text-[#2e241e] border border-[#2e241e]/20">
+        ATM
       </span>
+
+      <ChevronDown className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#9c441c] transition-colors" />
     </button>
   );
 }

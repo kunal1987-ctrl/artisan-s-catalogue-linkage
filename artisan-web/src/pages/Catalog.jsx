@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 
@@ -68,6 +69,7 @@ const EXPORT_CATALOG_URL = 'https://jrkrdlalnqswvwabktce.supabase.co/functions/v
 export default function Catalog() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
   const { language, user } = useAuth();
   const [products, setProducts] = useState(INITIAL_PRODUCTS);
   const [searchQuery, setSearchQuery] = useState('');
@@ -393,13 +395,13 @@ export default function Catalog() {
             {/* Left Side: Title & Add Button */}
             <div className="flex flex-wrap items-center gap-2.5 sm:gap-4 w-full sm:w-auto justify-between sm:justify-start">
               <h2 className="text-lg sm:text-xl font-bold text-gray-800">
-                {language === 'hi' ? 'मेरी शिल्प सूची' : 'My Catalog'}
+                {t('catalog.title', 'Craft Catalog')}
               </h2>
               <button
                 onClick={() => navigate('/capture')}
                 className="bg-emerald-600 text-white px-3.5 sm:px-4 py-2 rounded-xl shadow-xs hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:outline-none flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium transition-colors cursor-pointer active:scale-95"
               >
-                {language === 'hi' ? '📸 + 🎙️ नया उत्पाद' : '📸 + 🎙️ Add Product'}
+                <span>📸 + 🎙️ {t('catalog.add_item', 'Add Craft')}</span>
               </button>
             </div>
 
@@ -472,7 +474,7 @@ export default function Catalog() {
                 <input
                   className="w-full h-12 pl-11 pr-10 bg-surface-container-lowest text-on-surface placeholder:text-on-surface-variant text-sm font-medium rounded-xl shadow-xs border border-surface-container-high focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all"
                   id="productSearchInput"
-                  placeholder={language === 'hi' ? 'शिल्प, साड़ी, मिट्टी के बर्तन खोजें...' : 'Search crafts, sarees, pottery...'}
+                  placeholder={t('catalog.search', 'Search crafts, sarees, pottery...')}
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -493,7 +495,7 @@ export default function Catalog() {
                   className="text-xs font-bold text-secondary hover:underline cursor-pointer"
                   type="button"
                 >
-                  {language === 'hi' ? 'खोज साफ़ करें' : 'Clear Search'}
+                  {t('catalog.filter', 'Clear Search')}
                 </button>
               )}
             </div>
@@ -502,9 +504,9 @@ export default function Catalog() {
             <div className="bg-surface-container-low border border-surface-container rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex-1 w-full">
                 <div className="flex items-center justify-between text-xs font-semibold text-on-surface-variant mb-2">
-                  <span>{language === 'hi' ? 'समग्र स्टॉक उपलब्धता' : 'Overall Stock Availability'}</span>
+                  <span>{t('home.inventory_alert', 'Overall Stock Availability')}</span>
                   <span className="font-bold text-primary">
-                    {language === 'hi' ? '83% सक्रिय (डिस्पैच हेतु तैयार)' : '83% Active (Ready for dispatch)'}
+                    83% {t('orders.confirmed', 'Active')}
                   </span>
                 </div>
                 <div className="w-full h-2.5 bg-surface-container-highest rounded-full overflow-hidden flex">
@@ -516,15 +518,15 @@ export default function Catalog() {
               <div className="flex items-center gap-3 text-xs font-semibold shrink-0 flex-wrap">
                 <span className="flex items-center gap-1.5 bg-surface-container-lowest px-3 py-1.5 rounded-xl border border-surface-container">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-700 inline-block"></span>
-                  {liveCount} {language === 'hi' ? 'सक्रिय' : 'Live'}
+                  {liveCount} {t('orders.confirmed', 'Live')}
                 </span>
                 <span className="flex items-center gap-1.5 bg-surface-container-lowest px-3 py-1.5 rounded-xl border border-surface-container">
                   <span className="w-2.5 h-2.5 rounded-full bg-amber-600 inline-block"></span>
-                  {draftCount} {language === 'hi' ? 'समीक्षाधीन' : 'In Review'}
+                  {draftCount} {t('orders.pending', 'In Review')}
                 </span>
                 <span className="flex items-center gap-1.5 bg-surface-container-lowest px-3 py-1.5 rounded-xl border border-surface-container">
                   <span className="w-2.5 h-2.5 rounded-full bg-error inline-block"></span>
-                  {soldOutCount} {language === 'hi' ? 'बिक गया' : 'Sold Out'}
+                  {soldOutCount} {t('home.inventory_alert', 'Sold Out')}
                 </span>
               </div>
             </div>
@@ -541,7 +543,7 @@ export default function Catalog() {
                   onClick={() => setActiveFilter('all')}
                   type="button"
                 >
-                  {language === 'hi' ? 'सभी' : 'All'} ({products.length})
+                  {t('catalog.all', 'All')} ({products.length})
                 </button>
                 <button
                   className={`shrink-0 h-10 px-4 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-2 cursor-pointer ${

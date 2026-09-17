@@ -19,6 +19,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '../supabaseClient';
 import POSlipModal from '../components/POSlipModal';
 import { useLanguage } from '../context/LanguageContext';
@@ -436,6 +437,7 @@ function OrderCard({ order, onMarkPacked, onAcceptPO, onDispatchPO, setSelectedP
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function Orders() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { language } = useLanguage();
   const [orders, setOrders] = useState(STATIC_ORDERS);
   const [activeFilter, setActiveFilter] = useState('ALL');
@@ -773,7 +775,7 @@ export default function Orders() {
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs font-bold text-secondary tracking-wider uppercase">
-                    {language === 'hi' ? 'ऑर्डर फुलफिलमेंट' : 'Order Fulfillment'}
+                    {t('orders.title', 'Orders & Fulfillment')}
                   </span>
                   <span className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -781,7 +783,7 @@ export default function Orders() {
                   </span>
                 </div>
                 <h1 className="text-xl sm:text-2xl font-extrabold text-espresso-deep tracking-tight mt-0.5">
-                  {language === 'hi' ? 'आर्डर इनबॉक्स' : 'Order Inbox'}
+                  {t('orders.title', 'Orders & Fulfillment')}
                 </h1>
               </div>
             </div>
@@ -789,7 +791,7 @@ export default function Orders() {
             {/* Global voice button */}
             <button
               type="button"
-              aria-label={language === 'hi' ? 'बोलकर सुनें' : 'Listen to audio instructions'}
+              aria-label={t('capture.listening', 'Listen to audio')}
               id="voice-listen-btn"
               className="min-w-[48px] min-h-[48px] w-[48px] h-[48px] rounded-full bg-primary-container text-on-primary flex items-center justify-center shrink-0 active:scale-90 hover:scale-105 transition-all shadow-md cursor-pointer"
               onClick={() => {
@@ -809,9 +811,9 @@ export default function Orders() {
             {/* Filter chips */}
             <div className="flex items-center gap-2 overflow-x-auto py-1 scrollbar-none">
               {[
-                { key: 'ALL', label: language === 'hi' ? 'सभी आर्डर' : 'All Orders' },
-                { key: 'GEM', label: language === 'hi' ? 'सरकारी आर्डर (GeM)' : 'GeM Orders' },
-                { key: 'ONDC', label: language === 'hi' ? 'रिटेल आर्डर (ONDC)' : 'ONDC Orders' },
+                { key: 'ALL', label: t('orders.all_orders', 'All Orders') },
+                { key: 'GEM', label: 'GeM Orders' },
+                { key: 'ONDC', label: 'ONDC Orders' },
               ].map(({ key, label }) => (
                 <button
                   key={key}

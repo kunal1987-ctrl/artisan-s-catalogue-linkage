@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageToggle from '../components/LanguageToggle';
 
@@ -11,6 +12,7 @@ import LanguageToggle from '../components/LanguageToggle';
 export default function Success() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
   const { language } = useLanguage();
   const product = location.state || {};
 
@@ -105,13 +107,13 @@ export default function Success() {
             onClick={() => navigate('/catalog')}
             className="px-3 sm:px-4 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-xs font-bold transition-all cursor-pointer hidden sm:inline-flex"
           >
-            {language === 'hi' ? 'कैटलॉग' : 'Catalog'}
+            {t('nav.catalog', 'Catalog')}
           </button>
           <button
             onClick={() => navigate('/home')}
             className="px-3 sm:px-4 py-1.5 rounded-full bg-[#ff9062] text-[#180f0a] font-bold text-xs hover:bg-[#ff804a] transition-all cursor-pointer"
           >
-            {language === 'hi' ? 'डैशबोर्ड' : 'Dashboard'}
+            {t('nav.home', 'Dashboard')}
           </button>
         </div>
       </header>

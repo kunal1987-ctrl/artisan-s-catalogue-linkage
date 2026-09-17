@@ -7,6 +7,8 @@ import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import LanguageToggle from '../components/LanguageToggle';
 import LanguageSelectorModal, { getDialectBadgeText } from '../components/LanguageSelectorModal';
+import AudioMuteButton from '../components/AudioMuteButton';
+import useAudioAssistant from '../hooks/useAudioAssistant';
 
 const blobToBase64 = (blob) =>
   new Promise((resolve, reject) => {
@@ -163,6 +165,35 @@ export default function Capture() {
   const textDescription = (audioTranscript || customTranscript || '').trim();
   const hasDescription = Boolean(textDescription.length > 0 || Boolean(audioBase64) || Boolean(_audioBlob));
   const isReadyToProcess = Boolean(hasImage && hasDescription);
+
+  const { speakPrompt, stop } = useAudioAssistant();
+
+  // Contextual voice prompt: Screen 1 - Camera / Photo capture prompt for zero-literacy artisans
+  useEffect(() => {
+    if (!hasImage) {
+      const timer = setTimeout(() => {
+        speakPrompt('camera_step');
+      }, 700);
+      return () => clearTimeout(timer);
+    }
+  }, [hasImage, speakPrompt, language]);
+
+  // Contextual voice prompt: Screen 2 - Voice recording prompt once photo is ready
+  useEffect(() => {
+    if (hasImage && !audioBase64 && !customTranscript && !isRecording) {
+      const timer = setTimeout(() => {
+        speakPrompt('voice_step');
+      }, 900);
+      return () => clearTimeout(timer);
+    }
+  }, [hasImage, audioBase64, customTranscript, isRecording, speakPrompt, language]);
+
+  // Immediately silence audio assistant when recording starts
+  useEffect(() => {
+    if (isRecording) {
+      stop();
+    }
+  }, [isRecording, stop]);
 
   // ════════════════════════════════════════════
   // IMAGE SELECTION & OPTIMISTIC AI PIPELINE
@@ -342,6 +373,8 @@ export default function Capture() {
   // ════════════════════════════════════════════
 
   const startRecording = useCallback(async () => {
+    // Immediately silence any active audio assistant speech before microphone turns on
+    stop();
     try {
       if (!navigator.mediaDevices?.getUserMedia) {
         throw new Error('MediaDevices API not supported on this browser');
@@ -706,6 +739,9 @@ export default function Capture() {
                   <span>{t('nav.sign_in', 'Login')}</span>
                 </button>
               )}
+
+              {/* Audio Assistant Mute Toggle */}
+              <AudioMuteButton className="h-8 sm:h-9" />
 
               {/* Language Toggle */}
               <LanguageToggle variant="light" className="h-8 sm:h-9" />

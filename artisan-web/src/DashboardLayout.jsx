@@ -7,6 +7,7 @@ import { useAuth } from './context/AuthContext';
 import { useLanguage } from './context/LanguageContext';
 import NotificationBar from './components/NotificationBar';
 import LanguageSwitcher from './components/LanguageSwitcher';
+import AudioMuteButton from './components/AudioMuteButton';
 
 export default function DashboardLayout() {
   const navigate = useNavigate();
@@ -269,6 +270,9 @@ export default function DashboardLayout() {
 
           {/* Right-Side: Essential Controls Only */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* Audio Assistant Mute Toggle */}
+            <AudioMuteButton />
+
             {/* Language Switcher using react-i18next */}
             <LanguageSwitcher />
 

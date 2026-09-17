@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import LanguageToggle from '../components/LanguageToggle';
+import AudioMuteButton from '../components/AudioMuteButton';
+import useAudioAssistant from '../hooks/useAudioAssistant';
 
 const GEM_CATEGORIES = [
   'Handloom / Silk Sarees',
@@ -24,6 +26,19 @@ export default function Review() {
   const location = useLocation();
   const { t } = useTranslation();
   const { user, artisanProfile, openAuthModal, showToast, language } = useAuth();
+  const { speakPrompt, stop } = useAudioAssistant();
+
+  // Contextual voice prompt for zero-literacy review screen
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      speakPrompt('review');
+    }, 600);
+
+    return () => {
+      clearTimeout(timer);
+      stop();
+    };
+  }, [speakPrompt, stop, language]);
 
   // Read AI data passed from Capture.jsx
   const aiData = location.state || {};
@@ -256,8 +271,9 @@ export default function Review() {
             </div>
           </div>
 
-          {/* Far Right: Language Switcher, Auth Status & Publish Button */}
+          {/* Far Right: Audio Mute, Language Switcher, Auth Status & Publish Button */}
           <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+            <AudioMuteButton variant="light" />
             <LanguageToggle variant="dark" />
 
             {isPhoneVerified ? (

@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageToggle from '../components/LanguageToggle';
+import AudioMuteButton from '../components/AudioMuteButton';
+import useAudioAssistant from '../hooks/useAudioAssistant';
 
 /**
  * Celebratory Success State Component post-upload
@@ -29,6 +31,24 @@ export default function Success() {
     product.imageUrl ||
     product.image_url ||
     'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=800&q=80';
+
+  const { speakPrompt, stop } = useAudioAssistant();
+  const displayTitle = (language === 'hi' && titleHi) ? titleHi : title;
+
+  // The "Soundbox" Trust Confirmation: Dynamic audio read-back of listing details
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      speakPrompt('soundbox_success', {
+        title: displayTitle,
+        price: Number(price).toLocaleString('en-IN'),
+      });
+    }, 700);
+
+    return () => {
+      clearTimeout(timer);
+      stop();
+    };
+  }, [displayTitle, price, speakPrompt, stop, language]);
 
   const [toastMessage, setToastMessage] = useState('');
   const [showToast, setShowToast] = useState(false);
@@ -102,6 +122,7 @@ export default function Success() {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <AudioMuteButton variant="light" />
           <LanguageToggle variant="dark" />
           <button
             onClick={() => navigate('/catalog')}

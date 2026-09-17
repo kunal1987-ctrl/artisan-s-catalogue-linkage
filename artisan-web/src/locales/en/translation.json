@@ -124,5 +124,15 @@
     "send_otp": "Send OTP",
     "enter_otp": "Enter 6-Digit OTP",
     "verify_login": "Verify & Enter"
+  },
+  "audio_prompts": {
+    "home": "Welcome to Shilp Setu! To list a new handcrafted item, tap the Add Craft button.",
+    "camera_step": "Please take a clear photo of your craft or choose one from your gallery.",
+    "voice_step": "Photo ready! Now tap the microphone and describe your craft in your own language.",
+    "review": "Please review your craft details and price. When ready, tap Publish to list your product.",
+    "soundbox_success": "Congratulations! Your {{title}} has been successfully listed for {{price}} rupees.",
+    "indicator_speaking": "Audio Assistant Speaking...",
+    "mute": "Mute Audio Assistant",
+    "unmute": "Unmute Audio Assistant"
   }
 }

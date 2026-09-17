@@ -1,14 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
 import AtmLanguageSelector from '../components/AtmLanguageSelector';
+import useAudioAssistant from '../hooks/useAudioAssistant';
 
 export default function Home({ customArtisanName } = {}) {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { language, showToast, session, artisanName: contextArtisanName } = useAuth();
+  const { speakPrompt, stop } = useAudioAssistant();
+
+  // Contextual voice prompt for zero-literacy artisans on landing screen
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      speakPrompt('home');
+    }, 600);
+
+    return () => {
+      clearTimeout(timer);
+      stop();
+    };
+  }, [speakPrompt, stop, language]);
   const fallback = t('home.welcome', 'Artisan');
   const artisanName =
     customArtisanName ||

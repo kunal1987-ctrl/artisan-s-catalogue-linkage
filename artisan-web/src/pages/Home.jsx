@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
-import AtmLanguageSelector from '../components/AtmLanguageSelector';
 import useAudioAssistant from '../hooks/useAudioAssistant';
 
 export default function Home({ customArtisanName } = {}) {
@@ -123,9 +122,6 @@ export default function Home({ customArtisanName } = {}) {
             </div>
             <div className="px-3 sm:px-6 lg:px-8 py-4 sm:py-6 flex flex-col gap-6 max-w-7xl mx-auto w-full">
                 
-                {/* Prominent ATM-Style Regional Language Selector Board */}
-                <AtmLanguageSelector mode="inline" />
-
                 {/* Hero AI Studio Banner (Internationalized Header) */}
                 <Header />
                 

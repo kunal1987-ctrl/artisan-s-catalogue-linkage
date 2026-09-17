@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { INITIAL_PRODUCTS } from './Catalog';
+import useAudioAssistant from '../hooks/useAudioAssistant';
 
 export default function Details() {
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { language, showToast, artisanName } = useAuth();
+  const { speakPrompt, stop } = useAudioAssistant();
 
   const [product, setProduct] = useState(() => {
     // 1. First priority: Passed in router state
@@ -82,6 +86,38 @@ export default function Details() {
 
     fetchProduct();
   }, [id]);
+
+  // ── Audio read-back: speaks product details once data finishes loading ──
+  // Gives zero-literacy artisans a full audio summary of the product they are viewing.
+  useEffect(() => {
+    if (loading || !product) return;
+
+    // Build a meaningful description for the voice prompt
+    const displayDesc =
+      (language === 'hi' && product.hindi_description)
+        ? product.hindi_description
+        : product.description || product.title || '';
+    const displayTitle =
+      (language === 'hi' && product.hindi_title)
+        ? product.hindi_title
+        : product.title || '';
+
+    if (!displayTitle && !displayDesc) return;
+
+    const timer = setTimeout(() => {
+      speakPrompt('product_readback', {
+        title: displayTitle,
+        description: displayDesc,
+        price: product.price ?? '',
+      });
+    }, 800);
+
+    return () => {
+      clearTimeout(timer);
+      // Stop any ongoing speech when navigating away from product page
+      stop();
+    };
+  }, [loading, product, language]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handler: List / Delist on ONDC Network
   const handleToggleOndc = async () => {

@@ -168,6 +168,20 @@ export default function Capture() {
 
   const { speakPrompt, stop } = useAudioAssistant();
 
+  // Contextual voice prompt: On-load — single combined instruction for zero-literacy artisans
+  // Plays once when Capture screen mounts, before any photo/audio step prompts take over.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      speakPrompt('capture_instruction');
+    }, 500);
+    return () => {
+      clearTimeout(timer);
+      // Cancel any in-flight speech to prevent leaking audio across screens
+      stop();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [language]); // Replay if user switches language on this screen
+
   // Contextual voice prompt: Screen 1 - Camera / Photo capture prompt for zero-literacy artisans
   useEffect(() => {
     if (!hasImage) {

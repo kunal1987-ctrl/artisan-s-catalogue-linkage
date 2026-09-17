@@ -104,7 +104,7 @@ export default function DashboardLayout() {
               <img
                 src="/shilp-setu-logo.png"
                 alt="Shilp Setu"
-                className="h-10 w-auto object-contain drop-shadow-sm group-hover:scale-105 transition-transform"
+                className="h-9 w-9 object-contain drop-shadow-sm group-hover:scale-105 transition-transform shrink-0"
               />
               <span className="font-bold text-[18px] text-primary tracking-tight leading-tight">
                 {t('nav.brand', 'Shilp Setu')}
@@ -256,7 +256,7 @@ export default function DashboardLayout() {
               <img
                 src="/shilp-setu-logo.png"
                 alt="Shilp Setu"
-                className="h-8 sm:h-10 w-auto object-contain group-hover:scale-105 transition-transform"
+                className="h-8 w-8 sm:h-9 sm:w-9 object-contain group-hover:scale-105 transition-transform shrink-0"
               />
               <h1 className="text-base sm:text-lg font-bold text-gray-800 group-hover:text-primary transition-colors truncate">
                 {t('nav.brand', 'Shilp Setu')}
@@ -342,7 +342,7 @@ export default function DashboardLayout() {
                     <img
                       src="/shilp-setu-logo.png"
                       alt="Shilp Setu"
-                      className="h-8 w-auto object-contain"
+                      className="h-8 w-8 object-contain shrink-0"
                     />
                     <span className="font-bold text-base text-primary tracking-tight">
                       Shilp Setu

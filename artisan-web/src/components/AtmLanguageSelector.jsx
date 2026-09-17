@@ -26,7 +26,14 @@ export default function AtmLanguageSelector({
 
   const activeCode = language || 'hi';
   const showModal = mode === 'modal' ? (isOpen || isAtmLanguageModalOpen) : false;
-  const handleClose = onClose || closeAtmLanguageModal;
+
+  // Always call closeAtmLanguageModal (the real state setter).
+  // Never rely on the `onClose` prop alone — it defaults to () => {} which is
+  // truthy and would short-circuit the real handler with the old `||` pattern.
+  const handleClose = () => {
+    closeAtmLanguageModal();
+    if (typeof onClose === 'function') onClose();
+  };
 
   const handleSelectLanguage = (code) => {
     // Instant switch < 50ms
@@ -165,7 +172,7 @@ export default function AtmLanguageSelector({
             <button
               type="button"
               onClick={handleClose}
-              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer border border-white/20 active:scale-95"
+              className="relative z-[60] w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer border border-white/20 active:scale-95"
               aria-label={t('atm.cancel', 'Close')}
             >
               <X className="w-4 h-4" />
@@ -193,7 +200,7 @@ export default function AtmLanguageSelector({
             <button
               type="button"
               onClick={handleClose}
-              className="px-4 py-1.5 rounded-full bg-[#2e241e] hover:bg-[#45372d] text-white text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
+              className="relative z-[60] px-4 py-1.5 rounded-full bg-[#2e241e] hover:bg-[#45372d] text-white text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
             >
               {t('atm.cancel', 'Close')}
             </button>

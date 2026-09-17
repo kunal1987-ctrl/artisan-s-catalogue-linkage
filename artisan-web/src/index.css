@@ -96,12 +96,19 @@ body {
   box-sizing: border-box;
 }
 
-img,
 video,
-canvas,
-svg {
+canvas {
   max-width: 100%;
   height: auto;
+}
+
+/* Images: prevent overflow but do NOT force height:auto on explicitly-sized images */
+img {
+  max-width: 100%;
+}
+
+svg {
+  max-width: 100%;
 }
 
 /* Hide scrollbar utility for sleek mobile horizontal scroll carousels/pills */

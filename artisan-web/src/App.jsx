@@ -4,7 +4,6 @@ import { LanguageProvider } from './context/LanguageContext.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import AuthModal from './components/AuthModal.jsx';
 import AtmLanguageSelector from './components/AtmLanguageSelector.jsx';
-import AudioAssistantIndicator from './components/AudioAssistantIndicator.jsx';
 
 import DevOrderSimulator from './components/DevOrderSimulator.jsx';
 import DashboardLayout from './DashboardLayout.jsx';
@@ -32,7 +31,6 @@ export default function App() {
         <BrowserRouter>
           <AuthModal />
           <AtmLanguageSelector mode="modal" />
-          <AudioAssistantIndicator />
           <Routes>
           {/* Fullscreen Root & Public Flows */}
           <Route path="/" element={<Auth />} />

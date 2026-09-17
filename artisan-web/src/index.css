@@ -70,6 +70,13 @@
   animation: scan 2.6s ease-in-out infinite;
 }
 
+/* Audio EQ waveform indicator bars */
+@keyframes eq-bar {
+  0%, 100% { transform: scaleY(0.25); }
+  50%       { transform: scaleY(1); }
+}
+
+
 /* Mobile-First Global Resets & Anti-Overflow Rules */
 html,
 body {

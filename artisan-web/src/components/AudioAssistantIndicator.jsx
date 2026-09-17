@@ -1,55 +1,56 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Volume2, VolumeX } from 'lucide-react';
 import useAudioAssistant from '../hooks/useAudioAssistant';
 
 /**
  * AudioAssistantIndicator Component
- * 
- * Pulsing speaker indicator visible at the top corner of the screen
- * only while the audio assistant is actively speaking (speechSynthesis.speaking is true).
- * Provides clear visual feedback to zero-literacy artisans that the application is speaking to them.
- * Clicking on the indicator provides an immediate 1-tap mute option.
+ *
+ * A minimal, text-free animated waveform (equalizer) icon that renders
+ * inline in the navigation header only while the audio assistant is
+ * actively speaking (speechSynthesis.speaking === true).
+ *
+ * Design principles:
+ *  - Zero visible text — low-literacy users rely on audio + visual cues.
+ *  - Compact enough to sit beside other header icons without obstruction.
+ *  - aria-label is fully i18n-translated for screen-reader compliance.
+ *  - Clicking the indicator mutes the assistant (same as AudioMuteButton).
  */
-export default function AudioAssistantIndicator() {
+export default function AudioAssistantIndicator({ className = '' }) {
   const { t } = useTranslation();
   const { isSpeaking, isMuted, toggleMute } = useAudioAssistant();
 
+  // Render nothing when silent or muted — zero layout impact
   if (!isSpeaking || isMuted) return null;
 
   return (
-    <div
+    <button
+      type="button"
       role="status"
       aria-live="polite"
-      className="fixed top-3 sm:top-4 right-3 sm:right-6 z-50 pointer-events-auto select-none animate-in fade-in slide-in-from-top-2 duration-300"
+      onClick={toggleMute}
+      title={t('audio_prompts.mute', 'Mute Audio Assistant')}
+      aria-label={t('audio_prompts.audio_speaking', 'Audio assistant is speaking — tap to mute')}
+      className={`relative inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full
+        bg-[#ff9062]/15 hover:bg-[#ff9062]/25 border border-[#ff9062]/40
+        cursor-pointer active:scale-95 transition-all select-none
+        animate-in fade-in duration-300 ${className}`}
     >
-      <button
-        type="button"
-        onClick={toggleMute}
-        title={t('audio_prompts.mute', 'Mute Audio Assistant')}
-        aria-label={t('audio_prompts.indicator_speaking', 'Audio Assistant Speaking...')}
-        className="flex items-center gap-2 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-[#2e241e] via-[#443831] to-[#2e241e] text-white border-2 border-[#ff9062] shadow-xl shadow-black/25 cursor-pointer hover:scale-105 active:scale-95 transition-all group"
+      {/* Animated EQ waveform — 4 bars staggered */}
+      <span
+        aria-hidden="true"
+        className="flex items-end gap-[2px] h-4"
       >
-        {/* Pulsing Speaker Icon & Ripple Rings */}
-        <div className="relative flex items-center justify-center">
-          <span className="absolute w-6 h-6 rounded-full bg-[#ff9062]/40 animate-ping" />
-          <span className="relative w-6 h-6 rounded-full bg-[#ff9062] text-[#2e241e] flex items-center justify-center font-bold shadow-xs">
-            <Volume2 className="w-3.5 h-3.5 animate-pulse" />
-          </span>
-        </div>
+        <span className="w-[3px] rounded-full bg-[#ff9062]" style={{ height: '40%', animation: 'eq-bar 0.8s ease-in-out infinite', animationDelay: '0ms' }} />
+        <span className="w-[3px] rounded-full bg-[#ff9062]" style={{ height: '80%', animation: 'eq-bar 0.8s ease-in-out infinite', animationDelay: '160ms' }} />
+        <span className="w-[3px] rounded-full bg-[#ff9062]" style={{ height: '55%', animation: 'eq-bar 0.8s ease-in-out infinite', animationDelay: '320ms' }} />
+        <span className="w-[3px] rounded-full bg-[#ff9062]" style={{ height: '90%', animation: 'eq-bar 0.8s ease-in-out infinite', animationDelay: '80ms' }} />
+      </span>
 
-        {/* Localized Speaking Text */}
-        <span className="text-xs sm:text-sm font-extrabold tracking-tight text-[#ffeedd]">
-          {t('audio_prompts.indicator_speaking', 'Audio Assistant Speaking...')}
-        </span>
-
-        {/* Animated Soundwave EQ Bars */}
-        <div className="flex items-end gap-0.5 h-3.5 px-1">
-          <span className="w-0.5 h-2 bg-[#ff9062] rounded-full animate-bounce [animation-delay:0ms]" />
-          <span className="w-0.5 h-3.5 bg-white rounded-full animate-bounce [animation-delay:150ms]" />
-          <span className="w-0.5 h-2.5 bg-[#ff9062] rounded-full animate-bounce [animation-delay:300ms]" />
-        </div>
-      </button>
-    </div>
+      {/* Subtle pulsing ring — draws attention without text */}
+      <span
+        aria-hidden="true"
+        className="absolute inset-0 rounded-full border border-[#ff9062]/50 animate-ping opacity-60"
+      />
+    </button>
   );
 }

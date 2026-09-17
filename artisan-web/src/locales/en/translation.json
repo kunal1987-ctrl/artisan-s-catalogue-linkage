@@ -134,6 +134,7 @@
                           "soundbox_success":  "Congratulations! Your {{title}} has been successfully listed for {{price}} rupees.",
                           "indicator_speaking":  "Audio Assistant Speaking...",
                           "mute":  "Mute Audio Assistant",
-                          "unmute":  "Unmute Audio Assistant"
+                          "unmute":  "Unmute Audio Assistant",
+                          "audio_speaking":  "Audio assistant is speaking — tap to mute"
                       }
 }

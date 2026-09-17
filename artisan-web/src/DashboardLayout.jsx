@@ -162,29 +162,24 @@ export default function DashboardLayout() {
             </button>
           </div>
 
-          {/* Desktop ATM Regional Language Selector Card */}
+          {/* Desktop Language Selector Card */}
           <button
             type="button"
             onClick={openAtmLanguageModal}
             className="w-full p-3 rounded-2xl bg-white border border-[#d1c4bd]/70 hover:border-[#9c441c]/50 shadow-xs hover:shadow-md transition-all cursor-pointer group text-left"
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <span className="w-8 h-8 rounded-xl bg-[#2e241e] text-[#ffdeaa] flex items-center justify-center text-xs font-black group-hover:scale-105 transition-transform shadow-2xs">
-                  {currentLanguageConfig?.keyChar || 'अ'}
-                </span>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-xs font-bold text-primary truncate">
-                    {currentLanguageConfig?.native || 'हिंदी'}
-                  </span>
-                  <span className="text-[10px] text-secondary font-medium">
-                    ATM Language Keypad
-                  </span>
-                </div>
-              </div>
-              <span className="px-2 py-0.5 rounded-full bg-[#ff9062]/20 text-[#9c441c] text-[10px] font-extrabold tracking-wider">
-                ATM
+            <div className="flex items-center gap-2.5">
+              <span className="w-8 h-8 rounded-xl bg-[#2e241e] text-[#ffdeaa] flex items-center justify-center text-xs font-black group-hover:scale-105 transition-transform shadow-2xs">
+                {currentLanguageConfig?.keyChar || 'अ'}
               </span>
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs font-bold text-primary truncate">
+                  {currentLanguageConfig?.native || 'हिंदी'}
+                </span>
+                <span className="text-[10px] text-secondary font-medium">
+                  {t('nav.change_language', 'Change Language')}
+                </span>
+              </div>
             </div>
           </button>
         </div>
@@ -386,31 +381,26 @@ export default function DashboardLayout() {
                   </div>
                 </div>
 
-                {/* Mobile Drawer ATM Regional Language Selector */}
+                {/* Mobile Drawer Language Selector */}
                 <button
                   type="button"
                   onClick={() => {
                     setIsMobileMenuOpen(false);
                     openAtmLanguageModal();
                   }}
-                  className="w-full flex items-center justify-between p-3 rounded-2xl bg-white border border-[#d1c4bd]/80 hover:border-[#9c441c]/60 shadow-xs transition-all cursor-pointer group text-left"
+                  className="w-full flex items-center gap-2.5 p-3 rounded-2xl bg-white border border-[#d1c4bd]/80 hover:border-[#9c441c]/60 shadow-xs transition-all cursor-pointer group text-left"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <span className="w-8 h-8 rounded-xl bg-[#2e241e] text-[#ffdeaa] flex items-center justify-center text-xs font-black shadow-2xs">
-                      {currentLanguageConfig?.keyChar || 'अ'}
-                    </span>
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-xs font-bold text-primary truncate">
-                        {currentLanguageConfig?.native || 'हिंदी'}
-                      </span>
-                      <span className="text-[10px] text-secondary font-medium">
-                        ATM Language Selector
-                      </span>
-                    </div>
-                  </div>
-                  <span className="px-2 py-0.5 rounded-full bg-[#ff9062]/20 text-[#9c441c] text-[10px] font-extrabold">
-                    ATM
+                  <span className="w-8 h-8 rounded-xl bg-[#2e241e] text-[#ffdeaa] flex items-center justify-center text-xs font-black shadow-2xs">
+                    {currentLanguageConfig?.keyChar || 'अ'}
                   </span>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-xs font-bold text-primary truncate">
+                      {currentLanguageConfig?.native || 'हिंदी'}
+                    </span>
+                    <span className="text-[10px] text-secondary font-medium">
+                      {t('nav.change_language', 'Change Language')}
+                    </span>
+                  </div>
                 </button>
 
                 {/* Mobile Navigation Links */}

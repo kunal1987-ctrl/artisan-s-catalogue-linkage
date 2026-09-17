@@ -172,14 +172,11 @@ export default function AtmLanguageSelector({
             </button>
           </div>
 
-          {/* ATM Screen Instruction Strip */}
-          <div className="bg-[#ebe8e2] px-4 sm:px-6 py-2 border-b border-[#d1c4bd]/60 flex items-center justify-between text-xs text-[#2e241e] font-semibold">
+          {/* Instruction Strip */}
+          <div className="bg-[#ebe8e2] px-4 sm:px-6 py-2 border-b border-[#d1c4bd]/60 flex items-center text-xs text-[#2e241e] font-semibold">
             <span className="flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-[#9c441c]" />
               <span>{t('atm.switch_prompt', 'Touch any language to switch')}</span>
-            </span>
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-              ⚡ {t('atm.instant_switch', 'Instant 50ms Switch')}
             </span>
           </div>
 
@@ -215,31 +212,17 @@ export default function AtmLanguageSelector({
       className={`relative w-full rounded-3xl bg-gradient-to-b from-[#ffffff] to-[#fbf7f2] border-2 border-[#d1c4bd]/60 p-4 sm:p-6 shadow-sm overflow-hidden ${className}`}
     >
       {/* Decorative top pill badge */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 mb-3 sm:mb-4 border-b border-[#d1c4bd]/40">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-[#9c441c]/10 text-[#9c441c] flex items-center justify-center font-bold">
-            <Globe className="w-4 h-4" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-base sm:text-lg font-black text-primary tracking-tight">
-                {t('atm.heading', 'Regional Language Board')}
-              </h3>
-              <span className="px-2 py-0.5 rounded-full bg-[#ff9062]/20 text-[#9c441c] text-[10px] font-extrabold uppercase tracking-wider">
-                ATM Interface
-              </span>
-            </div>
-            <p className="text-xs text-on-surface-variant mt-0.5">
-              {t('atm.subheading', 'Choose your mother tongue. All buttons, instructions, and catalogs update immediately.')}
-            </p>
-          </div>
+      <div className="flex items-center gap-2.5 pb-3 mb-3 sm:mb-4 border-b border-[#d1c4bd]/40">
+        <div className="w-8 h-8 rounded-xl bg-[#9c441c]/10 text-[#9c441c] flex items-center justify-center font-bold shrink-0">
+          <Globe className="w-4 h-4" />
         </div>
-
-        <div className="flex items-center gap-2 self-start sm:self-auto">
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-bold">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
-            <span>&lt; 50ms Instant Sync</span>
-          </span>
+        <div>
+          <h3 className="text-base sm:text-lg font-black text-primary tracking-tight">
+            {t('atm.heading', 'Select Language')}
+          </h3>
+          <p className="text-xs text-on-surface-variant mt-0.5">
+            {t('atm.subheading', 'Choose your language. All text updates instantly.')}
+          </p>
         </div>
       </div>
 

@@ -93,14 +93,14 @@ export default function Home({ customArtisanName } = {}) {
                 <div className="flex flex-col">
                     <div
                         className="flex items-center gap-2 text-[11px] sm:text-[12px] font-semibold text-secondary uppercase tracking-wider">
-                        <span>{t('nav.home', 'Home')}</span>
+                        <span>{t('sidebar.home', 'Home')}</span>
                         <span>/</span>
-                        <span>{t('home.breadcrumb', 'Artisan Dashboard')}</span>
+                        <span>{t('dashboard.breadcrumb', 'Artisan Dashboard')}</span>
                     </div>
                     <h2 className="text-xl sm:text-[24px] font-bold text-primary flex flex-wrap items-center gap-2 mt-0.5">
-                        <span>{t('home.welcome', 'Namaste')}, {artisanName}!</span>
+                        <span>{t('dashboard.welcome', 'Welcome, Artisan!')}</span>
                         <span className="text-xs sm:text-[14px] font-medium text-on-surface-variant">
-                            {t('home.shop_subtitle', 'Shilp Setu Shop')}
+                            {t('dashboard.shop_name', 'Shilp Setu Shop')}
                         </span>
                     </h2>
                 </div>

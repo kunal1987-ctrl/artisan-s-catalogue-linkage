@@ -10,6 +10,8 @@ import LanguageSwitcher from './components/LanguageSwitcher';
 import AudioMuteButton from './components/AudioMuteButton';
 import AudioAssistantIndicator from './components/AudioAssistantIndicator';
 
+import Sidebar from './components/Sidebar';
+
 export default function DashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -85,134 +87,15 @@ export default function DashboardLayout() {
   }, [location.pathname]);
 
   const navItems = [
-    { to: '/home', label: t('nav.home', 'Home'), icon: 'cottage' },
-    { to: '/catalog', label: t('nav.catalog', 'Catalog'), icon: 'inventory_2', badge: '12' },
-    { to: '/orders', label: t('nav.orders', 'Orders'), icon: 'receipt_long', badge: t('nav.new_badge', '3 New'), badgeColor: 'bg-[#ff9062]/20 text-[#9c441c]' },
+    { to: '/home', label: t('sidebar.home', 'Home'), icon: 'cottage' },
+    { to: '/catalog', label: t('sidebar.catalog', 'Catalog'), icon: 'inventory_2', badge: '12' },
+    { to: '/orders', label: t('sidebar.orders', 'Orders'), icon: 'receipt_long', badge: t('sidebar.new_badge', '3 New'), badgeColor: 'bg-[#ff9062]/20 text-[#9c441c]' },
   ];
 
   return (
     <div className="flex min-h-screen bg-[#fdf9f3] text-on-surface font-sans selection:bg-[#ffdbce]">
       {/* Desktop Left Sidebar */}
-      <aside className="w-64 bg-[#fdf9f3] border-r border-[#d1c4bd]/40 flex flex-col justify-between p-4 shrink-0 hidden lg:flex sticky top-0 h-screen overflow-y-auto">
-        <div className="flex flex-col gap-6">
-          {/* Brand Header */}
-          <div className="flex items-center px-2 pt-2">
-            <div 
-              onClick={() => navigate('/home')}
-              className="flex items-center gap-3 cursor-pointer group"
-            >
-              <img
-                src="/shilp-setu-logo.png"
-                alt="Shilp Setu"
-                className="h-9 w-9 object-contain drop-shadow-sm group-hover:scale-105 transition-transform shrink-0"
-              />
-              <span className="font-bold text-[18px] text-primary tracking-tight leading-tight">
-                {t('nav.brand', 'Shilp Setu')}
-              </span>
-            </div>
-          </div>
-
-          {/* Navigation Links */}
-          <nav className="flex flex-col gap-1.5 mt-2">
-            {navItems.map((item) => {
-              const isDirectActive = location.pathname === item.to;
-              const isCatalogActive =
-                item.to === '/catalog' &&
-                (location.pathname.includes('/details') || location.pathname.includes('/product'));
-              const isActive = isDirectActive || isCatalogActive;
-              return (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={`flex items-center justify-between px-4 py-3 rounded-xl font-semibold text-[14px] transition-all ${
-                    isActive
-                      ? 'bg-[#2e241e] text-white shadow-sm'
-                      : 'text-on-surface-variant hover:text-primary hover:bg-[#ebe8e2]'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
-                    <span>{item.label}</span>
-                  </div>
-                  {item.badge && (
-                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
-                      isActive ? 'bg-white/20 text-[#ffdeaa]' : item.badgeColor || 'bg-[#ebe8e2] text-primary'
-                    }`}>
-                      {item.badge}
-                    </span>
-                  )}
-                </NavLink>
-              );
-            })}
-          </nav>
-
-          {/* Quick Capture Craft CTA */}
-          <div className="p-3 bg-[#f1ede7] rounded-2xl border border-[#d1c4bd]/40 space-y-2">
-            <div className="flex items-center gap-2 text-xs font-bold text-primary">
-              <span className="material-symbols-outlined text-secondary text-[18px]">photo_camera</span>
-              <span>{t('nav.studio_assistant', 'AI Studio Assistant')}</span>
-            </div>
-            <p className="text-[11px] text-on-surface-variant leading-relaxed">
-              {t('nav.studio_desc', 'Snap photo & speak naturally to list in 10s.')}
-            </p>
-            <button
-              onClick={() => navigate('/capture')}
-              className="w-full py-2 px-3 rounded-xl bg-primary hover:bg-[#2e241e] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
-            >
-              <span>{t('nav.add_craft', '+ Add Craft')}</span>
-            </button>
-          </div>
-
-          {/* Desktop Language Selector Card */}
-          <button
-            type="button"
-            onClick={openAtmLanguageModal}
-            className="w-full p-3 rounded-2xl bg-white border border-[#d1c4bd]/70 hover:border-[#9c441c]/50 shadow-xs hover:shadow-md transition-all cursor-pointer group text-left"
-          >
-            <div className="flex items-center gap-2.5">
-              <span className="w-8 h-8 rounded-xl bg-[#2e241e] text-[#ffdeaa] flex items-center justify-center text-xs font-black group-hover:scale-105 transition-transform shadow-2xs">
-                {currentLanguageConfig?.keyChar || 'अ'}
-              </span>
-              <div className="flex flex-col min-w-0">
-                <span className="text-xs font-bold text-primary truncate">
-                  {currentLanguageConfig?.native || 'हिंदी'}
-                </span>
-                <span className="text-[10px] text-secondary font-medium">
-                  {t('nav.change_language', 'Change Language')}
-                </span>
-              </div>
-            </div>
-          </button>
-        </div>
-
-        {/* Bottom Sidebar Profile & Help */}
-        <div className="flex flex-col gap-4 pt-4 border-t border-[#d1c4bd]/40">
-          <Link
-            to="/support"
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-[13px] font-semibold cursor-pointer ${
-              location.pathname === '/support'
-                ? 'bg-[#2e241e] text-white shadow-xs'
-                : 'text-on-surface-variant hover:text-primary hover:bg-[#ebe8e2]'
-            }`}
-          >
-            <HelpCircle className="w-[18px] h-[18px] shrink-0" />
-            <span>{t('nav.support', 'Help & Support')}</span>
-          </Link>
-          <div
-            onClick={() => navigate('/catalog')}
-            className="flex items-center gap-3 p-2.5 rounded-xl bg-[#ebe8e2]/60 border border-[#d1c4bd]/30 cursor-pointer hover:bg-[#ebe8e2] transition-all"
-          >
-            <img
-              alt={artisanName}
-              className="w-10 h-10 rounded-full object-cover shadow-sm shrink-0"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmvGYszZXuA45tASeKKSeAVzVfFnHtKAGtNsa4IB8eSEDv7aMN2Dj5pKYYgdmAj_qpHqPikrwnevchRmdRCCcuMRXPRl7fhyfOt-_XjOQic4K5XzVtP9-UCofnVEe570fnmUd_GNT4uQVrjHGKIIoPPyo1B2RZ4vXYFmloLyQfCyNa2hjDllGlTqYSywEQevMYAYPK6K6FMsX9YfKjc5nGMVc5iOINi_PYrPZd2lLY5bqH9AK1mI1L"
-            />
-            <span className="font-bold text-[13px] text-primary truncate min-w-0">
-              {artisanName}
-            </span>
-          </div>
-        </div>
-      </aside>
+      <Sidebar />
 
       {/* Main Routed Area */}
       <main className="flex-1 flex flex-col min-w-0 min-h-screen bg-[#fdf9f3] pb-20 lg:pb-0 overflow-y-auto">
@@ -332,7 +215,7 @@ export default function DashboardLayout() {
                       className="h-8 w-8 object-contain shrink-0"
                     />
                     <span className="font-bold text-base text-primary tracking-tight">
-                      Shilp Setu
+                      {t('sidebar.brand', 'Shilp Setu')}
                     </span>
                   </div>
                   <button
@@ -379,7 +262,7 @@ export default function DashboardLayout() {
                       {currentLanguageConfig?.native || 'हिंदी'}
                     </span>
                     <span className="text-[10px] text-secondary font-medium">
-                      {t('nav.change_language', 'Change Language')}
+                      {t('sidebar.change_language', 'Change Language')}
                     </span>
                   </div>
                 </button>
@@ -431,7 +314,7 @@ export default function DashboardLayout() {
                     }`}
                   >
                     <HelpCircle className="w-[18px] h-[18px] shrink-0" />
-                    <span>{t('nav.support', 'Help & Support')}</span>
+                    <span>{t('sidebar.help_support', 'Help & Support')}</span>
                   </Link>
                 </nav>
 
@@ -439,10 +322,10 @@ export default function DashboardLayout() {
                 <div className="p-3 bg-[#f1ede7] rounded-2xl border border-[#d1c4bd]/40 space-y-2">
                   <div className="flex items-center gap-2 text-xs font-bold text-primary">
                     <span className="material-symbols-outlined text-secondary text-[18px]">photo_camera</span>
-                    <span>{t('nav.studio_assistant', 'AI Studio Assistant')}</span>
+                    <span>{t('sidebar.ai_studio', 'AI Studio Assistant')}</span>
                   </div>
                   <p className="text-[11px] text-on-surface-variant leading-relaxed">
-                    {t('nav.studio_desc', 'Snap photo & speak naturally to list in 10s.')}
+                    {t('sidebar.studio_desc', 'Snap photo & speak naturally to list in 10s.')}
                   </p>
                   <button
                     onClick={() => {
@@ -451,7 +334,7 @@ export default function DashboardLayout() {
                     }}
                     className="w-full py-2.5 px-3 rounded-xl bg-primary hover:bg-[#2e241e] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer active:scale-95"
                   >
-                    <span>{t('nav.add_craft', '+ Add Craft')}</span>
+                    <span>{t('sidebar.add_craft', '+ Add Craft')}</span>
                   </button>
                 </div>
               </div>
@@ -467,7 +350,7 @@ export default function DashboardLayout() {
                     className="w-full py-2.5 px-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
                   >
                     <span className="material-symbols-outlined text-[18px]">logout</span>
-                    <span>{t('nav.sign_out', 'Sign Out')}</span>
+                    <span>{t('sidebar.sign_out', 'Sign Out')}</span>
                   </button>
                 ) : (
                   <button
@@ -478,7 +361,7 @@ export default function DashboardLayout() {
                     className="w-full py-2.5 px-3 rounded-xl bg-[#2e241e] text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
                   >
                     <span className="material-symbols-outlined text-[18px]">login</span>
-                    <span>{t('nav.sign_in', 'Sign In')}</span>
+                    <span>{t('sidebar.sign_in', 'Sign In')}</span>
                   </button>
                 )}
               </div>
@@ -500,7 +383,7 @@ export default function DashboardLayout() {
           }
         >
           <span className="material-symbols-outlined text-[22px]">cottage</span>
-          <span>{t('nav.home', 'Home')}</span>
+          <span>{t('sidebar.home', 'Home')}</span>
         </NavLink>
         <NavLink
           to="/catalog"
@@ -515,13 +398,13 @@ export default function DashboardLayout() {
           }}
         >
           <span className="material-symbols-outlined text-[22px]">inventory_2</span>
-          <span>{t('nav.catalog', 'Catalog')}</span>
+          <span>{t('sidebar.catalog', 'Catalog')}</span>
         </NavLink>
         {/* Floating Center Capture Button */}
         <button
           onClick={() => navigate('/capture')}
           className="w-12 h-12 -mt-5 rounded-full bg-primary text-white flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-transform border-2 border-white cursor-pointer shrink-0"
-          aria-label={t('nav.add_craft', 'Add Craft')}
+          aria-label={t('sidebar.add_craft', 'Add Craft')}
         >
           <span className="material-symbols-outlined text-[24px]">photo_camera</span>
         </button>
@@ -534,7 +417,7 @@ export default function DashboardLayout() {
           }
         >
           <span className="material-symbols-outlined text-[22px]">receipt_long</span>
-          <span>{t('nav.orders', 'Orders')}</span>
+          <span>{t('sidebar.orders', 'Orders')}</span>
           <span className="w-2 h-2 rounded-full bg-[#9c441c] absolute top-1 right-2"></span>
         </NavLink>
       </nav>

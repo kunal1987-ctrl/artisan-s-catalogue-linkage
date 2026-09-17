@@ -244,7 +244,7 @@ export default function AtmLanguageSelector({
   // ══════════════════════════════════════════════════════════
   return (
     <section
-      aria-label="Regional Language Selection Board"
+      aria-label={t('dashboard.language_board', 'Regional Language Board')}
       className={`relative w-full rounded-3xl bg-gradient-to-b from-[#ffffff] to-[#fbf7f2] border-2 border-[#d1c4bd]/60 p-4 sm:p-6 shadow-sm overflow-hidden ${className}`}
     >
       <div className="flex items-center gap-2.5 pb-3 mb-3 sm:mb-4 border-b border-[#d1c4bd]/40">
@@ -253,7 +253,7 @@ export default function AtmLanguageSelector({
         </div>
         <div>
           <h3 className="text-base sm:text-lg font-black text-primary tracking-tight">
-            {t('atm.heading', 'Select Language')}
+            {t('dashboard.language_board', t('atm.heading', 'Select Language'))}
           </h3>
           <p className="text-xs text-on-surface-variant mt-0.5">
             {t('atm.subheading', 'Choose your language. All text updates instantly.')}

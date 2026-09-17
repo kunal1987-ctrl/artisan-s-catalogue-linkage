@@ -24,11 +24,13 @@ export default function Header({ showLanguageSwitcher = true }) {
           <div className="flex flex-wrap items-center gap-3">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-[#ffdeaa] backdrop-blur-md">
               <span className="material-symbols-outlined text-[16px]">auto_awesome</span>
-              <span className="text-[11px] font-bold tracking-wider uppercase">Instant AI Cataloger</span>
+              <span className="text-[11px] font-bold tracking-wider uppercase">
+                {t('header.ai_cataloger', 'Instant AI Cataloger')}
+              </span>
             </div>
             <span className="text-[12px] text-[#ffdeaa] flex items-center gap-1">
               <span className="material-symbols-outlined text-[15px]">translate</span>
-              Hindi, Gujarati, Tamil +9 supported
+              {t('header.multilingual_support', 'Hindi, Bengali, Marathi +9 supported')}
             </span>
             {showLanguageSwitcher && (
               <div className="sm:hidden mt-1">

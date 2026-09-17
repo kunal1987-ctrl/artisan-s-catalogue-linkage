@@ -1,17 +1,14 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import Home from './Home';
 import { useAuth } from '../context/AuthContext';
 
 /**
  * Dashboard Component for Shilp Setu
- * ─────────────────────────────────────────────────────────────────────────────
- * Extracts the user's name from the session object:
- * const artisanName = session?.user?.user_metadata?.full_name || 'Artisan';
- * Displays the personalized greeting:
- * Namaste, {artisanName}! (नमस्ते, {artisanName}!)
- * ─────────────────────────────────────────────────────────────────────────────
+ * Fully internationalized with react-i18next.
  */
 export default function Dashboard() {
+  const { t } = useTranslation();
   const { artisanName } = useAuth();
 
   return <Home customArtisanName={artisanName} />;

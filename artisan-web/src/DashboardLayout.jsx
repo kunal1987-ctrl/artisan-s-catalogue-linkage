@@ -198,30 +198,17 @@ export default function DashboardLayout() {
             <HelpCircle className="w-[18px] h-[18px] shrink-0" />
             <span>{t('nav.support', 'Help & Support')}</span>
           </Link>
-          <div 
+          <div
             onClick={() => navigate('/catalog')}
             className="flex items-center gap-3 p-2.5 rounded-xl bg-[#ebe8e2]/60 border border-[#d1c4bd]/30 cursor-pointer hover:bg-[#ebe8e2] transition-all"
           >
-            <div className="relative">
-              <img
-                alt={artisanName}
-                className="w-10 h-10 rounded-full object-cover shadow-sm"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmvGYszZXuA45tASeKKSeAVzVfFnHtKAGtNsa4IB8eSEDv7aMN2Dj5pKYYgdmAj_qpHqPikrwnevchRmdRCCcuMRXPRl7fhyfOt-_XjOQic4K5XzVtP9-UCofnVEe570fnmUd_GNT4uQVrjHGKIIoPPyo1B2RZ4vXYFmloLyQfCyNa2hjDllGlTqYSywEQevMYAYPK6K6FMsX9YfKjc5nGMVc5iOINi_PYrPZd2lLY5bqH9AK1mI1L"
-              />
-              <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ring-2 ring-[#f7f3ed] ${isVerified ? 'bg-green-600' : 'bg-amber-500'}`}></span>
-            </div>
-            <div className="flex flex-col min-w-0 flex-1">
-              <span className="font-bold text-[13px] text-primary truncate">
-                {artisanName}
-              </span>
-              <span className="text-[11px] text-secondary truncate">
-                {isVerified 
-                  ? `✓ ${t('nav.verified', 'Verified')}`
-                  : t('nav.sign_in', 'Sign In')}
-              </span>
-            </div>
-            <span className={`material-symbols-outlined text-[18px] ${isVerified ? 'text-emerald-700' : 'text-amber-600'}`}>
-              {isVerified ? 'verified' : 'login'}
+            <img
+              alt={artisanName}
+              className="w-10 h-10 rounded-full object-cover shadow-sm shrink-0"
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmvGYszZXuA45tASeKKSeAVzVfFnHtKAGtNsa4IB8eSEDv7aMN2Dj5pKYYgdmAj_qpHqPikrwnevchRmdRCCcuMRXPRl7fhyfOt-_XjOQic4K5XzVtP9-UCofnVEe570fnmUd_GNT4uQVrjHGKIIoPPyo1B2RZ4vXYFmloLyQfCyNa2hjDllGlTqYSywEQevMYAYPK6K6FMsX9YfKjc5nGMVc5iOINi_PYrPZd2lLY5bqH9AK1mI1L"
+            />
+            <span className="font-bold text-[13px] text-primary truncate min-w-0">
+              {artisanName}
             </span>
           </div>
         </div>
@@ -365,24 +352,14 @@ export default function DashboardLayout() {
                   }}
                   className="flex items-center gap-3 p-3 rounded-2xl bg-[#ebe8e2]/60 border border-[#d1c4bd]/40 cursor-pointer hover:bg-[#ebe8e2] transition-all"
                 >
-                  <div className="relative">
-                    <img
-                      alt={artisanName}
-                      className="w-11 h-11 rounded-full object-cover shadow-sm"
-                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmvGYszZXuA45tASeKKSeAVzVfFnHtKAGtNsa4IB8eSEDv7aMN2Dj5pKYYgdmAj_qpHqPikrwnevchRmdRCCcuMRXPRl7fhyfOt-_XjOQic4K5XzVtP9-UCofnVEe570fnmUd_GNT4uQVrjHGKIIoPPyo1B2RZ4vXYFmloLyQfCyNa2hjDllGlTqYSywEQevMYAYPK6K6FMsX9YfKjc5nGMVc5iOINi_PYrPZd2lLY5bqH9AK1mI1L"
-                    />
-                    <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full ring-2 ring-[#f7f3ed] ${isVerified ? 'bg-green-600' : 'bg-amber-500'}`} />
-                  </div>
-                  <div className="flex flex-col min-w-0 flex-1">
-                    <span className="font-bold text-sm text-primary truncate">
-                      {artisanName}
-                    </span>
-                    <span className="text-[11px] text-secondary truncate">
-                      {isVerified
-                        ? `✓ ${t('nav.verified', 'Verified')}`
-                        : t('nav.sign_in', 'Sign In')}
-                    </span>
-                  </div>
+                  <img
+                    alt={artisanName}
+                    className="w-11 h-11 rounded-full object-cover shadow-sm shrink-0"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmvGYszZXuA45tASeKKSeAVzVfFnHtKAGtNsa4IB8eSEDv7aMN2Dj5pKYYgdmAj_qpHqPikrwnevchRmdRCCcuMRXPRl7fhyfOt-_XjOQic4K5XzVtP9-UCofnVEe570fnmUd_GNT4uQVrjHGKIIoPPyo1B2RZ4vXYFmloLyQfCyNa2hjDllGlTqYSywEQevMYAYPK6K6FMsX9YfKjc5nGMVc5iOINi_PYrPZd2lLY5bqH9AK1mI1L"
+                  />
+                  <span className="font-bold text-sm text-primary truncate min-w-0">
+                    {artisanName}
+                  </span>
                 </div>
 
                 {/* Mobile Drawer Language Selector */}

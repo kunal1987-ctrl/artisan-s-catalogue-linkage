@@ -1,50 +1,76 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLanguage, SUPPORTED_LANGUAGES } from '../context/LanguageContext';
-import { Globe, Check, X, Sparkles, Volume2 } from 'lucide-react';
+import { Globe, Check, X, Sparkles } from 'lucide-react';
+import useAudioAssistant from '../hooks/useAudioAssistant';
+
+/**
+ * Per-language hardcoded confirmation phrases spoken immediately after selection.
+ * These are intentionally NOT fetched from i18n — we need them in the NEW language
+ * before i18next has finished switching its internal state (race-condition bypass).
+ */
+const LANG_CONFIRMATION = {
+  hi: 'हिंदी भाषा चुनी गई।',
+  en: 'English language selected.',
+  bn: 'বাংলা ভাষা নির্বাচিত হয়েছে।',
+  ta: 'தமிழ் மொழி தேர்ந்தெடுக்கப்பட்டது.',
+  te: 'తెలుగు భాష ఎంపిక చేయబడింది.',
+  mr: 'मराठी भाषा निवडली गेली.',
+};
 
 /**
  * AtmLanguageSelector Component
- * 
- * Styled like an Indian Bank ATM screen:
- * - High-contrast, tactile, thumb-friendly physical-style push buttons.
- * - Displays each language prominently in its native script (e.g., "English", "हिंदी", "বাংলা", "தமிழ்", "తెలుగు", "मराठी").
- * - Shows phonetic English subtitle, regional cluster tag, and active checkmark.
- * - Supports dual modes:
- *     1. `mode="modal"`: Dialog popup triggered from header, navbar, or footer.
- *     2. `mode="inline"`: ATM Welcome Board embedded directly in the Home / Landing view.
- * - Instant client-side switching (<50ms) using react-i18next with no browser reload.
+ *
+ * Supports dual modes:
+ *   1. `mode="modal"`: Dialog popup triggered from header/navbar.
+ *   2. `mode="inline"`: Welcome board embedded in a page (legacy, kept for compatibility).
+ *
+ * On language card click:
+ *   - Calls setLanguage() → triggers i18n.changeLanguage() → UI re-renders in new language
+ *   - Calls speak() with the confirmation phrase in the NEW language immediately
+ *   - Closes the modal
  */
 export default function AtmLanguageSelector({
-  mode = 'inline', // 'inline' | 'modal'
+  mode = 'inline',
   isOpen = false,
   onClose = () => {},
   className = '',
 }) {
   const { t } = useTranslation();
   const { language, setLanguage, isAtmLanguageModalOpen, closeAtmLanguageModal } = useLanguage();
+  const { speak } = useAudioAssistant();
 
   const activeCode = language || 'hi';
   const showModal = mode === 'modal' ? (isOpen || isAtmLanguageModalOpen) : false;
 
-  // Always call closeAtmLanguageModal (the real state setter).
-  // Never rely on the `onClose` prop alone — it defaults to () => {} which is
-  // truthy and would short-circuit the real handler with the old `||` pattern.
+  // Always call the real state setter — never rely on the `onClose` prop alone
+  // (it defaults to () => {} which is truthy and would short-circuit the real handler)
   const handleClose = () => {
     closeAtmLanguageModal();
     if (typeof onClose === 'function') onClose();
   };
 
   const handleSelectLanguage = (code) => {
-    // Instant switch < 50ms
+    // 1. Switch the language in context + i18n (instant UI re-render)
     setLanguage(code);
+
+    // 2. Play audio confirmation in the newly selected language.
+    //    We use speak() directly with an explicit `lang` override rather than
+    //    speakPrompt() to avoid the race condition where i18next hasn't finished
+    //    loading the new locale yet when we try to read the translation key.
+    const confirmText = LANG_CONFIRMATION[code] || LANG_CONFIRMATION.en;
+    // Small delay lets the voice engine pick up the new language setting
+    setTimeout(() => {
+      speak(confirmText, { lang: code, rate: 0.88 });
+    }, 150);
+
+    // 3. Close modal after selection
     if (mode === 'modal') {
-      if (closeAtmLanguageModal) closeAtmLanguageModal();
-      if (onClose) onClose();
+      handleClose();
     }
   };
 
-  // Content for the ATM Keypad Grid
+  // ── Language Card Grid ──────────────────────────────────────
   const renderKeypad = () => (
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3.5 w-full">
       {SUPPORTED_LANGUAGES.map((langItem) => {
@@ -62,7 +88,7 @@ export default function AtmLanguageSelector({
                 : 'bg-white hover:bg-[#fbf7f2] text-gray-900 border-[#d1c4bd]/60 hover:border-[#9c441c]/50 shadow-xs hover:shadow-md'
             }`}
           >
-            {/* Top row: Native Initial Badge + Status checkmark */}
+            {/* Top row: Native Initial Badge + Status */}
             <div className="flex items-center justify-between w-full mb-2">
               <span
                 className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center font-black text-sm sm:text-base transition-transform group-hover:scale-105 shadow-xs ${
@@ -86,7 +112,7 @@ export default function AtmLanguageSelector({
               )}
             </div>
 
-            {/* Middle row: Prominent Native Script */}
+            {/* Middle: Native Script Name */}
             <div className="flex flex-col">
               <span
                 className={`text-lg sm:text-2xl font-black tracking-tight leading-tight transition-colors ${
@@ -104,7 +130,7 @@ export default function AtmLanguageSelector({
               </span>
             </div>
 
-            {/* Bottom row: Region descriptor */}
+            {/* Bottom: Region tag */}
             <div className="mt-2 pt-2 border-t border-current/10 flex items-center justify-between text-[10px] sm:text-[11px]">
               <span className={`truncate font-medium ${isSelected ? 'text-gray-300' : 'text-gray-600'}`}>
                 {langItem.region}
@@ -118,7 +144,7 @@ export default function AtmLanguageSelector({
               </span>
             </div>
 
-            {/* Tactile 3D button bevel overlay */}
+            {/* Tactile 3D bevel overlay */}
             <div
               className={`absolute inset-0 rounded-2xl pointer-events-none transition-opacity ${
                 isSelected
@@ -132,9 +158,9 @@ export default function AtmLanguageSelector({
     </div>
   );
 
-  // ═════════════════════════════════════════════════════
-  // MODAL MODE (Global Dialog)
-  // ═════════════════════════════════════════════════════
+  // ══════════════════════════════════════════════════════════
+  // MODAL MODE
+  // ══════════════════════════════════════════════════════════
   if (mode === 'modal') {
     if (!showModal) return null;
 
@@ -151,9 +177,9 @@ export default function AtmLanguageSelector({
           onClick={handleClose}
         />
 
-        {/* ATM Machine Terminal Card */}
+        {/* Modal Card */}
         <div className="relative w-full max-w-xl bg-[#fdf9f3] rounded-3xl shadow-2xl border-4 border-[#2e241e] overflow-hidden z-10 animate-in zoom-in-95 duration-250 flex flex-col">
-          {/* ATM Top Header Bar */}
+          {/* Header */}
           <div className="bg-gradient-to-r from-[#2e241e] via-[#3d2e24] to-[#2e241e] px-4 sm:px-6 py-3.5 sm:py-4 text-white flex items-center justify-between border-b-2 border-[#ff9062]">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-full bg-[#ff9062]/20 border border-[#ff9062]/40 flex items-center justify-center text-[#ff9062]">
@@ -187,15 +213,18 @@ export default function AtmLanguageSelector({
             </span>
           </div>
 
-          {/* ATM Keypad Body */}
+          {/* Language Grid */}
           <div className="p-4 sm:p-6 bg-[#fdf9f3] max-h-[75vh] overflow-y-auto">
             {renderKeypad()}
           </div>
 
-          {/* ATM Bottom Footer */}
+          {/* Footer */}
           <div className="bg-[#f1ede7] px-4 sm:px-6 py-3 border-t border-[#d1c4bd]/60 flex items-center justify-between">
             <span className="text-[11px] text-gray-600 font-medium">
-              {t('atm.current_lang', 'Current Language')}: <strong className="text-gray-900">{SUPPORTED_LANGUAGES.find(l => l.code === activeCode)?.native}</strong>
+              {t('atm.current_lang', 'Current Language')}:{' '}
+              <strong className="text-gray-900">
+                {SUPPORTED_LANGUAGES.find((l) => l.code === activeCode)?.native}
+              </strong>
             </span>
             <button
               type="button"
@@ -210,15 +239,14 @@ export default function AtmLanguageSelector({
     );
   }
 
-  // ═════════════════════════════════════════════════════
-  // INLINE MODE (Direct Welcome Board on Home screen)
-  // ═════════════════════════════════════════════════════
+  // ══════════════════════════════════════════════════════════
+  // INLINE MODE (legacy/compatibility)
+  // ══════════════════════════════════════════════════════════
   return (
     <section
       aria-label="Regional Language Selection Board"
       className={`relative w-full rounded-3xl bg-gradient-to-b from-[#ffffff] to-[#fbf7f2] border-2 border-[#d1c4bd]/60 p-4 sm:p-6 shadow-sm overflow-hidden ${className}`}
     >
-      {/* Decorative top pill badge */}
       <div className="flex items-center gap-2.5 pb-3 mb-3 sm:mb-4 border-b border-[#d1c4bd]/40">
         <div className="w-8 h-8 rounded-xl bg-[#9c441c]/10 text-[#9c441c] flex items-center justify-center font-bold shrink-0">
           <Globe className="w-4 h-4" />
@@ -233,7 +261,6 @@ export default function AtmLanguageSelector({
         </div>
       </div>
 
-      {/* ATM Push Buttons Keypad */}
       {renderKeypad()}
     </section>
   );

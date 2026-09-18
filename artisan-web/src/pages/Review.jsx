@@ -24,8 +24,7 @@ const GEM_CATEGORIES = [
 export default function Review() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { t } = useTranslation();
-  const { user, artisanProfile, openAuthModal, showToast, language } = useAuth();
+  const { user, artisanProfile, isEmailVerified, openAuthModal, setPendingProduct, showToast, language } = useAuth();
   const { speakPrompt, stop } = useAudioAssistant();
 
   // Contextual voice prompt for zero-literacy review screen
@@ -91,7 +90,12 @@ export default function Review() {
   const [editingField, setEditingField] = useState(null); // 'title' | 'titleHi' | 'price' | 'wholesalePrice' | 'moq' | 'reasoning' | 'description' | 'descriptionHi' | null
 
   const hasAiData = !!location.state;
-  const isPhoneVerified = Boolean(artisanProfile?.verified || user?.is_phone_verified);
+  const isVerified = Boolean(
+    isEmailVerified ||
+    (user?.email && !user?.is_anonymous) ||
+    artisanProfile?.verified ||
+    (typeof window !== 'undefined' && localStorage.getItem('artisan_verified_email'))
+  );
 
   // ════════════════════════════════════════════
   // PUBLISH TO SUPABASE (ONDC & GeM Payload)
@@ -190,9 +194,11 @@ export default function Review() {
 
       const finalizedId = insertedData?.id || payload.id;
 
-      // Reset state to avoid bleed into subsequent sessions
+      // Reset state and clear preserved pending state after successful publish
       setCategory('');
       setHsnCode('');
+      if (setPendingProduct) setPendingProduct(null);
+      try { sessionStorage.removeItem('artisan_pending_product'); } catch {}
 
       // 3. Navigate to celebratory /success screen with enhanced image and WhatsApp share details
       navigate('/success', {
@@ -200,13 +206,13 @@ export default function Review() {
           ...payload,
           id: finalizedId,
           productId: finalizedId,
-          title: payload.title || craftTitle,
-          titleHi: payload.title_hi || craftTitleHi,
+          title: payload.title || title,
+          titleHi: payload.title_hi || titleHi,
           price: payload.price || price,
           wholesalePrice: payload.bulk_price || wholesalePrice,
           moq: payload.moq || moq,
           gemCategory: payload.gem_category || gemCategory,
-          category: payload.category || craftCategory,
+          category: payload.category || category,
           imageUrl: finalImageUrl,
           enhancedImageUrl: finalImageUrl,
         },
@@ -219,14 +225,46 @@ export default function Review() {
   };
 
   const handlePublish = async () => {
-    // Check if artisan phone is verified before publishing
-    if (!isPhoneVerified) {
-      showToast(language === 'hi' ? 'कृपया पहले मोबाइल नंबर सत्यापित करें' : 'Please verify phone with OTP before publishing');
+    // Intercept publishing if Email OTP is not verified
+    if (!isVerified) {
+      // 1. Preserve current reviewed product data across OTP authentication
+      const pendingData = {
+        title,
+        titleHi,
+        price,
+        wholesalePrice,
+        moq,
+        gemCategory,
+        pricingReasoning,
+        category,
+        hsnCode,
+        description,
+        descriptionHi,
+        tags,
+        imageUrl,
+        aiData,
+      };
+
+      if (setPendingProduct) {
+        setPendingProduct(pendingData);
+      }
+      try {
+        sessionStorage.setItem('artisan_pending_product', JSON.stringify(pendingData));
+      } catch {}
+
+      showToast(
+        language === 'hi'
+          ? 'कृपया पहले ईमेल ओटीपी सत्यापित करें'
+          : 'Please verify your email with OTP before publishing'
+      );
+
+      // 2. Open Email OTP Modal with post-verification auto-publish callback
       openAuthModal(() => {
         proceedWithPublish();
       });
       return;
     }
+
     await proceedWithPublish();
   };
 
@@ -297,7 +335,7 @@ export default function Review() {
             <AudioMuteButton variant="light" />
             <LanguageToggle variant="dark" />
 
-            {isPhoneVerified ? (
+            {isVerified ? (
               <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950 border border-emerald-500/50 text-emerald-300 text-[11px] font-bold shadow-2xs">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                 <span>{language === 'hi' ? 'सत्यापित' : 'Verified'}</span>
@@ -305,11 +343,12 @@ export default function Review() {
             ) : (
               <button
                 type="button"
-                onClick={() => openAuthModal()}
-                className="hidden md:inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-stone-950 text-[11px] font-bold cursor-pointer transition-all active:scale-95 animate-pulse shadow-xs"
+                id="verify-header-btn"
+                onClick={handlePublish}
+                className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-stone-950 text-[11px] font-bold cursor-pointer transition-all active:scale-95 animate-pulse shadow-xs"
               >
-                <span className="material-symbols-outlined text-[14px]">login</span>
-                <span>📲 {language === 'hi' ? 'फ़ोन सत्यापन' : 'Verify'}</span>
+                <span className="material-symbols-outlined text-[15px]">verified</span>
+                <span>{language === 'hi' ? 'ईमेल सत्यापन' : 'Verify'}</span>
               </button>
             )}
 
@@ -965,7 +1004,8 @@ export default function Review() {
                     <button
                       onClick={handlePublish}
                       disabled={isPublishing}
-                      className={`w-full sm:flex-1 h-auto min-h-12 py-3 px-4 sm:px-6 rounded-full flex items-center justify-center gap-2 shadow-xl active:scale-[0.99] transition-all font-bold text-sm sm:text-[15px] tracking-wide text-center ${
+                      id="publish-bottom-btn"
+                      className={`w-full sm:flex-1 h-auto min-h-12 py-3 px-4 sm:px-6 rounded-full flex items-center justify-center gap-2 shadow-xl active:scale-[0.99] transition-all font-bold text-sm sm:text-[15px] tracking-wide text-center cursor-pointer ${
                         isPublishing
                           ? 'bg-primary-container/60 text-white/60 cursor-wait'
                           : 'bg-[#180f0a] hover:bg-black text-white'
@@ -980,8 +1020,12 @@ export default function Review() {
                       ) : (
                         <>
                           <span className="text-[17px]">🚀</span>
-                          <span>Publish to ONDC & GeM Network</span>
-                          <span className="material-symbols-outlined text-[18px]">hub</span>
+                          <span>
+                            {isVerified
+                              ? 'Publish to ONDC & GeM Network'
+                              : 'Verify & Publish to ONDC & GeM Network'}
+                          </span>
+                          <span className="material-symbols-outlined text-[18px]">verified</span>
                         </>
                       )}
                     </button>

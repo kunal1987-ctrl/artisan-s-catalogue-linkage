@@ -165,6 +165,8 @@ export default function Capture() {
   const [transcript, setTranscript] = useState('');
   const [audioTranscript, setAudioTranscript] = useState('');
   const [customTranscript, setCustomTranscript] = useState('');
+  const [category, setCategory] = useState(null);
+  const [hsnCode, setHsnCode] = useState(null);
   const [extractedPrice, setExtractedPrice] = useState(null);
   const [extractedName, setExtractedName] = useState('');
   const [showAdvancedText, setShowAdvancedText] = useState(false);
@@ -231,6 +233,8 @@ export default function Capture() {
     setTranscript('');
     setAudioTranscript('');
     setCustomTranscript('');
+    setCategory(null);
+    setHsnCode(null);
     setShowAdvancedText(false);
 
     setExtractedPrice(null);
@@ -929,6 +933,9 @@ export default function Capture() {
           activeToken = anonData?.session?.access_token;
         }
 
+        const imageBlob = images[0]?.blob || (image instanceof Blob ? image : null) || (imageFile instanceof Blob ? imageFile : null);
+        console.log("Sending to Gemini:", { imageBlob, transcript: activeText || transcript });
+
         const { data, error } = await supabase.functions.invoke('process-artisan-craft', {
           body: {
             audioBase64: targetAudioBase64 || null,
@@ -943,6 +950,12 @@ export default function Capture() {
 
         if (!error && data && !data.error) {
           listingData = data;
+          if (data.category || data.craft_category) {
+            setCategory(data.category || data.craft_category);
+          }
+          if (data.hsn_code) {
+            setHsnCode(data.hsn_code);
+          }
         } else {
           const errDetail = error?.message || data?.error || '';
           const isAudioError = errDetail.toLowerCase().includes('whisper') ||

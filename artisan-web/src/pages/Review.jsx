@@ -67,6 +67,7 @@ export default function Review() {
     `Fair artisan wage factored with expected price of ₹${resolvedInitialPrice} and volume discount for institutional orders.`
   );
   const [category, setCategory] = useState(resolvedInitialCategory);
+  const [hsnCode, setHsnCode] = useState(aiData.hsn_code || '');
   const [description, setDescription] = useState(
     aiData.description ||
     'Exquisite handwoven blue saree crafted from pure mulberry silk with fine golden zari border work. Traditional artisan weave taking over 4 days to complete. Lightweight, breathable, and wedding-ready.'
@@ -168,7 +169,7 @@ export default function Review() {
         bulk_price: Number(wholesalePrice),
         moq: Number(moq),
         gem_category: gemCategory,
-        hsn_code: aiData.hsn_code || '69120010',
+        hsn_code: hsnCode || aiData.hsn_code || '970300',
         unspsc_code: aiData.unspsc_code || '60121002',
         is_gem_ready: true,
         pricing_reasoning: pricingReasoning,
@@ -188,6 +189,10 @@ export default function Review() {
       if (error) throw error;
 
       const finalizedId = insertedData?.id || payload.id;
+
+      // Reset state to avoid bleed into subsequent sessions
+      setCategory('');
+      setHsnCode('');
 
       // 3. Navigate to celebratory /success screen with enhanced image and WhatsApp share details
       navigate('/success', {

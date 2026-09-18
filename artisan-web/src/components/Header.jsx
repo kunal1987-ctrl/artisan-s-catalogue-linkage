@@ -62,17 +62,33 @@ export default function Header({ showLanguageSwitcher = true }) {
           </div>
         </div>
 
-        {/* Action Button */}
+        {/* Action Button with Visual Affordance for Low-Literacy Artisans */}
         <div className="flex flex-col shrink-0 w-full sm:w-auto">
           <button
             onClick={() => navigate('/capture')}
-            className="px-7 py-4 rounded-full bg-white text-[#2e241e] font-bold text-[15px] sm:text-[16px] flex items-center justify-center gap-3.5 shadow-xl hover:bg-[#f7f3ed] active:scale-95 transition-all cursor-pointer group"
+            className="relative px-7 py-4 rounded-full bg-white text-[#2e241e] font-bold text-[15px] sm:text-[16px] flex items-center justify-center gap-3.5 shadow-xl hover:bg-[#f7f3ed] active:scale-95 transition-all cursor-pointer group animate-cta-pop"
             type="button"
           >
-            <div className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-full bg-[#2e241e] text-white shadow-md group-hover:scale-105 transition-transform shrink-0">
-              <span className="material-symbols-outlined text-[18px] leading-none">photo_camera</span>
-              <span className="material-symbols-outlined text-[18px] leading-none text-[#ffb599]">mic</span>
+            {/* Visual affordance: radiating ripple and breathing halo container */}
+            <div className="relative flex items-center justify-center shrink-0">
+              {/* Continuous gentle radiating ripple (slower, non-aggressive pulse) */}
+              <div
+                aria-hidden="true"
+                className="absolute inset-0 rounded-full bg-orange-400 opacity-75 animate-ping [animation-duration:2.2s] pointer-events-none"
+              />
+              {/* Soft ambient breathing glow */}
+              <div
+                aria-hidden="true"
+                className="absolute -inset-1 rounded-full bg-orange-400/40 blur-[2px] animate-pulse pointer-events-none"
+              />
+
+              {/* Dark oval section containing the camera and mic icons */}
+              <div className="relative z-10 flex items-center justify-center gap-1.5 px-3 py-2 rounded-full bg-[#2e241e] text-white shadow-md group-hover:scale-105 transition-transform shrink-0">
+                <span className="material-symbols-outlined text-[18px] leading-none">photo_camera</span>
+                <span className="material-symbols-outlined text-[18px] leading-none text-[#ffb599]">mic</span>
+              </div>
             </div>
+
             <span className="font-extrabold text-[15px] sm:text-[16px] tracking-tight">{t('button_text')}</span>
             <span className="material-symbols-outlined text-[22px] text-[#9c441c] group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
           </button>

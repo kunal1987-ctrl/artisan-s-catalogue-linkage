@@ -762,25 +762,18 @@ export default function Orders() {
         <div className="flex flex-col gap-6 max-w-7xl mx-auto w-full">
 
           {/* ── TOP NAV BAR ───────────────────────────────────────────────── */}
-          <div className="flex items-start justify-between gap-4 pb-4 border-b border-border-delicate/60 flex-wrap">
-            <div className="flex items-start gap-3">
-              <button
-                type="button"
-                aria-label="Go back to Home"
-                className="min-w-[48px] min-h-[48px] w-[48px] h-[48px] rounded-full bg-surface-container-low hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors cursor-pointer mt-0.5"
-                onClick={() => navigate('/home')}
-              >
-                <span className="material-symbols-outlined text-[24px]">arrow_back</span>
-              </button>
-              <div>
-                <span className="text-xs font-bold text-secondary tracking-wider uppercase block">
-                  {t('orders.title', 'Orders & Fulfillment')}
-                </span>
-                <h1 className="text-xl sm:text-2xl font-extrabold text-espresso-deep tracking-tight mt-0.5">
-                  {t('orders.title', 'Orders & Fulfillment')}
-                </h1>
-              </div>
-            </div>
+          <div className="flex items-center justify-between gap-4 pb-4 border-b border-border-delicate/60">
+            <button
+              type="button"
+              aria-label="Go back to Home"
+              className="min-w-[48px] min-h-[48px] w-[48px] h-[48px] rounded-full bg-surface-container-low hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors cursor-pointer"
+              onClick={() => navigate('/home')}
+            >
+              <span className="material-symbols-outlined text-[24px]">arrow_back</span>
+            </button>
+            <h1 className="sr-only">
+              {t('orders.title', 'Orders & Fulfillment')}
+            </h1>
 
             {/* Global voice button */}
             <button

@@ -43,13 +43,6 @@ export default function Header({ showLanguageSwitcher = true }) {
             {t('subtitle')}
           </p>
 
-          {/* Dynamic translated Feature Bullets */}
-          <div className="flex flex-wrap items-center gap-6 mt-2 text-[13px] text-[#d4c3ba]">
-            <span className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[18px] text-[#ffb599]">record_voice_over</span>
-              {t('feature_1')}
-            </span>
-          </div>
         </div>
 
         {/* Action Button with Visual Affordance for Low-Literacy Artisans */}

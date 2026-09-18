@@ -97,11 +97,8 @@ export default function Home({ customArtisanName } = {}) {
                         <span>/</span>
                         <span>{t('dashboard.breadcrumb', 'Artisan Dashboard')}</span>
                     </div>
-                    <h2 className="text-xl sm:text-[24px] font-bold text-primary flex flex-wrap items-center gap-2 mt-0.5">
-                        <span>{t('dashboard.welcome', 'Welcome, Artisan!')}</span>
-                        <span className="text-xs sm:text-[14px] font-medium text-on-surface-variant">
-                            {t('dashboard.shop_name', 'Shilp Setu Shop')}
-                        </span>
+                    <h2 className="text-xl sm:text-[24px] font-bold text-primary mt-0.5">
+                        {t('dashboard.welcome', 'Welcome, Artisan!')}
                     </h2>
                 </div>
                 

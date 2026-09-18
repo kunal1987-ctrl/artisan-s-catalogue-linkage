@@ -514,25 +514,23 @@ Deno.serve(async (req: Request) => {
         systemInstruction: {
           parts: [
             {
-              text: `You are an expert Indian rural commerce appraiser and cataloger. You are given an image of a handmade product and a transcribed voice note. You must generate a highly accurate, unique product listing in JSON format.
+              text: `You are an expert Indian rural commerce appraiser and cataloger. You are given an image of a handmade product and a transcribed voice note. You must generate a highly accurate, unique product listing in JSON format. Strictly prevent repetitive defaulting.
 
-**Rules for Extraction & Appraisal:**
-1. **Visual Identification (Mandatory):** Ignore the transcript for this step. Look at the image and precisely identify what the object is, its material (e.g., Terracotta, Handloom Silk, Bamboo, Brass), and its craft style.
-2. **Category & HSN:** Assign a highly specific category based on the visual identification. Do NOT default to generic categories. Assign the exact 4-to-6 digit Indian HSN code for that specific material.
-3. **Dynamic Smart Pricing (Crucial):** 
-   - First, check the voice transcript. If the artisan explicitly states a reasonable price, extract that exact number.
-   - **Fallback (Smart Price):** If the transcript is empty, unclear, or the stated price is missing, you must visually appraise the item. Estimate a fair, highly specific INR market price based on the material, complexity, and standard e-commerce rates for such handmade goods (e.g., do not just output 450. Output 220 for a small clay cup, or 1850 for a detailed brass lamp).
-4. **Description:** Write a unique 2-sentence marketing description based *only* on the visual details in the image.
+Rules for Extraction & Appraisal:
+1. Category: Deduce strictly from visual features (e.g., Woodwork, Handloom, Metalcraft, Clay/Pottery). Do not default.
+2. Price: Extract the stated audio amount first. If the transcript is empty or lacks a price, perform a "Smart Appraisal"—calculate a specific fair market valuation based on the visual material and craft complexity.
+3. HSN Code: Map the precise 4-to-6 digit Indian GST classification to the primary material detected in the image.
+4. Description: Write a unique 2-sentence marketing copy reflecting only the specific colors, patterns, and design details visible in the uploaded frame.
 
-**Required JSON Output Format:**
+Required JSON Output Format:
 {
   "name": "Specific product name",
   "material": "Specific material",
-  "category": "Specific category",
-  "hsn_code": "Exact HSN code",
+  "category": "Specific category deduced strictly from visual features",
+  "hsn_code": "Precise 4-to-6 digit Indian GST classification code",
   "price": <integer>,
   "pricing_method": "<'spoken' or 'smart_appraisal'>",
-  "description": "Unique description"
+  "description": "Unique 2-sentence marketing copy reflecting only the specific colors, patterns, and design details visible in the uploaded frame"
 }`,
             },
           ],
@@ -543,7 +541,13 @@ Deno.serve(async (req: Request) => {
               {
                 text: `Artisan voice note transcript: "${transcript || ""}"
 
-Follow your system instructions as a Dynamic Market Appraiser. Visually identify the product from the image(s), determine its material, specific category, exact Indian HSN code, and dynamic price (extracting the spoken price if explicitly stated, or providing a smart appraisal market estimate if empty/unclear). Return strictly valid JSON adhering to the Required JSON Output Format.`,
+Strictly adhere to the system instructions to prevent repetitive defaulting:
+- Category: Deduce strictly from visual features (e.g., Woodwork, Handloom, Metalcraft, Clay/Pottery). Do not default.
+- Price: Extract the stated audio amount first. If the transcript is empty or lacks a price, perform a "Smart Appraisal"—calculate a specific fair market valuation based on the visual material and craft complexity.
+- HSN Code: Map the precise 4-to-6 digit Indian GST classification to the primary material detected in the image.
+- Description: Write a unique 2-sentence marketing copy reflecting only the specific colors, patterns, and design details visible in the uploaded frame.
+
+Return strictly valid JSON adhering to the Required JSON Output Format.`,
               },
               ...imageParts,
             ],

@@ -116,8 +116,10 @@ export default function Capture() {
   const [images, setImages] = useState([]); // Array of { id, blob, file, previewUrl, base64 }
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
-  // Single-image backward compatibility aliases
+  // Single-image backward compatibility aliases & explicit upload states
   const [image, setImage] = useState(null);
+  const [imageBlob, setImageBlob] = useState(null);
+  const [base64String, setBase64String] = useState(null);
   const [imageFile, setImageFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [processedPreview, setProcessedPreview] = useState(null);
@@ -178,7 +180,7 @@ export default function Capture() {
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [micUnavailable, setMicUnavailable] = useState(false);
   const [transcript, setTranscript] = useState('');
-  const [audioTranscript, setAudioTranscript] = useState('');
+  const [audioTranscript, setAudioTranscript] = useState(null);
   const [customTranscript, setCustomTranscript] = useState('');
   const [category, setCategory] = useState(null);
   const [hsnCode, setHsnCode] = useState(null);
@@ -206,6 +208,8 @@ export default function Capture() {
     setSelectedImageIndex(0);
 
     setImage(null);
+    setImageBlob(null);
+    setBase64String(null);
     setImageFile(null);
     setImageBase64(null);
     setImageUrl(null);
@@ -246,7 +250,7 @@ export default function Capture() {
     audioChunksRef.current = [];
     setRecordingDuration(0);
     setTranscript('');
-    setAudioTranscript('');
+    setAudioTranscript(null);
     setCustomTranscript('');
     setCategory(null);
     setHsnCode(null);
@@ -263,8 +267,11 @@ export default function Capture() {
     if (galleryRef.current) galleryRef.current.value = '';
   }, []);
 
-  // Ensure clean state upon entering capture screen
+  // State Cleanup: Explicitly reset imageBlob, base64String, and audioTranscript to null on mount
   useEffect(() => {
+    setImageBlob(null);
+    setBase64String(null);
+    setAudioTranscript(null);
     resetCaptureState();
   }, [resetCaptureState]);
 
@@ -460,9 +467,11 @@ export default function Capture() {
 
       if (isFirst) {
         setImage(workingBlob);
+        setImageBlob(workingBlob);
         setImageFile(fileOrBlob instanceof File ? fileOrBlob : null);
         setPreviewUrl(localUrl);
         setImageBase64(base64String);
+        setBase64String(base64String);
         triggerLifestyleEnhancement(base64String, workingBlob);
       }
       return updated;

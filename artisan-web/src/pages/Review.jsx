@@ -95,6 +95,17 @@ export default function Review() {
   const [imageUrl] = useState(
     aiData.imageUrl || ''
   );
+  // Explicit craft upload states
+  const [imageBlob, setImageBlob] = useState(null);
+  const [base64String, setBase64String] = useState(null);
+  const [audioTranscript, setAudioTranscript] = useState(null);
+
+  // State Cleanup: Explicitly reset imageBlob, base64String, and audioTranscript to null on mount
+  useEffect(() => {
+    setImageBlob(null);
+    setBase64String(null);
+    setAudioTranscript(null);
+  }, []);
 
   // ── UI State ──
   const [isPublishing, setIsPublishing] = useState(false);
@@ -207,6 +218,11 @@ export default function Review() {
       if (error) throw error;
 
       const finalizedId = insertedData?.id || payload.id;
+
+      // State Cleanup: Explicitly reset imageBlob, base64String, and audioTranscript immediately after successful upload
+      setImageBlob(null);
+      setBase64String(null);
+      setAudioTranscript(null);
 
       // Reset state and clear preserved pending state after successful publish
       setCategory('');

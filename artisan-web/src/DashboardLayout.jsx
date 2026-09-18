@@ -38,7 +38,9 @@ export default function DashboardLayout() {
     artisanProfile?.verified ||
     isAuthenticated ||
     (user && !user.is_anonymous) ||
-    session
+    (session && session.user && !session.user.is_anonymous) ||
+    localStorage.getItem('artisan_verified_email') ||
+    localStorage.getItem('artisan_verified_phone')
   );
 
   // Production-grade logout workflow

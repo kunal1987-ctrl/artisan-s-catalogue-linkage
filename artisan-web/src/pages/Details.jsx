@@ -3,7 +3,6 @@ import { useParams, useLocation, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
-import { INITIAL_PRODUCTS } from './Catalog';
 import useAudioAssistant from '../hooks/useAudioAssistant';
 
 export default function Details() {
@@ -42,7 +41,7 @@ export default function Details() {
       if (!id) return;
       try {
         const { data, error } = await supabase
-          .from('products')
+          .from('items')
           .select('*')
           .eq('id', id)
           .maybeSingle();

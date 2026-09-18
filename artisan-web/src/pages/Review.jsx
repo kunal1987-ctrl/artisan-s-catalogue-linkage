@@ -31,6 +31,13 @@ export default function Review() {
   const pricingMethod = aiData.pricing_method || aiData.pricingMethod || (aiData.pricing_reasoning?.includes('Market price estimated') ? 'smart_appraisal' : 'spoken');
   const isSmartAppraisal = pricingMethod === 'smart_appraisal';
 
+  // Guard against navigating directly to review without craft data
+  useEffect(() => {
+    if (!location.state?.name && !location.state?.title && !location.state?.imageUrl) {
+      navigate('/capture', { replace: true });
+    }
+  }, [location.state, navigate]);
+
   // Contextual voice prompt for zero-literacy review screen
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -52,12 +59,12 @@ export default function Review() {
   }, [speakPrompt, speak, stop, language, isSmartAppraisal]);
 
   // ── Editable Form State ──
-  const resolvedInitialTitle = aiData.name || aiData.title || 'Handwoven Blue Pure Silk Saree';
-  const resolvedInitialPrice = Number(aiData.price || aiData.suggested_retail_price_inr || aiData.estimated_price_inr || 1200);
-  const resolvedInitialCategory = aiData.material || aiData.craft_category || 'Textiles & Sarees';
+  const resolvedInitialTitle = aiData.name || aiData.title || (language === 'hi' ? 'हस्तशिल्प उत्पाद' : 'Handcrafted Item');
+  const resolvedInitialPrice = Number(aiData.price || aiData.suggested_retail_price_inr || aiData.estimated_price_inr || 0);
+  const resolvedInitialCategory = aiData.material || aiData.craft_category || aiData.category || 'Handicrafts';
 
   const [title, setTitle] = useState(resolvedInitialTitle);
-  const [titleHi, setTitleHi] = useState(aiData.title_hi || (aiData.name ? aiData.name : 'वाराणसी हस्तनिर्मित बनारसी रेशम साड़ी'));
+  const [titleHi, setTitleHi] = useState(aiData.title_hi || (aiData.name ? aiData.name : ''));
   const [price, setPrice] = useState(resolvedInitialPrice);
   const [wholesalePrice, setWholesalePrice] = useState(
     Number(
@@ -66,9 +73,9 @@ export default function Review() {
       Math.round(resolvedInitialPrice * 0.72)
     )
   );
-  const [moq, setMoq] = useState(Number(aiData.moq || 50));
+  const [moq, setMoq] = useState(Number(aiData.moq || 10));
   const [gemCategory, setGemCategory] = useState(
-    aiData.gem_category || 'Handloom / Silk Sarees'
+    aiData.gem_category || 'Handicrafts & Traditional Artware'
   );
   const [pricingReasoning, setPricingReasoning] = useState(
     aiData.pricing_reasoning ||
@@ -77,19 +84,16 @@ export default function Review() {
   const [category, setCategory] = useState(resolvedInitialCategory);
   const [hsnCode, setHsnCode] = useState(aiData.hsn_code || '');
   const [description, setDescription] = useState(
-    aiData.description ||
-    'Exquisite handwoven blue saree crafted from pure mulberry silk with fine golden zari border work. Traditional artisan weave taking over 4 days to complete. Lightweight, breathable, and wedding-ready.'
+    aiData.description || ''
   );
   const [descriptionHi, setDescriptionHi] = useState(
-    aiData.description_hi ||
-    'पारंपरिक लकड़ी के करघे पर कुशल बुनकरों द्वारा तैयार प्रामाणिक हस्तशिल्प। शुद्ध ज़री और प्राकृतिक रेशम से निर्मित, उत्सव एवं विशेष अवसरों हेतु उपयुक्त।'
+    aiData.description_hi || ''
   );
   const [tags, setTags] = useState(
-    aiData.tags || ['Handmade', '100% Silk', 'Dry Clean Only', 'Mulberry Weave', 'GeM Verified']
+    aiData.tags || ['Handmade', 'Artisan', 'GeM Ready']
   );
   const [imageUrl] = useState(
-    aiData.imageUrl ||
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuAEq1Hkh8RmlAyVeK5gWu6j_YRSmgysFrP4oUBkyOyD-0L2PxQK2EPYOlD04SdKeyqcpoxMe-trihF63F1YYR0jB8DwGc_8Qj4FoI2OZy3SaWUq9mO9qZZmgAy_RFvRLSeQZPWsO_KnYucJlxSK8nl3V0KXJQSGkbwChhywzR_j7zm9kvIy-L9F8qh8ohekptBKtp2RWXgNgAH5wZtxJmMSbiXiLGP0BvGR-yhNeborvi6b1EC-3_NJ'
+    aiData.imageUrl || ''
   );
 
   // ── UI State ──
@@ -190,11 +194,12 @@ export default function Review() {
         image_url: finalImageUrl,
         status: 'published',
         user_id: authUserId,
+        artisan_id: authUserId,
         user_phone: userPhone,
       };
 
       const { data: insertedData, error } = await supabase
-        .from('products')
+        .from('items')
         .insert([payload])
         .select()
         .maybeSingle();

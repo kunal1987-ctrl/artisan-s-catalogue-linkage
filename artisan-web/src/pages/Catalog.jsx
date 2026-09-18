@@ -3,73 +3,15 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
-
-export const INITIAL_PRODUCTS = [
-  {
-    id: 'a1b2c3d4-0001-4000-8000-000000000001',
-    title: 'Handcrafted Terracotta Earthen Pitcher (Surahi)',
-    hindi_title: 'पारंपरिक हस्तनिर्मित मिट्टी की सुराही',
-    description: 'Naturally cooled unglazed terracotta water pitcher with micro-porous earthen filtration. Traditional hand-thrown pottery crafted using organic riverbed clay with embossed floral motifs.',
-    hindi_description: 'प्राकृतिक रूप से पानी को शीतल रखने वाली हस्तनिर्मित मिट्टी की सुराही। नदी की शुद्ध चिकनी मिट्टी से पारंपरिक चाक पर तैयार और फूलों के बारीक नक्काशीदार काम से अलंकृत।',
-    price: 450,
-    bulk_price: 260,
-    min_order_quantity: 50,
-    gem_category: 'Handicrafts & Traditional Artware - Terracotta Ware',
-    hsn_code: '69120010',
-    unspsc_code: '60121002',
-    craft_origin: 'Gorakhpur, Uttar Pradesh',
-    image_url: 'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=800&q=80',
-    is_gem_ready: true,
-    status: 'live',
-    category: 'Ceramics & Pottery',
-    qty: 50,
-  },
-  {
-    id: 'a1b2c3d4-0002-4000-8000-000000000002',
-    title: 'GI-Certified Jaipur Blue Pottery Decorative Wall Plate (10 Inch)',
-    hindi_title: 'भौगोलिक संकेतक (GI) प्रमाणित जयपुर ब्लू पॉटरी सजावटी प्लेट',
-    description: 'Authentic quartz powder and glass-frit ceramic plate hand-painted with Egyptian blue cobalt oxide and floral arabesque motifs. Turquoises glaze fired at low temperatures without clay.',
-    hindi_description: 'पारंपरिक क्वार्ट्ज और कांच के मिश्रण से निर्मित प्रामाणिक जयपुर ब्लू पॉटरी वॉल प्लेट। कोबाल्ट ऑक्साइड और प्राकृतिक रंगों से हाथ से चित्रित पारंपरिक फ्लोरल डिजाइन।',
-    price: 1250,
-    bulk_price: 780,
-    min_order_quantity: 25,
-    gem_category: 'Handicrafts & Decorative Items - Ceramic & Pottery Art',
-    hsn_code: '69139000',
-    unspsc_code: '60121001',
-    craft_origin: 'Jaipur, Rajasthan',
-    image_url: 'https://images.unsplash.com/photo-1610701596007-11502861dcfa?auto=format&fit=crop&w=800&q=80',
-    is_gem_ready: true,
-    status: 'draft',
-    category: 'Ceramics & Pottery',
-    qty: 25,
-  },
-  {
-    id: 'a1b2c3d4-0003-4000-8000-000000000003',
-    title: 'Handwoven Chanderi Silk-Cotton Zari Border Stole',
-    hindi_title: 'हथकरघा चंदेरी सिल्क-कॉटन जरी बॉर्डर स्टोल',
-    description: 'Fine lightweight handloom stole woven on traditional pit-looms using pure mulberry silk warp and cotton weft. Embellished with tested gold zari booti motifs and finished selvage.',
-    hindi_description: 'पारंपरिक गड्ढा करघे पर बुना गया हल्का और मुलायम चंदेरी सिल्क-कॉटन स्टोल। शुद्ध रेशम और सूती धागों के साथ बारीक सुनहरी जरी बूटी और पारंपरिक किनारी डिजाइन।',
-    price: 1850,
-    bulk_price: 1150,
-    min_order_quantity: 20,
-    gem_category: 'Handloom Textiles & Apparels - Scarves & Stoles',
-    hsn_code: '52085290',
-    unspsc_code: '53102504',
-    craft_origin: 'Chanderi, Madhya Pradesh',
-    image_url: 'https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?auto=format&fit=crop&w=800&q=80',
-    is_gem_ready: true,
-    status: 'sold_out',
-    category: 'Textiles & Handloom',
-    qty: 20,
-  }
-];
+import { clearStaleCatalogCache } from '../utils/cacheCleaner';
 
 export default function Catalog() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
   const { language, user } = useAuth();
-  const [products, setProducts] = useState(INITIAL_PRODUCTS);
+  const [products, setProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all'); // all | live | draft | sold_out
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -99,20 +41,27 @@ export default function Catalog() {
     }
   }, [location.state?.editProductId, products]);
 
-  // Fetch ALL products belonging to the logged-in artisan from Supabase
+  // Purge any stale demo items and fetch strictly live rows from Supabase items table
   useEffect(() => {
-    async function loadSupabaseProducts() {
+    // Purge stale demo caches from localStorage and IndexedDB
+    clearStaleCatalogCache();
+
+    async function loadSupabaseItems() {
+      setIsLoading(true);
       try {
-        let query = supabase.from('products').select('*');
+        let query = supabase.from('items').select('*');
         if (user?.id) {
-          query = query.eq('artisan_id', user.id);
+          query = query.or(`artisan_id.eq.${user.id},user_id.eq.${user.id}`);
         }
         const { data, error } = await query.order('created_at', { ascending: false });
 
-        if (!error && data && data.length > 0) {
+        if (error) {
+          console.error('Supabase items fetch error:', error);
+          setProducts([]);
+        } else if (data && data.length > 0) {
           const mapped = data.map((item) => ({
             id: item.id,
-            title: item.title,
+            title: item.title || item.name || '',
             hindi_title: item.hindi_title || item.title_hi || '',
             description: item.description || '',
             hindi_description: item.hindi_description || item.description_hi || '',
@@ -123,47 +72,25 @@ export default function Catalog() {
             hsn_code: item.hsn_code || '69120010',
             unspsc_code: item.unspsc_code || '60121002',
             craft_origin: item.craft_origin || 'India',
-            image_url: item.image_url || 'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?w=800&auto=format&fit=crop',
+            image_url: item.image_url || '',
             is_gem_ready: item.is_gem_ready ?? true,
             status: item.status === 'published' ? 'live' : (item.status || 'live'),
             category: item.category || item.gem_category || 'Handicrafts',
             qty: item.stock || item.min_order_quantity || item.moq || 1,
+            artisan_id: item.artisan_id || item.user_id,
           }));
           setProducts(mapped);
-        } else if (user?.id) {
-          // If specific artisan has no records yet, fallback to all catalog items
-          const { data: allData } = await supabase
-            .from('products')
-            .select('*')
-            .order('created_at', { ascending: false });
-          if (allData && allData.length > 0) {
-            const mapped = allData.map((item) => ({
-              id: item.id,
-              title: item.title,
-              hindi_title: item.hindi_title || item.title_hi || '',
-              description: item.description || '',
-              hindi_description: item.hindi_description || item.description_hi || '',
-              price: Number(item.price || 0),
-              bulk_price: Number(item.bulk_price || item.wholesale_price || Math.round((item.price || 0) * 0.72)),
-              min_order_quantity: Number(item.min_order_quantity || item.moq || 1),
-              gem_category: item.gem_category || item.category || 'Handicrafts',
-              hsn_code: item.hsn_code || '69120010',
-              unspsc_code: item.unspsc_code || '60121002',
-              craft_origin: item.craft_origin || 'India',
-              image_url: item.image_url || 'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?w=800&auto=format&fit=crop',
-              is_gem_ready: item.is_gem_ready ?? true,
-              status: item.status === 'published' ? 'live' : (item.status || 'live'),
-              category: item.category || item.gem_category || 'Handicrafts',
-              qty: item.stock || item.min_order_quantity || item.moq || 1,
-            }));
-            setProducts(mapped);
-          }
+        } else {
+          setProducts([]);
         }
       } catch (e) {
-        console.warn('Could not load products from Supabase:', e);
+        console.warn('Could not load items from Supabase:', e);
+        setProducts([]);
+      } finally {
+        setIsLoading(false);
       }
     }
-    loadSupabaseProducts();
+    loadSupabaseItems();
   }, [user]);
 
   // Handle product status toggle (live / draft / sold_out)
@@ -177,37 +104,58 @@ export default function Catalog() {
     }
     showToast(`Status updated: ${newStatus === 'live' ? 'Live' : newStatus === 'draft' ? 'In Review' : 'Sold Out'}`);
 
-    // Persist to Supabase if real product
+    // Persist to Supabase
     try {
-      if (!String(productId).startsWith('sample-')) {
-        const dbStatus = newStatus === 'live' ? 'published' : newStatus;
-        const { error } = await supabase
-          .from('products')
-          .update({ status: dbStatus })
-          .eq('id', productId);
-        if (error) console.error('Supabase update status error:', error);
-      }
+      const dbStatus = newStatus === 'live' ? 'published' : newStatus;
+      const { error } = await supabase
+        .from('items')
+        .update({ status: dbStatus })
+        .eq('id', productId);
+      if (error) console.error('Supabase update status error:', error);
     } catch (err) {
       console.error('Failed to update status in Supabase:', err);
     }
   };
 
-  // Handle product delete
+  // Handle product delete with user-bound matching & optimistic UI rollback
   const handleDeleteProduct = async (productId) => {
+    const previousProducts = products;
     // Optimistic UI update
     setProducts((prev) => prev.filter((p) => p.id !== productId));
-    setSelectedProduct(null);
-    showToast('🗑️ Product deleted from catalog');
+    if (selectedProduct?.id === productId) {
+      setSelectedProduct(null);
+    }
 
-    // Persist to Supabase
     try {
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', productId);
-      if (error) console.error('Supabase delete error:', error);
+      let error = null;
+      if (user?.id) {
+        const res = await supabase
+          .from('items')
+          .delete()
+          .eq('id', productId)
+          .eq('artisan_id', user.id);
+        error = res.error;
+      } else {
+        const res = await supabase
+          .from('items')
+          .delete()
+          .eq('id', productId);
+        error = res.error;
+      }
+
+      if (error) {
+        console.error('Supabase delete error:', error);
+        // Rollback optimistic update
+        setProducts(previousProducts);
+        showToast(language === 'hi' ? '❌ उत्पाद हटाने में विफल' : '❌ Failed to delete product');
+      } else {
+        showToast(language === 'hi' ? '🗑️ उत्पाद कैटलॉग से हटा दिया गया' : '🗑️ Product deleted from catalog');
+      }
     } catch (err) {
       console.error('Failed to delete product from Supabase:', err);
+      // Rollback optimistic update
+      setProducts(previousProducts);
+      showToast(language === 'hi' ? '❌ उत्पाद हटाने में विफल' : '❌ Failed to delete product');
     }
   };
 
@@ -377,7 +325,49 @@ export default function Catalog() {
 
           {/* Product Cards Grid */}
           <div className="pt-1 pb-4 mt-8">
-            {filteredProducts.length > 0 ? (
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center py-20">
+                <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4" />
+                <p className="text-sm font-bold text-primary">
+                  {language === 'hi' ? 'कैटलॉग लोड हो रहा है...' : 'Loading catalog crafts...'}
+                </p>
+              </div>
+            ) : products.length === 0 ? (
+              /* Zero-Literacy Empty State */
+              <div className="flex flex-col items-center justify-center py-16 px-4 text-center max-w-md mx-auto">
+                <div className="relative mb-6">
+                  <div className="w-24 h-24 rounded-full bg-[#f1ede7] flex items-center justify-center text-primary shadow-inner">
+                    <span className="material-symbols-outlined text-[48px] text-secondary">palette</span>
+                  </div>
+                  <button
+                    onClick={() => navigate('/capture')}
+                    aria-label="Add your first craft"
+                    className="absolute -bottom-1 -right-1 w-11 h-11 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all cursor-pointer border-2 border-white"
+                    type="button"
+                  >
+                    <span className="material-symbols-outlined text-[24px]">add</span>
+                  </button>
+                </div>
+                <h3 className="text-xl sm:text-2xl font-bold text-primary mb-2">
+                  {language === 'hi'
+                    ? 'कोई शिल्प अभी सूचीबद्ध नहीं है। अपना पहला शिल्प जोड़ने के लिए + दबाएं।'
+                    : 'No crafts listed yet. Tap + to add your first craft.'}
+                </h3>
+                <p className="text-sm text-on-surface-variant mb-6 font-normal">
+                  {language === 'hi'
+                    ? 'कैमरा या आवाज़ से अपने हस्तशिल्प को तुरंत कैटलॉग करें'
+                    : 'Snap a photo or speak in your language to create a market listing in seconds.'}
+                </p>
+                <button
+                  className="h-14 px-8 rounded-full bg-primary text-on-primary font-bold text-base flex items-center gap-2.5 shadow-md hover:bg-primary/90 active:scale-95 transition-all cursor-pointer"
+                  onClick={() => navigate('/capture')}
+                  type="button"
+                >
+                  <span className="material-symbols-outlined text-[24px]">add_a_photo</span>
+                  <span>{language === 'hi' ? '+ पहला शिल्प जोड़ें' : '+ Add First Craft'}</span>
+                </button>
+              </div>
+            ) : filteredProducts.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="productsGrid">
                 {filteredProducts.map((p) => (
                   <div
@@ -520,32 +510,34 @@ export default function Catalog() {
               </div>
             )}
 
-            {/* Restock Notification banner */}
-            <div className="mt-6 p-4 bg-surface-container-low border border-surface-container rounded-2xl shadow-xs flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center text-secondary shrink-0">
-                  <span className="material-symbols-outlined text-[22px]">sync_saved_locally</span>
+            {/* Restock Notification banner (only if low stock products exist) */}
+            {products.some((p) => p.qty <= 2) && (
+              <div className="mt-6 p-4 bg-surface-container-low border border-surface-container rounded-2xl shadow-xs flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center text-secondary shrink-0">
+                    <span className="material-symbols-outlined text-[22px]">sync_saved_locally</span>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-primary">
+                      {language === 'hi' ? 'पुनः स्टॉक अधिसूचना' : 'Instant Restock Notification'}
+                    </h4>
+                    <p className="text-xs text-on-surface-variant mt-0.5">
+                      {language === 'hi'
+                        ? 'दुकान में कम स्टॉक वाले उत्पादों को पुनः स्टॉक करने की आवश्यकता है'
+                        : 'Low stock items require replenishment in your shop'}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="text-sm font-bold text-primary">
-                    {language === 'hi' ? 'पुनः स्टॉक अधिसूचना' : 'Instant Restock Notification'}
-                  </h4>
-                  <p className="text-xs text-on-surface-variant mt-0.5">
-                    {language === 'hi'
-                      ? 'दुकान में 2 उत्पादों को तुरंत स्टॉक करने की आवश्यकता है'
-                      : '2 products require urgent replenishment in My Shop'}
-                  </p>
-                </div>
+                <button
+                  aria-label="Add craft to restock"
+                  className="px-4 py-2 rounded-xl bg-primary text-on-primary text-xs font-bold hover:bg-primary-container transition-colors cursor-pointer"
+                  onClick={() => navigate('/capture')}
+                  type="button"
+                >
+                  {language === 'hi' ? '+ स्टॉक जोड़ें' : '+ Restock Craft'}
+                </button>
               </div>
-              <button
-                aria-label="Add craft to restock"
-                className="px-4 py-2 rounded-xl bg-primary text-on-primary text-xs font-bold hover:bg-primary-container transition-colors cursor-pointer"
-                onClick={() => navigate('/capture')}
-                type="button"
-              >
-                {language === 'hi' ? '+ स्टॉक जोड़ें' : '+ Restock Craft'}
-              </button>
-            </div>
+            )}
           </div>
         </div>
 

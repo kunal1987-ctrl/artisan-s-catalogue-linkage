@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
 import useAudioAssistant from '../hooks/useAudioAssistant';
+import { clearStaleCatalogCache } from '../utils/cacheCleaner';
 
 export default function Home({ customArtisanName } = {}) {
   const navigate = useNavigate();
@@ -31,54 +33,48 @@ export default function Home({ customArtisanName } = {}) {
     fallback;
 
   // Metric Card Interactive States
+  const [products, setProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [showInsightsModal, setShowInsightsModal] = useState(false);
   const [showRestockModal, setShowRestockModal] = useState(false);
   const [stockQty, setStockQty] = useState(2);
   const [toastMsg, setToastMsg] = useState('');
   const [dismissTip, setDismissTip] = useState(false);
 
-  const previewProducts = [
-    {
-      id: 'a1b2c3d4-0003-4000-8000-000000000003',
-      title: 'Blue Silk Saree',
-      title_hi: 'नीली रेशम साड़ी',
-      category: 'Handloom Silk',
-      category_hi: 'हथकरघा रेशम',
-      price: 850,
-      views: 24,
-      stock: 4,
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBk9yCjVvfLitGlye3MvbbghbLdOw34rsaFmL_-TeVnqt2K_BMKv8YneeoJJurCu7if5401uhFx9DmOiUOkxUxrDGXw5H6DNUEIuxp0oDtmIkXeu0zNyclZ2p8kf6ZINO-0JD6Ef_tXAIP5dn4aziAqSn7UsagQpjPAWIq26dfUpyOJRk7jss9kk47-2CywEmKQXa-MrzfAGlG_PQn6GvYgEmwwS9dMsOPVP-TVBElrd_6mCkYUo1mI',
-    },
-    {
-      id: 'a1b2c3d4-0001-4000-8000-000000000001',
-      title: 'Handmade Clay Pot',
-      title_hi: 'हस्तनिर्मित मिट्टी का बर्तन',
-      category: 'Clay Pottery',
-      category_hi: 'मिट्टी कला',
-      price: 200,
-      views: 12,
-      stock: 8,
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuARaNY8d8OBAZkfszvKSrgvwkJU0jQJSlOAkSNdpZ0kzdy3e1Mq2nJJBMmkxo6N0wqudg4yQ_D6Nso1ZqeTBKPWlbyPVKIEV4pBs1BUZiRU7PlKRlIpKdvoiajh0c4O6ltESOJaA60KX1zZL3RN2ul-kVMpAPHmXvisLiObSJcyuvKRfJzAi8pmg3H6gzTnbY2xHZnWoeAjCznUZWdSDZyEAkddac-bTraUc2jg-xpZDRtvJKT6mKe2',
-    },
-    {
-      id: 'a1b2c3d4-0002-4000-8000-000000000002',
-      title: 'Brass Puja Diya',
-      title_hi: 'पीतल पूजा दीया',
-      category: 'Brass Metalwork',
-      category_hi: 'पीतल धातु शिल्प',
-      price: 450,
-      views: 9,
-      stock: stockQty,
-      isLowStock: stockQty <= 2,
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAXbDk5LUiUiH6EZVNqec37nEVwf59ppq2I5vbTrZUIgkOfHuqm10xwlrKrLI2HLwiqoQy3J3L5fTfxPXwRI3z8ZqUoaMoJdzLhQ76IU2D2xfOfzgBYXi57q6EOqIeBgvnQCBRM70-X1hQQIB2l06C-hruYJY9mgh_2IT8ZO48-E7z-OqrpSUCnQPfrV0Bq5Uof6gC7W_110-GxxyRqN5d-0gRL_Lqazm9M6AjVKfKRwHZ5_iyFoFxz',
-    },
-  ];
+  // Live Fetching of real rows from Supabase items table
+  useEffect(() => {
+    clearStaleCatalogCache();
+
+    async function loadLiveProducts() {
+      setIsLoading(true);
+      try {
+        let query = supabase.from('items').select('*');
+        if (session?.user?.id) {
+          query = query.or(`artisan_id.eq.${session.user.id},user_id.eq.${session.user.id}`);
+        }
+        const { data, error } = await query.order('created_at', { ascending: false });
+
+        if (!error && data) {
+          setProducts(data);
+        } else {
+          setProducts([]);
+        }
+      } catch (err) {
+        console.warn('Error fetching live products on Home:', err);
+        setProducts([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadLiveProducts();
+  }, [session?.user?.id]);
 
   const handleUpdateStock = () => {
     setShowRestockModal(false);
     const msg = language === 'hi'
-      ? `✅ मिट्टी की सुराही का स्टॉक बदलकर ${stockQty} इकाइयां किया गया!`
-      : `✅ Terracotta Surahi stock updated to ${stockQty} units!`;
+      ? `✅ स्टॉक बदलकर ${stockQty} इकाइयां किया गया!`
+      : `✅ Inventory stock updated to ${stockQty} units!`;
     if (showToast) showToast(msg);
     setToastMsg(msg);
     setTimeout(() => setToastMsg(''), 4000);
@@ -143,7 +139,7 @@ export default function Home({ customArtisanName } = {}) {
                                 {t('home.live_products', 'Live Products')}
                             </span>
                             <div className="flex items-baseline gap-2 mt-1">
-                                <span className="text-[32px] font-bold text-primary">12</span>
+                                <span className="text-[32px] font-bold text-primary">{products.length}</span>
                                 <span className="text-[14px] text-on-surface-variant font-medium">
                                     {t('home.in_shop', 'listed in shop')}
                                 </span>
@@ -268,7 +264,7 @@ export default function Home({ customArtisanName } = {}) {
                             {t('home.recent_uploads', 'Recent Uploads')}
                         </h3>
                         <span className="px-2.5 py-0.5 rounded-full bg-[#ebe8e2] text-secondary font-bold text-[11px] sm:text-[12px]">
-                            {t('home.active_crafts', '3 Active Crafts')}
+                            {products.length} {products.length === 1 ? (language === 'hi' ? 'सक्रिय शिल्प' : 'Active Craft') : (language === 'hi' ? 'सक्रिय शिल्प' : 'Active Crafts')}
                         </span>
                         <span className="text-[13px] text-on-surface-variant hidden md:inline">
                             {t('home.ready_buyers', 'Ready to show international buyers')}
@@ -286,93 +282,141 @@ export default function Home({ customArtisanName } = {}) {
                 
                 {/* Product Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                    {previewProducts.map((product) => {
-                        const isLow = product.isLowStock;
-                        return (
-                            <div
-                                key={product.id}
-                                onClick={() => navigate(`/details/${product.id}`, { state: { product } })}
-                                className="rounded-2xl bg-[#f7f3ed] border border-[#d1c4bd]/40 overflow-hidden shadow-sm flex flex-col group cursor-pointer hover:shadow-lg transition-all active:scale-[0.99]"
-                            >
-                                <div className="relative w-full aspect-[4/5] bg-[#ebe8e2] overflow-hidden">
-                                    <img
-                                        alt={product.title}
-                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                        src={product.image}
-                                    />
-                                    <div className="absolute top-3 left-3">
-                                        <span
-                                            className={`px-2.5 py-1 rounded-full backdrop-blur-md font-bold text-[11px] shadow-sm ${
-                                                isLow ? 'bg-[#ba1a1a] text-white' : 'bg-[#fdf9f3]/90 text-primary'
-                                            }`}
-                                        >
-                                            {isLow
-                                                ? t('home.low_stock_badge', { count: product.stock, defaultValue: `Low Stock (${product.stock})` })
-                                                : t('home.in_stock_badge', { count: product.stock, defaultValue: `In Stock (${product.stock})` })}
-                                        </span>
-                                    </div>
-                                    <button
-                                        aria-label={t('home.view', 'View details')}
-                                        title={t('home.view', 'View details')}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            navigate(`/details/${product.id}`, { state: { product } });
-                                        }}
-                                        className="absolute top-3 right-3 w-9 h-9 rounded-full bg-[#fdf9f3]/90 text-primary backdrop-blur-md flex items-center justify-center shadow-md hover:bg-white group-hover:bg-[#9c441c] group-hover:text-white transition-all cursor-pointer"
-                                        type="button"
-                                    >
-                                        <span className="material-symbols-outlined text-[18px]">open_in_new</span>
-                                    </button>
-                                </div>
-                                <div className="p-4 flex flex-col gap-1 flex-1 justify-between">
-                                    <div>
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-[11px] font-bold text-secondary uppercase tracking-wider block">
-                                                {language === 'hi' ? product.category_hi : product.category}
-                                            </span>
-                                            <span className="text-[11px] font-bold text-[#9c441c] flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
-                                                <span>{t('catalog.views', 'View')}</span>
-                                                <span>→</span>
-                                            </span>
-                                        </div>
-                                        <h4 className="text-[16px] font-bold text-primary truncate mt-0.5 group-hover:text-[#9c441c] transition-colors">
-                                            {language === 'hi' ? product.title_hi : product.title}
-                                        </h4>
-                                    </div>
-                                    <div className="flex items-baseline justify-between pt-3 border-t border-[#d1c4bd]/30 mt-2">
-                                        <span className="text-[18px] font-bold text-primary flex items-center gap-1">
-                                            ✨ ₹{product.price}
-                                        </span>
-                                        <span className="text-[12px] text-on-surface-variant font-medium flex items-center gap-1">
-                                            <span className="material-symbols-outlined text-[14px]">visibility</span> {product.views} {t('home.views', { count: product.views, defaultValue: `${product.views} views` })}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })}
-
-                    {/* Add New Craft Quick Action */}
-                    <div
-                        className="rounded-2xl border-2 border-dashed border-[#d1c4bd] bg-[#f7f3ed]/60 hover:bg-[#f7f3ed] flex flex-col items-center justify-center p-6 text-center shadow-sm transition-all cursor-pointer group min-h-[300px]"
-                        onClick={() => navigate('/capture')}
-                    >
-                        <div
-                            className="w-16 h-16 rounded-full bg-[#ebe8e2] group-hover:bg-[#2e241e] group-hover:text-white flex items-center justify-center text-primary mb-3 shadow-inner transition-colors duration-200">
-                            <span className="material-symbols-outlined text-[30px]">add_a_photo</span>
+                    {isLoading ? (
+                        <div className="col-span-full flex flex-col items-center justify-center py-12">
+                            <div className="w-8 h-8 border-3 border-primary/20 border-t-primary rounded-full animate-spin mb-3" />
+                            <p className="text-xs font-semibold text-on-surface-variant">
+                                {language === 'hi' ? 'कैटलॉग लोड हो रहा है...' : 'Loading crafts...'}
+                            </p>
                         </div>
-                        <p className="text-[18px] font-bold text-primary">
-                            {t('home.add_new_listing', 'Add New Listing')}
-                        </p>
-                        <p className="text-[13px] text-on-surface-variant mt-1.5 max-w-[200px]">
-                            {t('home.voice_listing_desc', 'Tap to snap camera or speak product details')}
-                        </p>
-                        <span
-                            className="inline-flex items-center gap-1.5 text-[12px] font-bold text-secondary uppercase tracking-wider mt-4 px-3 py-1 bg-white rounded-full border border-[#d1c4bd]/40 shadow-sm">
-                            <span className="material-symbols-outlined text-[16px]">mic</span>
-                            <span>{t('capture.start_recording', 'Voice Ready')}</span>
-                        </span>
-                    </div>
+                    ) : products.length === 0 ? (
+                        /* Zero-Literacy Empty State */
+                        <div className="col-span-full rounded-2xl border border-[#d1c4bd]/40 bg-[#f7f3ed] p-8 sm:p-12 flex flex-col items-center justify-center text-center">
+                            <div className="relative mb-5">
+                                <div className="w-20 h-20 rounded-full bg-[#ebe8e2] flex items-center justify-center text-primary shadow-inner">
+                                    <span className="material-symbols-outlined text-[40px] text-[#9c441c]">palette</span>
+                                </div>
+                                <button
+                                    onClick={() => navigate('/capture')}
+                                    aria-label="Add your first craft"
+                                    className="absolute -bottom-1 -right-1 w-9 h-9 rounded-full bg-[#9c441c] text-white flex items-center justify-center shadow-md hover:scale-110 active:scale-95 transition-all cursor-pointer border-2 border-white"
+                                    type="button"
+                                >
+                                    <span className="material-symbols-outlined text-[20px]">add</span>
+                                </button>
+                            </div>
+                            <h4 className="text-xl font-bold text-primary mb-2">
+                                {language === 'hi'
+                                    ? 'कोई शिल्प अभी सूचीबद्ध नहीं है। अपना पहला शिल्प जोड़ने के लिए + दबाएं।'
+                                    : 'No crafts listed yet. Tap + to add your first craft.'}
+                            </h4>
+                            <p className="text-sm text-on-surface-variant max-w-sm mb-6 font-normal">
+                                {language === 'hi'
+                                    ? 'कैमरा या आवाज़ से अपने हस्तशिल्प को तुरंत कैटलॉग करें'
+                                    : 'Snap a photo or speak product details to create your first listing in seconds.'}
+                            </p>
+                            <button
+                                onClick={() => navigate('/capture')}
+                                className="h-12 px-7 rounded-full bg-[#9c441c] hover:bg-[#7e3514] text-white font-bold text-sm flex items-center gap-2 shadow-sm active:scale-95 transition-all cursor-pointer"
+                                type="button"
+                            >
+                                <span className="material-symbols-outlined text-[20px]">add_a_photo</span>
+                                <span>{language === 'hi' ? '+ पहला शिल्प जोड़ें' : '+ Add First Craft'}</span>
+                            </button>
+                        </div>
+                    ) : (
+                        <>
+                            {products.slice(0, 3).map((product) => {
+                                const isLow = (product.stock || product.qty || product.min_order_quantity || 1) <= 2;
+                                return (
+                                    <div
+                                        key={product.id}
+                                        onClick={() => navigate(`/details/${product.id}`, { state: { product } })}
+                                        className="rounded-2xl bg-[#f7f3ed] border border-[#d1c4bd]/40 overflow-hidden shadow-sm flex flex-col group cursor-pointer hover:shadow-lg transition-all active:scale-[0.99]"
+                                    >
+                                        <div className="relative w-full aspect-[4/5] bg-[#ebe8e2] overflow-hidden">
+                                            <img
+                                                alt={product.title || product.name}
+                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                src={product.image_url || product.image || ''}
+                                            />
+                                            <div className="absolute top-3 left-3">
+                                                <span
+                                                    className={`px-2.5 py-1 rounded-full backdrop-blur-md font-bold text-[11px] shadow-sm ${
+                                                        isLow ? 'bg-[#ba1a1a] text-white' : 'bg-[#fdf9f3]/90 text-primary'
+                                                    }`}
+                                                >
+                                                    {isLow
+                                                        ? t('home.low_stock_badge', { count: product.stock || 1, defaultValue: `Low Stock (${product.stock || 1})` })
+                                                        : t('home.in_stock_badge', { count: product.stock || 10, defaultValue: `In Stock (${product.stock || 10})` })}
+                                                </span>
+                                            </div>
+                                            <button
+                                                aria-label={t('home.view', 'View details')}
+                                                title={t('home.view', 'View details')}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    navigate(`/details/${product.id}`, { state: { product } });
+                                                }}
+                                                className="absolute top-3 right-3 w-9 h-9 rounded-full bg-[#fdf9f3]/90 text-primary backdrop-blur-md flex items-center justify-center shadow-md hover:bg-white group-hover:bg-[#9c441c] group-hover:text-white transition-all cursor-pointer"
+                                                type="button"
+                                            >
+                                                <span className="material-symbols-outlined text-[18px]">open_in_new</span>
+                                            </button>
+                                        </div>
+                                        <div className="p-4 flex flex-col gap-1 flex-1 justify-between">
+                                            <div>
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-[11px] font-bold text-secondary uppercase tracking-wider block">
+                                                        {product.gem_category || product.category || 'Handicrafts'}
+                                                    </span>
+                                                    <span className="text-[11px] font-bold text-[#9c441c] flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
+                                                        <span>{t('catalog.views', 'View')}</span>
+                                                        <span>→</span>
+                                                    </span>
+                                                </div>
+                                                <h4 className="text-[16px] font-bold text-primary truncate mt-0.5 group-hover:text-[#9c441c] transition-colors">
+                                                    {(language === 'hi' && (product.hindi_title || product.title_hi))
+                                                        ? (product.hindi_title || product.title_hi)
+                                                        : (product.title || product.name)}
+                                                </h4>
+                                            </div>
+                                            <div className="flex items-baseline justify-between pt-3 border-t border-[#d1c4bd]/30 mt-2">
+                                                <span className="text-[18px] font-bold text-primary flex items-center gap-1">
+                                                    ✨ ₹{product.price}
+                                                </span>
+                                                <span className="text-[12px] text-on-surface-variant font-medium flex items-center gap-1">
+                                                    <span className="material-symbols-outlined text-[14px]">inventory_2</span> MOQ: {product.min_order_quantity || product.moq || 1}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+
+                            {/* Add New Craft Quick Action */}
+                            <div
+                                className="rounded-2xl border-2 border-dashed border-[#d1c4bd] bg-[#f7f3ed]/60 hover:bg-[#f7f3ed] flex flex-col items-center justify-center p-6 text-center shadow-sm transition-all cursor-pointer group min-h-[300px]"
+                                onClick={() => navigate('/capture')}
+                            >
+                                <div
+                                    className="w-16 h-16 rounded-full bg-[#ebe8e2] group-hover:bg-[#2e241e] group-hover:text-white flex items-center justify-center text-primary mb-3 shadow-inner transition-colors duration-200">
+                                    <span className="material-symbols-outlined text-[30px]">add_a_photo</span>
+                                </div>
+                                <p className="text-[18px] font-bold text-primary">
+                                    {t('home.add_new_listing', 'Add New Listing')}
+                                </p>
+                                <p className="text-[13px] text-on-surface-variant mt-1.5 max-w-[200px]">
+                                    {t('home.voice_listing_desc', 'Tap to snap camera or speak product details')}
+                                </p>
+                                <span
+                                    className="inline-flex items-center gap-1.5 text-[12px] font-bold text-secondary uppercase tracking-wider mt-4 px-3 py-1 bg-white rounded-full border border-[#d1c4bd]/40 shadow-sm">
+                                    <span className="material-symbols-outlined text-[16px]">mic</span>
+                                    <span>{t('capture.start_recording', 'Voice Ready')}</span>
+                                </span>
+                            </div>
+                        </>
+                    )}
                 </div>
 
                 {/* Artisan's Daily Tip */}

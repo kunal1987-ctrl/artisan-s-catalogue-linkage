@@ -112,7 +112,11 @@ export default function Capture() {
   const cameraRef = useRef(null);
   const galleryRef = useRef(null);
 
-  // ── Multi-Modal Input State (Image & Description Dependencies) ──
+  // ── Multi-Image State & Dependencies ──
+  const [images, setImages] = useState([]); // Array of { id, blob, file, previewUrl, base64 }
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+
+  // Single-image backward compatibility aliases
   const [image, setImage] = useState(null);
   const [imageFile, setImageFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -121,6 +125,14 @@ export default function Capture() {
   const [imageUrl, setImageUrl] = useState(null);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [bgRemovalStatus, setBgRemovalStatus] = useState('idle'); // idle | processing | done | error
+
+  // ── WebRTC Live Camera Viewfinder State & Refs ──
+  const [isCameraModalOpen, setIsCameraModalOpen] = useState(false);
+  const [cameraFacingMode, setCameraFacingMode] = useState('environment'); // 'environment' | 'user'
+  const [isCameraStarting, setIsCameraStarting] = useState(false);
+  const [cameraError, setCameraError] = useState(null);
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
 
   // Object URL tracking to prevent memory leaks
   const previewUrlRef = useRef(null);
@@ -131,6 +143,13 @@ export default function Capture() {
       if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
       if (processedPreviewRef.current && processedPreviewRef.current.startsWith('blob:')) {
         URL.revokeObjectURL(processedPreviewRef.current);
+      }
+      if (streamRef.current) {
+        try {
+          streamRef.current.getTracks().forEach((track) => track.stop());
+        } catch (e) {
+          console.warn('Error stopping tracks on unmount:', e);
+        }
       }
     };
   }, []);
@@ -158,6 +177,17 @@ export default function Capture() {
 
   // ── Explicit State Reset to prevent cache bleed between uploads ──
   const resetCaptureState = useCallback(() => {
+    // Revoke all preview URLs in images
+    setImages((prevImages) => {
+      prevImages.forEach((img) => {
+        if (img?.previewUrl && img.previewUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(img.previewUrl);
+        }
+      });
+      return [];
+    });
+    setSelectedImageIndex(0);
+
     setImage(null);
     setImageFile(null);
     setImageBase64(null);
@@ -174,6 +204,22 @@ export default function Capture() {
     setProcessedPreview(null);
     setIsProcessingImage(false);
     setBgRemovalStatus('idle');
+
+    // Close any active camera stream
+    if (streamRef.current) {
+      try {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+      } catch (e) {
+        console.warn('Error stopping camera stream on reset:', e);
+      }
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setIsCameraModalOpen(false);
+    setIsCameraStarting(false);
+    setCameraError(null);
 
     setIsRecording(false);
     setAudioLevel(0);
@@ -213,7 +259,7 @@ export default function Capture() {
   const [errorMsg, setErrorMsg] = useState('');
 
   // ── Multi-Modal State Dependency Flags ──
-  const hasImage = Boolean(image || imageFile || imageBase64 || imageUrl || processedPreview || previewUrl);
+  const hasImage = Boolean(images.length > 0 || image || imageFile || imageBase64 || imageUrl || processedPreview || previewUrl);
   const textDescription = (transcript || customTranscript || audioTranscript || '').trim();
   const hasDescription = Boolean(textDescription.length > 0 || Boolean(audioBase64) || Boolean(audioBlob) || Boolean(_audioBlob));
   const isReadyToProcess = Boolean(hasImage && hasDescription);
@@ -262,168 +308,192 @@ export default function Capture() {
   }, [isRecording, stop]);
 
   // ════════════════════════════════════════════
-  // IMAGE SELECTION & OPTIMISTIC AI PIPELINE
+  // ASYNC LIFESTYLE ENHANCEMENT
   // ════════════════════════════════════════════
 
-  const handleFileSelect = useCallback(async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Reset input value so re-capturing the same or new file always triggers onChange
-    e.target.value = '';
-    setImageFile(file);
-
-    // 1. Revoke previous preview URLs
-    if (previewUrlRef.current) {
-      URL.revokeObjectURL(previewUrlRef.current);
-      previewUrlRef.current = null;
-    }
-    if (processedPreviewRef.current && processedPreviewRef.current.startsWith('blob:')) {
-      URL.revokeObjectURL(processedPreviewRef.current);
-      processedPreviewRef.current = null;
-    }
-
+  const triggerLifestyleEnhancement = useCallback(async (base64String, workingBlob) => {
+    if (!base64String) return;
     setIsProcessingImage(true);
     setBgRemovalStatus('processing');
-    setAiStatusText(
-      language === 'hi'
-        ? 'शिल्प तस्वीर अनुकूलित की जा रही है...'
-        : 'Compressing craft photo...'
-    );
-    setErrorMsg('');
-
-    // 2. Compress camera/gallery image to maximum width/height of 1024px
-    let workingBlob = file;
-    try {
-      workingBlob = await compressImage(file, 1024, 0.85);
-    } catch (optErr) {
-      console.warn('[Capture] Image compression fallback:', optErr);
-    }
-
-    // 3. OPTIMISTIC UI: Immediately display raw compressed image so user can continue filling out form
-    const localUrl = URL.createObjectURL(workingBlob);
-    previewUrlRef.current = localUrl;
-    setPreviewUrl(localUrl);
-    setProcessedPreview(null);
-    setImageUrl(null);
-
-    // Generate immediate base64 representation of the compressed image
-    let base64String = '';
-    try {
-      base64String = await blobToBase64(workingBlob);
-      setImageBase64(base64String);
-    } catch (e) {
-      console.warn('[Capture] Photo base64 encoding error:', e);
-    }
-
     setAiStatusText(
       language === 'hi'
         ? 'एआई लाइफस्टाइल दृश्य तैयार किया जा रहा है...'
         : 'Generating lifestyle scene via Photoroom AI...'
     );
 
-    // 4. Asynchronously invoke Supabase Edge Function without blocking the user interface
-    (async () => {
-      try {
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-        const { data: sessionData } = await supabase.auth.getSession();
-        let token = sessionData?.session?.access_token;
-        if (!token) {
-          const { data: anonData } = await supabase.auth.signInAnonymously();
-          token = anonData?.session?.access_token;
-        }
-        const activeAuth = token
-          ? `Bearer ${token}`
-          : `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`;
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+      const { data: sessionData } = await supabase.auth.getSession();
+      let token = sessionData?.session?.access_token;
+      if (!token) {
+        const { data: anonData } = await supabase.auth.signInAnonymously();
+        token = anonData?.session?.access_token;
+      }
+      const activeAuth = token
+        ? `Bearer ${token}`
+        : `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`;
 
-        const response = await fetch(`${supabaseUrl}/functions/v1/generate-lifestyle-image`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: activeAuth,
-          },
-          body: JSON.stringify({
-            imageBase64: base64String,
-          }),
-        });
+      const response = await fetch(`${supabaseUrl}/functions/v1/generate-lifestyle-image`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: activeAuth,
+        },
+        body: JSON.stringify({
+          imageBase64: base64String,
+        }),
+      });
 
-        if (!response.ok) {
-          const errText = await response.text();
-          throw new Error(`Edge function returned HTTP ${response.status}: ${errText}`);
-        }
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Edge function returned HTTP ${response.status}: ${errText}`);
+      }
 
-        const data = await response.json();
-        if (data?.imageUrl) {
-          setImageUrl(data.imageUrl);
-          setProcessedPreview(data.imageUrl);
-          setBgRemovalStatus('done');
-          setAiStatusText(
-            language === 'hi'
-              ? 'लाइफस्टाइल फ़ोटो तैयार ✓'
-              : 'Lifestyle scene ready ✓'
-          );
-          if (showToast) {
-            showToast(
-              language === 'hi'
-                ? '✨ लाइफस्टाइल बैकग्राउंड तैयार!'
-                : '✨ AI lifestyle background generated!'
-            );
-          }
-        } else {
-          throw new Error(data?.error || data?.message || 'No image URL received from Edge Function');
-        }
-      } catch (cloudErr) {
-        console.warn('[Capture] Photoroom Edge Function fallback activated:', cloudErr);
-        setBgRemovalStatus('error');
+      const data = await response.json();
+      if (data?.imageUrl) {
+        setImageUrl(data.imageUrl);
+        setProcessedPreview(data.imageUrl);
+        setBgRemovalStatus('done');
         setAiStatusText(
           language === 'hi'
-            ? 'मूल फ़ोटो सुरक्षित की गई'
-            : 'Original photo preserved'
+            ? 'लाइफस्टाइल फ़ोटो तैयार ✓'
+            : 'Lifestyle scene ready ✓'
         );
-
-        // Fallback: Upload compressed raw image to Supabase Storage bucket product-images
-        try {
-          const fileName = `craft_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('product-images')
-            .upload(fileName, workingBlob, {
-              contentType: 'image/jpeg',
-              upsert: false,
-            });
-
-          if (!uploadError && uploadData) {
-            const { data: urlData } = supabase.storage
-              .from('product-images')
-              .getPublicUrl(uploadData.path);
-            setImageUrl(urlData.publicUrl);
-          }
-        } catch (storageErr) {
-          console.warn('[Capture] Storage fallback upload skipped:', storageErr);
-        }
-
         if (showToast) {
           showToast(
             language === 'hi'
-              ? 'मूल फ़ोटो उपयोग की जा रही है'
-              : 'Using original photo (fallback active)'
+              ? '✨ लाइफस्टाइल बैकग्राउंड तैयार!'
+              : '✨ AI lifestyle background generated!'
           );
         }
-      } finally {
-        setIsProcessingImage(false);
+      } else {
+        throw new Error(data?.error || data?.message || 'No image URL received from Edge Function');
       }
-    })();
+    } catch (cloudErr) {
+      console.warn('[Capture] Photoroom Edge Function fallback activated:', cloudErr);
+      setBgRemovalStatus('error');
+      setAiStatusText(
+        language === 'hi'
+          ? 'मूल फ़ोटो सुरक्षित की गई'
+          : 'Original photo preserved'
+      );
+
+      // Fallback: Upload compressed raw image to Supabase Storage bucket product-images
+      try {
+        const fileName = `craft_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('product-images')
+          .upload(fileName, workingBlob, {
+            contentType: 'image/jpeg',
+            upsert: false,
+          });
+
+        if (!uploadError && uploadData) {
+          const { data: urlData } = supabase.storage
+            .from('product-images')
+            .getPublicUrl(uploadData.path);
+          setImageUrl(urlData.publicUrl);
+        }
+      } catch (storageErr) {
+        console.warn('[Capture] Storage fallback upload skipped:', storageErr);
+      }
+    } finally {
+      setIsProcessingImage(false);
+    }
   }, [language, showToast]);
 
-  const handleImageSelection = handleFileSelect;
+  // ════════════════════════════════════════════
+  // MULTI-IMAGE STATE MANAGEMENT
+  // ════════════════════════════════════════════
+
+  const addImageToState = useCallback(async (fileOrBlob) => {
+    if (!fileOrBlob) return;
+    const id = `img_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+
+    // Compress image to 1024px
+    let workingBlob = fileOrBlob;
+    try {
+      workingBlob = await compressImage(fileOrBlob, 1024, 0.85);
+    } catch (optErr) {
+      console.warn('[Capture] Image compression fallback:', optErr);
+    }
+
+    const localUrl = URL.createObjectURL(workingBlob);
+    let base64String = '';
+    try {
+      base64String = await blobToBase64(workingBlob);
+    } catch (e) {
+      console.warn('[Capture] Photo base64 encoding error:', e);
+    }
+
+    const newImageItem = {
+      id,
+      blob: workingBlob,
+      file: fileOrBlob instanceof File ? fileOrBlob : null,
+      previewUrl: localUrl,
+      base64: base64String,
+    };
+
+    setImages((prev) => {
+      const isFirst = prev.length === 0;
+      const updated = [...prev, newImageItem];
+      setSelectedImageIndex(updated.length - 1);
+
+      if (isFirst) {
+        setImage(workingBlob);
+        setImageFile(fileOrBlob instanceof File ? fileOrBlob : null);
+        setPreviewUrl(localUrl);
+        setImageBase64(base64String);
+        triggerLifestyleEnhancement(base64String, workingBlob);
+      }
+      return updated;
+    });
+
+    return newImageItem;
+  }, [triggerLifestyleEnhancement]);
+
+  const removeImage = useCallback((indexToRemove) => {
+    setImages((prev) => {
+      const target = prev[indexToRemove];
+      if (target?.previewUrl && target.previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(target.previewUrl);
+      }
+      const updated = prev.filter((_, idx) => idx !== indexToRemove);
+
+      if (updated.length === 0) {
+        setImage(null);
+        setImageFile(null);
+        setPreviewUrl(null);
+        setProcessedPreview(null);
+        setImageBase64(null);
+        setImageUrl(null);
+        setSelectedImageIndex(0);
+        setIsProcessingImage(false);
+        setBgRemovalStatus('idle');
+      } else {
+        const nextIndex = Math.min(indexToRemove, updated.length - 1);
+        setSelectedImageIndex(nextIndex);
+        const active = updated[nextIndex];
+        setImage(active.blob);
+        setImageFile(active.file || null);
+        setPreviewUrl(active.previewUrl);
+        setImageBase64(active.base64);
+      }
+      return updated;
+    });
+  }, []);
 
   const handleRetake = useCallback(() => {
-    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
-    if (processedPreviewRef.current && processedPreviewRef.current.startsWith('blob:')) {
-      URL.revokeObjectURL(processedPreviewRef.current);
-    }
-    previewUrlRef.current = null;
-    processedPreviewRef.current = null;
-
+    setImages((prev) => {
+      prev.forEach((img) => {
+        if (img?.previewUrl && img.previewUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(img.previewUrl);
+        }
+      });
+      return [];
+    });
+    setSelectedImageIndex(0);
+    setImage(null);
     setImageFile(null);
     setPreviewUrl(null);
     setProcessedPreview(null);
@@ -433,6 +503,186 @@ export default function Capture() {
     setBgRemovalStatus('idle');
     setAiStatusText('');
   }, []);
+
+  // File picker handler (supports multi-select)
+  const handleFileSelect = useCallback(async (e) => {
+    const fileList = e.target.files;
+    if (!fileList || fileList.length === 0) return;
+    const files = Array.from(fileList);
+    e.target.value = '';
+
+    for (const file of files) {
+      await addImageToState(file);
+    }
+  }, [addImageToState]);
+
+  const handleImageSelection = handleFileSelect;
+
+  // ════════════════════════════════════════════
+  // WEBRTC LIVE CAMERA STREAM & FRAME CAPTURE
+  // ════════════════════════════════════════════
+
+  const closeLiveCamera = useCallback(() => {
+    if (streamRef.current) {
+      try {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+      } catch (err) {
+        console.warn('Error stopping camera stream tracks:', err);
+      }
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setIsCameraModalOpen(false);
+    setIsCameraStarting(false);
+    setCameraError(null);
+  }, []);
+
+  const openLiveCamera = useCallback(async (facing = cameraFacingMode) => {
+    // Check if mediaDevices API is supported in this browser/environment
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      console.warn('[Camera] getUserMedia not supported in this browser. Falling back to native capture input.');
+      if (showToast) {
+        showToast(language === 'hi' ? 'लाइव कैमरा उपलब्ध नहीं है। डिवाइस कैमरा खोला जा रहा है।' : 'Live camera unavailable. Opening device camera.');
+      }
+      cameraRef.current?.click();
+      return;
+    }
+
+    // Stop existing stream if any
+    if (streamRef.current) {
+      try {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+      } catch (e) {
+        console.warn('Error stopping previous stream:', e);
+      }
+      streamRef.current = null;
+    }
+
+    setIsCameraStarting(true);
+    setCameraError(null);
+    setIsCameraModalOpen(true);
+
+    try {
+      let stream = null;
+      try {
+        // High quality back camera ideal constraints
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: facing },
+            width: { ideal: 1920, min: 640 },
+            height: { ideal: 1080, min: 480 },
+          },
+          audio: false,
+        });
+      } catch (idealErr) {
+        console.warn('[Camera] Ideal constraints failed, falling back to basic video constraint:', idealErr);
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false,
+        });
+      }
+
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.setAttribute('playsinline', 'true');
+        videoRef.current.setAttribute('muted', 'true');
+        await videoRef.current.play().catch((playErr) => {
+          console.warn('[Camera] video.play error:', playErr);
+        });
+      }
+      setIsCameraStarting(false);
+    } catch (err) {
+      console.warn('[Camera] getUserMedia error:', err);
+      setIsCameraStarting(false);
+      let userFriendlyMsg = language === 'hi' 
+        ? 'कैमरा अनुमति अस्वीकृत या उपलब्ध नहीं है।' 
+        : 'Camera permission denied or camera not available.';
+
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        userFriendlyMsg = language === 'hi'
+          ? 'कैमरा अनुमति अस्वीकृत। कृपया अनुमति दें या डिवाइस फ़ाइल चुनें।'
+          : 'Camera permission was denied. Please allow access or select a file.';
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        userFriendlyMsg = language === 'hi'
+          ? 'डिवाइस पर कोई कैमरा नहीं मिला।'
+          : 'No camera found on this device.';
+      }
+
+      setCameraError(userFriendlyMsg);
+      if (showToast) {
+        showToast(userFriendlyMsg);
+      }
+      // Graceful fallback to native device camera
+      setTimeout(() => {
+        closeLiveCamera();
+        cameraRef.current?.click();
+      }, 900);
+    }
+  }, [cameraFacingMode, closeLiveCamera, language, showToast]);
+
+  const toggleCameraFacingMode = useCallback(() => {
+    const nextFacing = cameraFacingMode === 'environment' ? 'user' : 'environment';
+    setCameraFacingMode(nextFacing);
+    openLiveCamera(nextFacing);
+  }, [cameraFacingMode, openLiveCamera]);
+
+  const captureFrameFromVideo = useCallback(async () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const width = video.videoWidth || 1280;
+    const height = video.videoHeight || 720;
+    if (width === 0 || height === 0) {
+      console.warn('[Camera] Video frame dimensions not ready');
+      return;
+    }
+
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      // Draw current video frame to canvas
+      ctx.drawImage(video, 0, 0, width, height);
+
+      // Convert canvas to Blob
+      const blob = await new Promise((resolve) => {
+        canvas.toBlob(
+          (b) => resolve(b),
+          'image/jpeg',
+          0.92
+        );
+      });
+
+      if (!blob) {
+        throw new Error('Canvas frame blob conversion failed');
+      }
+
+      // Add to multi-image state
+      await addImageToState(blob);
+
+      // Close live camera modal after capture
+      closeLiveCamera();
+
+      if (showToast) {
+        showToast(
+          language === 'hi'
+            ? `कोण #${images.length + 1} सफलतापूर्वक कैप्चर किया गया!`
+            : `Angle #${images.length + 1} captured successfully!`
+        );
+      }
+    } catch (err) {
+      console.error('[Camera] Frame capture error:', err);
+      if (showToast) {
+        showToast(language === 'hi' ? 'तस्वीर कैप्चर करने में त्रुटि।' : 'Failed to capture frame from camera.');
+      }
+    }
+  }, [addImageToState, closeLiveCamera, images.length, language, showToast]);
 
   // ════════════════════════════════════════════
   // AUDIO RECORDING & FALLBACK
@@ -607,18 +857,38 @@ export default function Capture() {
       return;
     }
 
-    // Dynamically grab newly captured image base64
-    let targetImageBase64 = null;
-    const currentImg = imageFile || image;
-    if (currentImg) {
-      try {
-        targetImageBase64 = await blobToBase64(currentImg);
-      } catch (err) {
-        console.warn('[handleGenerateListing] Image base64 encoding error:', err);
+    // Gather all base64 representations from images state for multi-angle AI context
+    const allImagesBase64 = [];
+    for (const item of images) {
+      if (item?.base64) {
+        allImagesBase64.push(item.base64);
+      } else if (item?.blob) {
+        try {
+          const b64 = await blobToBase64(item.blob);
+          allImagesBase64.push(b64);
+        } catch (e) {
+          console.warn('[handleGenerateListing] Multi-image base64 error:', e);
+        }
+      }
+    }
+
+    let targetImageBase64 = allImagesBase64[0] || null;
+    if (!targetImageBase64) {
+      const currentImg = imageFile || image;
+      if (currentImg) {
+        try {
+          targetImageBase64 = await blobToBase64(currentImg);
+          allImagesBase64.push(targetImageBase64);
+        } catch (err) {
+          console.warn('[handleGenerateListing] Image base64 encoding error:', err);
+        }
       }
     }
     if (!targetImageBase64 && imageBase64) {
       targetImageBase64 = imageBase64;
+      if (!allImagesBase64.includes(imageBase64)) {
+        allImagesBase64.push(imageBase64);
+      }
     }
 
     // Dynamically grab newly recorded audio base64
@@ -663,6 +933,8 @@ export default function Capture() {
           body: {
             audioBase64: targetAudioBase64 || null,
             imageBase64: targetImageBase64,
+            imagesBase64: allImagesBase64,
+            images: allImagesBase64,
             customTranscript: activeText || null,
             language: transcriptionLang,
           },
@@ -744,7 +1016,7 @@ export default function Capture() {
 
       setAiStatus('done');
 
-      // Navigate to Review page with full AI profile
+      // Navigate to Review page with full AI profile and multi-angle images
       navigate('/review', {
         state: {
           ...listingData,
@@ -753,6 +1025,8 @@ export default function Capture() {
           price: resolvedPrice,
           imageUrl: targetImageUrl,
           imageBase64: targetImageBase64,
+          images: allImagesBase64,
+          imagesBase64: allImagesBase64,
         },
       });
 
@@ -778,11 +1052,14 @@ export default function Capture() {
       setAiStatus('error');
     }
   }, [
+    images,
+    image,
     imageFile,
     imageBase64,
     imageUrl,
     processedPreview,
     previewUrl,
+    audioBlob,
     audioBase64,
     _audioBlob,
     audioTranscript,
@@ -791,9 +1068,11 @@ export default function Capture() {
     language,
     navigate,
     showToast,
+    resetCaptureState,
   ]);
 
-  const displayImage = processedPreview || previewUrl;
+  const activeImageObj = images[selectedImageIndex] || images[0];
+  const displayImage = activeImageObj?.previewUrl || processedPreview || previewUrl;
   const isProcessing = aiStatus === 'transcribing' || aiStatus === 'analyzing';
   const isOptimizing = isProcessingImage || bgRemovalStatus === 'processing';
   const isLoading = isProcessing; // Do NOT block the user when image is optimizing (optimistic UI)
@@ -867,11 +1146,23 @@ export default function Capture() {
                 <div className="absolute inset-0 flex items-center justify-center bg-[#191312]">
                   <img
                     src={displayImage}
-                    alt="Craft capture"
+                    alt={`Craft capture angle ${selectedImageIndex + 1}`}
                     className={`w-full h-full object-contain p-3 sm:p-5 transition-all duration-700 ${
                       (isOptimizing || isProcessing) ? 'blur-md scale-[0.97] opacity-80' : 'blur-none scale-100 opacity-100'
                     }`}
                   />
+                  {/* Top Angle Indicator Badge */}
+                  <div className="absolute top-3.5 left-3.5 sm:top-5 sm:left-5 z-20 flex items-center gap-2">
+                    <span className="px-3 py-1 rounded-full bg-black/75 backdrop-blur-md border border-white/20 text-xs font-bold text-[#ffdeaa] flex items-center gap-1.5 shadow-lg">
+                      <span className="material-symbols-outlined text-[15px] text-[#ff9062]">photo_camera</span>
+                      <span>
+                        {language === 'hi' 
+                          ? `कोण #${selectedImageIndex + 1} (${images.length || 1} कुल)` 
+                          : `Angle #${selectedImageIndex + 1} of ${images.length || 1}`}
+                      </span>
+                    </span>
+                  </div>
+
                   {/* Viewfinder reticle with subtle edge-scan pulse animation */}
                   {!isOptimizing && !isProcessing && (
                     <div className="absolute inset-3 sm:inset-5 rounded-2xl border-2 border-[#ff9062]/80 shadow-[0_0_20px_rgba(255,144,98,0.4)] animate-pulse pointer-events-none z-10">
@@ -912,7 +1203,7 @@ export default function Capture() {
               ) : (
                 <div
                   onClick={() => {
-                    if (!isLoading) cameraRef.current?.click();
+                    if (!isLoading) openLiveCamera();
                   }}
                   className={`absolute inset-0 flex flex-col items-center justify-center ${
                     isLoading ? 'cursor-not-allowed opacity-75' : 'cursor-pointer group'
@@ -931,9 +1222,10 @@ export default function Capture() {
                     <div className="flex justify-center items-center gap-6 my-4 z-10">
                       <button 
                         type="button"
+                        id="open-camera-btn"
                         onClick={(e) => {
                           e.stopPropagation();
-                          cameraRef.current?.click();
+                          openLiveCamera();
                         }}
                         className="p-4 bg-orange-100 text-orange-600 rounded-full hover:bg-orange-200 transition-colors shadow-sm flex flex-col items-center gap-1 cursor-pointer active:scale-95"
                         title="Open Camera"
@@ -944,6 +1236,7 @@ export default function Capture() {
 
                       <button 
                         type="button"
+                        id="upload-gallery-btn"
                         onClick={(e) => {
                           e.stopPropagation();
                           galleryRef.current?.click();
@@ -977,16 +1270,16 @@ export default function Capture() {
                 </div>
               )}
 
-              {/* Retake Photo if already captured */}
+              {/* Retake / Clear Actions if photo captured */}
               {displayImage && (
-                <div className="relative z-20 flex items-center justify-center">
+                <div className="relative z-20 flex items-center justify-center gap-3">
                   <button
                     id="retake-photo-btn"
                     disabled={isProcessing}
                     onClick={() => {
                       if (!isProcessing) handleRetake();
                     }}
-                    className={`flex items-center gap-1.5 text-xs font-bold px-5 py-2.5 rounded-xl border transition-all shadow-lg ${
+                    className={`flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-xl border transition-all shadow-lg ${
                       isProcessing
                         ? 'text-red-300/40 bg-red-950/30 border-red-500/20 cursor-not-allowed'
                         : 'text-red-300 bg-red-950/80 hover:bg-red-900/80 border-red-500/40 cursor-pointer active:scale-95'
@@ -994,11 +1287,98 @@ export default function Capture() {
                     type="button"
                   >
                     <span className="material-symbols-outlined text-[16px]">replay</span>
-                    <span>{language === 'hi' ? 'दोबारा फोटो लें' : 'Retake Photo'}</span>
+                    <span>{language === 'hi' ? 'सभी हटाएं' : 'Clear All'}</span>
+                  </button>
+                  <button
+                    disabled={isProcessing}
+                    onClick={() => {
+                      if (!isProcessing) openLiveCamera();
+                    }}
+                    className={`flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-xl border transition-all shadow-lg ${
+                      isProcessing
+                        ? 'text-orange-300/40 bg-orange-950/30 border-orange-500/20 cursor-not-allowed'
+                        : 'text-[#ffdeaa] bg-[#ff9062]/20 hover:bg-[#ff9062]/30 border-[#ff9062]/50 cursor-pointer active:scale-95'
+                    }`}
+                    type="button"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">add_a_photo</span>
+                    <span>{language === 'hi' ? 'नया कोण लें' : 'Take Another Angle'}</span>
                   </button>
                 </div>
               )}
             </div>
+
+            {/* ── HORIZONTAL SCROLLABLE ROW OF CAPTURED IMAGE THUMBNAILS WITH PROMINENT "+" BUTTON ── */}
+            {images.length > 0 && (
+              <div className="bg-[#191312] p-3 sm:p-4 rounded-3xl border border-[#2e241e] shadow-xl flex flex-col gap-2.5">
+                <div className="flex items-center justify-between px-1">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[#ff9062] text-[18px]">photo_library</span>
+                    <span className="text-xs sm:text-sm font-bold text-[#ffdeaa]">
+                      {language === 'hi'
+                        ? `शिल्प के विभिन्न कोण (${images.length})`
+                        : `Multi-Angle Craft Photos (${images.length})`}
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-stone-400 font-medium">
+                    {language === 'hi' ? 'बेहतर AI सटीकता हेतु विभिन्न कोण जोड़ें' : 'Add 2-4 angles for Gemini AI'}
+                  </span>
+                </div>
+
+                {/* Horizontal scrollable row */}
+                <div className="flex items-center gap-3 overflow-x-auto py-1.5 px-0.5 scrollbar-thin">
+                  {images.map((img, idx) => (
+                    <div
+                      key={img.id || idx}
+                      onClick={() => setSelectedImageIndex(idx)}
+                      className={`relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden cursor-pointer border-2 transition-all shrink-0 group ${
+                        selectedImageIndex === idx
+                          ? 'border-[#ff9062] ring-2 ring-[#ff9062]/50 scale-105 shadow-lg shadow-[#ff9062]/20'
+                          : 'border-white/20 opacity-75 hover:opacity-100 hover:border-white/40'
+                      }`}
+                    >
+                      <img
+                        src={img.previewUrl}
+                        alt={`Angle ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      {/* Angle Badge */}
+                      <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded-md bg-black/80 backdrop-blur-xs text-[10px] font-bold text-white">
+                        #{idx + 1}
+                      </span>
+                      {/* Remove thumbnail button */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeImage(idx);
+                        }}
+                        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/85 hover:bg-red-600 text-white flex items-center justify-center transition-colors shadow-sm cursor-pointer"
+                        title={language === 'hi' ? 'तस्वीर हटाएं' : 'Remove this photo'}
+                      >
+                        <span className="material-symbols-outlined text-[14px]">close</span>
+                      </button>
+                    </div>
+                  ))}
+
+                  {/* PROMINENT "+" BUTTON FOR EXTRA ANGLES */}
+                  <button
+                    type="button"
+                    id="add-angle-photo-btn"
+                    onClick={() => openLiveCamera()}
+                    className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl border-2 border-dashed border-[#ff9062] bg-[#ff9062]/10 hover:bg-[#ff9062]/20 text-[#ff9062] flex flex-col items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 shrink-0 shadow-md group"
+                    title={language === 'hi' ? 'अन्य कोण से तस्वीर लें' : 'Take another angle photo'}
+                  >
+                    <div className="w-8 h-8 rounded-full bg-[#ff9062] text-white flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
+                      <span className="material-symbols-outlined text-[20px] font-bold">add</span>
+                    </div>
+                    <span className="text-[11px] font-bold text-[#ffdeaa]">
+                      {language === 'hi' ? '+ नया कोण' : '+ Add Angle'}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Feature Helper Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -1317,6 +1697,130 @@ export default function Capture() {
             </div>
           </div>
         </div>
+      {/* WebRTC Live Camera Viewfinder Modal */}
+      {isCameraModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-3 sm:p-6 animate-fadeIn">
+          <div className="relative w-full max-w-xl bg-[#191312] border border-[#382b24] rounded-3xl overflow-hidden shadow-2xl flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b border-white/10 bg-stone-900/90">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[#ff9062] text-[22px]">photo_camera</span>
+                <h3 className="text-sm sm:text-base font-bold text-white">
+                  {language === 'hi' 
+                    ? `शिल्प कोण #${images.length + 1} कैप्चर करें` 
+                    : `Capture Craft Angle #${images.length + 1}`}
+                </h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={toggleCameraFacingMode}
+                  className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-medium flex items-center gap-1 transition-colors cursor-pointer"
+                  title={language === 'hi' ? 'कैमरा बदलें' : 'Flip Camera'}
+                >
+                  <span className="material-symbols-outlined text-[18px]">flip_camera_ios</span>
+                  <span className="hidden sm:inline text-[11px]">{cameraFacingMode === 'environment' ? 'Back' : 'Front'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={closeLiveCamera}
+                  className="p-2 rounded-xl bg-white/10 hover:bg-red-500/20 text-white hover:text-red-400 text-xs font-medium transition-colors cursor-pointer"
+                  title="Close camera"
+                >
+                  <span className="material-symbols-outlined text-[18px]">close</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Video Viewfinder Area */}
+            <div className="relative aspect-[4/3] sm:aspect-[16/11] bg-black flex items-center justify-center overflow-hidden">
+              {isCameraStarting && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 z-20 bg-black/70">
+                  <span className="material-symbols-outlined text-[36px] text-[#ff9062] animate-spin">progress_activity</span>
+                  <span className="text-xs text-[#ffdeaa] font-medium">
+                    {language === 'hi' ? 'कैमरा सक्रिय किया जा रहा है...' : 'Starting camera feed...'}
+                  </span>
+                </div>
+              )}
+
+              {cameraError && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center gap-3 z-20 bg-black/85">
+                  <span className="material-symbols-outlined text-[36px] text-amber-400">videocam_off</span>
+                  <p className="text-xs text-stone-200">{cameraError}</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      closeLiveCamera();
+                      cameraRef.current?.click();
+                    }}
+                    className="mt-2 px-4 py-2 rounded-xl bg-[#ff9062] text-white font-bold text-xs shadow-md active:scale-95 cursor-pointer"
+                  >
+                    {language === 'hi' ? 'डिवाइस कैमरा खोलें' : 'Open Device Camera'}
+                  </button>
+                </div>
+              )}
+
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-cover"
+              />
+
+              {/* Viewfinder Reticle Overlay */}
+              <div className="absolute inset-4 sm:inset-8 border border-white/20 rounded-2xl pointer-events-none flex flex-col justify-between p-4">
+                <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none" viewBox="0 0 100 100">
+                  <path d="M 0 14 L 0 0 L 14 0" fill="none" stroke="#ff9062" strokeLinecap="round" strokeWidth="3" />
+                  <path d="M 86 0 L 100 0 L 100 14" fill="none" stroke="#ff9062" strokeLinecap="round" strokeWidth="3" />
+                  <path d="M 0 86 L 0 100 L 14 100" fill="none" stroke="#ff9062" strokeLinecap="round" strokeWidth="3" />
+                  <path d="M 86 100 L 100 100 L 100 86" fill="none" stroke="#ff9062" strokeLinecap="round" strokeWidth="3" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Modal Controls / Shutter Bar */}
+            <div className="p-4 sm:p-5 bg-stone-900 flex items-center justify-between border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => {
+                  closeLiveCamera();
+                  cameraRef.current?.click();
+                }}
+                className="text-stone-400 hover:text-white text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[16px]">file_upload</span>
+                <span>{language === 'hi' ? 'नेटिव ऐप' : 'Native App'}</span>
+              </button>
+
+              {/* Shutter Button */}
+              <button
+                type="button"
+                id="camera-shutter-btn"
+                onClick={captureFrameFromVideo}
+                disabled={isCameraStarting}
+                className="w-16 h-16 sm:w-18 sm:h-18 rounded-full border-4 border-white flex items-center justify-center p-1 cursor-pointer transition-all active:scale-90 hover:border-[#ff9062] group shadow-xl"
+                title={language === 'hi' ? 'फोटो खींचें' : 'Take Photo'}
+              >
+                <div className="w-full h-full rounded-full bg-[#ff9062] group-hover:bg-[#ff7b44] group-active:scale-95 transition-all shadow-inner" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  closeLiveCamera();
+                  galleryRef.current?.click();
+                }}
+                className="text-stone-400 hover:text-white text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[16px]">photo_library</span>
+                <span>{language === 'hi' ? 'गैलरी' : 'Gallery'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Regional Dialect Selector Modal */}
       <LanguageSelectorModal
         isOpen={isLangModalOpen}
@@ -1335,10 +1839,11 @@ export default function Capture() {
         onChange={handleImageSelection} 
         className="hidden" 
       />
-      {/* Opens native gallery / file picker */}
+      {/* Opens native gallery / file picker with multiple support */}
       <input 
         type="file" 
         accept="image/*" 
+        multiple
         ref={galleryRef}
         onChange={handleImageSelection} 
         className="hidden" 

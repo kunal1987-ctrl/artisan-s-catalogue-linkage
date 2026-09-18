@@ -349,14 +349,37 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  const { audioBase64, imageBase64, customTranscript, language } = requestPayload || {};
+  const { audioBase64, imageBase64, imagesBase64, images, customTranscript, language } = requestPayload || {};
 
-  if (imageBase64) {
-    if (typeof imageBase64 !== "string") {
+  // Extract array of images from imagesBase64, images, or single imageBase64
+  const incomingImages: string[] = [];
+  if (Array.isArray(imagesBase64)) {
+    for (const item of imagesBase64) {
+      if (typeof item === "string" && item.trim().length > 0) {
+        incomingImages.push(item);
+      }
+    }
+  } else if (Array.isArray(images)) {
+    for (const item of images) {
+      if (typeof item === "string" && item.trim().length > 0) {
+        incomingImages.push(item);
+      }
+    }
+  }
+
+  if (imageBase64 && typeof imageBase64 === "string" && imageBase64.trim().length > 0) {
+    if (!incomingImages.includes(imageBase64)) {
+      incomingImages.unshift(imageBase64);
+    }
+  }
+
+  // Validate incoming images
+  for (const img of incomingImages) {
+    if (typeof img !== "string") {
       return new Response(
         JSON.stringify({
           error: "Bad Request",
-          message: "imageBase64 must be a string.",
+          message: "All images must be base64 strings.",
         }),
         {
           status: 400,
@@ -364,11 +387,11 @@ Deno.serve(async (req: Request) => {
         }
       );
     }
-    if (imageBase64.length > MAX_IMAGE_BASE64_LENGTH) {
+    if (img.length > MAX_IMAGE_BASE64_LENGTH) {
       return new Response(
         JSON.stringify({
           error: "Payload Too Large",
-          message: `imageBase64 exceeds maximum allowed size of 10MB (got ${(imageBase64.length / (1024 * 1024)).toFixed(1)}MB).`,
+          message: `An image exceeds the maximum allowed size of 10MB.`,
         }),
         {
           status: 413,
@@ -406,7 +429,7 @@ Deno.serve(async (req: Request) => {
   }
 
   // Ensure at least one input field is provided
-  const hasImage = Boolean(imageBase64 && imageBase64.length > 20);
+  const hasImage = incomingImages.length > 0;
   const hasAudio = Boolean(audioBase64 && audioBase64.length > 20);
   const hasTranscript = Boolean(
     customTranscript &&
@@ -418,7 +441,7 @@ Deno.serve(async (req: Request) => {
     return new Response(
       JSON.stringify({
         error: "Bad Request",
-        message: "At least one input (imageBase64, audioBase64, or customTranscript) is required.",
+        message: "At least one input (imagesBase64, imageBase64, audioBase64, or customTranscript) is required.",
       }),
       {
         status: 400,
@@ -431,19 +454,22 @@ Deno.serve(async (req: Request) => {
     const groqApiKey = Deno.env.get("GROQ_API_KEY");
     const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
 
-    // Clean base64 strings if data URL prefixes are present
-    const cleanImageBase64 = (imageBase64 || "").replace(
-      /^data:image\/[a-zA-Z0-9+.-]+;base64,/,
-      ""
-    );
-
-    // Detect image MIME type
-    let mimeType = "image/png";
-    if (cleanImageBase64.startsWith("/9j/")) {
-      mimeType = "image/jpeg";
-    } else if (cleanImageBase64.startsWith("UklGR")) {
-      mimeType = "image/webp";
-    }
+    // Build Gemini inlineData parts for each image in incomingImages
+    const imageParts = incomingImages.map((rawB64) => {
+      const clean = rawB64.replace(/^data:image\/[a-zA-Z0-9+.-]+;base64,/, "");
+      let mime = "image/jpeg";
+      if (clean.startsWith("iVBORw0KGgo")) {
+        mime = "image/png";
+      } else if (clean.startsWith("UklGR")) {
+        mime = "image/webp";
+      }
+      return {
+        inlineData: {
+          mimeType: mime,
+          data: clean,
+        },
+      };
+    }).filter((part) => part.inlineData.data.length > 50);
 
     // ───────────────────────────────────────────────────────────
     // STEP 1: Groq Whisper Transcription  ← 8-second timeout
@@ -526,10 +552,10 @@ Deno.serve(async (req: Request) => {
         systemInstruction: {
           parts: [
             {
-              text: `You are an AI assistant for a rural artisan e-commerce platform. You have been provided with an image of a handmade product and a transcribed voice note from the artisan. 
-1. Analyze the image to determine the visual details, material, and category of the product.
+              text: `You are an AI assistant for a rural artisan e-commerce platform. Analyze this array of images representing a single handmade product to gather comprehensive visual context. Combine this multi-angle visual data with the audio transcript to generate a highly accurate description, material list, and price.
+1. Analyze the array of images to determine the multi-angle visual details, craftsmanship, material, and category of the product.
 2. Read the voice note transcript to extract the specific price and any additional context spoken by the artisan.
-3. Synthesize this information and return a strictly formatted JSON object containing: 'name', 'description' (based on the image and text), 'material', and 'price' (extracted strictly from the transcript). Do not reuse examples; generate accurate details exclusively from the provided image and text.`,
+3. Synthesize this information and return a strictly formatted JSON object containing: 'name', 'description' (based on the multi-angle images and text), 'material', and 'price' (extracted strictly from the transcript). Do not reuse examples; generate accurate details exclusively from the provided images and text.`,
             },
           ],
         },
@@ -537,16 +563,16 @@ Deno.serve(async (req: Request) => {
           {
             parts: [
               {
-                text: `Artisan voice note transcript: "${transcript || "No spoken note provided. Infer details and fair artisan pricing exclusively from visual craftsmanship."}"
+                text: `Artisan voice note transcript: "${transcript || "No spoken note provided. Infer details and fair artisan pricing exclusively from visual craftsmanship across all angles."}"
 
-Analyze this handcrafted item following your system instructions. Return ONLY a valid JSON object matching this schema:
+Analyze this array of images representing a single handmade product from multiple angles along with the artisan's voice note transcript following your system instructions. Return ONLY a valid JSON object matching this schema:
 {
   "name": "string (Specific craft title in English based on visual details)",
   "title": "string (Same as name)",
   "title_hi": "string (Accurate craft name in Hindi / Devanagari script)",
-  "description": "string (2-3 sentences based on the unique image and text)",
+  "description": "string (2-3 sentences based on the multi-angle images and text)",
   "description_hi": "string (Accurate Hindi translation in Devanagari script)",
-  "material": "string (Primary material identified from the image and text)",
+  "material": "string (Primary material identified from the images and text)",
   "craft_category": "string (Craft category e.g. Terracotta & Pottery, Handloom Textiles, Metalware, Woodcraft)",
   "price": number,
   "suggested_retail_price_inr": number,
@@ -561,16 +587,7 @@ Analyze this handcrafted item following your system instructions. Return ONLY a 
   "tags": ["string", "string", "string", "string", "string"]
 }`,
               },
-              ...(cleanImageBase64.length > 50
-                ? [
-                    {
-                      inlineData: {
-                        mimeType: mimeType,
-                        data: cleanImageBase64,
-                      },
-                    },
-                  ]
-                : []),
+              ...imageParts,
             ],
           },
         ],

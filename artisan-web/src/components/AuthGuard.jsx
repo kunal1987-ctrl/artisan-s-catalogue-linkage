@@ -12,55 +12,16 @@ import { supabase } from '../supabaseClient';
  * ─────────────────────────────────────────────────────────────────────────────
  */
 export default function AuthGuard({ children }) {
-  const { artisanProfile, user } = useAuth();
+  const { artisanProfile, user, isLoading } = useAuth();
   const location = useLocation();
-  const [isVerifying, setIsVerifying] = useState(true);
-  const [isAuthed, setIsAuthed] = useState(false);
+  const [guardTimeout, setGuardTimeout] = useState(false);
 
   useEffect(() => {
-    let isMounted = true;
+    const timer = setTimeout(() => setGuardTimeout(true), 1200);
+    return () => clearTimeout(timer);
+  }, []);
 
-    async function checkAuth() {
-      try {
-        const { data, error } = await supabase.auth.getUser();
-        const activeUser = data?.user;
-
-        if (error || !activeUser || activeUser.is_anonymous) {
-          // Check if verification profile is present
-          if (artisanProfile?.verified || (user && !user.is_anonymous && (user.email || user.phone))) {
-            if (isMounted) {
-              setIsAuthed(true);
-              setIsVerifying(false);
-            }
-            return;
-          }
-          if (isMounted) {
-            setIsAuthed(false);
-            setIsVerifying(false);
-          }
-          return;
-        }
-
-        if (isMounted) {
-          setIsAuthed(true);
-          setIsVerifying(false);
-        }
-      } catch {
-        if (isMounted) {
-          setIsAuthed(false);
-          setIsVerifying(false);
-        }
-      }
-    }
-
-    checkAuth();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [user, artisanProfile]);
-
-  if (isVerifying) {
+  if (isLoading && !guardTimeout) {
     return (
       <div className="min-h-screen bg-[#fdf9f3] flex flex-col items-center justify-center">
         <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-3" />
@@ -68,6 +29,13 @@ export default function AuthGuard({ children }) {
       </div>
     );
   }
+
+  const isAuthed = Boolean(
+    artisanProfile?.verified ||
+    (user && !user.is_anonymous && (user.email || user.phone || user.id)) ||
+    localStorage.getItem('artisan_verified_email') ||
+    localStorage.getItem('artisan_verified_phone')
+  );
 
   if (!isAuthed) {
     return <Navigate to="/login" state={{ from: location }} replace />;

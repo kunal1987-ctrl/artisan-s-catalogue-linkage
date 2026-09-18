@@ -572,6 +572,10 @@ export function AuthProvider({ children }) {
           });
           setIsLoading(false);
         }
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     }
 

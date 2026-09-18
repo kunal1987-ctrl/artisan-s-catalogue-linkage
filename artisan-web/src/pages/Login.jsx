@@ -15,7 +15,7 @@ import LanguageToggle from '../components/LanguageToggle';
  */
 export default function Login() {
   const navigate = useNavigate();
-  const { session, user, artisanProfile, language, showToast } = useAuth();
+  const { session, user, artisanProfile, language, showToast, sendEmailOtp, verifyEmailOtp } = useAuth();
 
   // Distinct UI States: 'email_input' | 'otp_verification'
   const [authState, setAuthState] = useState('email_input');
@@ -92,17 +92,20 @@ export default function Login() {
     setErrorMsg('');
 
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email: cleanEmail,
-        options: {
-          data: {
-            full_name: cleanName,
+      if (sendEmailOtp) {
+        await sendEmailOtp(cleanEmail, cleanName);
+      } else {
+        const { error } = await supabase.auth.signInWithOtp({
+          email: cleanEmail,
+          options: {
+            data: {
+              full_name: cleanName,
+            },
+            emailRedirectTo: window.location.origin,
           },
-          emailRedirectTo: window.location.origin,
-        },
-      });
-
-      if (error) throw error;
+        });
+        if (error) throw error;
+      }
 
       setAuthState('otp_verification');
       setOtpDigits(['', '', '', '', '', '']);
@@ -110,11 +113,11 @@ export default function Login() {
 
       showToast?.(
         language === 'hi'
-          ? '6-अंकीय लॉगिन कोड आपके ईमेल पर भेजा गया'
-          : '6-digit login code sent to your email'
+          ? 'सत्यापन कोड आपके ईमेल पर भेजा गया है'
+          : 'Verification code sent to your email'
       );
     } catch (err) {
-      console.error('[Login] signInWithOtp error:', err);
+      console.error('[Login] sendOtp error:', err);
       const msg = err.message || (
         language === 'hi' 
           ? 'लॉगिन कोड भेजने में विफल। कृपया पुनः प्रयास करें।' 
@@ -145,35 +148,35 @@ export default function Login() {
     setErrorMsg('');
 
     try {
-      const { data, error } = await supabase.auth.verifyOtp({
-        email: email.trim().toLowerCase(),
-        token: otpString,
-        type: 'email',
-      });
-
-      if (error) throw error;
-
-      if (data?.session || data?.user) {
-        // Persist the typed name to Supabase user_metadata (handles stale/existing users)
-        const cleanName = name.trim();
-        if (cleanName) {
-          try {
-            await supabase.auth.updateUser({
-              data: { full_name: cleanName },
-            });
-          } catch (updateErr) {
-            console.warn('[Login] updateUser metadata notice:', updateErr);
+      if (verifyEmailOtp) {
+        await verifyEmailOtp(email.trim().toLowerCase(), otpString);
+      } else {
+        const { data, error } = await supabase.auth.verifyOtp({
+          email: email.trim().toLowerCase(),
+          token: otpString,
+          type: 'email',
+        });
+        if (error) throw error;
+        if (data?.session || data?.user) {
+          const cleanName = name.trim();
+          if (cleanName) {
+            try {
+              await supabase.auth.updateUser({
+                data: { full_name: cleanName },
+              });
+            } catch (updateErr) {
+              console.warn('[Login] updateUser metadata notice:', updateErr);
+            }
           }
         }
-
-        showToast?.(
-          language === 'hi'
-            ? 'लॉगिन सफल! डैशबोर्ड पर भेजा जा रहा है...'
-            : 'Login successful! Redirecting to dashboard...'
-        );
-        // Immediate redirection to /dashboard
-        navigate('/dashboard', { replace: true });
       }
+
+      showToast?.(
+        language === 'hi'
+          ? 'लॉगिन सफल! डैशबोर्ड पर भेजा जा रहा है...'
+          : 'Login successful! Redirecting to dashboard...'
+      );
+      navigate('/dashboard', { replace: true });
     } catch (err) {
       console.error('[Login] verifyOtp error:', err);
       const msg = language === 'hi'

@@ -758,29 +758,29 @@ export default function Orders() {
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div className="w-full">
-      <main className="flex-1 w-full bg-background min-h-screen p-3 sm:p-6 lg:p-10 flex flex-col gap-5 sm:gap-6">
-        <div className="flex flex-col gap-6 max-w-7xl mx-auto w-full">
+      <h1 className="sr-only">
+        {t('orders.title', 'Orders & Fulfillment')}
+      </h1>
+      <main className="flex-1 w-full bg-background min-h-screen px-3 sm:px-6 lg:px-8 py-3 sm:py-4 flex flex-col gap-3.5 sm:gap-4">
+        <div className="flex flex-col gap-3.5 sm:gap-4 max-w-7xl mx-auto w-full">
 
           {/* ── TOP NAV BAR ───────────────────────────────────────────────── */}
-          <div className="flex items-center justify-between gap-4 pb-4 border-b border-border-delicate/60">
+          <div className="flex items-center justify-between py-3 border-b border-border-delicate/60">
             <button
               type="button"
               aria-label="Go back to Home"
-              className="min-w-[48px] min-h-[48px] w-[48px] h-[48px] rounded-full bg-surface-container-low hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors cursor-pointer"
+              className="min-w-[44px] min-h-[44px] w-[44px] h-[44px] rounded-full bg-surface-container-low hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors cursor-pointer active:scale-95"
               onClick={() => navigate('/home')}
             >
               <span className="material-symbols-outlined text-[24px]">arrow_back</span>
             </button>
-            <h1 className="sr-only">
-              {t('orders.title', 'Orders & Fulfillment')}
-            </h1>
 
             {/* Global voice button */}
             <button
               type="button"
               aria-label={t('capture.listening', 'Listen to audio')}
               id="voice-listen-btn"
-              className="min-w-[48px] min-h-[48px] w-[48px] h-[48px] rounded-full bg-primary-container text-on-primary flex items-center justify-center shrink-0 active:scale-90 hover:scale-105 transition-all shadow-md cursor-pointer"
+              className="min-w-[44px] min-h-[44px] w-[44px] h-[44px] rounded-full bg-primary-container text-on-primary flex items-center justify-center shrink-0 active:scale-90 hover:scale-105 transition-all shadow-sm cursor-pointer"
               onClick={() => {
                 unlockAudio();
                 if (displayedOrders.length > 0) {

@@ -2,7 +2,6 @@
   "title": "Add Your Craft",
   "subtitle": "Take a photo and describe your item in your own language. We'll handle the rest.",
   "feature_1": "Speaks Your Language",
-  "feature_2": "Ready in 10 seconds",
   "button_text": "Start Camera & Mic",
   "atm": {
     "title": "Select Language",
@@ -23,7 +22,7 @@
     "support": "Help & Support",
     "add_craft": "+ Add Craft",
     "studio_assistant": "AI Studio Assistant",
-    "studio_desc": "Snap photo & speak naturally to list in 10s.",
+    "studio_desc": "Snap photo & speak naturally to list your craft.",
     "sign_in": "Sign In",
     "sign_out": "Sign Out",
     "verified": "Verified",
@@ -147,7 +146,7 @@
     "orders": "Orders",
     "ai_studio": "AI Studio Assistant",
     "studio_assistant": "AI Studio Assistant",
-    "studio_desc": "Snap photo & speak naturally to list in 10s.",
+    "studio_desc": "Snap photo & speak naturally to list your craft.",
     "add_craft": "+ Add Craft",
     "help_support": "Help & Support",
     "support": "Help & Support",
@@ -165,7 +164,6 @@
     "title": "Artisan Dashboard"
   },
   "header": {
-    "ai_cataloger": "Instant AI Cataloger",
     "multilingual_support": "Hindi, Bengali, Marathi +9 supported"
   }
 }

@@ -242,22 +242,6 @@ export default function ProductDetail() {
                 className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-500"
               />
 
-              {/* Absolute Floating Badges */}
-              <div className="absolute top-4 left-4 flex flex-col gap-2">
-                {/* Green badge: "Live & Verified" */}
-                <span className="px-3.5 py-1.5 rounded-full bg-emerald-600 text-white font-extrabold text-xs shadow-md flex items-center gap-1.5 backdrop-blur-sm">
-                  <span className="w-2 h-2 rounded-full bg-white animate-pulse" aria-hidden="true" />
-                  {isHi ? 'सक्रिय एवं सत्यापित' : 'Live & Verified'}
-                </span>
-
-                {/* Amber badge: "GeM & ONDC Ready" */}
-                {product.is_gem_ready && (
-                  <span className="px-3.5 py-1.5 rounded-full bg-amber-500 text-amber-950 font-bold text-xs shadow-md flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-[15px]" aria-hidden="true">verified</span>
-                    GeM &amp; ONDC Ready
-                  </span>
-                )}
-              </div>
 
               {/* Dark Location Pin Overlay at Bottom Left */}
               <div className="absolute bottom-4 left-4 px-3.5 py-1.5 rounded-xl bg-[#191312]/90 backdrop-blur-md text-[#ffdeaa] font-bold text-xs flex items-center gap-1.5 border border-white/10 shadow-lg">

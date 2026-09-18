@@ -266,19 +266,6 @@ export default function Details() {
                   className="w-full h-full object-contain p-3 sm:p-4 group-hover:scale-105 transition-transform duration-500"
                 />
 
-                {/* Status Badges Overlay */}
-                <div className="absolute top-4 left-4 flex flex-col gap-2">
-                  <span className="px-3 py-1.5 rounded-full bg-white/95 backdrop-blur-md text-emerald-800 font-extrabold text-xs shadow-md flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
-                    <span>{language === 'hi' ? 'सक्रिय शिल्प' : 'Live & Verified'}</span>
-                  </span>
-                  {product.is_gem_ready && (
-                    <span className="px-3 py-1 rounded-full bg-amber-500 text-amber-950 font-bold text-xs shadow-md flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[15px]">verified</span>
-                      <span>GeM & ONDC Ready</span>
-                    </span>
-                  )}
-                </div>
 
                 {/* Origin Stamp Overlay */}
                 {product.craft_origin && (

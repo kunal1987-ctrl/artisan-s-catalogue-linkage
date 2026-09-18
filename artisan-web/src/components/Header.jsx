@@ -22,12 +22,6 @@ export default function Header({ showLanguageSwitcher = true }) {
         <div className="flex flex-col gap-2 max-w-2xl">
           {/* Top metadata tags & optional header language switcher */}
           <div className="flex flex-wrap items-center gap-3">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-[#ffdeaa] backdrop-blur-md">
-              <span className="material-symbols-outlined text-[16px]">auto_awesome</span>
-              <span className="text-[11px] font-bold tracking-wider uppercase">
-                {t('header.ai_cataloger', 'Instant AI Cataloger')}
-              </span>
-            </div>
             <span className="text-[12px] text-[#ffdeaa] flex items-center gap-1">
               <span className="material-symbols-outlined text-[15px]">translate</span>
               {t('header.multilingual_support', 'Hindi, Bengali, Marathi +9 supported')}
@@ -54,10 +48,6 @@ export default function Header({ showLanguageSwitcher = true }) {
             <span className="flex items-center gap-1.5">
               <span className="material-symbols-outlined text-[18px] text-[#ffb599]">record_voice_over</span>
               {t('feature_1')}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[18px] text-[#ffb599]">bolt</span>
-              {t('feature_2')}
             </span>
           </div>
         </div>

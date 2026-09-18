@@ -159,10 +159,6 @@ export default function Success() {
               </span>
             </div>
             <div className="flex flex-col min-w-0">
-              <div className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-0.5 rounded-full bg-emerald-900/60 border border-emerald-500/40 text-emerald-300 text-[11px] sm:text-xs font-bold w-max mb-1.5">
-                <span className="material-symbols-outlined text-[14px]">auto_awesome</span>
-                <span>{language === 'hi' ? 'प्रमाणित शिल्पकला • लाइव' : 'Certified Craft • Published Live'}</span>
-              </div>
               <h1 className="text-lg sm:text-2xl lg:text-3xl font-black tracking-tight leading-tight">
                 {language === 'hi' ? '🎉 बधाई हो! उत्पाद लाइव एवं प्रकाशित हो चुका है!' : '🎉 Congratulations! Your Craft is Live & Published!'}
               </h1>
@@ -189,13 +185,9 @@ export default function Success() {
           {/* Left Column: Finalized Photoroom-Enhanced Image Card */}
           <div className="lg:col-span-6 flex flex-col gap-4">
             <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-md border border-[#d1c4bd]/60 flex flex-col gap-4">
-              <div className="flex items-center justify-between pb-3 border-b border-[#d1c4bd]/40">
+              <div className="pb-3 border-b border-[#d1c4bd]/40">
                 <span className="text-xs font-bold uppercase tracking-wider text-[#9c441c]">
                   {language === 'hi' ? 'अंतिम उन्नत उत्पाद छवि' : 'Finalized Studio Image'}
-                </span>
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
-                  {language === 'hi' ? 'लाइव कैटलॉग' : 'Live in Catalog'}
                 </span>
               </div>
 
@@ -211,12 +203,6 @@ export default function Success() {
                 <div className="absolute top-3 left-3 px-2.5 sm:px-3 py-1 rounded-full bg-black/75 backdrop-blur-md border border-white/20 text-white text-[10px] sm:text-[11px] font-bold flex items-center gap-1.5 shadow-lg">
                   <span className="material-symbols-outlined text-[14px] sm:text-[15px] text-[#ff9062]">auto_awesome</span>
                   <span>{language === 'hi' ? 'फोटो-स्टूडियो उन्नत' : 'Photoroom AI Enhanced'}</span>
-                </div>
-
-                {/* Live Status Badge */}
-                <div className="absolute bottom-3 right-3 px-2.5 sm:px-3 py-1 rounded-full bg-emerald-950/80 backdrop-blur-md border border-emerald-500/50 text-emerald-300 text-[10px] sm:text-[11px] font-bold flex items-center gap-1.5 shadow-lg">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span>GeM & ONDC Active</span>
                 </div>
               </div>
 

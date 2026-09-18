@@ -773,15 +773,9 @@ export default function Orders() {
                 <span className="material-symbols-outlined text-[24px]">arrow_back</span>
               </button>
               <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-bold text-secondary tracking-wider uppercase">
-                    {t('orders.title', 'Orders & Fulfillment')}
-                  </span>
-                  <span className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    Live
-                  </span>
-                </div>
+                <span className="text-xs font-bold text-secondary tracking-wider uppercase block">
+                  {t('orders.title', 'Orders & Fulfillment')}
+                </span>
                 <h1 className="text-xl sm:text-2xl font-extrabold text-espresso-deep tracking-tight mt-0.5">
                   {t('orders.title', 'Orders & Fulfillment')}
                 </h1>

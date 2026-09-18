@@ -1684,15 +1684,6 @@ export default function Capture() {
                     )}
                   </div>
                 )}
-
-                <div className="flex items-center justify-center gap-1.5 text-[#d4c3ba] text-[11px] text-center px-2">
-                  <span className="material-symbols-outlined text-[14px] text-[#ff9062]">bolt</span>
-                  <span>
-                    {language === 'hi'
-                      ? 'शून्य टाइपिंग • त्वरित शीर्षक, GeM कोड और थोक मूल्य 10 सेकंड में'
-                      : 'Zero typing • Instant title, GeM codes & bulk pricing in 10s'}
-                  </span>
-                </div>
               </div>
             </div>
           </div>

@@ -268,19 +268,6 @@ export default function PublicProduct() {
                 loading="eager"
               />
 
-              {/* Absolute floating badge 1: Live & Verified */}
-              <div className="absolute top-3 sm:top-4 left-3 sm:left-4 z-10 flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full bg-emerald-950/85 backdrop-blur-md border border-emerald-500/50 text-emerald-300 text-[10px] sm:text-xs font-bold shadow-lg">
-                <span className="w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>{isHi ? 'लाइव' : 'Live & Verified'}</span>
-              </div>
-
-              {/* Absolute floating badge 2: GeM & ONDC Ready */}
-              <div className="absolute top-3 sm:top-4 right-3 sm:right-4 z-10 flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full bg-amber-950/85 backdrop-blur-md border border-amber-500/50 text-amber-300 text-[10px] sm:text-xs font-bold shadow-lg">
-                <span className="material-symbols-outlined text-[13px] sm:text-[15px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  verified_user
-                </span>
-                <span>{isHi ? 'GeM व ONDC' : 'GeM & ONDC'}</span>
-              </div>
 
               {/* Bottom-left location pin overlay */}
               <div className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 z-10 flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full bg-black/75 backdrop-blur-md text-white text-[10px] sm:text-xs font-medium shadow-md">

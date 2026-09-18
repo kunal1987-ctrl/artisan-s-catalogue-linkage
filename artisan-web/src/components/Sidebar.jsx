@@ -94,7 +94,7 @@ export default function Sidebar({ className = '' }) {
             <span>{t('sidebar.ai_studio', 'AI Studio Assistant')}</span>
           </div>
           <p className="text-[11px] text-on-surface-variant leading-relaxed">
-            {t('sidebar.studio_desc', 'Snap photo & speak naturally to list in 10s.')}
+            {t('sidebar.studio_desc', 'Snap photo & speak naturally to list your craft.')}
           </p>
           <button
             onClick={() => navigate('/capture')}

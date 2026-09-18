@@ -428,7 +428,7 @@ Deno.serve(async (req: Request) => {
           audioBytes[i] = binaryString.charCodeAt(i);
         }
 
-        const audioBlob = new Blob([audioBytes], { type: "audio/webm" });
+        const audioBlob = new Blob([audioBytes.buffer as ArrayBuffer], { type: "audio/webm" });
         const formData = new FormData();
         formData.append("file", audioBlob, "audio.webm");
         formData.append("model", "whisper-large-v3");

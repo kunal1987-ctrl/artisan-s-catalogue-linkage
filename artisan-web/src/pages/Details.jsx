@@ -19,19 +19,12 @@ export default function Details() {
     if (location.state?.product) {
       return location.state.product;
     }
-    // 2. Second priority: Match against INITIAL_PRODUCTS
-    if (id) {
-      const match = INITIAL_PRODUCTS.find((p) => String(p.id) === String(id));
-      if (match) return match;
-    }
-    // Default initial placeholder
-    return INITIAL_PRODUCTS[0];
+    return null;
   });
 
   const [loading, setLoading] = useState(() => {
     if (location.state?.product) return false;
-    if (id && INITIAL_PRODUCTS.some((p) => String(p.id) === String(id))) return false;
-    return true;
+    return Boolean(id);
   });
   const [copied, setCopied] = useState(false);
   const [isOndcListed, setIsOndcListed] = useState(() => {
@@ -168,18 +161,19 @@ export default function Details() {
 
   // Dynamic WhatsApp Sharing Implementation
   const handleWhatsAppShare = () => {
-    const productUrl = `${window.location.origin}/details/${product.id}`;
+    if (!product || !product.id) return;
+    const shareUrl = `${window.location.origin}/product/${product.id}`;
     const name = (language === 'hi' && product.hindi_title) ? product.hindi_title : (product.title || product.name || 'Handcrafted Craft');
-    const descSnippet = product.description ? `\n\n"${product.description.slice(0, 160)}${product.description.length > 160 ? '...' : ''}"` : '';
-    const message = `Check out this handcrafted item on Shilp Setu!\n\n*${name}*\nPrice: ₹${product.price}${product.bulk_price ? ` (Bulk: ₹${product.bulk_price}, MOQ: ${product.min_order_quantity || 20})` : ''}${descSnippet}\n\nView details and buy here: ${productUrl}`;
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+    const message = `Check out this product: ${shareUrl}\n\n*${name}*\nPrice: ₹${product.price}`;
+    const waLink = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(waLink, '_blank');
   };
 
   const handleCopyLink = () => {
-    const productUrl = `${window.location.origin}/details/${product.id}`;
+    if (!product || !product.id) return;
+    const shareUrl = `${window.location.origin}/product/${product.id}`;
     if (navigator.clipboard) {
-      navigator.clipboard.writeText(productUrl);
+      navigator.clipboard.writeText(shareUrl);
     }
     setCopied(true);
     if (showToast) {
@@ -187,6 +181,43 @@ export default function Details() {
     }
     setTimeout(() => setCopied(false), 3000);
   };
+
+  if (loading) {
+    return (
+      <div className="w-full min-h-screen bg-[#fdf9f3] text-on-surface flex flex-col items-center justify-center py-20 gap-3">
+        <span className="material-symbols-outlined text-[36px] text-secondary animate-pulse">auto_awesome</span>
+        <p className="text-sm font-semibold text-secondary">
+          {language === 'hi' ? 'शिल्प विवरण लोड हो रहा है...' : 'Loading craft details...'}
+        </p>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="w-full min-h-screen bg-[#fdf9f3] text-on-surface flex flex-col items-center justify-center py-20 gap-4 px-6 text-center">
+        <div className="w-16 h-16 rounded-full bg-red-50 text-red-500 flex items-center justify-center mb-2">
+          <span className="material-symbols-outlined text-3xl">inventory_2</span>
+        </div>
+        <h1 className="text-2xl font-extrabold text-[#2e241e]">
+          {language === 'hi' ? 'उत्पाद नहीं मिला' : 'Product Not Found'}
+        </h1>
+        <p className="text-sm text-stone-500 max-w-md">
+          {language === 'hi'
+            ? 'यह उत्पाद हटा दिया गया हो सकता है या लिंक गलत है।'
+            : 'The product you are looking for does not exist or may have been removed.'}
+        </p>
+        <button
+          onClick={() => navigate('/catalog')}
+          className="mt-2 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#9c441c] hover:bg-[#833714] text-white font-bold text-sm transition-colors cursor-pointer"
+          type="button"
+        >
+          <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+          <span>{language === 'hi' ? 'कैटलॉग पर वापस जाएं' : 'Back to Catalog'}</span>
+        </button>
+      </div>
+    );
+  }
 
   const title = (language === 'hi' && product.hindi_title) ? product.hindi_title : (product.title || product.name || 'Handcrafted Item');
   const description = (language === 'hi' && product.hindi_description) ? product.hindi_description : (product.description || 'Authentic Indian handicraft made by master artisans using traditional techniques.');
@@ -225,15 +256,7 @@ export default function Details() {
           </button>
         </div>
 
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <span className="material-symbols-outlined text-[36px] text-secondary animate-pulse">auto_awesome</span>
-            <p className="text-sm font-semibold text-secondary">
-              {language === 'hi' ? 'शिल्प विवरण लोड हो रहा है...' : 'Loading craft details...'}
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
             {/* ── Left Column: Large Hero Image ── */}
             <div className="lg:col-span-6 flex flex-col gap-4">
               <div className="relative w-full aspect-square rounded-2xl sm:rounded-3xl overflow-hidden bg-[#191312] border border-[#d1c4bd]/40 shadow-xl group">
@@ -556,7 +579,6 @@ export default function Details() {
               </div>
             </div>
           </div>
-        )}
       </div>
     </div>
   );

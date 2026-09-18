@@ -4,11 +4,8 @@ import { Helmet } from 'react-helmet-async';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
-import { INITIAL_PRODUCTS } from './Catalog';
 import {
   buildProductUrl,
-  formatWhatsAppMessage,
-  shareViaWhatsApp,
   formatPrice,
 } from '../utils/whatsappShare';
 
@@ -52,40 +49,34 @@ function normalizeProduct(row, fallbackArtisan = 'Master Artisan') {
 }
 
 export default function PublicProduct() {
-  const { id, productId } = useParams();
-  const effectiveId = id || productId;
+  const { id } = useParams();
   const { language, showToast, artisanName } = useAuth();
   const navigate = useNavigate();
 
-  const [product, setProduct] = useState(() => {
-    if (!effectiveId) return null;
-    const seeded = INITIAL_PRODUCTS.find((p) => String(p.id) === String(effectiveId));
-    return seeded ? normalizeProduct(seeded, artisanName) : null;
-  });
-
-  const [loading, setLoading] = useState(() => {
-    if (!effectiveId) return false;
-    const seeded = INITIAL_PRODUCTS.find((p) => String(p.id) === String(effectiveId));
-    return !seeded;
-  });
-
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(Boolean(id));
   const [copied, setCopied] = useState(false);
 
-  // Fetch product from Supabase products table using effectiveId
+  // Fetch product from Supabase products table using id
   useEffect(() => {
     let isMounted = true;
 
     async function fetchProduct() {
-      if (!effectiveId) {
-        setLoading(false);
+      if (!id) {
+        if (isMounted) {
+          setProduct(null);
+          setLoading(false);
+        }
         return;
       }
+
+      setLoading(true);
 
       try {
         const { data, error } = await supabase
           .from('products')
           .select('*')
-          .eq('id', effectiveId)
+          .eq('id', id)
           .maybeSingle();
 
         if (error) {
@@ -96,20 +87,13 @@ export default function PublicProduct() {
           if (data) {
             setProduct(normalizeProduct(data, artisanName));
           } else {
-            // Local fallback if seeded
-            const seeded = INITIAL_PRODUCTS.find((p) => String(p.id) === String(effectiveId));
-            if (seeded) {
-              setProduct(normalizeProduct(seeded, artisanName));
-            } else {
-              setProduct(null);
-            }
+            setProduct(null);
           }
         }
       } catch (err) {
-        console.warn('[PublicProduct] Fallback notice:', err?.message || err);
+        console.warn('[PublicProduct] Fetch error:', err?.message || err);
         if (isMounted) {
-          const seeded = INITIAL_PRODUCTS.find((p) => String(p.id) === String(effectiveId));
-          if (seeded) setProduct(normalizeProduct(seeded, artisanName));
+          setProduct(null);
         }
       } finally {
         if (isMounted) setLoading(false);
@@ -120,24 +104,22 @@ export default function PublicProduct() {
     return () => {
       isMounted = false;
     };
-  }, [effectiveId, artisanName]);
+  }, [id, artisanName]);
 
   const isHi = language === 'hi';
 
   const shareUrl = useMemo(
-    () => (product ? buildProductUrl(product.id) : (typeof window !== 'undefined' ? window.location.href : '')),
+    () => (product?.id ? `${window.location.origin}/product/${product.id}` : (typeof window !== 'undefined' ? window.location.href : '')),
     [product]
   );
 
   const handleWhatsAppOrder = () => {
-    if (!product) return;
-    shareViaWhatsApp({
-      title: product.title_en,
-      artisanName: product.artisan_name,
-      price: product.retail_price,
-      url: shareUrl,
-      language,
-    });
+    if (!product || !product.id) return;
+    const shareUrl = `${window.location.origin}/product/${product.id}`;
+    const name = (isHi && product.title_hi) ? product.title_hi : (product.title_en || 'Handcrafted Craft');
+    const message = `Check out this product: ${shareUrl}\n\n*${name}*\nPrice: ₹${product.retail_price}`;
+    const waLink = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(waLink, '_blank');
   };
 
   const handleCopyLink = async () => {
@@ -486,3 +468,5 @@ export default function PublicProduct() {
     </div>
   );
 }
+
+export { PublicProduct as ProductView };

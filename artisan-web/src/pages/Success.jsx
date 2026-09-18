@@ -62,7 +62,11 @@ export default function Success() {
   };
 
   const copyLink = async () => {
-    const productId = product.id || 'a1b2c3d4-0001-4000-8000-000000000001';
+    const productId = product.id || product.productId;
+    if (!productId) {
+      triggerToast(language === 'hi' ? 'उत्पाद आईडी उपलब्ध नहीं है' : 'Product ID not available');
+      return;
+    }
     const shareUrl = `${window.location.origin}/product/${productId}`;
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -86,18 +90,16 @@ export default function Success() {
   };
 
   const shareWhatsApp = () => {
-    const productId = product.id || 'a1b2c3d4-0001-4000-8000-000000000001';
+    const productId = product.id || product.productId;
+    if (!productId) {
+      triggerToast(language === 'hi' ? 'उत्पाद आईडी उपलब्ध नहीं है' : 'Product ID not available');
+      return;
+    }
     const shareUrl = `${window.location.origin}/product/${productId}`;
-    const displayTitle = language === 'hi' ? titleHi : title;
-    const text = encodeURIComponent(
-      `नमस्ते! शिल्प सेतु पर हमारा नया हस्तशिल्प "${displayTitle}" अब लाइव है।\n\n` +
-      `खुदरा मूल्य: ₹${price.toLocaleString('en-IN')}\n` +
-      `थोक व संस्थागत मूल्य (न्यूनतम ${moq} पीस): ₹${wholesalePrice.toLocaleString('en-IN')}/यूनिट\n` +
-      `GeM श्रेणी: ${gemCategory}\n` +
-      `HSN कोड: ${hsnCode}\n\n` +
-      `यहाँ देखें और सीधा ऑर्डर करें: ${shareUrl}`
-    );
-    window.open(`https://wa.me/?text=${text}`, '_blank');
+    const displayTitle = (language === 'hi' && titleHi) ? titleHi : title;
+    const shareText = `Check out this product: ${shareUrl}\n\n*${displayTitle}*\nPrice: ₹${Number(price).toLocaleString('en-IN')}`;
+    const waLink = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+    window.open(waLink, '_blank');
   };
 
   return (

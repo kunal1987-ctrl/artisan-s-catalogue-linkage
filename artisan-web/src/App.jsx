@@ -40,6 +40,7 @@ export default function App() {
           <Route path="/success" element={<Success />} />
           {/* Public buyer-facing PDP (shareable via WhatsApp, accessible without auth) */}
           <Route path="/product/:id" element={<PublicProduct />} />
+          <Route path="/p/:id" element={<PublicProduct />} />
 
           {/* Protected Dashboard Layout Flow */}
           <Route

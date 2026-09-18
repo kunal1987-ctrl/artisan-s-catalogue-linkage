@@ -91,7 +91,7 @@ Deno.serve(async (req: Request) => {
         );
       }
       const bytes = base64ToUint8Array(imageBase64);
-      imageBlob = new Blob([bytes], { type: "image/jpeg" });
+      imageBlob = new Blob([bytes.buffer as ArrayBuffer], { type: "image/jpeg" });
     } else if (contentType.includes("multipart/form-data")) {
       const formData = await req.formData();
       const fileEntry = formData.get("imageFile") || formData.get("image") || formData.get("file");
@@ -113,7 +113,7 @@ Deno.serve(async (req: Request) => {
         const body = JSON.parse(rawText);
         if (body.imageBase64) {
           const bytes = base64ToUint8Array(body.imageBase64);
-          imageBlob = new Blob([bytes], { type: "image/jpeg" });
+          imageBlob = new Blob([bytes.buffer as ArrayBuffer], { type: "image/jpeg" });
         }
       } catch {
         return new Response(

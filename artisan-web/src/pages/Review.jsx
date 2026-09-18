@@ -149,7 +149,12 @@ export default function Review() {
       const authUserId = authUser?.id || user?.id || null;
       const userPhone = artisanProfile?.phone || authUser?.phone || user?.phone || null;
 
+      const newProductId = (typeof crypto !== 'undefined' && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : ('prod_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9));
+
       const payload = {
+        id: newProductId,
         title,
         title_hi: titleHi,
         description,
@@ -171,14 +176,22 @@ export default function Review() {
         user_phone: userPhone,
       };
 
-      const { error } = await supabase.from('products').insert([payload]);
+      const { data: insertedData, error } = await supabase
+        .from('products')
+        .insert([payload])
+        .select()
+        .maybeSingle();
 
       if (error) throw error;
+
+      const finalizedId = insertedData?.id || payload.id;
 
       // 3. Navigate to celebratory /success screen with enhanced image and WhatsApp share details
       navigate('/success', {
         state: {
           ...payload,
+          id: finalizedId,
+          productId: finalizedId,
           title: payload.title || craftTitle,
           titleHi: payload.title_hi || craftTitleHi,
           price: payload.price || price,

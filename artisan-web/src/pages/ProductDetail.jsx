@@ -3,18 +3,15 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
-import { INITIAL_PRODUCTS } from './Catalog';
 import {
   buildProductUrl,
-  formatWhatsAppMessage,
-  shareViaWhatsApp,
   formatPrice,
 } from '../utils/whatsappShare';
 
 /**
  * Public-facing Product Detail Page (PDP) for buyers and WhatsApp sharing.
  *
- * Route: /product/:productId
+ * Route: /product/:id
  *
  * Expected schema: title_en, title_hi, image_url, category, hsn_code,
  * unspsc_code, retail_price, bulk_price, moq, location, artisan_name, description.
@@ -50,20 +47,13 @@ function normalizeProduct(row, fallbackArtisan = 'Master Artisan') {
 }
 
 export default function ProductDetail() {
-  const { productId } = useParams();
+  const { id, productId } = useParams();
+  const effectiveId = id || productId;
   const { language, showToast, artisanName } = useAuth();
   const navigate = useNavigate();
 
-  const [product, setProduct] = useState(() => {
-    if (!productId) return null;
-    const seeded = INITIAL_PRODUCTS.find((p) => String(p.id) === String(productId));
-    return seeded ? normalizeProduct(seeded, artisanName) : null;
-  });
-  const [loading, setLoading] = useState(() => {
-    if (!productId) return false;
-    const seeded = INITIAL_PRODUCTS.find((p) => String(p.id) === String(productId));
-    return !seeded;
-  });
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(Boolean(effectiveId));
   const [copied, setCopied] = useState(false);
 
   // Authoritative fetch from Supabase `products` table
@@ -71,16 +61,21 @@ export default function ProductDetail() {
     let isMounted = true;
 
     async function fetchProduct() {
-      if (!productId) {
-        setLoading(false);
+      if (!effectiveId) {
+        if (isMounted) {
+          setProduct(null);
+          setLoading(false);
+        }
         return;
       }
+
+      setLoading(true);
 
       try {
         const { data, error } = await supabase
           .from('products')
           .select('*')
-          .eq('id', productId)
+          .eq('id', effectiveId)
           .maybeSingle();
 
         if (error) {
@@ -91,20 +86,13 @@ export default function ProductDetail() {
           if (data) {
             setProduct(normalizeProduct(data, artisanName));
           } else {
-            // Check local fallback
-            const seeded = INITIAL_PRODUCTS.find((p) => String(p.id) === String(productId));
-            if (seeded) {
-              setProduct(normalizeProduct(seeded, artisanName));
-            } else {
-              setProduct(null);
-            }
+            setProduct(null);
           }
         }
       } catch (err) {
-        console.warn('[ProductDetail] Falling back to local catalogue:', err?.message || err);
+        console.warn('[ProductDetail] Fetch error:', err?.message || err);
         if (isMounted) {
-          const seeded = INITIAL_PRODUCTS.find((p) => String(p.id) === String(productId));
-          if (seeded) setProduct(normalizeProduct(seeded, artisanName));
+          setProduct(null);
         }
       } finally {
         if (isMounted) setLoading(false);
@@ -125,14 +113,12 @@ export default function ProductDetail() {
   );
 
   const handleShare = () => {
-    if (!product) return;
-    shareViaWhatsApp({
-      title: product.title_en,
-      artisanName: product.artisan_name,
-      price: product.retail_price,
-      url: shareUrl,
-      language,
-    });
+    if (!product || !product.id) return;
+    const shareUrl = `${window.location.origin}/product/${product.id}`;
+    const name = (isHi && product.title_hi) ? product.title_hi : (product.title_en || 'Handcrafted Craft');
+    const message = `Check out this product: ${shareUrl}\n\n*${name}*\nPrice: ₹${product.retail_price}`;
+    const waLink = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(waLink, '_blank');
   };
 
   const handleCopyLink = async () => {

@@ -212,12 +212,12 @@ export default function Catalog() {
   };
 
   const handleWhatsAppShare = (product) => {
-    if (!product) return;
-    const productUrl = `${window.location.origin}/details/${product.id}`;
+    if (!product || !product.id) return;
+    const shareUrl = `${window.location.origin}/product/${product.id}`;
     const name = product.title || product.hindi_title || 'Handcrafted Craft';
-    const message = `Check out this handcrafted item on Shilp Setu!\n\n*${name}*\nPrice: ₹${product.price}\n\nView details and buy here: ${productUrl}`;
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+    const message = `Check out this product: ${shareUrl}\n\n*${name}*\nPrice: ₹${product.price}`;
+    const waLink = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(waLink, '_blank');
   };
 
   const handleVoiceSearch = () => {

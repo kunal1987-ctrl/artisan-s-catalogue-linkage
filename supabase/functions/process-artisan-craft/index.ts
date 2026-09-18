@@ -311,7 +311,7 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  const { audioBase64, imageBase64, customTranscript } = requestPayload || {};
+  const { audioBase64, imageBase64, customTranscript, language } = requestPayload || {};
 
   if (imageBase64) {
     if (typeof imageBase64 !== "string") {
@@ -410,12 +410,9 @@ Deno.serve(async (req: Request) => {
     // ───────────────────────────────────────────────────────────
     // STEP 1: Groq Whisper Transcription  ← 8-second timeout
     // ───────────────────────────────────────────────────────────
-    const FALLBACK_TRANSCRIPT =
-      "हाथ से बना हुआ मिट्टी का सजावटी बर्तन, बहुत सुंदर नक्काशी, कीमत लगभग ₹450";
-
     let transcript = "";
 
-    if (audioBase64 && audioBase64.length > 50 && groqApiKey) {
+    if (hasAudio && groqApiKey) {
       console.log(`[Step 1] Transcribing audio for user ${user.id} via Groq Whisper...`);
       try {
         const cleanAudioBase64 = audioBase64.replace(
@@ -432,6 +429,9 @@ Deno.serve(async (req: Request) => {
         const formData = new FormData();
         formData.append("file", audioBlob, "audio.webm");
         formData.append("model", "whisper-large-v3");
+        if (language && typeof language === "string" && language.trim().length > 0) {
+          formData.append("language", language.trim());
+        }
 
         const whisperRes = await fetchWithTimeout(
           "https://api.groq.com/openai/v1/audio/transcriptions",
@@ -446,29 +446,26 @@ Deno.serve(async (req: Request) => {
         if (whisperRes.ok) {
           const whisperData = await whisperRes.json();
           transcript = whisperData.text || "";
-          console.log("[Step 1 Success] Transcript:", transcript);
-        } else if (whisperRes.status === 429) {
-          console.warn("[Step 1] Groq rate-limited (429). Using fallback transcript.");
-          transcript = FALLBACK_TRANSCRIPT;
+          console.log(`[Step 1 Success] Whisper transcribed (${transcript.length} chars):`, transcript);
         } else {
-          const errBody = await whisperRes.text();
-          console.warn("[Step 1 Non-fatal Whisper Error]", whisperRes.status, errBody);
-          transcript = FALLBACK_TRANSCRIPT;
+          const errText = await whisperRes.text();
+          console.warn(`[Step 1 Warning] Groq Whisper returned ${whisperRes.status}:`, errText);
+          transcript = hasTranscript ? customTranscript.trim() : "";
         }
       } catch (whisperErr: any) {
         if (whisperErr?.name === "AbortError") {
-          console.warn("[Step 1] Groq Whisper timed out after 8s. Using fallback transcript.");
+          console.warn("[Step 1] Groq Whisper timed out after 8s.");
         } else {
           console.warn("[Step 1 Whisper Warning]", whisperErr);
         }
-        transcript = FALLBACK_TRANSCRIPT;
+        transcript = hasTranscript ? customTranscript.trim() : "";
       }
     } else if (hasTranscript) {
       console.log(`[Step 1] Using provided artisan description for user ${user.id}:`, customTranscript);
       transcript = customTranscript.trim();
     } else {
-      console.log("[Step 1] Using visual craft analysis default.");
-      transcript = "Handcrafted artisan item. Analyze visual craft features.";
+      console.log("[Step 1] No audio or transcript provided; will rely on visual craft analysis.");
+      transcript = "";
     }
 
     // ───────────────────────────────────────────────────────────
@@ -477,8 +474,9 @@ Deno.serve(async (req: Request) => {
     console.log(`[Step 2] Analyzing craft image & transcript via Gemini for user ${user.id}...`);
 
     const candidateModels = [
+      "gemini-2.0-flash",
       "gemini-1.5-flash",
-      "gemini-2.5-flash",
+      "gemini-1.5-pro",
       "gemini-flash-latest",
     ];
 
@@ -490,19 +488,10 @@ Deno.serve(async (req: Request) => {
         systemInstruction: {
           parts: [
             {
-              text: `You are an expert Indian handicrafts appraiser and pricing algorithm.
-
-PRIMARY TRUTH: You must base the product category, material, and baseline price on the provided IMAGE. The audio transcript is SECONDARY context (e.g., origin location or labor time).
-
-FRAUD PREVENTION: If the audio transcript claims materials or qualities that contradict the visual evidence (e.g., claiming gold when it is painted brass), you MUST ignore the audio claim and price it based on the visual reality.
-
-PRICE EXTRACTION: The audio transcript will likely contain the artisan's expected base price in Hindi or English. Extract this spoken number as the \`artisan_expected_price\`. If found, ensure the final retail \`price\` applies a fair markup (e.g., +20%) to their spoken baseline, provided it does not wildly exceed your visual market appraisal. If no price is spoken, fall back strictly to visual market anchoring.
-
-MARKET ANCHORING: Calculate the \`price\` and \`bulk_price\` by anchoring to standard, real-world Indian retail market rates for the visually identified item.
-
-Return the output in the strict JSON schema provided.
-
-Generate a structured, dual-market catalog profile supporting both Direct-to-Consumer (ONDC) and Institutional/B2B (GeM) procurement. Return ONLY a valid JSON object matching the requested schema. No markdown, no code blocks.`,
+              text: `You are an AI assistant for a rural artisan e-commerce platform. You have been provided with an image of a handmade product and a transcribed voice note from the artisan. 
+1. Analyze the image to determine the visual details, material, and category of the product.
+2. Read the voice note transcript to extract the specific price and any additional context spoken by the artisan.
+3. Synthesize this information and return a strictly formatted JSON object containing: 'name', 'description' (based on the image and text), 'material', and 'price' (extracted strictly from the transcript). Do not reuse examples; generate accurate details exclusively from the provided image and text.`,
             },
           ],
         },
@@ -510,33 +499,27 @@ Generate a structured, dual-market catalog profile supporting both Direct-to-Con
           {
             parts: [
               {
-                text: `Artisan voice transcript: "${transcript}"
+                text: `Artisan voice note transcript: "${transcript || "No spoken note provided. Infer details and fair artisan pricing exclusively from visual craftsmanship."}"
 
-Analyze this handcrafted item following these strict rules:
-1. PRIMARY TRUTH: You must base the product category, material, and baseline price on the provided IMAGE. The audio transcript is SECONDARY context (e.g., origin location or labor time).
-2. FRAUD PREVENTION: If the audio transcript claims materials or qualities that contradict the visual evidence (e.g., claiming gold when it is painted brass), you MUST ignore the audio claim and price it based on the visual reality.
-3. PRICE EXTRACTION: The audio transcript will likely contain the artisan's expected base price in Hindi or English. Extract this spoken number as the \`artisan_expected_price\`. If found, ensure the final retail \`price\` applies a fair markup (e.g., +20%) to their spoken baseline, provided it does not wildly exceed your visual market appraisal. If no price is spoken, fall back strictly to visual market anchoring.
-4. MARKET ANCHORING: Calculate the \`price\` and \`bulk_price\` by anchoring to standard, real-world Indian retail market rates for the visually identified item.
-5. Return the output in the strict JSON schema provided.
-
-Return ONLY a valid JSON object matching this exact schema:
+Analyze this handcrafted item following your system instructions. Return ONLY a valid JSON object matching this schema:
 {
-  "title": "string",
-  "title_hi": "string (Devanagari script)",
-  "description": "string (2-3 sentences, SEO-friendly)",
-  "description_hi": "string (Devanagari, 2-3 sentences)",
-  "artisan_expected_price": number,
+  "name": "string (Specific craft title in English based on visual details)",
+  "title": "string (Same as name)",
+  "title_hi": "string (Accurate craft name in Hindi / Devanagari script)",
+  "description": "string (2-3 sentences based on the unique image and text)",
+  "description_hi": "string (Accurate Hindi translation in Devanagari script)",
+  "material": "string (Primary material identified from the image and text)",
+  "craft_category": "string (Craft category e.g. Terracotta & Pottery, Handloom Textiles, Metalware, Woodcraft)",
   "price": number,
-  "bulk_price": number,
   "suggested_retail_price_inr": number,
+  "bulk_price": number,
   "suggested_wholesale_price_inr": number,
-  "pricing_reasoning": "string",
-  "gem_category": "string",
+  "pricing_reasoning": "string (Explanation of pricing based on artisan input and materials)",
+  "gem_category": "string (Government e-Marketplace GeM category)",
   "unspsc_code": "string",
   "hsn_code": "string",
-  "moq": 50,
+  "moq": 20,
   "is_gem_ready": true,
-  "craft_category": "string",
   "tags": ["string", "string", "string", "string", "string"]
 }`,
               },
@@ -595,7 +578,7 @@ Return ONLY a valid JSON object matching this exact schema:
 
             try {
               productData = JSON.parse(rawText);
-              console.log(`[Step 2 Success] Generated listing with ${model}:`, productData.title);
+              console.log(`[Step 2 Success] Generated listing with ${model}:`, productData.name || productData.title);
               break;
             } catch (parseErr) {
               console.warn(`[Step 2] JSON parse failed for ${model}:`, parseErr);
@@ -618,21 +601,69 @@ Return ONLY a valid JSON object matching this exact schema:
     }
 
     // ───────────────────────────────────────────────────────────
-    // Judge Insurance Circuit Breaker: if ALL models failed / timed out / 429
+    // Dynamic Circuit Breaker: if ALL models failed / timed out / 429
     // ───────────────────────────────────────────────────────────
     if (!productData) {
-      console.warn("[Step 2] All Gemini attempts exhausted. Activating Judge Insurance fallback.");
+      console.warn("[Step 2] All Gemini attempts exhausted. Activating dynamic fallback.");
+      const spokenPriceMatch = transcript.match(/(?:₹|rs\.?|inr|rupees?|रुपये?|कीमत)\s*[:\-]?\s*(\d+)/i) || transcript.match(/(\d{2,6})/);
+      const dynamicPrice = spokenPriceMatch ? Number(spokenPriceMatch[1]) : 450;
+      const dynamicName = transcript && transcript.length > 5
+        ? `Handcrafted Artisan Item (${transcript.slice(0, 30)}...)`
+        : "Handcrafted Heritage Artisan Craft";
+
       productData = {
-        ...JUDGE_INSURANCE_PAYLOAD,
+        name: dynamicName,
+        title: dynamicName,
+        title_hi: "हस्तनिर्मित प्रामाणिक शिल्प",
+        description: transcript && transcript.length > 10
+          ? `${transcript}. Handcrafted using traditional heritage artisan techniques.`
+          : "Exquisitely handcrafted artisan piece made with authentic traditional craftsmanship.",
+        description_hi: transcript || "कुशल कारीगरों द्वारा पारंपरिक कला से तैयार किया गया प्रामाणिक हस्तशिल्प।",
+        material: "Natural Artisan Materials",
+        craft_category: "Handicrafts",
+        price: dynamicPrice,
+        suggested_retail_price_inr: dynamicPrice,
+        estimated_price_inr: dynamicPrice,
+        bulk_price: Math.round(dynamicPrice * 0.72),
+        suggested_wholesale_price_inr: Math.round(dynamicPrice * 0.72),
+        moq: 20,
+        gem_category: "Handicrafts & Traditional Artware",
+        unspsc_code: "60121002",
+        hsn_code: "69120010",
+        pricing_reasoning: `Price dynamically derived from artisan input (₹${dynamicPrice}) with standard volume discount for bulk procurement.`,
+        is_gem_ready: true,
+        tags: ["Handmade", "Authentic", "GeM Ready", "ONDC Verified"],
         rate_limited: hitRateLimit429,
+        demo_mode: true,
         user_id: user?.id || null,
-        description:
-          transcript && transcript.length > 10 && transcript !== FALLBACK_TRANSCRIPT
-            ? `${transcript}. Exquisitely handcrafted using traditional techniques and eco-friendly natural materials.`
-            : JUDGE_INSURANCE_PAYLOAD.description,
       };
     } else {
       // Normalize schema fields from Gemini response
+      if (productData.name && !productData.title) {
+        productData.title = productData.name;
+      }
+      if (productData.title && !productData.name) {
+        productData.name = productData.title;
+      }
+      if (productData.material && !productData.craft_category) {
+        productData.craft_category = productData.material;
+      }
+      if (productData.price) {
+        const numericPrice = Number(typeof productData.price === 'string' ? productData.price.replace(/[^0-9.]/g, '') : productData.price) || 450;
+        productData.price = numericPrice;
+        if (!productData.suggested_retail_price_inr) {
+          productData.suggested_retail_price_inr = numericPrice;
+        }
+        if (!productData.estimated_price_inr) {
+          productData.estimated_price_inr = numericPrice;
+        }
+        if (!productData.bulk_price) {
+          productData.bulk_price = Math.round(numericPrice * 0.72);
+        }
+        if (!productData.suggested_wholesale_price_inr) {
+          productData.suggested_wholesale_price_inr = productData.bulk_price;
+        }
+      }
       if (productData.artisan_expected_price !== undefined && productData.artisan_expected_price !== null) {
         productData.artisan_expected_price = Number(productData.artisan_expected_price) || null;
       }
@@ -654,7 +685,7 @@ Return ONLY a valid JSON object matching this exact schema:
       if (!productData.bulk_price_inr) {
         productData.bulk_price_inr = productData.bulk_price || productData.suggested_wholesale_price_inr;
       }
-      if (!productData.moq) productData.moq = 50;
+      if (!productData.moq) productData.moq = 20;
       if (!productData.unspsc_code) productData.unspsc_code = "60121002";
       if (!productData.hsn_code) productData.hsn_code = "69120010";
       productData.is_gem_ready = true;

@@ -113,6 +113,7 @@ export default function Capture() {
   const galleryRef = useRef(null);
 
   // ── Multi-Modal Input State (Image & Description Dependencies) ──
+  const [image, setImage] = useState(null);
   const [imageFile, setImageFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [processedPreview, setProcessedPreview] = useState(null);
@@ -138,11 +139,15 @@ export default function Capture() {
   const [isRecording, setIsRecording] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
   const [audioBase64, setAudioBase64] = useState(null);
-  const [_audioBlob, setAudioBlob] = useState(null);
+  const [audioBlob, setAudioBlob] = useState(null);
+  const [_audioBlob, setLegacyAudioBlob] = useState(null);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [micUnavailable, setMicUnavailable] = useState(false);
+  const [transcript, setTranscript] = useState('');
   const [audioTranscript, setAudioTranscript] = useState('');
   const [customTranscript, setCustomTranscript] = useState('');
+  const [extractedPrice, setExtractedPrice] = useState(null);
+  const [extractedName, setExtractedName] = useState('');
   const [showAdvancedText, setShowAdvancedText] = useState(false);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -150,6 +155,53 @@ export default function Capture() {
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
   const animFrameRef = useRef(null);
+
+  // ── Explicit State Reset to prevent cache bleed between uploads ──
+  const resetCaptureState = useCallback(() => {
+    setImage(null);
+    setImageFile(null);
+    setImageBase64(null);
+    setImageUrl(null);
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = null;
+    }
+    if (processedPreviewRef.current && processedPreviewRef.current.startsWith('blob:')) {
+      URL.revokeObjectURL(processedPreviewRef.current);
+      processedPreviewRef.current = null;
+    }
+    setPreviewUrl(null);
+    setProcessedPreview(null);
+    setIsProcessingImage(false);
+    setBgRemovalStatus('idle');
+
+    setIsRecording(false);
+    setAudioLevel(0);
+    setAudioBase64(null);
+    setAudioBlob(null);
+    setLegacyAudioBlob(null);
+    audioChunksRef.current = [];
+    setRecordingDuration(0);
+    setTranscript('');
+    setAudioTranscript('');
+    setCustomTranscript('');
+    setShowAdvancedText(false);
+
+    setExtractedPrice(null);
+    setExtractedName('');
+
+    setAiStatus('idle');
+    setAiStatusText('');
+    setErrorMsg('');
+
+    if (cameraRef.current) cameraRef.current.value = '';
+    if (galleryRef.current) galleryRef.current.value = '';
+  }, []);
+
+  // Ensure clean state upon entering capture screen
+  useEffect(() => {
+    resetCaptureState();
+  }, [resetCaptureState]);
 
   // ── Regional Dialect / Voice Transcription State ──
   const [isLangModalOpen, setIsLangModalOpen] = useState(false);
@@ -161,9 +213,9 @@ export default function Capture() {
   const [errorMsg, setErrorMsg] = useState('');
 
   // ── Multi-Modal State Dependency Flags ──
-  const hasImage = Boolean(imageFile || imageBase64 || imageUrl || processedPreview || previewUrl);
-  const textDescription = (audioTranscript || customTranscript || '').trim();
-  const hasDescription = Boolean(textDescription.length > 0 || Boolean(audioBase64) || Boolean(_audioBlob));
+  const hasImage = Boolean(image || imageFile || imageBase64 || imageUrl || processedPreview || previewUrl);
+  const textDescription = (transcript || customTranscript || audioTranscript || '').trim();
+  const hasDescription = Boolean(textDescription.length > 0 || Boolean(audioBase64) || Boolean(audioBlob) || Boolean(_audioBlob));
   const isReadyToProcess = Boolean(hasImage && hasDescription);
 
   const { speakPrompt, stop } = useAudioAssistant();
@@ -520,9 +572,9 @@ export default function Capture() {
   // ════════════════════════════════════════════
 
   const handleGenerateListing = useCallback(async () => {
-    const hasImg = Boolean(imageFile || imageBase64 || imageUrl || processedPreview || previewUrl);
-    const activeText = (audioTranscript || customTranscript || '').trim();
-    const hasDesc = Boolean(activeText.length > 0 || Boolean(audioBase64) || Boolean(_audioBlob));
+    const hasImg = Boolean(image || imageFile || imageBase64 || imageUrl || processedPreview || previewUrl);
+    const activeText = (transcript || customTranscript || audioTranscript || '').trim();
+    const hasDesc = Boolean(activeText.length > 0 || Boolean(audioBase64) || Boolean(audioBlob) || Boolean(_audioBlob));
 
     // ── Strict Sequential Validation (Image & Description Dependency) ──
     // Scenario A: Voice/Text only, No Image
@@ -555,24 +607,42 @@ export default function Capture() {
       return;
     }
 
-    let targetImageBase64 = imageBase64;
-    let targetImageUrl = imageUrl || processedPreview || previewUrl;
-
-    if (!targetImageBase64 && imageFile) {
+    // Dynamically grab newly captured image base64
+    let targetImageBase64 = null;
+    const currentImg = imageFile || image;
+    if (currentImg) {
       try {
-        targetImageBase64 = await blobToBase64(imageFile);
-        setImageBase64(targetImageBase64);
+        targetImageBase64 = await blobToBase64(currentImg);
       } catch (err) {
-        console.warn('[handleGenerateListing] Base64 encoding fallback:', err);
+        console.warn('[handleGenerateListing] Image base64 encoding error:', err);
       }
     }
+    if (!targetImageBase64 && imageBase64) {
+      targetImageBase64 = imageBase64;
+    }
+
+    // Dynamically grab newly recorded audio base64
+    let targetAudioBase64 = null;
+    const currentAudio = audioBlob || _audioBlob;
+    if (currentAudio) {
+      try {
+        targetAudioBase64 = await blobToBase64(currentAudio);
+      } catch (err) {
+        console.warn('[handleGenerateListing] Audio base64 encoding error:', err);
+      }
+    }
+    if (!targetAudioBase64 && audioBase64) {
+      targetAudioBase64 = audioBase64;
+    }
+
+    let targetImageUrl = imageUrl || processedPreview || previewUrl;
 
     setAiStatus('transcribing');
     setAiStatusText(language === 'hi' ? 'आवाज़ और विवरण का विश्लेषण...' : 'Transcribing voice note...');
     setErrorMsg('');
 
     try {
-      if (audioBase64) {
+      if (targetAudioBase64) {
         await new Promise((r) => setTimeout(r, 600));
       }
       setAiStatus('analyzing');
@@ -591,7 +661,7 @@ export default function Capture() {
 
         const { data, error } = await supabase.functions.invoke('process-artisan-craft', {
           body: {
-            audioBase64: audioBase64 || null,
+            audioBase64: targetAudioBase64 || null,
             imageBase64: targetImageBase64,
             customTranscript: activeText || null,
             language: transcriptionLang,
@@ -630,42 +700,47 @@ export default function Capture() {
         }
       }
 
-      // Safe local fallback if remote Edge Function is unreachable
+      // Dynamic local fallback if remote Edge Function is unreachable
       if (!listingData) {
-        console.info('Using resilient local AI craft profile fallback');
+        console.info('Using dynamic local AI craft profile fallback');
         const resolvedText = activeText;
+        const spokenPriceMatch = resolvedText.match(/(?:₹|rs\.?|inr|rupees?|रुपये?|कीमत)\s*[:\-]?\s*(\d+)/i) || resolvedText.match(/(\d{2,6})/);
+        const dynamicPrice = spokenPriceMatch ? Number(spokenPriceMatch[1]) : 450;
+        const dynamicTitle = resolvedText
+          ? `Handcrafted Craft (${resolvedText.slice(0, 30)}...)`
+          : "Handcrafted Artisan Craft";
+
         listingData = {
-          title: resolvedText?.includes('सिल्क') || resolvedText?.includes('साड़ी')
-            ? "Varanasi Handwoven Heritage Silk Saree"
-            : resolvedText?.includes('दीया')
-            ? "Handcrafted Brass Hanging Temple Diya"
-            : "Handcrafted Terracotta Decorative Pot",
-          title_hi: resolvedText?.includes('सिल्क') || resolvedText?.includes('साड़ी')
-            ? "वाराणसी हस्तनिर्मित बनारसी रेशम साड़ी"
-            : resolvedText?.includes('दीया')
-            ? "हस्तनिर्मित पीतल मंदिर दीया"
-            : "हस्तनिर्मित टेराकोटा सजावटी बर्तन",
+          name: dynamicTitle,
+          title: dynamicTitle,
+          title_hi: resolvedText ? `हस्तनिर्मित शिल्प (${resolvedText.slice(0, 24)})` : "हस्तनिर्मित प्रामाणिक शिल्प",
           description: resolvedText
-            ? `${resolvedText}. Exquisitely handcrafted using traditional heritage techniques.`
-            : "Exquisitely hand-thrown and kiln-fired natural clay pot with traditional motifs.",
-          description_hi: resolvedText || "स्थानीय मिट्टी से हाथ से बनाया गया सुंदर टेराकोटा बर्तन।",
-          artisan_expected_price: 380,
-          price: 450,
-          bulk_price: 280,
-          suggested_retail_price_inr: 450,
-          suggested_wholesale_price_inr: 280,
-          estimated_price_inr: 450,
-          bulk_price_inr: 280,
-          pricing_reasoning: "Fair artisan living wage factored with artisan expected base price (+18% fair markup) and institutional volume pricing.",
+            ? `${resolvedText}. Exquisitely handcrafted using traditional heritage artisan techniques.`
+            : "Exquisitely handcrafted artisan piece made with authentic traditional craftsmanship.",
+          description_hi: resolvedText || "कुशल कारीगरों द्वारा पारंपरिक कला से तैयार किया गया प्रामाणिक हस्तशिल्प।",
+          material: "Handicraft Materials",
+          artisan_expected_price: dynamicPrice,
+          price: dynamicPrice,
+          bulk_price: Math.round(dynamicPrice * 0.72),
+          suggested_retail_price_inr: dynamicPrice,
+          suggested_wholesale_price_inr: Math.round(dynamicPrice * 0.72),
+          estimated_price_inr: dynamicPrice,
+          bulk_price_inr: Math.round(dynamicPrice * 0.72),
+          pricing_reasoning: `Fair artisan wage factored with expected price of ₹${dynamicPrice} and volume discount for institutional orders.`,
           gem_category: "Handicrafts - Traditional Art & Decor",
           unspsc_code: "60121002",
           hsn_code: "69120010",
-          moq: 50,
+          moq: 20,
           is_gem_ready: true,
-          craft_category: "Terracotta & Pottery",
+          craft_category: "Handicrafts",
           tags: ["Handmade", "Traditional", "GeM Ready", "ONDC", "Eco-friendly"],
         };
       }
+
+      const resolvedName = listingData.name || listingData.title || (activeText ? `Handcrafted Item (${activeText.slice(0, 24)}...)` : 'Handcrafted Artisan Item');
+      const resolvedPrice = Number(listingData.price || listingData.suggested_retail_price_inr || 450);
+      setExtractedName(resolvedName);
+      setExtractedPrice(resolvedPrice);
 
       setAiStatus('done');
 
@@ -673,10 +748,16 @@ export default function Capture() {
       navigate('/review', {
         state: {
           ...listingData,
+          name: resolvedName,
+          title: resolvedName,
+          price: resolvedPrice,
           imageUrl: targetImageUrl,
           imageBase64: targetImageBase64,
         },
       });
+
+      // Explicitly reset all relevant React states immediately after navigation to prevent cache bleed
+      resetCaptureState();
     } catch (fatalErr) {
       console.error('Fatal generation error:', fatalErr);
       const errMsg = fatalErr?.message || 'Processing failed. Please try again.';

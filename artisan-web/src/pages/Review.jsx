@@ -44,15 +44,18 @@ export default function Review() {
   const aiData = location.state || {};
 
   // ── Editable Form State ──
-  const [title, setTitle] = useState(aiData.title || 'Handwoven Blue Pure Silk Saree');
-  const [titleHi, setTitleHi] = useState(aiData.title_hi || 'वाराणसी हस्तनिर्मित बनारसी रेशम साड़ी');
-  const [price, setPrice] = useState(
-    Number(aiData.suggested_retail_price_inr || aiData.estimated_price_inr || 1200)
-  );
+  const resolvedInitialTitle = aiData.name || aiData.title || 'Handwoven Blue Pure Silk Saree';
+  const resolvedInitialPrice = Number(aiData.price || aiData.suggested_retail_price_inr || aiData.estimated_price_inr || 1200);
+  const resolvedInitialCategory = aiData.material || aiData.craft_category || 'Textiles & Sarees';
+
+  const [title, setTitle] = useState(resolvedInitialTitle);
+  const [titleHi, setTitleHi] = useState(aiData.title_hi || (aiData.name ? aiData.name : 'वाराणसी हस्तनिर्मित बनारसी रेशम साड़ी'));
+  const [price, setPrice] = useState(resolvedInitialPrice);
   const [wholesalePrice, setWholesalePrice] = useState(
     Number(
       aiData.suggested_wholesale_price_inr ||
-      Math.round((aiData.suggested_retail_price_inr || aiData.estimated_price_inr || 1200) * 0.72)
+      aiData.bulk_price ||
+      Math.round(resolvedInitialPrice * 0.72)
     )
   );
   const [moq, setMoq] = useState(Number(aiData.moq || 50));
@@ -61,9 +64,9 @@ export default function Review() {
   );
   const [pricingReasoning, setPricingReasoning] = useState(
     aiData.pricing_reasoning ||
-    'Retail price reflects 32 hours of artisanal weaving and pure silk yarn. Bulk price (≥50 units) offers 28% volume efficiency while preserving living wage margins.'
+    `Fair artisan wage factored with expected price of ₹${resolvedInitialPrice} and volume discount for institutional orders.`
   );
-  const [category, setCategory] = useState(aiData.craft_category || 'Textiles & Sarees');
+  const [category, setCategory] = useState(resolvedInitialCategory);
   const [description, setDescription] = useState(
     aiData.description ||
     'Exquisite handwoven blue saree crafted from pure mulberry silk with fine golden zari border work. Traditional artisan weave taking over 4 days to complete. Lightweight, breathable, and wedding-ready.'

@@ -64,8 +64,6 @@ export const INITIAL_PRODUCTS = [
   }
 ];
 
-const EXPORT_CATALOG_URL = 'https://jrkrdlalnqswvwabktce.supabase.co/functions/v1/export-catalog';
-
 export default function Catalog() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -76,8 +74,6 @@ export default function Catalog() {
   const [activeFilter, setActiveFilter] = useState('all'); // all | live | draft | sold_out
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [toastMsg, setToastMsg] = useState('');
-  const [exportingFormat, setExportingFormat] = useState(null); // 'ondc' | 'gem' | 'gem_csv' | null
-  const [exportMenuOpen, setExportMenuOpen] = useState(false);
 
   const showToast = (msg) => {
     setToastMsg(msg);
@@ -215,130 +211,6 @@ export default function Catalog() {
     }
   };
 
-  const handleExportCatalog = async (format) => {
-    setExportingFormat(format);
-    try {
-      const queryFormat = format === 'gem_csv' ? 'csv' : format;
-      let textContent = null;
-      let jsonContent = null;
-
-      try {
-        const res = await fetch(`${EXPORT_CATALOG_URL}?format=${queryFormat}`, {
-          method: 'GET',
-        });
-        if (res.ok) {
-          if (queryFormat === 'csv') {
-            textContent = await res.text();
-          } else {
-            jsonContent = await res.json();
-          }
-        }
-      } catch (fetchErr) {
-        console.warn(`[Export ${format}] Remote fetch failed, using local builder:`, fetchErr);
-      }
-
-      if (queryFormat === 'csv') {
-        // Fallback CSV if remote fetch was unavailable
-        if (!textContent) {
-          const header = 'Product Title,Category,Retail Price (INR),Wholesale Price (INR),MOQ,GeM Category,HSN Code,UNSPSC Code,Status\n';
-          const rows = products.map((p) =>
-            `"${(p.title || '').replace(/"/g, '""')}","${p.category || 'Handicrafts'}",${p.price || 0},${Math.round((p.price || 0) * 0.72)},50,"Handicrafts","69120010","60121002","${p.status || 'live'}"`
-          ).join('\n');
-          textContent = header + rows;
-        }
-
-        const blob = new Blob([textContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'gem-bulk-import.csv';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        showToast('✅ GeM Sheet (CSV) downloaded: gem-bulk-import.csv');
-      } else if (format === 'gem') {
-        // GeM Procurement Batch JSON
-        if (!jsonContent) {
-          jsonContent = {
-            batch_id: `GEM-BATCH-${Date.now()}`,
-            generated_at: new Date().toISOString(),
-            procurement_ready_items: products.map((p) => ({
-              product_id: p.id,
-              title: p.title,
-              gem_category: 'Handicrafts - Traditional Art & Decor',
-              price_inr: p.price,
-              bulk_price_inr: Math.round((p.price || 0) * 0.72),
-              moq: 50,
-              hsn_code: '69120010',
-              unspsc_code: '60121002',
-              status: p.status,
-            })),
-          };
-        }
-
-        const blob = new Blob([JSON.stringify(jsonContent, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'gem-procurement-batch.json';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        showToast('✅ GeM Batch (JSON) downloaded: gem-procurement-batch.json');
-      } else {
-        // ONDC Beckn Catalog JSON
-        if (!jsonContent) {
-          jsonContent = {
-            context: {
-              domain: 'nic2004:52110',
-              country: 'IND',
-              city: 'std:0542',
-              action: 'on_search',
-              core_version: '1.2.0',
-              bap_id: 'ondc.buyer.app',
-              bpp_id: 'shilp-setu.seller.hub',
-            },
-            message: {
-              catalog: {
-                'bpp/descriptor': { name: 'Shilp Setu Collective' },
-                'bpp/providers': [
-                  {
-                    id: 'shilp-setu-provider-1',
-                    descriptor: { name: 'Shilp Setu Artisans of India' },
-                    items: products.map((p) => ({
-                      id: String(p.id),
-                      descriptor: { name: p.title, images: [p.image_url] },
-                      price: { currency: 'INR', value: String(p.price) },
-                      category_id: p.category,
-                    })),
-                  },
-                ],
-              },
-            },
-          };
-        }
-
-        const blob = new Blob([JSON.stringify(jsonContent, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'shilp-setu-ondc-catalog.json';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        showToast('✅ ONDC Beckn (JSON) downloaded: shilp-setu-ondc-catalog.json');
-      }
-    } catch (err) {
-      console.error(`[Export ${format}]`, err);
-      showToast(`❌ Export failed: ${err.message}`);
-    } finally {
-      setExportingFormat(null);
-    }
-  };
-
   const handleWhatsAppShare = (product) => {
     if (!product) return;
     const productUrl = `${window.location.origin}/details/${product.id}`;
@@ -390,81 +262,20 @@ export default function Catalog() {
       <main className="flex-1 flex flex-col relative w-full bg-surface min-h-screen">
         <div className="flex flex-col w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
           
-          {/* Top Administrative Toolbar (Spacing & Alignment) */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
-            {/* Left Side: Title & Add Button */}
-            <div className="flex flex-wrap items-center gap-2.5 sm:gap-4 w-full sm:w-auto justify-between sm:justify-start">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-800">
-                {t('catalog.title', 'Craft Catalog')}
-              </h2>
-              <button
-                onClick={() => navigate('/capture')}
-                className="bg-emerald-600 text-white px-3.5 sm:px-4 py-2 rounded-xl shadow-xs hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:outline-none flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium transition-colors cursor-pointer active:scale-95"
-              >
-                <span>📸 + 🎙️ {t('catalog.add_item', 'Add Craft')}</span>
-              </button>
-            </div>
-
-            {/* Right Side: Export Controls */}
-            <div className="relative w-full sm:w-auto">
-              <button
-                id="export-protocols-btn"
-                aria-label="Export Protocols"
-                onClick={() => setExportMenuOpen((prev) => !prev)}
-                className="w-full sm:w-auto bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-xl text-xs sm:text-sm shadow-xs hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shrink-0 cursor-pointer"
-                type="button"
-              >
-                <span className="material-symbols-outlined text-[17px] text-gray-600">download</span>
-                <span>{language === 'hi' ? 'प्रोटोकॉल निर्यात ▾' : 'Export Protocols ▾'}</span>
-              </button>
-
-              {exportMenuOpen && (
-                <div className="absolute right-0 mt-2 w-72 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-xl border border-gray-200 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
-                  <button
-                    id="export-ondc-btn"
-                    onClick={() => { handleExportCatalog('ondc'); setExportMenuOpen(false); }}
-                    disabled={!!exportingFormat}
-                    className="w-full px-4 py-3 text-left text-sm font-semibold text-gray-800 hover:bg-gray-50 flex items-center gap-3 transition-colors disabled:opacity-50 cursor-pointer"
-                    type="button"
-                  >
-                    <span className="material-symbols-outlined text-[18px] text-emerald-600">hub</span>
-                    <div>
-                      <span className="block text-[13px] font-bold">{exportingFormat === 'ondc' ? (language === 'hi' ? 'डाउनलोड हो रहा है...' : 'Downloading...') : '📥 ONDC Beckn (JSON)'}</span>
-                      <span className="block text-[11px] text-gray-500">shilp-setu-ondc-catalog.json</span>
-                    </div>
-                  </button>
-                  <button
-                    id="export-gem-btn"
-                    onClick={() => { handleExportCatalog('gem'); setExportMenuOpen(false); }}
-                    disabled={!!exportingFormat}
-                    className="w-full px-4 py-3 text-left text-sm font-semibold text-gray-800 hover:bg-gray-50 flex items-center gap-3 border-t border-gray-100 transition-colors disabled:opacity-50 cursor-pointer"
-                    type="button"
-                  >
-                    <span className="material-symbols-outlined text-[18px] text-amber-600">account_balance</span>
-                    <div>
-                      <span className="block text-[13px] font-bold">{exportingFormat === 'gem' ? (language === 'hi' ? 'डाउनलोड हो रहा है...' : 'Downloading...') : '🏛️ GeM Batch (JSON)'}</span>
-                      <span className="block text-[11px] text-gray-500">gem-procurement-batch.json</span>
-                    </div>
-                  </button>
-                  <button
-                    id="export-gem-csv-btn"
-                    onClick={() => { handleExportCatalog('csv'); setExportMenuOpen(false); }}
-                    disabled={!!exportingFormat}
-                    className="w-full px-4 py-3 text-left text-sm font-semibold text-gray-800 hover:bg-gray-50 flex items-center gap-3 border-t border-gray-100 transition-colors disabled:opacity-50 cursor-pointer"
-                    type="button"
-                  >
-                    <span className="material-symbols-outlined text-[18px] text-emerald-700">table_view</span>
-                    <div>
-                      <span className="block text-[13px] font-bold">{exportingFormat === 'csv' || exportingFormat === 'gem_csv' ? (language === 'hi' ? 'डाउनलोड हो रहा है...' : 'Downloading...') : '📊 GeM Sheet (CSV)'}</span>
-                      <span className="block text-[11px] text-gray-500">gem-bulk-import.csv</span>
-                    </div>
-                  </button>
-                </div>
-              )}
-            </div>
+          {/* Top Administrative Toolbar */}
+          <div className="flex items-center justify-between gap-3 sm:gap-4 mb-6 sm:mb-8">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-800">
+              {t('catalog.title', 'Craft Catalog')}
+            </h2>
+            <button
+              onClick={() => navigate('/capture')}
+              className="bg-emerald-600 text-white px-3.5 sm:px-4 py-2 rounded-xl shadow-xs hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:outline-none flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium transition-colors cursor-pointer active:scale-95"
+            >
+              <span>📸 + 🎙️ {t('catalog.add_item', 'Add Craft')}</span>
+            </button>
           </div>
 
-          {/* Search Bar & Inventory Summary */}
+          {/* Search Bar & Filters */}
           <div className="flex flex-col gap-4 mb-6">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
               <div className="relative w-full sm:w-96">
@@ -498,37 +309,6 @@ export default function Catalog() {
                   {t('catalog.filter', 'Clear Search')}
                 </button>
               )}
-            </div>
-
-            {/* Inventory Status Bar */}
-            <div className="bg-surface-container-low border border-surface-container rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex-1 w-full">
-                <div className="flex items-center justify-between text-xs font-semibold text-on-surface-variant mb-2">
-                  <span>{t('home.inventory_alert', 'Overall Stock Availability')}</span>
-                  <span className="font-bold text-primary">
-                    83% {t('orders.confirmed', 'Active')}
-                  </span>
-                </div>
-                <div className="w-full h-2.5 bg-surface-container-highest rounded-full overflow-hidden flex">
-                  <div className="bg-emerald-700 h-full" style={{ width: '67%' }}></div>
-                  <div className="bg-amber-600 h-full" style={{ width: '17%' }}></div>
-                  <div className="bg-error h-full" style={{ width: '16%' }}></div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 text-xs font-semibold shrink-0 flex-wrap">
-                <span className="flex items-center gap-1.5 bg-surface-container-lowest px-3 py-1.5 rounded-xl border border-surface-container">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-700 inline-block"></span>
-                  {liveCount} {t('orders.confirmed', 'Live')}
-                </span>
-                <span className="flex items-center gap-1.5 bg-surface-container-lowest px-3 py-1.5 rounded-xl border border-surface-container">
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-600 inline-block"></span>
-                  {draftCount} {t('orders.pending', 'In Review')}
-                </span>
-                <span className="flex items-center gap-1.5 bg-surface-container-lowest px-3 py-1.5 rounded-xl border border-surface-container">
-                  <span className="w-2.5 h-2.5 rounded-full bg-error inline-block"></span>
-                  {soldOutCount} {t('home.inventory_alert', 'Sold Out')}
-                </span>
-              </div>
             </div>
 
             {/* Filter Pills */}

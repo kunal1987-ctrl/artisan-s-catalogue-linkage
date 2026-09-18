@@ -11,6 +11,7 @@ import AudioMuteButton from './components/AudioMuteButton';
 import AudioAssistantIndicator from './components/AudioAssistantIndicator';
 
 import Sidebar from './components/Sidebar';
+import { handleAddCraftNavigation } from './utils/authGuard';
 
 export default function DashboardLayout() {
   const navigate = useNavigate();
@@ -328,9 +329,9 @@ export default function DashboardLayout() {
                     {t('sidebar.studio_desc', 'Snap photo & speak naturally to list your craft.')}
                   </p>
                   <button
-                    onClick={() => {
-                      navigate('/capture');
+                    onClick={async (e) => {
                       setIsMobileMenuOpen(false);
+                      await handleAddCraftNavigation(navigate, e);
                     }}
                     className="w-full py-2.5 px-3 rounded-xl bg-primary hover:bg-[#2e241e] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer active:scale-95"
                   >
@@ -402,7 +403,7 @@ export default function DashboardLayout() {
         </NavLink>
         {/* Floating Center Capture Button */}
         <button
-          onClick={() => navigate('/capture')}
+          onClick={(e) => handleAddCraftNavigation(navigate, e)}
           className="w-12 h-12 -mt-5 rounded-full bg-primary text-white flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-transform border-2 border-white cursor-pointer shrink-0"
           aria-label={t('sidebar.add_craft', 'Add Craft')}
         >

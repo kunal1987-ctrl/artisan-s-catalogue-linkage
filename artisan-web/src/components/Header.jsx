@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
+import { handleAddCraftNavigation } from '../utils/authGuard';
 
 /**
  * Header Component (Hero Banner for Shilp Setu)
@@ -48,7 +49,7 @@ export default function Header({ showLanguageSwitcher = true }) {
         {/* Action Button with Visual Affordance for Low-Literacy Artisans */}
         <div className="flex flex-col shrink-0 w-full sm:w-auto">
           <button
-            onClick={() => navigate('/capture')}
+            onClick={(e) => handleAddCraftNavigation(navigate, e)}
             className="relative px-7 py-4 rounded-full bg-white text-[#2e241e] font-bold text-[15px] sm:text-[16px] flex items-center justify-center gap-3.5 shadow-xl hover:bg-[#f7f3ed] active:scale-95 transition-all cursor-pointer group animate-cta-pop"
             type="button"
           >

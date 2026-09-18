@@ -193,8 +193,8 @@ export default function Review() {
         tags,
         image_url: finalImageUrl,
         status: 'published',
-        user_id: authUserId,
-        artisan_id: authUserId,
+        artisan_id: user?.id || authUserId,
+        user_id: user?.id || authUserId,
         user_phone: userPhone,
       };
 

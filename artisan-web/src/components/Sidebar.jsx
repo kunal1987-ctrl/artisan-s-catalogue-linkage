@@ -4,6 +4,7 @@ import { HelpCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { handleAddCraftNavigation } from '../utils/authGuard';
 
 /**
  * Sidebar Component for Shilp Setu
@@ -97,7 +98,7 @@ export default function Sidebar({ className = '' }) {
             {t('sidebar.studio_desc', 'Snap photo & speak naturally to list your craft.')}
           </p>
           <button
-            onClick={() => navigate('/capture')}
+            onClick={(e) => handleAddCraftNavigation(navigate, e)}
             className="w-full py-2 px-3 rounded-xl bg-primary hover:bg-[#2e241e] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
           >
             <span>{t('sidebar.add_craft', '+ Add Craft')}</span>

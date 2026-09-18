@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
 import useAudioAssistant from '../hooks/useAudioAssistant';
 import { clearStaleCatalogCache } from '../utils/cacheCleaner';
+import { handleAddCraftNavigation } from '../utils/authGuard';
 
 export default function Home({ customArtisanName } = {}) {
   const navigate = useNavigate();
@@ -297,7 +298,7 @@ export default function Home({ customArtisanName } = {}) {
                                     <span className="material-symbols-outlined text-[40px] text-[#9c441c]">palette</span>
                                 </div>
                                 <button
-                                    onClick={() => navigate('/capture')}
+                                    onClick={(e) => handleAddCraftNavigation(navigate, e)}
                                     aria-label="Add your first craft"
                                     className="absolute -bottom-1 -right-1 w-9 h-9 rounded-full bg-[#9c441c] text-white flex items-center justify-center shadow-md hover:scale-110 active:scale-95 transition-all cursor-pointer border-2 border-white"
                                     type="button"
@@ -316,7 +317,7 @@ export default function Home({ customArtisanName } = {}) {
                                     : 'Snap a photo or speak product details to create your first listing in seconds.'}
                             </p>
                             <button
-                                onClick={() => navigate('/capture')}
+                                onClick={(e) => handleAddCraftNavigation(navigate, e)}
                                 className="h-12 px-7 rounded-full bg-[#9c441c] hover:bg-[#7e3514] text-white font-bold text-sm flex items-center gap-2 shadow-sm active:scale-95 transition-all cursor-pointer"
                                 type="button"
                             >
@@ -397,7 +398,7 @@ export default function Home({ customArtisanName } = {}) {
                             {/* Add New Craft Quick Action */}
                             <div
                                 className="rounded-2xl border-2 border-dashed border-[#d1c4bd] bg-[#f7f3ed]/60 hover:bg-[#f7f3ed] flex flex-col items-center justify-center p-6 text-center shadow-sm transition-all cursor-pointer group min-h-[300px]"
-                                onClick={() => navigate('/capture')}
+                                onClick={(e) => handleAddCraftNavigation(navigate, e)}
                             >
                                 <div
                                     className="w-16 h-16 rounded-full bg-[#ebe8e2] group-hover:bg-[#2e241e] group-hover:text-white flex items-center justify-center text-primary mb-3 shadow-inner transition-colors duration-200">

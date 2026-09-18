@@ -154,6 +154,21 @@ export default function Capture() {
     };
   }, []);
 
+  // Upload Guard: If !supabase.auth.getUser(), redirect immediately to login
+  useEffect(() => {
+    async function verifyAuth() {
+      try {
+        const { data, error } = await supabase.auth.getUser();
+        if (error || !data?.user || data.user.is_anonymous) {
+          navigate('/login', { state: { from: '/capture' }, replace: true });
+        }
+      } catch {
+        navigate('/login', { state: { from: '/capture' }, replace: true });
+      }
+    }
+    verifyAuth();
+  }, [navigate]);
+
   // ── Audio / Description State ──
   const [isRecording, setIsRecording] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);

@@ -480,6 +480,7 @@ export function AuthProvider({ children }) {
         cluster: '',
         verified: false,
       });
+      setIsLoading(false);
 
       showToast(
         language === 'hi'

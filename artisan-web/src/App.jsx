@@ -35,8 +35,22 @@ export default function App() {
           {/* Fullscreen Root & Public Flows */}
           <Route path="/" element={<Auth />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/capture" element={<Capture />} />
-          <Route path="/review" element={<Review />} />
+          <Route
+            path="/capture"
+            element={
+              <AuthGuard>
+                <Capture />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/review"
+            element={
+              <AuthGuard>
+                <Review />
+              </AuthGuard>
+            }
+          />
           <Route path="/success" element={<Success />} />
           {/* Public buyer-facing PDP (shareable via WhatsApp, accessible without auth) */}
           <Route path="/product/:id" element={<PublicProduct />} />

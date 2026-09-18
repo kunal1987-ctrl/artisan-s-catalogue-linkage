@@ -5,6 +5,7 @@ import { useLanguage } from '../context/LanguageContext';
 import LanguageToggle from '../components/LanguageToggle';
 import AudioMuteButton from '../components/AudioMuteButton';
 import useAudioAssistant from '../hooks/useAudioAssistant';
+import { handleAddCraftNavigation } from '../utils/authGuard';
 
 /**
  * Celebratory Success State Component post-upload
@@ -341,7 +342,7 @@ export default function Success() {
 
               <button
                 type="button"
-                onClick={() => navigate('/capture')}
+                onClick={(e) => handleAddCraftNavigation(navigate, e)}
                 className="py-3 sm:py-3.5 px-4 rounded-2xl bg-primary hover:bg-[#2e241e] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95 cursor-pointer"
               >
                 <span className="material-symbols-outlined text-[20px]">add_a_photo</span>

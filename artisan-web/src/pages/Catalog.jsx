@@ -4,12 +4,14 @@ import { useTranslation } from 'react-i18next';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { clearStaleCatalogCache } from '../utils/cacheCleaner';
+import { handleAddCraftNavigation } from '../utils/authGuard';
 
 export default function Catalog() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
   const { language, user } = useAuth();
+  const currentUser = user;
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -216,7 +218,7 @@ export default function Catalog() {
               {t('catalog.title', 'Craft Catalog')}
             </h2>
             <button
-              onClick={() => navigate('/capture')}
+              onClick={(e) => handleAddCraftNavigation(navigate, e)}
               className="bg-emerald-600 text-white px-3.5 sm:px-4 py-2 rounded-xl shadow-xs hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:outline-none flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium transition-colors cursor-pointer active:scale-95"
             >
               <span>📸 + 🎙️ {t('catalog.add_item', 'Add Craft')}</span>
@@ -340,7 +342,7 @@ export default function Catalog() {
                     <span className="material-symbols-outlined text-[48px] text-secondary">palette</span>
                   </div>
                   <button
-                    onClick={() => navigate('/capture')}
+                    onClick={(e) => handleAddCraftNavigation(navigate, e)}
                     aria-label="Add your first craft"
                     className="absolute -bottom-1 -right-1 w-11 h-11 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all cursor-pointer border-2 border-white"
                     type="button"
@@ -360,7 +362,7 @@ export default function Catalog() {
                 </p>
                 <button
                   className="h-14 px-8 rounded-full bg-primary text-on-primary font-bold text-base flex items-center gap-2.5 shadow-md hover:bg-primary/90 active:scale-95 transition-all cursor-pointer"
-                  onClick={() => navigate('/capture')}
+                  onClick={(e) => handleAddCraftNavigation(navigate, e)}
                   type="button"
                 >
                   <span className="material-symbols-outlined text-[24px]">add_a_photo</span>
@@ -418,19 +420,21 @@ export default function Catalog() {
                           <span className="material-symbols-outlined text-[18px]">share</span>
                         </button>
 
-                        {/* Direct Delete button on each card */}
-                        <button
-                          aria-label={`Delete ${p.title}`}
-                          title={language === 'hi' ? 'उत्पाद हटाएं' : 'Delete Product'}
-                          className="w-9 h-9 rounded-full bg-red-600/90 hover:bg-red-700 text-white flex items-center justify-center shadow-md active:scale-90 transition-all cursor-pointer"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteProduct(p.id);
-                          }}
-                          type="button"
-                        >
-                          <span className="material-symbols-outlined text-[18px]">delete</span>
-                        </button>
+                        {/* Direct Delete button on each card: only if currentUser?.id === product.artisan_id */}
+                        {currentUser?.id && (currentUser.id === p.artisan_id || currentUser.id === p.user_id) && (
+                          <button
+                            aria-label={`Delete ${p.title}`}
+                            title={language === 'hi' ? 'उत्पाद हटाएं' : 'Delete Product'}
+                            className="w-9 h-9 rounded-full bg-red-600/90 hover:bg-red-700 text-white flex items-center justify-center shadow-md active:scale-90 transition-all cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteProduct(p.id);
+                            }}
+                            type="button"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">delete</span>
+                          </button>
+                        )}
 
                         {/* Details / Actions modal button */}
                         <button
@@ -531,7 +535,7 @@ export default function Catalog() {
                 <button
                   aria-label="Add craft to restock"
                   className="px-4 py-2 rounded-xl bg-primary text-on-primary text-xs font-bold hover:bg-primary-container transition-colors cursor-pointer"
-                  onClick={() => navigate('/capture')}
+                  onClick={(e) => handleAddCraftNavigation(navigate, e)}
                   type="button"
                 >
                   {language === 'hi' ? '+ स्टॉक जोड़ें' : '+ Restock Craft'}
@@ -673,9 +677,9 @@ export default function Catalog() {
                 </button>
 
                 <button
-                  onClick={() => {
+                  onClick={async (e) => {
                     setSelectedProduct(null);
-                    navigate('/capture');
+                    await handleAddCraftNavigation(navigate, e);
                   }}
                   className="w-full py-2.5 px-4 rounded-xl bg-primary text-on-primary font-bold text-xs flex items-center justify-center gap-2 hover:bg-primary-container transition-colors cursor-pointer"
                   type="button"
@@ -697,14 +701,17 @@ export default function Catalog() {
                   <span>{language === 'hi' ? 'कैटलॉग लिंक शेयर करें' : 'Share Catalog Link'}</span>
                 </button>
 
-                <button
-                  onClick={() => handleDeleteProduct(selectedProduct.id)}
-                  className="w-full py-2 px-4 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs flex items-center justify-center gap-2 border border-red-200 transition-colors cursor-pointer"
-                  type="button"
-                >
-                  <span className="material-symbols-outlined text-[18px]">delete</span>
-                  <span>{language === 'hi' ? 'उत्पाद हटाएं' : 'Delete Product'}</span>
-                </button>
+                {/* Modal Delete button: only if currentUser is owner */}
+                {currentUser?.id && (currentUser.id === selectedProduct.artisan_id || currentUser.id === selectedProduct.user_id) && (
+                  <button
+                    onClick={() => handleDeleteProduct(selectedProduct.id)}
+                    className="w-full py-2 px-4 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs flex items-center justify-center gap-2 border border-red-200 transition-colors cursor-pointer"
+                    type="button"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">delete</span>
+                    <span>{language === 'hi' ? 'उत्पाद हटाएं' : 'Delete Product'}</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>

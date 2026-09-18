@@ -77,14 +77,14 @@ export default function DashboardLayout() {
     }
   }, [isLoading, isVerified, navigate]);
 
-  if (!isLoading && !isVerified) {
-    return <Navigate to="/login" replace />;
-  }
-
   // Close mobile drawer on route navigation
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
+
+  if (!isLoading && !isVerified) {
+    return <Navigate to="/login" replace />;
+  }
 
   const navItems = [
     { to: '/home', label: t('sidebar.home', 'Home'), icon: 'cottage' },

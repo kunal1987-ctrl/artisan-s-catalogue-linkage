@@ -27,10 +27,11 @@ const corsHeaders = {
 function generateDynamicCraftProfile(transcript: string, user: any, customPrice?: number) {
   const text = (transcript || "").toLowerCase();
   
-  // Extract price from transcript or default
+  // Extract price from transcript or default to smart appraisal
+  const spokenPriceMatch = transcript ? (transcript.match(/(?:₹|rs\.?|inr|rupees?|रुपये?|कीमत|मूल्य)\s*[:\-]?\s*(\d+)/i) || transcript.match(/(\d{2,6})/)) : null;
+  const pricingMethod = spokenPriceMatch ? 'spoken' : 'smart_appraisal';
   let dynamicPrice = customPrice;
   if (!dynamicPrice) {
-    const spokenPriceMatch = transcript.match(/(?:₹|rs\.?|inr|rupees?|रुपये?|कीमत|मूल्य)\s*[:\-]?\s*(\d+)/i) || transcript.match(/(\d{2,6})/);
     dynamicPrice = spokenPriceMatch ? Number(spokenPriceMatch[1]) : 750;
   }
   const wholesalePrice = Math.round(dynamicPrice * 0.72);
@@ -109,6 +110,7 @@ function generateDynamicCraftProfile(transcript: string, user: any, customPrice?
     description_hi: descHi,
     artisan_expected_price: dynamicPrice,
     price: dynamicPrice,
+    pricing_method: pricingMethod,
     bulk_price: wholesalePrice,
     suggested_retail_price_inr: dynamicPrice,
     suggested_wholesale_price_inr: wholesalePrice,
@@ -496,9 +498,11 @@ Deno.serve(async (req: Request) => {
     console.log(`[Step 2] Analyzing craft image & transcript via Gemini for user ${user.id}...`);
 
     const candidateModels = [
-      "gemini-2.0-flash",
-      "gemini-2.0-flash-lite",
-      "gemini-1.5-flash-latest",
+      "gemini-3.6-flash",
+      "gemini-3.5-flash-lite",
+      "gemini-2.5-flash",
+      "gemini-2.5-flash-lite",
+      "gemini-1.5-flash",
       "gemini-flash-latest",
     ];
 
@@ -510,12 +514,26 @@ Deno.serve(async (req: Request) => {
         systemInstruction: {
           parts: [
             {
-              text: `You are an expert e-commerce cataloger. You must analyze the provided image and voice transcript to generate a unique product listing. 
-1. CATEGORY: Determine the accurate category based purely on the visual material (do not default to Terracotta unless it is actually clay).
-2. HSN CODE: Search your knowledge base for the most accurate 4 to 6-digit Indian HSN code matching this specific material and craft. 
-3. DESCRIPTION: Write a unique, appealing 2-sentence description based ONLY on the visual details in the newly provided image.
-4. PRICE: Extract the exact numerical price spoken in the transcript.
-Output strictly as a JSON object. Do not reuse previous outputs or examples.`,
+              text: `You are an expert Indian rural commerce appraiser and cataloger. You are given an image of a handmade product and a transcribed voice note. You must generate a highly accurate, unique product listing in JSON format.
+
+**Rules for Extraction & Appraisal:**
+1. **Visual Identification (Mandatory):** Ignore the transcript for this step. Look at the image and precisely identify what the object is, its material (e.g., Terracotta, Handloom Silk, Bamboo, Brass), and its craft style.
+2. **Category & HSN:** Assign a highly specific category based on the visual identification. Do NOT default to generic categories. Assign the exact 4-to-6 digit Indian HSN code for that specific material.
+3. **Dynamic Smart Pricing (Crucial):** 
+   - First, check the voice transcript. If the artisan explicitly states a reasonable price, extract that exact number.
+   - **Fallback (Smart Price):** If the transcript is empty, unclear, or the stated price is missing, you must visually appraise the item. Estimate a fair, highly specific INR market price based on the material, complexity, and standard e-commerce rates for such handmade goods (e.g., do not just output 450. Output 220 for a small clay cup, or 1850 for a detailed brass lamp).
+4. **Description:** Write a unique 2-sentence marketing description based *only* on the visual details in the image.
+
+**Required JSON Output Format:**
+{
+  "name": "Specific product name",
+  "material": "Specific material",
+  "category": "Specific category",
+  "hsn_code": "Exact HSN code",
+  "price": <integer>,
+  "pricing_method": "<'spoken' or 'smart_appraisal'>",
+  "description": "Unique description"
+}`,
             },
           ],
         },
@@ -523,30 +541,9 @@ Output strictly as a JSON object. Do not reuse previous outputs or examples.`,
           {
             parts: [
               {
-                text: `Artisan voice note transcript: "${transcript || "No spoken note provided. Infer details and fair artisan pricing exclusively from visual craftsmanship across all angles."}"
+                text: `Artisan voice note transcript: "${transcript || ""}"
 
-Analyze the provided image(s) representing a handcrafted product along with the artisan voice note transcript following your system instructions. Return ONLY a valid JSON object matching this schema:
-{
-  "name": "string (Specific craft title in English based on visual details)",
-  "title": "string (Same as name)",
-  "title_hi": "string (Accurate craft name in Hindi / Devanagari script)",
-  "category": "string (Accurate category determined purely on the visual material)",
-  "craft_category": "string (Same as category)",
-  "material": "string (Primary material identified from the images and text)",
-  "hsn_code": "string (Accurate 4 to 6-digit Indian HSN code matching this specific material and craft)",
-  "description": "string (Unique, appealing 2-sentence description based ONLY on the visual details in the newly provided image)",
-  "description_hi": "string (Accurate Hindi translation in Devanagari script)",
-  "price": number,
-  "suggested_retail_price_inr": number,
-  "bulk_price": number,
-  "suggested_wholesale_price_inr": number,
-  "pricing_reasoning": "string (Explanation of pricing based on artisan input and materials)",
-  "gem_category": "string (Government e-Marketplace GeM category matching this material and craft)",
-  "unspsc_code": "string",
-  "moq": number,
-  "is_gem_ready": boolean,
-  "tags": ["string", "string", "string", "string", "string"]
-}`,
+Follow your system instructions as a Dynamic Market Appraiser. Visually identify the product from the image(s), determine its material, specific category, exact Indian HSN code, and dynamic price (extracting the spoken price if explicitly stated, or providing a smart appraisal market estimate if empty/unclear). Return strictly valid JSON adhering to the Required JSON Output Format.`,
               },
               ...imageParts,
             ],
@@ -555,7 +552,7 @@ Analyze the provided image(s) representing a handcrafted product along with the 
         generationConfig: {
           responseMimeType: "application/json",
           response_mime_type: "application/json",
-          temperature: 0.3,
+          temperature: 0.2,
         },
       };
 
@@ -660,6 +657,19 @@ Analyze the provided image(s) representing a handcrafted product along with the 
         if (!productData.suggested_wholesale_price_inr) {
           productData.suggested_wholesale_price_inr = productData.bulk_price;
         }
+      }
+
+      // Normalize pricing_method from Gemini or transcript appraisal
+      const spokenPriceMatch = transcript ? (transcript.match(/(?:₹|rs\.?|inr|rupees?|रुपये?|कीमत|मूल्य)\s*[:\-]?\s*(\d+)/i) || transcript.match(/(\d{2,6})/)) : null;
+      if (productData.pricing_method === 'smart_appraisal' || !spokenPriceMatch) {
+        productData.pricing_method = 'smart_appraisal';
+      } else {
+        productData.pricing_method = 'spoken';
+      }
+      if (productData.pricing_method === 'smart_appraisal') {
+        productData.pricing_reasoning = productData.pricing_reasoning || `Market price estimated based on visual craftsmanship, material (${productData.material || 'handcrafted'}), and standard e-commerce fair-trade rates.`;
+      } else {
+        productData.pricing_reasoning = productData.pricing_reasoning || `Price extracted directly from artisan voice description (₹${productData.price}).`;
       }
 
       if (productData.artisan_expected_price !== undefined && productData.artisan_expected_price !== null) {

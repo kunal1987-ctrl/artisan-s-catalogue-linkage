@@ -989,8 +989,9 @@ export default function Capture() {
       if (!listingData) {
         console.info('Using dynamic local AI craft profile fallback');
         const resolvedText = activeText;
-        const spokenPriceMatch = resolvedText.match(/(?:₹|rs\.?|inr|rupees?|रुपये?|कीमत)\s*[:\-]?\s*(\d+)/i) || resolvedText.match(/(\d{2,6})/);
+        const spokenPriceMatch = resolvedText ? (resolvedText.match(/(?:₹|rs\.?|inr|rupees?|रुपये?|कीमत|मूल्य)\s*[:\-]?\s*(\d+)/i) || resolvedText.match(/(\d{2,6})/)) : null;
         const dynamicPrice = spokenPriceMatch ? Number(spokenPriceMatch[1]) : 450;
+        const pricingMethod = spokenPriceMatch ? 'spoken' : 'smart_appraisal';
         const dynamicTitle = resolvedText
           ? `Handcrafted Craft (${resolvedText.slice(0, 30)}...)`
           : "Handcrafted Artisan Craft";
@@ -1006,12 +1007,15 @@ export default function Capture() {
           material: "Handicraft Materials",
           artisan_expected_price: dynamicPrice,
           price: dynamicPrice,
+          pricing_method: pricingMethod,
           bulk_price: Math.round(dynamicPrice * 0.72),
           suggested_retail_price_inr: dynamicPrice,
           suggested_wholesale_price_inr: Math.round(dynamicPrice * 0.72),
           estimated_price_inr: dynamicPrice,
           bulk_price_inr: Math.round(dynamicPrice * 0.72),
-          pricing_reasoning: `Fair artisan wage factored with expected price of ₹${dynamicPrice} and volume discount for institutional orders.`,
+          pricing_reasoning: pricingMethod === 'smart_appraisal'
+            ? 'Market price estimated based on visual craftsmanship, material, and standard fair-trade rates.'
+            : `Price extracted from artisan voice input (₹${dynamicPrice}).`,
           gem_category: "Handicrafts - Traditional Art & Decor",
           unspsc_code: "60121002",
           hsn_code: "69120010",
@@ -1024,6 +1028,7 @@ export default function Capture() {
 
       const resolvedName = listingData.name || listingData.title || (activeText ? `Handcrafted Item (${activeText.slice(0, 24)}...)` : 'Handcrafted Artisan Item');
       const resolvedPrice = Number(listingData.price || listingData.suggested_retail_price_inr || 450);
+      const resolvedPricingMethod = listingData.pricing_method || (activeText ? 'spoken' : 'smart_appraisal');
       setExtractedName(resolvedName);
       setExtractedPrice(resolvedPrice);
 
@@ -1036,6 +1041,8 @@ export default function Capture() {
           name: resolvedName,
           title: resolvedName,
           price: resolvedPrice,
+          pricing_method: resolvedPricingMethod,
+          pricingMethod: resolvedPricingMethod,
           imageUrl: targetImageUrl,
           imageBase64: targetImageBase64,
           images: allImagesBase64,

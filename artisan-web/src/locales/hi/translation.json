@@ -137,7 +137,8 @@
     "audio_speaking": "ऑडियो सहायक बोल रहा है — म्यूट करने के लिए स्पर्श करें",
     "product_readback": "{{title}}। {{description}} कीमत: {{price}} रुपये।",
     "capture_instruction": "फोटो लें या गैलरी से चुनें, फिर अपने उत्पाद का वर्णन करने के लिए बोलें।",
-    "language_selected": "हिंदी भाषा चुनी गई।"
+    "language_selected": "हिंदी भाषा चुनी गई।",
+    "smart_appraisal": "फोटो के आधार पर कीमत तय की गई है। आप चाहें तो इसे बदल सकते हैं।"
   },
   "sidebar": {
     "brand": "शिल्प सेतु",

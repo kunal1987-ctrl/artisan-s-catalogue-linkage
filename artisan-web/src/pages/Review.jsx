@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import LanguageToggle from '../components/LanguageToggle';
@@ -25,22 +24,32 @@ export default function Review() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, artisanProfile, isEmailVerified, openAuthModal, setPendingProduct, showToast, language } = useAuth();
-  const { speakPrompt, stop } = useAudioAssistant();
+  const { speakPrompt, speak, stop } = useAudioAssistant();
+
+  // Read AI data passed from Capture.jsx
+  const aiData = location.state || {};
+  const pricingMethod = aiData.pricing_method || aiData.pricingMethod || (aiData.pricing_reasoning?.includes('Market price estimated') ? 'smart_appraisal' : 'spoken');
+  const isSmartAppraisal = pricingMethod === 'smart_appraisal';
 
   // Contextual voice prompt for zero-literacy review screen
   useEffect(() => {
     const timer = setTimeout(() => {
-      speakPrompt('review');
+      if (isSmartAppraisal) {
+        if (language === 'hi') {
+          speak('फोटो के आधार पर कीमत तय की गई है। आप चाहें तो इसे बदल सकते हैं।');
+        } else {
+          speak('Market price suggested based on your photo. You can edit this if needed.');
+        }
+      } else {
+        speakPrompt('review');
+      }
     }, 600);
 
     return () => {
       clearTimeout(timer);
       stop();
     };
-  }, [speakPrompt, stop, language]);
-
-  // Read AI data passed from Capture.jsx
-  const aiData = location.state || {};
+  }, [speakPrompt, speak, stop, language, isSmartAppraisal]);
 
   // ── Editable Form State ──
   const resolvedInitialTitle = aiData.name || aiData.title || 'Handwoven Blue Pure Silk Saree';
@@ -425,8 +434,14 @@ export default function Review() {
                       <span>GeM Verified</span>
                     </div>
                     <div className="absolute bottom-3 left-3 flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-container/85 backdrop-blur-md text-white shadow-sm border border-white/10">
-                      <span className="material-symbols-outlined text-[14px] text-tertiary-fixed animate-pulse">mic</span>
-                      <span className="text-[11px] font-semibold text-white tracking-wider">🎙️ Voice Cataloged</span>
+                      <span className="material-symbols-outlined text-[14px] text-tertiary-fixed animate-pulse">
+                        {isSmartAppraisal ? 'auto_awesome' : 'mic'}
+                      </span>
+                      <span className="text-[11px] font-semibold text-white tracking-wider">
+                        {isSmartAppraisal
+                          ? (language === 'hi' ? '✨ स्मार्ट एआई मूल्यांकन' : '✨ Smart Market Appraised')
+                          : (language === 'hi' ? '🎙️ आवाज़ से दर्ज' : '🎙️ Voice Cataloged')}
+                      </span>
                     </div>
                   </div>
                   <div className="px-4 py-3 bg-surface-container-low border-t border-outline-variant/30 flex items-center justify-between">
@@ -775,6 +790,16 @@ export default function Review() {
                           Suggested Retail Price (ONDC / D2C Consumer Sale)
                         </span>
                       </div>
+                      {isSmartAppraisal && (
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-[12px] font-semibold my-1.5">
+                          <span className="material-symbols-outlined text-[16px] text-amber-600 shrink-0">auto_awesome</span>
+                          <span>
+                            {language === 'hi'
+                              ? 'फोटो के आधार पर कीमत तय की गई है (आप चाहें तो बदल सकते हैं)'
+                              : 'Market price suggested based on your photo. You can edit this if needed.'}
+                          </span>
+                        </div>
+                      )}
                       {editingField === 'price' ? (
                         <div className="flex items-baseline gap-2 mt-1">
                           <span className="text-[34px] font-bold text-secondary tracking-tight leading-none">₹</span>

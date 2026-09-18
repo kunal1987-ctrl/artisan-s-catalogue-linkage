@@ -137,7 +137,8 @@
     "audio_speaking": "Audio assistant is speaking — tap to mute",
     "product_readback": "{{title}}. {{description}} Price: {{price}} rupees.",
     "capture_instruction": "Take a photo or choose from your gallery, then speak to describe your product.",
-    "language_selected": "English language selected."
+    "language_selected": "English language selected.",
+    "smart_appraisal": "Market price suggested based on your photo. You can edit this if needed."
   },
   "sidebar": {
     "brand": "Shilp Setu",

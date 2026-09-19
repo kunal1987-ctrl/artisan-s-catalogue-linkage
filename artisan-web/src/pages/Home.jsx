@@ -258,6 +258,70 @@ export default function Home({ customArtisanName } = {}) {
                     </div>
                 </div>
                 
+                {/* ── Government Opportunities & Live Fairs ── */}
+                <div className="mt-2 relative overflow-hidden bg-gradient-to-br from-[#2e241e] to-[#4a3b32] rounded-3xl p-5 sm:p-6 sm:px-8 border border-[#4a3b32] shadow-md group">
+                    {/* Decorative Background Elements */}
+                    <div className="absolute top-0 right-0 p-4 opacity-10 transform translate-x-4 -translate-y-4 pointer-events-none">
+                        <span className="material-symbols-outlined text-[120px] text-[#ffdeaa]" style={{ fontVariationSettings: "'FILL' 1" }}>festival</span>
+                    </div>
+                    
+                    <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                        <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-3">
+                                <span className="px-2.5 py-0.5 rounded-full bg-[#ff9062]/20 text-[#ffdeaa] text-[10px] font-bold uppercase tracking-wider border border-[#ff9062]/30 flex items-center gap-1.5">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-[#ff9062] animate-pulse"></span>
+                                    Govt Sponsored
+                                </span>
+                                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold uppercase tracking-wider border border-emerald-500/30">
+                                    Registration Open
+                                </span>
+                            </div>
+                            
+                            <h3 className="text-xl sm:text-2xl font-black text-white leading-tight mb-1">
+                                SARAS Aajeevika Mela
+                            </h3>
+                            <p className="text-[#d1c4bd] text-sm font-medium mb-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+                                <span className="flex items-center gap-1.5">
+                                    <span className="material-symbols-outlined text-[16px] text-[#ff9062]">account_balance</span>
+                                    Ministry of Rural Development
+                                </span>
+                                <span className="flex items-center gap-1.5">
+                                    <span className="material-symbols-outlined text-[16px] text-[#ff9062]">location_on</span>
+                                    Bhopal Haat, MP
+                                </span>
+                                <span className="flex items-center gap-1.5">
+                                    <span className="material-symbols-outlined text-[16px] text-[#ff9062]">calendar_month</span>
+                                    25 Oct - 05 Nov
+                                </span>
+                            </p>
+                            
+                            <div className="flex items-center gap-3">
+                                <button 
+                                    onClick={() => speak('Bhopal Haat mein SARAS Mela aayojit ho raha hai. Stalls ke liye panjikaran khula hai.')}
+                                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-bold transition-colors border border-white/10 active:scale-95 cursor-pointer"
+                                >
+                                    <span className="material-symbols-outlined text-[18px]">volume_up</span>
+                                    {language === 'hi' ? 'विवरण सुनें' : 'Listen Details'}
+                                </button>
+                                <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#ff9062] hover:bg-[#e87a4d] text-white text-sm font-black transition-colors shadow-lg active:scale-95 cursor-pointer">
+                                    {language === 'hi' ? 'अभी पंजीकरण करें' : 'Register Now'}
+                                    <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        {/* Right side illustration / graphic */}
+                        <div className="hidden md:flex shrink-0 items-center justify-center w-32 h-32 rounded-2xl bg-white/5 border border-white/10 overflow-hidden relative group-hover:scale-105 transition-transform duration-500">
+                             <img 
+                                src="https://images.unsplash.com/photo-1596484552834-6a58f850d0a1?auto=format&fit=crop&w=400&q=80" 
+                                alt="Craft Exhibition" 
+                                className="w-full h-full object-cover opacity-80 mix-blend-overlay"
+                             />
+                             <div className="absolute inset-0 bg-gradient-to-tr from-[#2e241e]/80 to-transparent"></div>
+                             <span className="material-symbols-outlined absolute text-[40px] text-white/90 drop-shadow-md">storefront</span>
+                        </div>
+                    </div>
+                </div>
                 {/* Recent Uploads Section */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-4">
                     <div className="flex flex-wrap items-center gap-2 sm:gap-3">

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
+const CACHE_KEY = 'cached_haat_events';
+
 const FALLBACK_EVENTS = [
   {
     id: 'a8429859-6c20-489e-b886-f3f84999dc7e',
@@ -30,15 +32,32 @@ const FALLBACK_EVENTS = [
   },
 ];
 
+function getCachedEvents() {
+  if (typeof window === 'undefined') return FALLBACK_EVENTS;
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (err) {
+    console.warn('Error reading cached_haat_events:', err);
+  }
+  return FALLBACK_EVENTS;
+}
+
 export default function HaatEventCard({ artisanProfile = null, user = null }) {
-  const [events, setEvents] = useState([]);
+  const [events, setEvents] = useState(getCachedEvents);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [availableVoices, setAvailableVoices] = useState([]);
 
   const [formData, setFormData] = useState({
     artisanName: '',
@@ -65,12 +84,34 @@ export default function HaatEventCard({ artisanProfile = null, user = null }) {
     });
   }, [user, artisanProfile]);
 
-  // Fetch initial events and subscribe to Supabase Realtime WebSocket changes
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+
+    const populateVoices = () => {
+      try {
+        const voices = window.speechSynthesis.getVoices();
+        if (voices && voices.length > 0) {
+          setAvailableVoices(voices);
+        }
+      } catch (err) {
+        console.warn('Voice retrieval notice:', err);
+      }
+    };
+
+    populateVoices();
+    window.speechSynthesis.onvoiceschanged = populateVoices;
+
+    return () => {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.onvoiceschanged = null;
+      }
+    };
+  }, []);
+
   useEffect(() => {
     let isMounted = true;
 
     async function fetchHaatEvents() {
-      setIsLoading(true);
       try {
         const todayStr = new Date().toISOString().split('T')[0];
         const { data, error } = await supabase
@@ -81,23 +122,21 @@ export default function HaatEventCard({ artisanProfile = null, user = null }) {
 
         if (error) {
           console.warn('Error fetching haat_events from Supabase:', error.message);
-          if (isMounted) setEvents(FALLBACK_EVENTS);
         } else if (data && data.length > 0) {
-          if (isMounted) setEvents(data);
-        } else {
-          if (isMounted) setEvents(FALLBACK_EVENTS);
+          if (isMounted) {
+            setEvents(data);
+            try {
+              localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+            } catch {}
+          }
         }
       } catch (err) {
-        console.warn('Network error fetching haat events:', err);
-        if (isMounted) setEvents(FALLBACK_EVENTS);
-      } finally {
-        if (isMounted) setIsLoading(false);
+        console.warn('Network offline during haat events query:', err);
       }
     }
 
     fetchHaatEvents();
 
-    // Supabase Realtime WebSocket subscription for live haat_events updates
     const channel = supabase
       .channel('haat_events_realtime_root')
       .on(
@@ -113,32 +152,29 @@ export default function HaatEventCard({ artisanProfile = null, user = null }) {
           const { eventType, new: newRecord, old: oldRecord } = payload;
 
           setEvents((prevEvents) => {
+            let updated = prevEvents;
+
             if (eventType === 'INSERT') {
               const exists = prevEvents.some((ev) => ev.id === newRecord.id);
-              if (exists) {
-                return prevEvents.map((ev) => (ev.id === newRecord.id ? newRecord : ev));
-              }
-              return [newRecord, ...prevEvents];
-            }
-
-            if (eventType === 'UPDATE') {
-              return prevEvents.map((ev) => (ev.id === newRecord.id ? newRecord : ev));
-            }
-
-            if (eventType === 'DELETE') {
+              updated = exists
+                ? prevEvents.map((ev) => (ev.id === newRecord.id ? newRecord : ev))
+                : [newRecord, ...prevEvents];
+            } else if (eventType === 'UPDATE') {
+              updated = prevEvents.map((ev) => (ev.id === newRecord.id ? newRecord : ev));
+            } else if (eventType === 'DELETE') {
               const filtered = prevEvents.filter((ev) => ev.id !== oldRecord?.id);
-              return filtered.length > 0 ? filtered : FALLBACK_EVENTS;
+              updated = filtered.length > 0 ? filtered : FALLBACK_EVENTS;
             }
 
-            return prevEvents;
+            try {
+              localStorage.setItem(CACHE_KEY, JSON.stringify(updated));
+            } catch {}
+
+            return updated;
           });
         }
       )
-      .subscribe((status, err) => {
-        if (err) {
-          console.warn('Realtime subscription notice for haat_events:', err);
-        }
-      });
+      .subscribe();
 
     return () => {
       isMounted = false;
@@ -157,6 +193,18 @@ export default function HaatEventCard({ artisanProfile = null, user = null }) {
       setIsSpeaking(false);
     }
   }, [currentIndex]);
+
+  useEffect(() => {
+    if (events.length <= 1 || isHovered || isSpeaking || isModalOpen) {
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % events.length);
+    }, 8000);
+
+    return () => clearInterval(timer);
+  }, [events.length, isHovered, isSpeaking, isModalOpen]);
 
   const safeIndex = currentIndex >= events.length ? 0 : currentIndex;
   const activeEvent = events[safeIndex] || FALLBACK_EVENTS[0];
@@ -193,24 +241,46 @@ export default function HaatEventCard({ artisanProfile = null, user = null }) {
       return;
     }
 
-    window.speechSynthesis.cancel();
+    try {
+      window.speechSynthesis.cancel();
 
-    const textToSpeak = activeEvent?.description_hi || activeEvent?.title;
-    const utterance = new SpeechSynthesisUtterance(textToSpeak);
-    utterance.lang = 'hi-IN';
-    utterance.rate = 0.9;
+      const textToSpeak = activeEvent?.description_hi || activeEvent?.title || '';
+      const utterance = new SpeechSynthesisUtterance(textToSpeak);
+      utterance.rate = 0.9;
 
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
+      const voicesList =
+        availableVoices.length > 0 ? availableVoices : window.speechSynthesis.getVoices();
 
-    const voices = window.speechSynthesis.getVoices();
-    const hiVoice = voices.find((v) => v.lang === 'hi-IN' || v.lang.startsWith('hi'));
-    if (hiVoice) {
-      utterance.voice = hiVoice;
+      const hiVoice = voicesList.find(
+        (v) => v.lang === 'hi-IN' || (v.lang && v.lang.toLowerCase().replace('_', '-') === 'hi-in')
+      );
+      const anyHiVoice = voicesList.find((v) => v.lang && v.lang.toLowerCase().startsWith('hi'));
+      const enInVoice = voicesList.find(
+        (v) => v.lang === 'en-IN' || (v.lang && v.lang.toLowerCase().replace('_', '-') === 'en-in')
+      );
+
+      if (hiVoice) {
+        utterance.voice = hiVoice;
+        utterance.lang = 'hi-IN';
+      } else if (anyHiVoice) {
+        utterance.voice = anyHiVoice;
+        utterance.lang = anyHiVoice.lang;
+      } else if (enInVoice) {
+        utterance.voice = enInVoice;
+        utterance.lang = 'en-IN';
+      } else {
+        utterance.lang = 'hi-IN';
+      }
+
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
+
+      window.speechSynthesis.speak(utterance);
+    } catch (err) {
+      console.warn('Speech synthesis safeguard caught exception:', err);
+      setIsSpeaking(false);
     }
-
-    window.speechSynthesis.speak(utterance);
   };
 
   const handleOpenRegistration = () => {
@@ -248,33 +318,15 @@ export default function HaatEventCard({ artisanProfile = null, user = null }) {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="mt-2 relative overflow-hidden bg-[#2e241e]/80 rounded-3xl p-5 sm:p-6 sm:px-8 border border-[#4a3b32] shadow-md animate-pulse">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="flex-1 space-y-4">
-            <div className="flex items-center gap-2">
-              <div className="w-28 h-6 bg-white/10 rounded-full"></div>
-              <div className="w-32 h-6 bg-white/10 rounded-full"></div>
-            </div>
-            <div className="w-3/4 h-8 bg-white/15 rounded-lg"></div>
-            <div className="flex gap-4">
-              <div className="w-40 h-5 bg-white/10 rounded"></div>
-              <div className="w-32 h-5 bg-white/10 rounded"></div>
-              <div className="w-24 h-5 bg-white/10 rounded"></div>
-            </div>
-          </div>
-          <div className="hidden md:flex w-32 h-32 rounded-2xl bg-white/5 border border-white/10"></div>
-        </div>
-      </div>
-    );
-  }
-
   const isRegistrationOpen = activeEvent.status === 'REGISTRATION OPEN';
 
   return (
     <>
-      <div className="mt-2 relative overflow-hidden bg-gradient-to-br from-[#2e241e] to-[#4a3b32] rounded-3xl p-5 sm:p-6 sm:px-8 border border-[#4a3b32] shadow-md group transition-all duration-300">
+      <div
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className="mt-2 relative overflow-hidden bg-gradient-to-br from-[#2e241e] to-[#4a3b32] rounded-3xl p-5 sm:p-6 sm:px-8 border border-[#4a3b32] shadow-md group transition-all duration-300"
+      >
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex-1">
             <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -288,22 +340,21 @@ export default function HaatEventCard({ artisanProfile = null, user = null }) {
               <span
                 className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border flex items-center gap-1 shadow-sm ${
                   isRegistrationOpen
-                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-                    : 'bg-sky-500/20 text-sky-300 border-sky-500/30'
+                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30 ring-1 ring-emerald-500/20'
+                    : 'bg-sky-500/20 text-sky-300 border-sky-500/30 ring-1 ring-sky-500/20'
                 }`}
               >
                 {activeEvent.status}
               </span>
 
               {events.length > 1 && (
-                <div className="ml-auto sm:ml-2 flex items-center gap-1 bg-black/30 rounded-full px-2 py-0.5 border border-white/10 text-[10px] text-[#d1c4bd]">
-                  <span>{currentIndex + 1} / {events.length}</span>
+                <div className="ml-auto sm:ml-2 flex items-center gap-1.5 bg-black/40 rounded-full px-2.5 py-0.5 border border-white/10 text-[10px] text-[#d1c4bd]">
+                  <span>{safeIndex + 1} / {events.length}</span>
                   <button
                     onClick={() =>
                       setCurrentIndex((prev) => (prev === 0 ? events.length - 1 : prev - 1))
                     }
                     className="hover:text-white p-0.5 transition-colors cursor-pointer"
-                    title="पिछला मेला"
                   >
                     ‹
                   </button>
@@ -312,7 +363,6 @@ export default function HaatEventCard({ artisanProfile = null, user = null }) {
                       setCurrentIndex((prev) => (prev === events.length - 1 ? 0 : prev + 1))
                     }
                     className="hover:text-white p-0.5 transition-colors cursor-pointer"
-                    title="अगला मेला"
                   >
                     ›
                   </button>
@@ -325,15 +375,9 @@ export default function HaatEventCard({ artisanProfile = null, user = null }) {
             </h3>
 
             <div className="text-[#d1c4bd] text-sm font-medium mb-4 flex flex-wrap items-center gap-x-4 gap-y-2">
-              <span className="flex items-center gap-1.5">
-                🏛️ {activeEvent.organizer}
-              </span>
-              <span className="flex items-center gap-1.5">
-                📍 {activeEvent.location}
-              </span>
-              <span className="flex items-center gap-1.5">
-                📅 {formatDateRange(activeEvent.start_date, activeEvent.end_date)}
-              </span>
+              <span>🏛️ {activeEvent.organizer}</span>
+              <span>📍 {activeEvent.location}</span>
+              <span>📅 {formatDateRange(activeEvent.start_date, activeEvent.end_date)}</span>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
@@ -357,17 +401,6 @@ export default function HaatEventCard({ artisanProfile = null, user = null }) {
                 <span>अभी पंजीकरण करें</span>
                 <span>→</span>
               </button>
-
-              {activeEvent.registration_url && (
-                <a
-                  href={activeEvent.registration_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-[#ffdeaa]/80 hover:text-[#ffdeaa] underline underline-offset-4 hidden sm:inline-block ml-1 transition-colors"
-                >
-                  आधिकारिक वेबसाइट ↗
-                </a>
-              )}
             </div>
           </div>
         </div>
@@ -398,25 +431,13 @@ export default function HaatEventCard({ artisanProfile = null, user = null }) {
                   ✓
                 </div>
                 <h5 className="text-lg font-black text-white">आवेदन सफलतापूर्वक दर्ज हुआ!</h5>
-                <div className="pt-2 flex items-center justify-center gap-3">
-                  {activeEvent.registration_url && (
-                    <a
-                      href={activeEvent.registration_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-5 py-2.5 rounded-xl bg-[#ff9062] hover:bg-[#e87a4d] text-white text-xs font-black shadow-lg"
-                    >
-                      आधिकारिक पोर्टल खोलें ↗
-                    </a>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setIsModalOpen(false)}
-                    className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold"
-                  >
-                    समाप्त
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold"
+                >
+                  समाप्त
+                </button>
               </div>
             ) : (
               <form onSubmit={handleSubmitRegistration} className="space-y-4">

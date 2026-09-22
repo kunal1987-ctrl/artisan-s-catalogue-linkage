@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 
+const CACHE_KEY = 'cached_haat_events';
+
 const FALLBACK_EVENTS = [
   {
     id: 'a8429859-6c20-489e-b886-f3f84999dc7e',
@@ -15,6 +17,7 @@ const FALLBACK_EVENTS = [
     status: 'REGISTRATION OPEN',
     description_hi: 'सरस आजीविका मेला, ग्रामीण विकास मंत्रालय द्वारा भोपाल हाट में 25 अक्टूबर से 5 नवंबर तक आयोजित किया जा रहा है। इसमें हस्तशिल्प और हथकरघा उत्पादों के लिए स्टॉल उपलब्ध हैं। पंजीकरण अभी खुला है।',
     registration_url: 'https://rural.nic.in',
+    banner_image_url: 'https://images.unsplash.com/photo-1596484552834-6a58f850d0a1?auto=format&fit=crop&w=400&q=80',
   },
   {
     id: '877cdf6d-28da-4220-a7f9-cf83431dd9b4',
@@ -28,18 +31,38 @@ const FALLBACK_EVENTS = [
     status: 'UPCOMING',
     description_hi: 'ट्राइब्स इंडिया शिल्प महोत्सव, जनजातीय कार्य मंत्रालय द्वारा इंदौर में आयोजित किया जाएगा। हस्तनिर्मित कलाकृतियों के लिए आवेदन जल्द शुरू होंगे।',
     registration_url: 'https://trifed.tribal.gov.in',
+    banner_image_url: 'https://images.unsplash.com/photo-1606744837616-56c9a5c6a6eb?auto=format&fit=crop&w=400&q=80',
   },
 ];
 
+// Read from LocalStorage immediately for 0ms initial render resilience
+function getCachedEvents() {
+  if (typeof window === 'undefined') return FALLBACK_EVENTS;
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (err) {
+    console.warn('Error reading cached_haat_events:', err);
+  }
+  return FALLBACK_EVENTS;
+}
+
 export default function HaatEventCard() {
-  const [events, setEvents] = useState([]);
+  const [events, setEvents] = useState(getCachedEvents);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [availableVoices, setAvailableVoices] = useState([]);
 
   // Access auth context safely
   let authContext = {};
@@ -76,12 +99,36 @@ export default function HaatEventCard() {
     });
   }, [user, artisanName, artisanProfile]);
 
+  // Speech Engine Safeguard: Load voices asynchronously for Chromium/Android resilience
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+
+    const populateVoices = () => {
+      try {
+        const voices = window.speechSynthesis.getVoices();
+        if (voices && voices.length > 0) {
+          setAvailableVoices(voices);
+        }
+      } catch (err) {
+        console.warn('Voice retrieval notice:', err);
+      }
+    };
+
+    populateVoices();
+    window.speechSynthesis.onvoiceschanged = populateVoices;
+
+    return () => {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.onvoiceschanged = null;
+      }
+    };
+  }, []);
+
   // Fetch initial events and subscribe to Supabase Realtime WebSocket changes
   useEffect(() => {
     let isMounted = true;
 
     async function fetchHaatEvents() {
-      setIsLoading(true);
       try {
         const todayStr = new Date().toISOString().split('T')[0];
         const { data, error } = await supabase
@@ -92,18 +139,16 @@ export default function HaatEventCard() {
 
         if (error) {
           console.warn('Error fetching haat_events from Supabase:', error.message);
-          if (isMounted) setEvents(FALLBACK_EVENTS);
         } else if (data && data.length > 0) {
-          if (isMounted) setEvents(data);
-        } else {
-          // If no future events found, load seed fallback
-          if (isMounted) setEvents(FALLBACK_EVENTS);
+          if (isMounted) {
+            setEvents(data);
+            try {
+              localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+            } catch {}
+          }
         }
       } catch (err) {
-        console.warn('Network error fetching haat events:', err);
-        if (isMounted) setEvents(FALLBACK_EVENTS);
-      } finally {
-        if (isMounted) setIsLoading(false);
+        console.warn('Network loss or offline during haat events query, using cache:', err);
       }
     }
 
@@ -125,27 +170,25 @@ export default function HaatEventCard() {
           const { eventType, new: newRecord, old: oldRecord } = payload;
 
           setEvents((prevEvents) => {
+            let updated = prevEvents;
+
             if (eventType === 'INSERT') {
-              // Prepend new event to the list
               const exists = prevEvents.some((ev) => ev.id === newRecord.id);
-              if (exists) {
-                return prevEvents.map((ev) => (ev.id === newRecord.id ? newRecord : ev));
-              }
-              return [newRecord, ...prevEvents];
-            }
-
-            if (eventType === 'UPDATE') {
-              // Replace modified event object in state
-              return prevEvents.map((ev) => (ev.id === newRecord.id ? newRecord : ev));
-            }
-
-            if (eventType === 'DELETE') {
-              // Filter out the deleted event
+              updated = exists
+                ? prevEvents.map((ev) => (ev.id === newRecord.id ? newRecord : ev))
+                : [newRecord, ...prevEvents];
+            } else if (eventType === 'UPDATE') {
+              updated = prevEvents.map((ev) => (ev.id === newRecord.id ? newRecord : ev));
+            } else if (eventType === 'DELETE') {
               const filtered = prevEvents.filter((ev) => ev.id !== oldRecord?.id);
-              return filtered.length > 0 ? filtered : FALLBACK_EVENTS;
+              updated = filtered.length > 0 ? filtered : FALLBACK_EVENTS;
             }
 
-            return prevEvents;
+            try {
+              localStorage.setItem(CACHE_KEY, JSON.stringify(updated));
+            } catch {}
+
+            return updated;
           });
         }
       )
@@ -174,6 +217,19 @@ export default function HaatEventCard() {
     }
   }, [currentIndex]);
 
+  // Automatic 8-second cycle (paused on hover, speaking, or modal open)
+  useEffect(() => {
+    if (events.length <= 1 || isHovered || isSpeaking || isModalOpen) {
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % events.length);
+    }, 8000);
+
+    return () => clearInterval(timer);
+  }, [events.length, isHovered, isSpeaking, isModalOpen]);
+
   const safeIndex = currentIndex >= events.length ? 0 : currentIndex;
   const activeEvent = events[safeIndex] || FALLBACK_EVENTS[0];
 
@@ -198,7 +254,7 @@ export default function HaatEventCard() {
     }
   };
 
-  // Native Hindi Voice Narration using window.speechSynthesis
+  // Resilient Speech Synthesis with safe voice fallback hierarchy: hi-IN -> hi-* -> en-IN -> default
   const handleToggleSpeech = () => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
       alert('आपके ब्राउज़र में आवाज़ (Speech Synthesis) उपलब्ध नहीं है।');
@@ -211,25 +267,49 @@ export default function HaatEventCard() {
       return;
     }
 
-    window.speechSynthesis.cancel();
+    try {
+      window.speechSynthesis.cancel();
 
-    const textToSpeak = activeEvent?.description_hi || activeEvent?.title;
-    const utterance = new SpeechSynthesisUtterance(textToSpeak);
-    utterance.lang = 'hi-IN';
-    utterance.rate = 0.9; // clear, comfortable rural articulation pace
+      const textToSpeak = activeEvent?.description_hi || activeEvent?.title || '';
+      const utterance = new SpeechSynthesisUtterance(textToSpeak);
+      utterance.rate = 0.9;
 
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
+      const voicesList =
+        availableVoices.length > 0 ? availableVoices : window.speechSynthesis.getVoices();
 
-    // Try finding an installed Hindi or Indian English voice
-    const voices = window.speechSynthesis.getVoices();
-    const hiVoice = voices.find((v) => v.lang === 'hi-IN' || v.lang.startsWith('hi'));
-    if (hiVoice) {
-      utterance.voice = hiVoice;
+      const hiVoice = voicesList.find(
+        (v) => v.lang === 'hi-IN' || (v.lang && v.lang.toLowerCase().replace('_', '-') === 'hi-in')
+      );
+      const anyHiVoice = voicesList.find((v) => v.lang && v.lang.toLowerCase().startsWith('hi'));
+      const enInVoice = voicesList.find(
+        (v) => v.lang === 'en-IN' || (v.lang && v.lang.toLowerCase().replace('_', '-') === 'en-in')
+      );
+
+      if (hiVoice) {
+        utterance.voice = hiVoice;
+        utterance.lang = 'hi-IN';
+      } else if (anyHiVoice) {
+        utterance.voice = anyHiVoice;
+        utterance.lang = anyHiVoice.lang;
+      } else if (enInVoice) {
+        utterance.voice = enInVoice;
+        utterance.lang = 'en-IN';
+      } else {
+        utterance.lang = 'hi-IN';
+      }
+
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = (err) => {
+        console.warn('Speech utterance event error:', err);
+        setIsSpeaking(false);
+      };
+
+      window.speechSynthesis.speak(utterance);
+    } catch (err) {
+      console.warn('Speech synthesis safeguard caught exception:', err);
+      setIsSpeaking(false);
     }
-
-    window.speechSynthesis.speak(utterance);
   };
 
   // Open 1-Click Registration Modal
@@ -263,7 +343,6 @@ export default function HaatEventCard() {
 
       if (error) {
         console.warn('Supabase registration insert warning:', error.message);
-        // Even if table has a constraint, let user proceed smoothly
       }
 
       setRegistrationSuccess(true);
@@ -275,39 +354,16 @@ export default function HaatEventCard() {
     }
   };
 
-  // Loading Skeleton State
-  if (isLoading) {
-    return (
-      <div className="mt-2 relative overflow-hidden bg-[#2e241e]/80 rounded-3xl p-5 sm:p-6 sm:px-8 border border-[#4a3b32] shadow-md animate-pulse">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="flex-1 space-y-4">
-            <div className="flex items-center gap-2">
-              <div className="w-28 h-6 bg-white/10 rounded-full"></div>
-              <div className="w-32 h-6 bg-white/10 rounded-full"></div>
-            </div>
-            <div className="w-3/4 h-8 bg-white/15 rounded-lg"></div>
-            <div className="flex gap-4">
-              <div className="w-40 h-5 bg-white/10 rounded"></div>
-              <div className="w-32 h-5 bg-white/10 rounded"></div>
-              <div className="w-24 h-5 bg-white/10 rounded"></div>
-            </div>
-            <div className="flex items-center gap-3 pt-2">
-              <div className="w-32 h-10 bg-white/10 rounded-xl"></div>
-              <div className="w-40 h-10 bg-white/20 rounded-xl"></div>
-            </div>
-          </div>
-          <div className="hidden md:flex w-32 h-32 rounded-2xl bg-white/5 border border-white/10"></div>
-        </div>
-      </div>
-    );
-  }
-
   const isRegistrationOpen = activeEvent.status === 'REGISTRATION OPEN';
 
   return (
     <>
-      {/* ── Government Opportunities & Live Fairs Dynamic Card ── */}
-      <div className="mt-2 relative overflow-hidden bg-gradient-to-br from-[#2e241e] to-[#4a3b32] rounded-3xl p-5 sm:p-6 sm:px-8 border border-[#4a3b32] shadow-md group transition-all duration-300">
+      {/* ── Government Opportunities & Live Fairs Hardened Dynamic Card ── */}
+      <div
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className="mt-2 relative overflow-hidden bg-gradient-to-br from-[#2e241e] to-[#4a3b32] rounded-3xl p-5 sm:p-6 sm:px-8 border border-[#4a3b32] shadow-md group transition-all duration-300"
+      >
         {/* Decorative Background Elements */}
         <div className="absolute top-0 right-0 p-4 opacity-10 transform translate-x-4 -translate-y-4 pointer-events-none select-none">
           <span
@@ -320,7 +376,7 @@ export default function HaatEventCard() {
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex-1">
-            {/* Dark Pill Tags & Carousel Indicators */}
+            {/* Status Badging & Carousel Indicators */}
             <div className="flex flex-wrap items-center gap-2 mb-3">
               {activeEvent.is_govt_sponsored && (
                 <span className="px-2.5 py-0.5 rounded-full bg-[#ff9062]/20 text-[#ffdeaa] text-[10px] font-bold uppercase tracking-wider border border-[#ff9062]/30 flex items-center gap-1.5 shadow-sm">
@@ -332,37 +388,59 @@ export default function HaatEventCard() {
               <span
                 className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border flex items-center gap-1 shadow-sm ${
                   isRegistrationOpen
-                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30 ring-1 ring-emerald-500/20'
                     : activeEvent.status === 'UPCOMING'
-                    ? 'bg-sky-500/20 text-sky-300 border-sky-500/30'
+                    ? 'bg-sky-500/20 text-sky-300 border-sky-500/30 ring-1 ring-sky-500/20'
                     : 'bg-zinc-500/20 text-zinc-300 border-zinc-500/30'
                 }`}
               >
                 {activeEvent.status}
               </span>
 
-              {/* Event switcher if multiple live government melas exist */}
+              {/* Interactive Carousel Switcher & 8-sec Auto-cycle Indicator */}
               {events.length > 1 && (
-                <div className="ml-auto sm:ml-2 flex items-center gap-1 bg-black/30 rounded-full px-2 py-0.5 border border-white/10 text-[10px] text-[#d1c4bd]">
-                  <span>{currentIndex + 1} / {events.length}</span>
-                  <button
-                    onClick={() =>
-                      setCurrentIndex((prev) => (prev === 0 ? events.length - 1 : prev - 1))
-                    }
-                    className="hover:text-white p-0.5 transition-colors cursor-pointer"
-                    title="पिछला मेला"
-                  >
-                    <span className="material-symbols-outlined text-[13px] block">chevron_left</span>
-                  </button>
-                  <button
-                    onClick={() =>
-                      setCurrentIndex((prev) => (prev === events.length - 1 ? 0 : prev + 1))
-                    }
-                    className="hover:text-white p-0.5 transition-colors cursor-pointer"
-                    title="अगला मेला"
-                  >
-                    <span className="material-symbols-outlined text-[13px] block">chevron_right</span>
-                  </button>
+                <div className="ml-auto sm:ml-2 flex items-center gap-1.5 bg-black/40 rounded-full px-2.5 py-0.5 border border-white/10 text-[10px] text-[#d1c4bd]">
+                  <span className="font-semibold text-white/90">
+                    {safeIndex + 1} / {events.length}
+                  </span>
+
+                  {/* Carousel navigation buttons */}
+                  <div className="flex items-center gap-0.5 border-l border-white/15 pl-1.5 ml-0.5">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCurrentIndex((prev) => (prev === 0 ? events.length - 1 : prev - 1))
+                      }
+                      className="hover:text-white p-0.5 transition-colors cursor-pointer rounded hover:bg-white/10"
+                      title="पिछला मेला (Previous)"
+                    >
+                      <span className="material-symbols-outlined text-[13px] block">chevron_left</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCurrentIndex((prev) => (prev === events.length - 1 ? 0 : prev + 1))
+                      }
+                      className="hover:text-white p-0.5 transition-colors cursor-pointer rounded hover:bg-white/10"
+                      title="अगला मेला (Next)"
+                    >
+                      <span className="material-symbols-outlined text-[13px] block">chevron_right</span>
+                    </button>
+                  </div>
+
+                  {/* Visual dots */}
+                  <div className="flex items-center gap-1 ml-1 hidden sm:flex">
+                    {events.map((_, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setCurrentIndex(idx)}
+                        className={`w-1.5 h-1.5 rounded-full transition-all cursor-pointer ${
+                          idx === safeIndex ? 'bg-[#ff9062] w-3' : 'bg-white/30 hover:bg-white/60'
+                        }`}
+                        title={`Event ${idx + 1}`}
+                      />
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -516,7 +594,7 @@ export default function HaatEventCard() {
                     आवेदन सफलतापूर्वक दर्ज हुआ!
                   </h5>
                   <p className="text-sm text-[#d1c4bd] max-w-xs mx-auto">
-                    आपकी विवरण सरकारी हाट सेल सेल टीम को भेज दी गई है। आधिकारिक सूचना आपके नंबर पर प्राप्त होगी।
+                    आपकी विवरण सरकारी हाट सेल टीम को भेज दी गई है। आधिकारिक सूचना आपके नंबर पर प्राप्त होगी।
                   </p>
                 </div>
 

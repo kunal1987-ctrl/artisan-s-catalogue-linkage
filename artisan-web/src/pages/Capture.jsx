@@ -9,6 +9,7 @@ import LanguageToggle from '../components/LanguageToggle';
 import LanguageSelectorModal, { getDialectBadgeText } from '../components/LanguageSelectorModal';
 import AudioMuteButton from '../components/AudioMuteButton';
 import useAudioAssistant from '../hooks/useAudioAssistant';
+import { validateImageLightweight, getLocalizedValidationReason } from '../utils/imageValidator';
 
 const blobToBase64 = (blob) =>
   new Promise((resolve, reject) => {
@@ -598,7 +599,28 @@ export default function Capture() {
     setAiStatusText('');
   }, []);
 
-  // File picker handler (supports multi-select)
+  // ── Native Rear Camera Photo Capture Handler (capture="environment") ──
+  // Fast Micro-Canvas Check: Laplacian Variance (<5ms on 128x128 matrix)
+  const handlePhotoCapture = useCallback(async (e) => {
+    const fileList = e.target.files;
+    if (!fileList || fileList.length === 0) return;
+    const file = fileList[0];
+    e.target.value = '';
+
+    const validation = await validateImageLightweight(file);
+    if (!validation.valid) {
+      const msg = getLocalizedValidationReason(validation.reason, language);
+      if (showToast) showToast(`⚠️ ${msg}`);
+      if (language === 'hi') {
+        speakHindi(msg);
+      }
+      return;
+    }
+
+    await addImageToState(file);
+  }, [addImageToState, language, showToast]);
+
+  // File picker handler (supports multi-select with micro-canvas validation)
   const handleFileSelect = useCallback(async (e) => {
     const fileList = e.target.files;
     if (!fileList || fileList.length === 0) return;
@@ -606,11 +628,20 @@ export default function Capture() {
     e.target.value = '';
 
     for (const file of files) {
+      const validation = await validateImageLightweight(file);
+      if (!validation.valid) {
+        const msg = getLocalizedValidationReason(validation.reason, language);
+        if (showToast) showToast(`⚠️ ${msg}`);
+        if (language === 'hi') {
+          speakHindi(msg);
+        }
+        continue;
+      }
       await addImageToState(file);
     }
-  }, [addImageToState]);
+  }, [addImageToState, language, showToast]);
 
-  const handleImageSelection = handleFileSelect;
+  const handleImageSelection = handlePhotoCapture;
 
   // ════════════════════════════════════════════
   // WEBRTC LIVE CAMERA STREAM & FRAME CAPTURE
@@ -755,6 +786,17 @@ export default function Capture() {
 
       if (!blob) {
         throw new Error('Canvas frame blob conversion failed');
+      }
+
+      // Fast micro-canvas validation check (<5ms)
+      const validation = await validateImageLightweight(blob);
+      if (!validation.valid) {
+        const msg = getLocalizedValidationReason(validation.reason, language);
+        if (showToast) showToast(`⚠️ ${msg}`);
+        if (language === 'hi') {
+          speakHindi(msg);
+        }
+        return;
       }
 
       // Add to multi-image state
@@ -1989,13 +2031,13 @@ export default function Capture() {
         uiLanguage={language}
       />
 
-      {/* Forces native camera app */}
+      {/* Restrict file input directly to the rear camera */}
       <input 
         type="file" 
         accept="image/*" 
         capture="environment" 
         ref={cameraRef}
-        onChange={handleImageSelection} 
+        onChange={handlePhotoCapture} 
         className="hidden" 
       />
       {/* Opens native gallery / file picker with multiple support */}
@@ -2004,7 +2046,7 @@ export default function Capture() {
         accept="image/*" 
         multiple
         ref={galleryRef}
-        onChange={handleImageSelection} 
+        onChange={handleFileSelect} 
         className="hidden" 
       />
       </main>

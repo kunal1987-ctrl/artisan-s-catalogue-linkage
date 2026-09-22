@@ -528,20 +528,15 @@ export default function HaatEventCard() {
             )}
           </div>
 
-          {/* Right Side Illustration */}
-          <div className="hidden md:flex shrink-0 items-center justify-center w-32 h-32 rounded-2xl bg-white/5 border border-white/10 overflow-hidden relative group-hover:scale-105 transition-transform duration-500 shadow-inner">
-            <img
-              src={
-                activeEvent.banner_image_url ||
-                'https://images.unsplash.com/photo-1596484552834-6a58f850d0a1?auto=format&fit=crop&w=400&q=80'
-              }
-              alt={activeEvent.title}
-              className="w-full h-full object-cover opacity-80 mix-blend-overlay"
-            />
-            <div className="absolute inset-0 bg-gradient-to-tr from-[#2e241e]/80 to-transparent"></div>
-            <span className="material-symbols-outlined absolute text-[40px] text-white/90 drop-shadow-md">
-              storefront
-            </span>
+          {/* Right Side Visual Badge / Illustration */}
+          <div className="hidden sm:flex flex-col items-center justify-center p-4 bg-white/10 rounded-2xl border border-white/15 backdrop-blur-sm min-w-[120px] text-center">
+            <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-300 mb-2">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+              </svg>
+            </div>
+            <span className="text-xs font-semibold text-amber-200 tracking-wide uppercase">Live Exhibition</span>
+            <span className="text-[10px] text-gray-300">Stalls Available</span>
           </div>
         </div>
       </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
-const CACHE_KEY = 'cached_haat_events';
+const CACHE_KEY = 'shilp_cached_haats';
 
 const FALLBACK_EVENTS = [
   {
@@ -32,24 +32,21 @@ const FALLBACK_EVENTS = [
   },
 ];
 
-function getCachedEvents() {
-  if (typeof window === 'undefined') return FALLBACK_EVENTS;
-  try {
-    const raw = localStorage.getItem(CACHE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
-      }
-    }
-  } catch (err) {
-    console.warn('Error reading cached_haat_events:', err);
-  }
-  return FALLBACK_EVENTS;
-}
-
 export default function HaatEventCard({ artisanProfile = null, user = null }) {
-  const [events, setEvents] = useState(getCachedEvents);
+  // Cache-First State Initialization
+  const [events, setEvents] = useState(() => {
+    try {
+      const cached = localStorage.getItem(CACHE_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {
+      // Fallback
+    }
+    return FALLBACK_EVENTS;
+  });
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -108,6 +105,7 @@ export default function HaatEventCard({ artisanProfile = null, user = null }) {
     };
   }, []);
 
+  // Network Sync & Realtime Listener
   useEffect(() => {
     let isMounted = true;
 
@@ -138,7 +136,7 @@ export default function HaatEventCard({ artisanProfile = null, user = null }) {
     fetchHaatEvents();
 
     const channel = supabase
-      .channel('haat_events_realtime_root')
+      .channel('public:haat_events')
       .on(
         'postgres_changes',
         {
@@ -158,7 +156,7 @@ export default function HaatEventCard({ artisanProfile = null, user = null }) {
               const exists = prevEvents.some((ev) => ev.id === newRecord.id);
               updated = exists
                 ? prevEvents.map((ev) => (ev.id === newRecord.id ? newRecord : ev))
-                : [newRecord, ...prevEvents];
+                : [...prevEvents, newRecord];
             } else if (eventType === 'UPDATE') {
               updated = prevEvents.map((ev) => (ev.id === newRecord.id ? newRecord : ev));
             } else if (eventType === 'DELETE') {
@@ -251,23 +249,13 @@ export default function HaatEventCard({ artisanProfile = null, user = null }) {
       const voicesList =
         availableVoices.length > 0 ? availableVoices : window.speechSynthesis.getVoices();
 
-      const hiVoice = voicesList.find(
-        (v) => v.lang === 'hi-IN' || (v.lang && v.lang.toLowerCase().replace('_', '-') === 'hi-in')
-      );
-      const anyHiVoice = voicesList.find((v) => v.lang && v.lang.toLowerCase().startsWith('hi'));
-      const enInVoice = voicesList.find(
-        (v) => v.lang === 'en-IN' || (v.lang && v.lang.toLowerCase().replace('_', '-') === 'en-in')
+      const suitableVoice = voicesList.find(
+        (voice) => voice.lang && (voice.lang.includes('hi') || voice.lang.includes('IN'))
       );
 
-      if (hiVoice) {
-        utterance.voice = hiVoice;
-        utterance.lang = 'hi-IN';
-      } else if (anyHiVoice) {
-        utterance.voice = anyHiVoice;
-        utterance.lang = anyHiVoice.lang;
-      } else if (enInVoice) {
-        utterance.voice = enInVoice;
-        utterance.lang = 'en-IN';
+      if (suitableVoice) {
+        utterance.voice = suitableVoice;
+        utterance.lang = suitableVoice.lang;
       } else {
         utterance.lang = 'hi-IN';
       }
@@ -402,6 +390,26 @@ export default function HaatEventCard({ artisanProfile = null, user = null }) {
                 <span>→</span>
               </button>
             </div>
+
+            {/* Multi-Event Carousel Dots / Quick Navigation */}
+            {events.length > 1 && (
+              <div className="flex items-center gap-1.5 mt-4 pt-3 border-t border-white/10">
+                <span className="text-[10px] text-gray-400 mr-1">मेले:</span>
+                {events.map((ev, idx) => (
+                  <button
+                    key={ev.id || idx}
+                    type="button"
+                    onClick={() => setCurrentIndex(idx)}
+                    title={ev.title}
+                    className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                      idx === safeIndex
+                        ? 'w-7 bg-[#ff9062]'
+                        : 'w-2 bg-white/25 hover:bg-white/50'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

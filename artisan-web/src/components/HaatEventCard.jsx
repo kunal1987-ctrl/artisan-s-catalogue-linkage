@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 
-const CACHE_KEY = 'cached_haat_events';
+const CACHE_KEY = 'shilp_cached_haats';
 
 const FALLBACK_EVENTS = [
   {
@@ -35,27 +35,22 @@ const FALLBACK_EVENTS = [
   },
 ];
 
-// Read from LocalStorage immediately for 0ms initial render resilience
-function getCachedEvents() {
-  if (typeof window === 'undefined') return FALLBACK_EVENTS;
-  try {
-    const raw = localStorage.getItem(CACHE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
-      }
-    }
-  } catch (err) {
-    console.warn('Error reading cached_haat_events:', err);
-  }
-  return FALLBACK_EVENTS;
-}
-
 export default function HaatEventCard() {
-  const [events, setEvents] = useState(getCachedEvents);
+  // Cache-First State Initialization for Zero-Failure Operation
+  const [events, setEvents] = useState(() => {
+    try {
+      const cached = localStorage.getItem(CACHE_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {
+      // Fallback on parse failure
+    }
+    return FALLBACK_EVENTS;
+  });
+
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -124,10 +119,11 @@ export default function HaatEventCard() {
     };
   }, []);
 
-  // Fetch initial events and subscribe to Supabase Realtime WebSocket changes
+  // Network Sync & Realtime Listener
   useEffect(() => {
     let isMounted = true;
 
+    // 1. Fetch latest events from Supabase on mount; on success, update state and cache to localStorage
     async function fetchHaatEvents() {
       try {
         const todayStr = new Date().toISOString().split('T')[0];
@@ -148,15 +144,15 @@ export default function HaatEventCard() {
           }
         }
       } catch (err) {
-        console.warn('Network loss or offline during haat events query, using cache:', err);
+        console.warn('Network offline during haat events query, using cache:', err);
       }
     }
 
     fetchHaatEvents();
 
-    // Supabase Realtime WebSocket subscription for live haat_events updates
+    // 2. Bind to supabase.channel('public:haat_events')
     const channel = supabase
-      .channel('haat_events_realtime')
+      .channel('public:haat_events')
       .on(
         'postgres_changes',
         {
@@ -173,11 +169,13 @@ export default function HaatEventCard() {
             let updated = prevEvents;
 
             if (eventType === 'INSERT') {
+              // On INSERT: Append to state and update cache
               const exists = prevEvents.some((ev) => ev.id === newRecord.id);
               updated = exists
                 ? prevEvents.map((ev) => (ev.id === newRecord.id ? newRecord : ev))
-                : [newRecord, ...prevEvents];
+                : [...prevEvents, newRecord];
             } else if (eventType === 'UPDATE') {
+              // On UPDATE: Map and replace matching ID in state and cache
               updated = prevEvents.map((ev) => (ev.id === newRecord.id ? newRecord : ev));
             } else if (eventType === 'DELETE') {
               const filtered = prevEvents.filter((ev) => ev.id !== oldRecord?.id);
@@ -194,10 +192,11 @@ export default function HaatEventCard() {
       )
       .subscribe((status, err) => {
         if (err) {
-          console.warn('Realtime subscription notice for haat_events:', err);
+          console.warn('Realtime subscription notice for public:haat_events:', err);
         }
       });
 
+    // 3. Clean up listener on component unmount
     return () => {
       isMounted = false;
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
@@ -254,13 +253,15 @@ export default function HaatEventCard() {
     }
   };
 
-  // Resilient Speech Synthesis with safe voice fallback hierarchy: hi-IN -> hi-* -> en-IN -> default
+  // Hardened Voice Narration (विवरण सुनें)
   const handleToggleSpeech = () => {
+    // 1. Check if (!('speechSynthesis' in window)) before invoking
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
       alert('आपके ब्राउज़र में आवाज़ (Speech Synthesis) उपलब्ध नहीं है।');
       return;
     }
 
+    // 2. If already playing, cancel speech and reset toggle icon
     if (isSpeaking) {
       window.speechSynthesis.cancel();
       setIsSpeaking(false);
@@ -270,6 +271,7 @@ export default function HaatEventCard() {
     try {
       window.speechSynthesis.cancel();
 
+      // 3. Create new SpeechSynthesisUtterance(event.description_hi || event.title)
       const textToSpeak = activeEvent?.description_hi || activeEvent?.title || '';
       const utterance = new SpeechSynthesisUtterance(textToSpeak);
       utterance.rate = 0.9;
@@ -277,33 +279,23 @@ export default function HaatEventCard() {
       const voicesList =
         availableVoices.length > 0 ? availableVoices : window.speechSynthesis.getVoices();
 
-      const hiVoice = voicesList.find(
-        (v) => v.lang === 'hi-IN' || (v.lang && v.lang.toLowerCase().replace('_', '-') === 'hi-in')
-      );
-      const anyHiVoice = voicesList.find((v) => v.lang && v.lang.toLowerCase().startsWith('hi'));
-      const enInVoice = voicesList.find(
-        (v) => v.lang === 'en-IN' || (v.lang && v.lang.toLowerCase().replace('_', '-') === 'en-in')
+      // 4. Find a suitable voice by matching voice.lang.includes('hi') || voice.lang.includes('IN')
+      const suitableVoice = voicesList.find(
+        (voice) => voice.lang && (voice.lang.includes('hi') || voice.lang.includes('IN'))
       );
 
-      if (hiVoice) {
-        utterance.voice = hiVoice;
-        utterance.lang = 'hi-IN';
-      } else if (anyHiVoice) {
-        utterance.voice = anyHiVoice;
-        utterance.lang = anyHiVoice.lang;
-      } else if (enInVoice) {
-        utterance.voice = enInVoice;
-        utterance.lang = 'en-IN';
+      if (suitableVoice) {
+        utterance.voice = suitableVoice;
+        utterance.lang = suitableVoice.lang;
       } else {
         utterance.lang = 'hi-IN';
       }
 
       utterance.onstart = () => setIsSpeaking(true);
       utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = (err) => {
-        console.warn('Speech utterance event error:', err);
-        setIsSpeaking(false);
-      };
+
+      // 5. Add utterance.onerror = () => setIsSpeaking(false) to prevent stuck speaker UI icons
+      utterance.onerror = () => setIsSpeaking(false);
 
       window.speechSynthesis.speak(utterance);
     } catch (err) {
@@ -397,14 +389,13 @@ export default function HaatEventCard() {
                 {activeEvent.status}
               </span>
 
-              {/* Interactive Carousel Switcher & 8-sec Auto-cycle Indicator */}
+              {/* Multi-Event Quick Navigation Header Switcher */}
               {events.length > 1 && (
                 <div className="ml-auto sm:ml-2 flex items-center gap-1.5 bg-black/40 rounded-full px-2.5 py-0.5 border border-white/10 text-[10px] text-[#d1c4bd]">
                   <span className="font-semibold text-white/90">
                     {safeIndex + 1} / {events.length}
                   </span>
 
-                  {/* Carousel navigation buttons */}
                   <div className="flex items-center gap-0.5 border-l border-white/15 pl-1.5 ml-0.5">
                     <button
                       type="button"
@@ -426,20 +417,6 @@ export default function HaatEventCard() {
                     >
                       <span className="material-symbols-outlined text-[13px] block">chevron_right</span>
                     </button>
-                  </div>
-
-                  {/* Visual dots */}
-                  <div className="flex items-center gap-1 ml-1 hidden sm:flex">
-                    {events.map((_, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => setCurrentIndex(idx)}
-                        className={`w-1.5 h-1.5 rounded-full transition-all cursor-pointer ${
-                          idx === safeIndex ? 'bg-[#ff9062] w-3' : 'bg-white/30 hover:bg-white/60'
-                        }`}
-                        title={`Event ${idx + 1}`}
-                      />
-                    ))}
                   </div>
                 </div>
               )}
@@ -529,6 +506,26 @@ export default function HaatEventCard() {
                 </a>
               )}
             </div>
+
+            {/* Multi-Event Carousel Navigation Dots */}
+            {events.length > 1 && (
+              <div className="flex items-center gap-1.5 mt-4 pt-3 border-t border-white/10">
+                <span className="text-[10px] text-gray-400 mr-1">लाइव मेले:</span>
+                {events.map((ev, idx) => (
+                  <button
+                    key={ev.id || idx}
+                    type="button"
+                    onClick={() => setCurrentIndex(idx)}
+                    title={ev.title}
+                    className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                      idx === safeIndex
+                        ? 'w-7 bg-[#ff9062]'
+                        : 'w-2 bg-white/25 hover:bg-white/50'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Right Side Illustration */}

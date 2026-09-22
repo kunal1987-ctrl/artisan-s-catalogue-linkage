@@ -17,7 +17,6 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { CheckCircle2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../supabaseClient';
@@ -436,7 +435,6 @@ function OrderCard({ order, onMarkPacked, onAcceptPO, onDispatchPO, setSelectedP
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function Orders() {
-  const navigate = useNavigate();
   const { t } = useTranslation();
   const { language } = useLanguage();
   const [orders, setOrders] = useState(STATIC_ORDERS);
@@ -764,34 +762,6 @@ export default function Orders() {
       <main className="flex-1 w-full bg-background min-h-screen px-3 sm:px-6 lg:px-8 py-3 sm:py-4 flex flex-col gap-3.5 sm:gap-4">
         <div className="flex flex-col gap-3.5 sm:gap-4 max-w-7xl mx-auto w-full">
 
-          {/* ── TOP NAV BAR ───────────────────────────────────────────────── */}
-          <div className="flex items-center justify-between py-3 border-b border-border-delicate/60">
-            <button
-              type="button"
-              aria-label="Go back to Home"
-              className="min-w-[44px] min-h-[44px] w-[44px] h-[44px] rounded-full bg-surface-container-low hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors cursor-pointer active:scale-95"
-              onClick={() => navigate('/home')}
-            >
-              <span className="material-symbols-outlined text-[24px]">arrow_back</span>
-            </button>
-
-            {/* Global voice button */}
-            <button
-              type="button"
-              aria-label={t('capture.listening', 'Listen to audio')}
-              id="voice-listen-btn"
-              className="min-w-[44px] min-h-[44px] w-[44px] h-[44px] rounded-full bg-primary-container text-on-primary flex items-center justify-center shrink-0 active:scale-90 hover:scale-105 transition-all shadow-sm cursor-pointer"
-              onClick={() => {
-                unlockAudio();
-                if (displayedOrders.length > 0) {
-                  const text = displayedOrders[0].voice_announcement_text || buildOrderAnnouncementText(displayedOrders[0]);
-                  announceOrder(text);
-                }
-              }}
-            >
-              <span className="material-symbols-outlined text-[24px]">volume_up</span>
-            </button>
-          </div>
 
           {/* ── FILTER CHIPS + SIMULATORS ────────────────────────────────── */}
           <div className="flex flex-wrap items-center justify-between gap-3">

@@ -85,3 +85,14 @@ values
   'https://trifed.tribal.gov.in'
 )
 on conflict do nothing;
+
+-- Enable Realtime replication for haat_events table
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables 
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'haat_events'
+  ) then
+    alter publication supabase_realtime add table public.haat_events;
+  end if;
+end $$;

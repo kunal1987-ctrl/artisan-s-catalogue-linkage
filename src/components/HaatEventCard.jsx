@@ -65,6 +65,7 @@ export default function HaatEventCard({ artisanProfile = null, user = null }) {
     });
   }, [user, artisanProfile]);
 
+  // Fetch initial events and subscribe to Supabase Realtime WebSocket changes
   useEffect(() => {
     let isMounted = true;
 
@@ -96,10 +97,56 @@ export default function HaatEventCard({ artisanProfile = null, user = null }) {
 
     fetchHaatEvents();
 
+    // Supabase Realtime WebSocket subscription for live haat_events updates
+    const channel = supabase
+      .channel('haat_events_realtime_root')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'haat_events',
+        },
+        (payload) => {
+          if (!isMounted) return;
+
+          const { eventType, new: newRecord, old: oldRecord } = payload;
+
+          setEvents((prevEvents) => {
+            if (eventType === 'INSERT') {
+              const exists = prevEvents.some((ev) => ev.id === newRecord.id);
+              if (exists) {
+                return prevEvents.map((ev) => (ev.id === newRecord.id ? newRecord : ev));
+              }
+              return [newRecord, ...prevEvents];
+            }
+
+            if (eventType === 'UPDATE') {
+              return prevEvents.map((ev) => (ev.id === newRecord.id ? newRecord : ev));
+            }
+
+            if (eventType === 'DELETE') {
+              const filtered = prevEvents.filter((ev) => ev.id !== oldRecord?.id);
+              return filtered.length > 0 ? filtered : FALLBACK_EVENTS;
+            }
+
+            return prevEvents;
+          });
+        }
+      )
+      .subscribe((status, err) => {
+        if (err) {
+          console.warn('Realtime subscription notice for haat_events:', err);
+        }
+      });
+
     return () => {
       isMounted = false;
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
         window.speechSynthesis.cancel();
+      }
+      if (channel) {
+        supabase.removeChannel(channel);
       }
     };
   }, []);
@@ -111,7 +158,8 @@ export default function HaatEventCard({ artisanProfile = null, user = null }) {
     }
   }, [currentIndex]);
 
-  const activeEvent = events[currentIndex] || FALLBACK_EVENTS[0];
+  const safeIndex = currentIndex >= events.length ? 0 : currentIndex;
+  const activeEvent = events[safeIndex] || FALLBACK_EVENTS[0];
 
   const formatDateRange = (startDateStr, endDateStr) => {
     if (!startDateStr || !endDateStr) return '';

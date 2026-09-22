@@ -76,7 +76,7 @@ export default function HaatEventCard() {
     });
   }, [user, artisanName, artisanProfile]);
 
-  // Fetch events from Supabase (end_date >= current_date ordered by start_date asc)
+  // Fetch initial events and subscribe to Supabase Realtime WebSocket changes
   useEffect(() => {
     let isMounted = true;
 
@@ -109,10 +109,59 @@ export default function HaatEventCard() {
 
     fetchHaatEvents();
 
+    // Supabase Realtime WebSocket subscription for live haat_events updates
+    const channel = supabase
+      .channel('haat_events_realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'haat_events',
+        },
+        (payload) => {
+          if (!isMounted) return;
+
+          const { eventType, new: newRecord, old: oldRecord } = payload;
+
+          setEvents((prevEvents) => {
+            if (eventType === 'INSERT') {
+              // Prepend new event to the list
+              const exists = prevEvents.some((ev) => ev.id === newRecord.id);
+              if (exists) {
+                return prevEvents.map((ev) => (ev.id === newRecord.id ? newRecord : ev));
+              }
+              return [newRecord, ...prevEvents];
+            }
+
+            if (eventType === 'UPDATE') {
+              // Replace modified event object in state
+              return prevEvents.map((ev) => (ev.id === newRecord.id ? newRecord : ev));
+            }
+
+            if (eventType === 'DELETE') {
+              // Filter out the deleted event
+              const filtered = prevEvents.filter((ev) => ev.id !== oldRecord?.id);
+              return filtered.length > 0 ? filtered : FALLBACK_EVENTS;
+            }
+
+            return prevEvents;
+          });
+        }
+      )
+      .subscribe((status, err) => {
+        if (err) {
+          console.warn('Realtime subscription notice for haat_events:', err);
+        }
+      });
+
     return () => {
       isMounted = false;
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
         window.speechSynthesis.cancel();
+      }
+      if (channel) {
+        supabase.removeChannel(channel);
       }
     };
   }, []);
@@ -125,7 +174,8 @@ export default function HaatEventCard() {
     }
   }, [currentIndex]);
 
-  const activeEvent = events[currentIndex] || FALLBACK_EVENTS[0];
+  const safeIndex = currentIndex >= events.length ? 0 : currentIndex;
+  const activeEvent = events[safeIndex] || FALLBACK_EVENTS[0];
 
   // Format Date Range: e.g. "25 Oct - 05 Nov"
   const formatDateRange = (startDateStr, endDateStr) => {

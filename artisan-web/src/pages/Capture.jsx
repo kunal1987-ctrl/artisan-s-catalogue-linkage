@@ -26,27 +26,76 @@ const blobToBase64 = (blob) =>
   });
 
 /**
- * Compresses incoming camera photos to a maximum dimension of 1024px
- * using browser-image-compression before upload, ensuring lightning-fast uploads
- * and zero device lockups.
+ * In-memory client-side compression function using an HTML5 Canvas.
+ * Compresses camera captures and image files down to maxWidth (800px) with quality 0.6
+ * returning a lightweight JPEG Data URL to harden uploads against network latency.
  */
-const compressImage = async (file, maxDimension = 1024, quality = 0.85) => {
-  if (!file) return file;
-  if (file.type === 'image/svg+xml') return file;
+const compressImage = (fileOrDataUrl, maxWidth = 800, quality = 0.6) => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(maxWidth / img.width, 1);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Canvas 2d context unavailable'));
+        return;
+      }
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = (err) => reject(err);
+    if (typeof fileOrDataUrl === 'string') {
+      img.src = fileOrDataUrl;
+    } else {
+      const reader = new FileReader();
+      reader.onload = (e) => (img.src = e.target.result);
+      reader.onerror = (err) => reject(err);
+      reader.readAsDataURL(fileOrDataUrl);
+    }
+  });
+};
 
-  const options = {
-    maxSizeMB: 1,
-    maxWidthOrHeight: maxDimension,
-    useWebWorker: true,
-    fileType: 'image/jpeg',
-    initialQuality: quality,
-  };
+const dataUrlToBlob = (dataUrl) => {
+  const arr = dataUrl.split(',');
+  const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new Blob([u8arr], { type: mime });
+};
+
+/**
+ * Sanitizes Gemini API response text with strict regex extraction before JSON parsing.
+ * Strips markdown code fences (```json ... ``` or ``` ... ```) and falls back to
+ * extracting the first valid JSON object substring.
+ */
+const parseGeminiResponse = (rawText) => {
+  if (typeof rawText !== 'string') {
+    if (typeof rawText === 'object' && rawText !== null) return rawText;
+    throw new Error('Invalid raw response text');
+  }
+
+  // Strip markdown code fences if present (```json ... ``` or ``` ... ```)
+  const cleanedText = rawText
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```$/i, '')
+    .trim();
 
   try {
-    return await imageCompression(file, options);
-  } catch (error) {
-    console.warn('[Capture] browser-image-compression fallback:', error);
-    return file;
+    return JSON.parse(cleanedText);
+  } catch (parseError) {
+    // Fallback: extract the first valid JSON object substring
+    const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]);
+    }
+    throw new Error(`Failed to parse structured catalog response: ${parseError.message}`);
   }
 };
 
@@ -126,6 +175,7 @@ export default function Capture() {
   const [imageBase64, setImageBase64] = useState(null);
   const [imageUrl, setImageUrl] = useState(null);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [bgRemovalStatus, setBgRemovalStatus] = useState('idle'); // idle | processing | done | error
 
   // ── WebRTC Live Camera Viewfinder State & Refs ──
@@ -193,6 +243,18 @@ export default function Capture() {
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
   const animFrameRef = useRef(null);
+
+  // ── AbortController Ref & Single Active Submit Lock ──
+  const generateAbortControllerRef = useRef(null);
+  const isSubmittingRef = useRef(false);
+
+  useEffect(() => {
+    return () => {
+      if (generateAbortControllerRef.current) {
+        generateAbortControllerRef.current.abort('Component unmounted');
+      }
+    };
+  }, []);
 
   // ── Explicit State Reset to prevent cache bleed between uploads ──
   const resetCaptureState = useCallback(() => {
@@ -436,20 +498,24 @@ export default function Capture() {
     if (!fileOrBlob) return;
     const id = `img_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
-    // Compress image to 1024px
+    // Compress image to 800px max width at 0.6 quality via in-memory HTML5 Canvas
     let workingBlob = fileOrBlob;
-    try {
-      workingBlob = await compressImage(fileOrBlob, 1024, 0.85);
-    } catch (optErr) {
-      console.warn('[Capture] Image compression fallback:', optErr);
-    }
-
-    const localUrl = URL.createObjectURL(workingBlob);
     let base64String = '';
+    let localUrl = '';
+
     try {
-      base64String = await blobToBase64(workingBlob);
-    } catch (e) {
-      console.warn('[Capture] Photo base64 encoding error:', e);
+      const dataUrl = await compressImage(fileOrBlob, 800, 0.6);
+      workingBlob = dataUrlToBlob(dataUrl);
+      base64String = dataUrl.split(',')[1] || '';
+      localUrl = dataUrl;
+    } catch (optErr) {
+      console.warn('[Capture] Canvas image compression error, using raw fallback:', optErr);
+      localUrl = fileOrBlob instanceof Blob ? URL.createObjectURL(fileOrBlob) : String(fileOrBlob);
+      try {
+        base64String = await blobToBase64(fileOrBlob);
+      } catch (e) {
+        console.warn('[Capture] Photo base64 encoding error:', e);
+      }
     }
 
     const newImageItem = {
@@ -850,6 +916,12 @@ export default function Capture() {
   // ════════════════════════════════════════════
 
   const handleGenerateListing = useCallback(async () => {
+    // Single Active Request Guard & isLoading guard (prevent double submit clicks)
+    if (isLoading || isSubmittingRef.current || aiStatus === 'analyzing' || aiStatus === 'transcribing') {
+      console.warn('[handleGenerateListing] Catalog request already in progress. Ignoring duplicate click.');
+      return;
+    }
+
     const hasImg = Boolean(image || imageFile || imageBase64 || imageUrl || processedPreview || previewUrl);
     const activeText = (transcript || customTranscript || audioTranscript || '').trim();
     const hasDesc = Boolean(activeText.length > 0 || Boolean(audioBase64) || Boolean(audioBlob) || Boolean(_audioBlob));
@@ -884,6 +956,16 @@ export default function Capture() {
       if (showToast) showToast(msg);
       return;
     }
+
+    // Race Condition Prevention: Abort any previous pending request in flight
+    if (generateAbortControllerRef.current) {
+      console.info('[handleGenerateListing] Aborting previous in-flight AI request...');
+      generateAbortControllerRef.current.abort('New catalog request started');
+    }
+
+    const abortController = new AbortController();
+    generateAbortControllerRef.current = abortController;
+    isSubmittingRef.current = true;
 
     // Gather all base64 representations from images state for multi-angle AI context
     const allImagesBase64 = [];
@@ -940,6 +1022,7 @@ export default function Capture() {
     setErrorMsg('');
 
     try {
+      setIsLoading(true);
       if (targetAudioBase64) {
         await new Promise((r) => setTimeout(r, 600));
       }
@@ -960,7 +1043,19 @@ export default function Capture() {
         const imageBlob = images[0]?.blob || (image instanceof Blob ? image : null) || (imageFile instanceof Blob ? imageFile : null);
         console.log("Sending to Gemini:", { imageBlob, transcript: activeText || transcript });
 
-        const { data, error } = await supabase.functions.invoke('process-artisan-craft', {
+        // Network Latency & Timeout Protection (15-second max timeout)
+        const timeoutMs = 15000;
+        const timeoutPromise = new Promise((_, reject) => {
+          const timer = setTimeout(() => reject(new Error('REQUEST_TIMEOUT')), timeoutMs);
+
+          if (abortController.signal.aborted) {
+            clearTimeout(timer);
+          } else {
+            abortController.signal.addEventListener('abort', () => clearTimeout(timer));
+          }
+        });
+
+        const invokePromise = supabase.functions.invoke('process-artisan-craft', {
           body: {
             audioBase64: targetAudioBase64 || null,
             imageBase64: targetImageBase64,
@@ -972,13 +1067,30 @@ export default function Capture() {
           headers: activeToken ? { Authorization: `Bearer ${activeToken}` } : {},
         });
 
+        const responseRes = await Promise.race([invokePromise, timeoutPromise]);
+        const data = responseRes?.data;
+        const error = responseRes?.error;
+
         if (!error && data && !data.error) {
-          listingData = data;
-          if (data.category || data.craft_category) {
-            setCategory(data.category || data.craft_category);
-          }
-          if (data.hsn_code) {
-            setHsnCode(data.hsn_code);
+          try {
+            const parsedData = parseGeminiResponse(data);
+            listingData = parsedData;
+            if (parsedData.category || parsedData.craft_category) {
+              setCategory(parsedData.category || parsedData.craft_category);
+            }
+            if (parsedData.hsn_code) {
+              setHsnCode(parsedData.hsn_code);
+            }
+          } catch (parseError) {
+            console.warn('[Capture] parseGeminiResponse error:', parseError.message);
+            speakHindi('प्रतिक्रिया प्रारूप में समस्या। सुरक्षित कैटलॉग लोड किया गया।');
+            if (showToast) {
+              showToast(
+                language === 'hi'
+                  ? 'एआई प्रतिक्रिया पार्स करने में त्रुटि: सुरक्षित कैटलॉग सक्रिय किया गया।'
+                  : `AI Response Format Alert: ${parseError.message}`
+              );
+            }
           }
         } else {
           const errDetail = error?.message || data?.error || '';
@@ -999,7 +1111,12 @@ export default function Capture() {
           }
         }
       } catch (invokeErr) {
-        console.warn('Edge Function invocation caught error:', invokeErr);
+        console.warn('Edge Function invocation caught error or timed out:', invokeErr);
+        if (invokeErr?.message === 'REQUEST_TIMEOUT') {
+          alert('Network is taking longer than usual. Please try again.');
+        } else {
+          alert('Could not generate listing automatically. Please verify your photo and speech.');
+        }
         if (showToast) {
           showToast(
             language === 'hi'
@@ -1094,6 +1211,12 @@ export default function Capture() {
         }
       }
       setAiStatus('error');
+    } finally {
+      setIsLoading(false);
+      isSubmittingRef.current = false;
+      if (generateAbortControllerRef.current === abortController) {
+        generateAbortControllerRef.current = null;
+      }
     }
   }, [
     images,
@@ -1117,9 +1240,8 @@ export default function Capture() {
 
   const activeImageObj = images[selectedImageIndex] || images[0];
   const displayImage = activeImageObj?.previewUrl || processedPreview || previewUrl;
-  const isProcessing = aiStatus === 'transcribing' || aiStatus === 'analyzing';
+  const isProcessing = aiStatus === 'transcribing' || aiStatus === 'analyzing' || isLoading;
   const isOptimizing = isProcessingImage || bgRemovalStatus === 'processing';
-  const isLoading = isProcessing; // Do NOT block the user when image is optimizing (optimistic UI)
 
   return (
     <div className="w-full">
@@ -1695,25 +1817,27 @@ export default function Capture() {
                   <button
                     id="process-ai-btn"
                     aria-label="Process with AI"
-                    disabled={isLoading || !isReadyToProcess}
+                    disabled={isLoading || isProcessing || !isReadyToProcess}
                     onClick={() => {
-                      if (!isLoading) handleGenerateListing();
+                      if (!isLoading && !isProcessing) handleGenerateListing();
                     }}
                     className={`w-full h-14 rounded-2xl font-bold text-base tracking-wide flex items-center justify-center gap-2 shadow-xl transition-all ${
-                      isLoading || !isReadyToProcess
+                      isLoading || isProcessing || !isReadyToProcess
                         ? 'bg-[#ff9062]/40 text-[#180f0a]/50 cursor-not-allowed pointer-events-none'
                         : 'bg-[#ff9062] hover:bg-[#ff804a] text-[#180f0a] cursor-pointer active:scale-95'
                     }`}
                     type="button"
                   >
                     <span>
-                      {isProcessing
-                        ? (language === 'hi' ? 'कैटलॉग बन रहा है...' : 'Generating Listing...')
+                      {isLoading || isProcessing
+                        ? (language === 'hi' ? 'एआई शिल्प विश्लेषण जारी है...' : 'Analyzing craft with AI...')
                         : (language === 'hi' ? 'एआई कैटलॉग बनाएं' : 'Process with AI')}
                     </span>
-                    <span className="material-symbols-outlined text-[22px]">
-                      {isLoading ? 'hourglass_top' : 'auto_awesome'}
-                    </span>
+                    {isLoading || isProcessing ? (
+                      <div className="w-5 h-5 border-2 border-[#180f0a] border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <span className="material-symbols-outlined text-[22px]">auto_awesome</span>
+                    )}
                   </button>
                 </div>
 

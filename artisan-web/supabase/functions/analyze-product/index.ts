@@ -109,7 +109,17 @@ Return strictly valid JSON adhering to the Required JSON Output Format.`
       throw new Error("No text response received from Gemini API");
     }
 
-    const productData = JSON.parse(textResult);
+    let productData: any;
+    try {
+      productData = JSON.parse(textResult);
+    } catch (parseErr) {
+      const jsonMatch = textResult.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        productData = JSON.parse(jsonMatch[0]);
+      } else {
+        throw parseErr;
+      }
+    }
 
     return new Response(
       JSON.stringify(productData),

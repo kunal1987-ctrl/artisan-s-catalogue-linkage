@@ -21,6 +21,28 @@ const corsHeaders = {
 };
 
 // ─────────────────────────────────────────────────────────────────
+// STRICT REGEX GEMINI RESPONSE PARSER
+// ─────────────────────────────────────────────────────────────────
+const parseGeminiResponse = (rawText: string) => {
+  // Strip markdown code fences if present (```json ... ``` or ``` ... ```)
+  const cleanedText = rawText
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```$/i, '')
+    .trim();
+
+  try {
+    return JSON.parse(cleanedText);
+  } catch (parseError: any) {
+    // Fallback: extract the first valid JSON object substring
+    const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]);
+    }
+    throw new Error(`Failed to parse structured catalog response: ${parseError.message}`);
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────
 // DYNAMIC CRAFT PROFILE GENERATOR (NO HARDCODED TERRACOTTA DEFAULT)
 // Generates accurate fallback details based on transcript & craft keywords
 // ─────────────────────────────────────────────────────────────────
@@ -583,12 +605,7 @@ Return strictly valid JSON adhering to the Required JSON Output Format.`,
 
           if (geminiRes.ok) {
             const geminiResult = await geminiRes.json();
-            let rawText = geminiResult?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-            rawText = rawText
-              .replace(/^```json\s*/i, "")
-              .replace(/^```\s*/i, "")
-              .replace(/\s*```$/i, "")
-              .trim();
+            const rawText = geminiResult?.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
             if (!rawText) {
               console.warn(`[Step 2] Model ${model} returned empty text. Trying next...`);
@@ -596,11 +613,11 @@ Return strictly valid JSON adhering to the Required JSON Output Format.`,
             }
 
             try {
-              productData = JSON.parse(rawText);
+              productData = parseGeminiResponse(rawText);
               console.log(`[Step 2 Success] Generated listing with ${model}:`, productData.name || productData.title);
               break;
-            } catch (parseErr) {
-              console.warn(`[Step 2] JSON parse failed for ${model}:`, parseErr);
+            } catch (parseErr: any) {
+              console.warn(`[Step 2] Response parsing failed for ${model}:`, parseErr.message);
               continue;
             }
           } else {

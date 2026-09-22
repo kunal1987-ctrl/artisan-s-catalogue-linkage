@@ -73,6 +73,8 @@ const AuthContext = createContext({
   verifyOtp: async () => {},
   sendEmailOtp: async () => {},
   verifyEmailOtp: async () => {},
+  signInWithGoogle: async () => {},
+  executePostAuthSuccess: () => {},
   signOut: async () => {},
 });
 
@@ -459,6 +461,22 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const signInWithGoogle = async () => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin,
+        },
+      });
+      if (error) throw error;
+      return { success: true, data };
+    } catch (err) {
+      console.error('[Auth] signInWithGoogle error:', err);
+      throw err;
+    }
+  };
+
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
@@ -670,6 +688,8 @@ export function AuthProvider({ children }) {
     verifyOtp,
     sendEmailOtp,
     verifyEmailOtp,
+    signInWithGoogle,
+    executePostAuthSuccess,
     signOut,
   };
 

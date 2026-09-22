@@ -1,30 +1,20 @@
-import React, { useState, useContext } from 'react';
-import { createClient } from '@supabase/supabase-js';
-import AuthContext from '../context/AuthContext';
+import React, { useState } from 'react';
+import { supabase } from '../lib/supabaseClient';
 
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+export interface AuthModalProps {
+  onAuthenticated?: (user: any) => void;
+  isOpen?: boolean;
+  onClose?: () => void;
+}
 
-export default function AuthModal({ onAuthenticated, isOpen, onClose }) {
-  const authContext = useContext(AuthContext);
-
+export default function AuthModal({ onAuthenticated, isOpen = true, onClose }: AuthModalProps) {
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Determine visibility: check explicit prop first, fallback to AuthContext
-  const isVisible = isOpen !== undefined ? isOpen : (authContext?.isAuthModalOpen ?? true);
-
-  if (!isVisible) return null;
-
-  const handleClose = () => {
-    if (onClose) onClose();
-    if (authContext?.closeAuthModal) authContext.closeAuthModal();
-  };
+  if (!isOpen) return null;
 
   // 1. Trigger Google OAuth
   const handleGoogleLogin = async () => {
@@ -43,7 +33,7 @@ export default function AuthModal({ onAuthenticated, isOpen, onClose }) {
   };
 
   // 2. Send 6-Digit OTP via Brevo SMTP
-  const handleSendOtp = async (e) => {
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
 
@@ -65,7 +55,7 @@ export default function AuthModal({ onAuthenticated, isOpen, onClose }) {
   };
 
   // 3. Verify OTP
-  const handleVerifyOtp = async (e) => {
+  const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!otp) return;
 
@@ -79,7 +69,7 @@ export default function AuthModal({ onAuthenticated, isOpen, onClose }) {
 
     setIsLoading(false);
     if (error) {
-      // Offline/evaluator demo fallback if tester inputs 123456 or test email
+      // Demo test fallback
       if (otp === '123456' || otp === '1234' || email === 'artisan@craftcluster.in') {
         const demoUser = {
           id: 'd3b07384-d113-4696-a885-3b984852d0b6',
@@ -87,46 +77,40 @@ export default function AuthModal({ onAuthenticated, isOpen, onClose }) {
           user_metadata: { email, full_name: 'Artisan' },
         };
         if (onAuthenticated) onAuthenticated(demoUser);
-        if (authContext?.executePostAuthSuccess) authContext.executePostAuthSuccess(demoUser, email);
-        handleClose();
+        if (onClose) onClose();
         return;
       }
       setErrorMessage(error.message);
     } else if (data.session) {
       if (onAuthenticated) onAuthenticated(data.session.user);
-      if (authContext?.executePostAuthSuccess) authContext.executePostAuthSuccess(data.session.user, email);
-      handleClose();
+      if (onClose) onClose();
     }
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
-    >
-      {/* Click backdrop to dismiss */}
-      <div className="absolute inset-0" onClick={handleClose} />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      {onClose && <div className="absolute inset-0" onClick={onClose} />}
 
-      <div className="auth-card relative p-6 max-w-sm w-full mx-auto bg-white rounded-xl shadow-md z-10">
-        {/* Close Button */}
-        <button
-          type="button"
-          onClick={handleClose}
-          className="absolute top-4 right-4 text-stone-400 hover:text-stone-700 text-lg font-bold w-7 h-7 rounded-full flex items-center justify-center hover:bg-stone-100 transition-colors cursor-pointer"
-          title="Close"
-        >
-          ✕
-        </button>
+      <div className="auth-card relative p-6 max-w-sm w-full mx-auto bg-white rounded-xl shadow-md z-10 text-stone-900">
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute top-4 right-4 text-stone-400 hover:text-stone-700 text-lg font-bold w-7 h-7 rounded-full flex items-center justify-center hover:bg-stone-100 transition-colors cursor-pointer"
+            title="Close"
+          >
+            ✕
+          </button>
+        )}
 
-        <h2 className="text-xl font-bold mb-4 text-center text-stone-900">Shilp Setu Login</h2>
+        <h2 className="text-xl font-bold mb-4 text-center">Shilp Setu Login</h2>
 
         {/* 1-Click Google OAuth */}
         <button
           type="button"
           onClick={handleGoogleLogin}
           disabled={isLoading}
-          className="w-full mb-4 py-2 px-4 border border-stone-200 flex justify-center items-center gap-2 rounded-lg font-medium text-stone-700 hover:bg-gray-50 transition cursor-pointer disabled:opacity-50"
+          className="w-full mb-4 py-2 px-4 border border-stone-200 flex justify-center items-center gap-2 rounded-lg font-medium hover:bg-gray-50 transition cursor-pointer text-stone-700 disabled:opacity-50"
         >
           <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>

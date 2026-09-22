@@ -628,6 +628,26 @@ export function AuthProvider({ children }) {
             phone: currentUser.phone || savedPhone || prev?.phone || null,
             verified: true,
           }));
+          if (currentUser.email) {
+            try { localStorage.setItem('artisan_verified_email', currentUser.email); } catch {}
+          }
+          if (currentUser.id) {
+            try { localStorage.setItem('artisan_user_id', currentUser.id); } catch {}
+          }
+        }
+        if (_event === 'SIGNED_OUT') {
+          try {
+            localStorage.removeItem('artisan_verified_email');
+            localStorage.removeItem('artisan_verified_phone');
+            localStorage.removeItem('artisan_user_id');
+          } catch {}
+          setArtisanProfile({
+            name: '',
+            email: null,
+            phone: null,
+            cluster: '',
+            verified: false,
+          });
         }
         setIsLoading(false);
       }

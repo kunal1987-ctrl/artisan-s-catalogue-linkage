@@ -43,23 +43,36 @@ Deno.serve(async (req: Request) => {
         systemInstruction: {
           parts: [
             {
-              text: `You are an expert Indian rural commerce appraiser and cataloger. You are given an image of a handmade product and a transcribed voice note. You must generate a highly accurate, unique product listing in JSON format. Strictly prevent repetitive defaulting.
+              text: `You are Shilp Setu's authentic artisan inventory verification and cataloging engine. You are given an image of a handmade product.
 
-Rules for Extraction & Appraisal:
-1. Category: Deduce strictly from visual features (e.g., Woodwork, Handloom, Metalcraft, Clay/Pottery). Do not default.
-2. Price: Extract the stated audio amount first. If the transcript is empty or lacks a price, perform a "Smart Appraisal"—calculate a specific fair market valuation based on the visual material and craft complexity.
-3. HSN Code: Map the precise 4-to-6 digit Indian GST classification to the primary material detected in the image.
-4. Description: Write a unique 2-sentence marketing copy reflecting only the specific colors, patterns, and design details visible in the uploaded frame.
+AUTHENTICITY & INTEGRITY RULES:
+1. is_authentic_craft: Image MUST clearly display an authentic, physical handmade craft, textile, pottery, metalwork, sculpture, or indigenous art piece. It must NOT be a selfie, pet, food, industrial machinery, or irrelevant object.
+2. is_screen_recapture: Detect if this image is a photograph taken of another digital screen (monitor, mobile screen, TV, tablet). Look for pixel grid moiré patterns, screen bevels/frames, glare on glass, or UI icons.
+3. is_watermarked_or_stock: Detect if this is an e-commerce stock photo from Amazon/Flipkart/Etsy with clean-cut pure white studio backdrops, watermarks, or digital catalog banners.
+
+IF the image FAILS any of these criteria:
+Set "is_valid": false and populate "rejection_reason" in simple Hindi and English (e.g. "तस्वीर किसी स्क्रीन से ली गई प्रतीत होती है। कृपया असली उत्पाद की फोटो लें। / Photo appears to be taken from a screen. Please photograph the physical craft directly."). Leave all catalog fields null.
+
+IF the image PASSES:
+Set "is_valid": true, "rejection_reason": null, and generate the full product catalog fields.
+- Category: Deduce strictly from visual features (e.g., Woodwork, Handloom, Metalcraft, Clay/Pottery). Do not default.
+- Price: Perform a Smart Appraisal calculating fair market valuation based on visual material and craft complexity.
+- HSN Code: Map the precise 4-to-6 digit Indian GST classification code.
+- Description: Write a unique 2-sentence marketing copy reflecting only the specific colors, patterns, and design details visible in the uploaded frame.
 
 Required JSON Output Format:
 {
-  "name": "Specific product name",
-  "material": "Specific material",
-  "category": "Specific category deduced strictly from visual features",
-  "hsn_code": "Precise 4-to-6 digit Indian GST classification code",
-  "price": <integer>,
-  "pricing_method": "<'spoken' or 'smart_appraisal'>",
-  "description": "Unique 2-sentence marketing copy reflecting only the specific colors, patterns, and design details visible in the uploaded frame"
+  "is_valid": boolean,
+  "rejection_reason": string or null,
+  "name": "Specific product name" or null,
+  "product_name": "Specific product name" or null,
+  "material": "Specific material" or null,
+  "category": "Specific category deduced strictly from visual features" or null,
+  "hsn_code": "Precise 4-to-6 digit Indian GST classification code" or null,
+  "price": <integer or null>,
+  "suggested_price_inr": <integer or null>,
+  "pricing_method": "smart_appraisal",
+  "description": "Unique 2-sentence marketing copy reflecting only the specific colors, patterns, and design details visible in the uploaded frame" or null
 }`
             }
           ]
@@ -68,11 +81,12 @@ Required JSON Output Format:
           {
             parts: [
               {
-                text: `Analyze the provided image and generate the appraised product listing following the system instructions. Strictly prevent repetitive defaulting:
-- Category: Deduce strictly from visual features (e.g., Woodwork, Handloom, Metalcraft, Clay/Pottery). Do not default.
-- Price: Extract the stated audio amount first. If the transcript is empty or lacks a price, perform a "Smart Appraisal"—calculate a specific fair market valuation based on the visual material and craft complexity.
-- HSN Code: Map the precise 4-to-6 digit Indian GST classification to the primary material detected in the image.
-- Description: Write a unique 2-sentence marketing copy reflecting only the specific colors, patterns, and design details visible in the uploaded frame.
+                text: `Analyze the provided craft photo.
+
+AUTHENTICITY & INTEGRITY CHECKS:
+1. Verify this is a genuine physical craft, not a selfie, screen photograph, or stock photo.
+2. If invalid, set "is_valid": false and provide "rejection_reason" in Hindi and English.
+3. If valid, set "is_valid": true, "rejection_reason": null, and extract full catalog fields.
 
 Return strictly valid JSON adhering to the Required JSON Output Format.`
               },

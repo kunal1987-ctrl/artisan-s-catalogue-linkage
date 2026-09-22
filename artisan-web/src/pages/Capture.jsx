@@ -1116,6 +1116,24 @@ export default function Capture() {
         if (!error && data && !data.error) {
           try {
             const parsedData = parseGeminiResponse(data);
+
+            // ── Step 3: Anti-Tamper & Authenticity Guardrail Check ──
+            if (parsedData && parsedData.is_valid === false) {
+              const reason = parsedData.rejection_reason || (
+                language === 'hi'
+                  ? 'यह तस्वीर प्रामाणिक हस्तशिल्प नहीं है या स्क्रीन से ली गई है।'
+                  : 'Image failed authenticity verification (not an authentic craft or screen recapture).'
+              );
+              console.warn('[Capture] Rejected by authenticity guardrail:', reason);
+              if (showToast) showToast(`🚫 ${reason}`);
+              if (language === 'hi') {
+                speakHindi(reason);
+              }
+              alert(`Image Verification Failed:\n${reason}`);
+              setIsGeneratingListing(false);
+              return;
+            }
+
             listingData = parsedData;
             if (parsedData.category || parsedData.craft_category) {
               setCategory(parsedData.category || parsedData.craft_category);

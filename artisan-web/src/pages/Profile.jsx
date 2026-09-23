@@ -474,40 +474,32 @@ export default function Profile() {
                 {userName}
               </h2>
 
-              {/* Minimalist Verified / Not Verified Artisan Badge with Dynamic Certificate ID */}
-              {isVerified ? (
-                <button
-                  type="button"
-                  onClick={() => setShowGovIdDetails((prev) => !prev)}
-                  title="Click to view DigiLocker verification details"
-                  className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs cursor-pointer hover:bg-emerald-100 transition-colors"
-                >
-                  <svg className="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              {isVerified && certificateId ? (
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <svg 
+                    className="w-3.5 h-3.5 text-emerald-600" 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor" 
+                    strokeWidth="2.5"
+                  >
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>DigiLocker Verified</span>
-                  {certificateId && (
-                    <>
-                      <span className="text-emerald-300">•</span>
-                      <span className="font-mono text-[11px] font-bold text-emerald-800">
-                        {certificateId}
-                      </span>
-                    </>
-                  )}
-                </button>
+                  <span>DigiLocker Verified: {certificateId}</span>
+                </div>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => navigate('/verification')}
-                  title="Click to complete DigiLocker / Government verification"
-                  className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200 shadow-2xs cursor-pointer hover:bg-amber-100 transition-colors"
-                >
-                  <svg className="w-3.5 h-3.5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-stone-100 text-stone-600 border border-stone-200">
+                  <svg 
+                    className="w-3.5 h-3.5 text-stone-400" 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor" 
+                    strokeWidth="2"
+                  >
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
                   <span>Not Verified</span>
-                  <span className="text-amber-700 text-[11px] underline">Verify Now →</span>
-                </button>
+                </div>
               )}
             </div>
 

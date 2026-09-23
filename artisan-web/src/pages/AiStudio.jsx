@@ -41,6 +41,37 @@ export default function AiStudio() {
   const [isWatermarking, setIsWatermarking] = useState(false);
   const fileInputRef = useRef(null);
 
+  // Government Verification State (Gatekeeper)
+  const [isVerified, setIsVerified] = useState(() => {
+    return localStorage.getItem('artisan_gov_verified') === 'true' || Boolean(artisanProfile?.is_verified);
+  });
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+
+  useEffect(() => {
+    const fetchVerification = async () => {
+      try {
+        const { data: authData } = await supabase.auth.getUser();
+        const activeUserId = authData?.user?.id || user?.id;
+        if (!activeUserId) return;
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_verified')
+          .eq('id', activeUserId)
+          .maybeSingle();
+
+        if (profile) {
+          const verified = Boolean(profile.is_verified);
+          setIsVerified(verified);
+          if (verified) localStorage.setItem('artisan_gov_verified', 'true');
+        }
+      } catch (e) {
+        console.warn('[AiStudio] Error fetching verification status:', e);
+      }
+    };
+    fetchVerification();
+  }, [user]);
+
   // Clean up object URLs on unmount to avoid memory leaks
   useEffect(() => {
     return () => {
@@ -214,8 +245,14 @@ export default function AiStudio() {
     setIsEnhancing(false);
   }, [capturedImages, isEnhancing]);
 
-  // Proceed to catalog listing / review
+  // Proceed to catalog listing / review (Action-Gated Interceptor)
   const handleProceedToReview = () => {
+    // ── Mandatory Government Verification Gatekeeper ──
+    if (!isVerified) {
+      setShowVerificationModal(true);
+      return;
+    }
+
     if (capturedImages.length === 0) return;
     const primary = capturedImages[0];
     const allB64 = capturedImages.map((img) => img.base64).filter(Boolean);
@@ -382,6 +419,55 @@ export default function AiStudio() {
       </>
     )}
   </div>
+
+  {/* ── Government Verification Gatekeeper Modal ── */}
+  {showVerificationModal && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in">
+      <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-200 flex flex-col gap-4 text-gray-900">
+        <div className="flex items-center justify-between">
+          <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 shrink-0">
+            <span className="text-2xl">⚠️</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowVerificationModal(false)}
+            className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700 flex items-center justify-center transition cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div>
+          <h3 className="text-lg font-bold text-gray-900">
+            Verification Required (सत्यापन आवश्यक है)
+          </h3>
+          <p className="text-xs sm:text-sm text-gray-600 mt-2 leading-relaxed">
+            Verification Required. You must be a verified MoSJE/Pehchan artisan to publish catalogs to government marketplaces.
+          </p>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-2">
+          <button
+            type="button"
+            onClick={() => {
+              setShowVerificationModal(false);
+              navigate('/verification');
+            }}
+            className="w-full sm:flex-1 py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-sm transition text-center cursor-pointer"
+          >
+            Complete Verification Now
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowVerificationModal(false)}
+            className="w-full sm:w-auto py-3 px-4 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-sm transition cursor-pointer"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  )}
 </div>
   );
 }

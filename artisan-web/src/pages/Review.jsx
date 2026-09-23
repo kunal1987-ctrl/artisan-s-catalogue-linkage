@@ -1190,10 +1190,12 @@ export default function Review() {
 
             <div>
               <h3 className="text-lg font-bold text-gray-900">
-                {language === 'hi' ? 'सरकारी सत्यापन आवश्यक है' : 'Government Verification Required'}
+                {language === 'hi' ? 'सत्यापन आवश्यक है (Verification Required)' : 'Verification Required'}
               </h3>
               <p className="text-xs sm:text-sm text-gray-600 mt-2 leading-relaxed">
-                Government verification is required to publish products on GeM/ONDC. Please complete your profile verification first.
+                {language === 'hi'
+                  ? 'सरकारी बाज़ारों (GeM/ONDC) पर कैटलॉग प्रकाशित करने के लिए आपका MoSJE/पहचान सत्यापित कारीगर होना अनिवार्य है।'
+                  : 'Verification Required. You must be a verified MoSJE/Pehchan artisan to publish catalogs to government marketplaces.'}
               </p>
             </div>
 

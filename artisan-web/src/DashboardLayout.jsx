@@ -6,6 +6,7 @@ import { supabase } from './supabaseClient';
 import { useAuth } from './context/AuthContext';
 import { useLanguage } from './context/LanguageContext';
 import NotificationBar from './components/NotificationBar';
+import VerificationBanner from './components/VerificationBanner';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import AudioMuteButton from './components/AudioMuteButton';
 import AudioAssistantIndicator from './components/AudioAssistantIndicator';
@@ -382,6 +383,9 @@ export default function DashboardLayout() {
 
         {/* Global Notification Drawer & Toast Bar */}
         <NotificationBar />
+
+        {/* Persistent Government Verification Warning Banner */}
+        <VerificationBanner />
 
         {/* Mobile Slide-Over Navigation Drawer */}
         {isMobileMenuOpen && (

@@ -74,6 +74,7 @@ export default function Review() {
     )
   );
   const [moq, setMoq] = useState(Number(aiData.moq || 10));
+  const [stock, setStock] = useState(Number(aiData.stock || aiData.available_stock || 25));
   const [gemCategory, setGemCategory] = useState(
     aiData.gem_category || 'Handicrafts & Traditional Artware'
   );
@@ -250,6 +251,9 @@ export default function Review() {
         wholesale_price: Number(wholesalePrice),
         bulk_price: Number(wholesalePrice),
         moq: Number(moq),
+        stock: Number(stock),
+        make_in_india_percentage: 100,
+        msme_exempt: true,
         gem_category: gemCategory,
         hsn_code: hsnCode || aiData.hsn_code || '970300',
         unspsc_code: aiData.unspsc_code || '60121002',
@@ -651,209 +655,145 @@ export default function Review() {
                   )}
                 </div>
 
-                {/* ── 2. DEDICATED INSTITUTIONAL & B2B MARKET LINKAGE (GeM) SECTION ── */}
-                <div className="rounded-2xl p-4 sm:p-6 bg-gradient-to-br from-[#121c24] to-[#1c2934] text-white border border-[#2b3e50] shadow-xl relative overflow-hidden">
-                  {/* Decorative emblem badge */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-white/10">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center">
-                        <span className="material-symbols-outlined text-[24px]">account_balance</span>
+                {/* ── 2. GeM PRODUCT LISTING SECTION (Clean Government Portal Light Theme) ── */}
+                <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex flex-col gap-4 text-gray-900">
+                  {/* Header with Trustworthy Blue Accent */}
+                  <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center shrink-0">
+                        <span className="material-symbols-outlined text-[22px]">account_balance</span>
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="text-[16px] font-bold text-white tracking-wide">
-                            Institutional & B2B Market Linkage
+                          <h3 className="text-base font-bold text-gray-900">
+                            {language === 'hi' ? 'GeM सरकारी बाज़ार लिस्टिंग' : 'GeM Product Listing'}
                           </h3>
-                          <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold border border-emerald-500/40">
-                            GeM Active
+                          <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold">
+                            GeM Verified
                           </span>
                         </div>
-                        <p className="text-[12px] text-[#9bb0c4]">
-                          Government e-Marketplace (GeM) & PSU Bulk Procurement Integration
+                        <p className="text-xs text-gray-600 mt-0.5">
+                          {language === 'hi'
+                            ? 'सरकारी विभागों एवं पीएसयू में थोक आपूर्ति के लिए'
+                            : 'Direct institutional procurement details for government buyers'}
                         </p>
                       </div>
                     </div>
-
-                    {/* GeM Readiness Badge */}
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-600/90 text-white text-[12px] font-bold shadow-md border border-white/20">
-                      <span className="material-symbols-outlined text-[16px]">verified</span>
-                      <span>GeM Readiness: 100% Certified</span>
-                    </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                    {/* GeM Category Selection */}
-                    <div className="sm:col-span-2">
-                      <label className="text-[11px] font-bold text-[#9bb0c4] uppercase tracking-wider block mb-1.5">
-                        Relevant GeM Category Classification
-                      </label>
-                      <select
-                        value={gemCategory}
-                        onChange={(e) => setGemCategory(e.target.value)}
-                        className="w-full h-11 px-3.5 text-[14px] font-semibold text-white bg-[#101820] border border-[#374e63] rounded-xl focus:outline-none focus:border-emerald-400 cursor-pointer"
-                      >
-                        {GEM_CATEGORIES.map((cat) => (
-                          <option key={cat} value={cat} className="bg-[#121c24] text-white">
-                            {cat}
-                          </option>
-                        ))}
-                      </select>
-                      <p className="text-[11px] text-[#9bb0c4] mt-1">
-                        Pre-classified according to Govt. of India handicraft procurement taxonomy.
-                      </p>
-                    </div>
-
-                    {/* HSN & UNSPSC Read-Only AI Badges */}
-                    <div className="sm:col-span-2 flex flex-wrap gap-3">
-                      <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-950/60 border border-emerald-500/30">
-                        <span className="material-symbols-outlined text-[16px] text-emerald-400">verified</span>
-                        <span className="text-[13px] font-bold text-emerald-300">
-                          HSN: {aiData.hsn_code || '69120010'}
-                        </span>
-                        <span className="text-[11px] text-emerald-400/80 font-medium">(Verified by AI)</span>
-                      </div>
-                      <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-950/60 border border-blue-500/30">
-                        <span className="material-symbols-outlined text-[16px] text-blue-400">verified</span>
-                        <span className="text-[13px] font-bold text-blue-300">
-                          UNSPSC: {aiData.unspsc_code || '60121002'}
-                        </span>
-                        <span className="text-[11px] text-blue-400/80 font-medium">(Auto-Assigned)</span>
-                      </div>
-                    </div>
-
-                    {/* Wholesale Price */}
-                    <div className="p-4 rounded-xl bg-[#101820]/90 border border-[#2b3e50] flex flex-col justify-between">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[11px] font-bold text-[#9bb0c4] uppercase tracking-wider">
-                          Suggested Wholesale Price
-                        </span>
-                        <button
-                          onClick={() => setEditingField(editingField === 'wholesalePrice' ? null : 'wholesalePrice')}
-                          className="text-[11px] text-emerald-400 font-bold hover:underline"
-                          type="button"
-                        >
-                          {editingField === 'wholesalePrice' ? 'Done' : 'Edit'}
-                        </button>
-                      </div>
-                      {editingField === 'wholesalePrice' ? (
-                        <div className="flex items-baseline gap-2 my-1">
-                          <span className="text-[26px] font-bold text-emerald-400">₹</span>
-                          <input
-                            autoFocus
-                            type="number"
-                            className="text-[26px] font-bold text-emerald-400 w-32 bg-[#1b2631] border border-emerald-400 rounded-lg px-2 py-0.5 focus:outline-none"
-                            value={wholesalePrice}
-                            onChange={(e) => setWholesalePrice(Number(e.target.value))}
-                            onBlur={() => setEditingField(null)}
-                            onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
-                          />
-                          <span className="text-[12px] text-[#9bb0c4]">/ unit</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-baseline gap-2 my-1">
-                          <span className="text-[28px] font-bold text-emerald-400 tracking-tight">
-                            ₹ {wholesalePrice.toLocaleString('en-IN')}
-                          </span>
-                          <span className="text-[12px] text-[#9bb0c4]">/ unit</span>
-                          {wholesaleDiscountPct > 0 && (
-                            <span className="px-2 py-0.5 rounded-md bg-emerald-950 text-emerald-300 text-[10px] font-bold border border-emerald-700/50">
-                              {wholesaleDiscountPct}% volume discount
-                            </span>
-                          )}
-                        </div>
-                      )}
-                      <p className="text-[11px] text-[#9bb0c4]">
-                        For government offices, corporate gifts & institutional bulk orders.
-                      </p>
-                    </div>
-
-                    {/* Minimum Order Quantity (MOQ) */}
-                    <div className="p-4 rounded-xl bg-[#101820]/90 border border-[#2b3e50] flex flex-col justify-between">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[11px] font-bold text-[#9bb0c4] uppercase tracking-wider">
-                          Minimum Order Quantity (MOQ)
-                        </span>
-                        <button
-                          onClick={() => setEditingField(editingField === 'moq' ? null : 'moq')}
-                          className="text-[11px] text-emerald-400 font-bold hover:underline"
-                          type="button"
-                        >
-                          {editingField === 'moq' ? 'Done' : 'Edit'}
-                        </button>
-                      </div>
-                      {editingField === 'moq' ? (
-                        <div className="flex items-baseline gap-2 my-1">
-                          <input
-                            autoFocus
-                            type="number"
-                            className="text-[26px] font-bold text-white w-28 bg-[#1b2631] border border-emerald-400 rounded-lg px-2 py-0.5 focus:outline-none"
-                            value={moq}
-                            onChange={(e) => setMoq(Number(e.target.value))}
-                            onBlur={() => setEditingField(null)}
-                            onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
-                          />
-                          <span className="text-[12px] text-[#9bb0c4]">units batch</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-baseline gap-2 my-1">
-                          <span className="text-[28px] font-bold text-white tracking-tight">
-                            {moq}
-                          </span>
-                          <span className="text-[13px] text-[#9bb0c4]">units per institutional order</span>
-                        </div>
-                      )}
-                      <p className="text-[11px] text-[#9bb0c4]">
-                        Guarantees batch production efficiency and bulk raw material savings.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Guaranteed Minimum Bulk Order Value */}
-                  <div className="mt-4 p-3.5 rounded-xl bg-[#101820] border border-emerald-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-2.5">
-                      <span className="material-symbols-outlined text-[20px] text-emerald-400">payments</span>
-                      <div>
-                        <span className="text-[13px] font-bold text-white block leading-tight">
-                          Minimum Bulk Contract Value: ₹ {bulkContractValue.toLocaleString('en-IN')}
-                        </span>
-                        <span className="text-[11px] text-[#9bb0c4] block leading-tight">
-                          Calculated as {moq} units × ₹{wholesalePrice} with direct GeM Escrow payment settlement.
-                        </span>
-                      </div>
-                    </div>
-                    <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] font-bold border border-emerald-500/40 w-fit">
-                      100% Escrow Protected
+                  {/* Auto-filled compliance indicator */}
+                  <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 px-3 py-2 rounded-lg border border-gray-100">
+                    <span className="material-symbols-outlined text-[16px] text-green-600">verified</span>
+                    <span>
+                      {language === 'hi'
+                        ? 'मेक इन इंडिया 100% एवं एमएसएमई छूट स्वतः मान्य'
+                        : 'Make in India 100% & MSME exemption auto-applied'}
                     </span>
                   </div>
 
-                  {/* Material-Based Pricing Reasoning */}
-                  <div className="mt-4 pt-3 border-t border-white/10">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[15px]">psychology</span>
-                        AI Material & Labor Dynamic Pricing Breakdown
-                      </span>
-                      <button
-                        onClick={() => setEditingField(editingField === 'reasoning' ? null : 'reasoning')}
-                        className="text-[11px] text-[#9bb0c4] hover:text-white font-semibold"
-                        type="button"
-                      >
-                        {editingField === 'reasoning' ? 'Save' : 'Edit Note'}
-                      </button>
-                    </div>
-                    {editingField === 'reasoning' ? (
-                      <textarea
-                        autoFocus
-                        className="w-full text-[13px] text-white bg-[#101820] border border-emerald-400 rounded-xl p-3 focus:outline-none min-h-[70px]"
-                        value={pricingReasoning}
-                        onChange={(e) => setPricingReasoning(e.target.value)}
-                        onBlur={() => setEditingField(null)}
-                      />
-                    ) : (
-                      <p className="text-[12px] text-[#d0dbe5] leading-relaxed italic bg-[#101820]/60 p-3 rounded-xl border border-white/5">
-                        "{pricingReasoning}"
+                  {/* Bare minimum mandatory fields stacked cleanly */}
+                  <div className="flex flex-col gap-4">
+                    {/* 1. Selling Price (मूल्य) */}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-bold text-gray-900 flex items-center justify-between">
+                        <span>{language === 'hi' ? 'सरकारी विक्रय मूल्य (Selling Price)' : 'Selling Price (मूल्य)'}</span>
+                        <span className="text-[11px] text-blue-600 font-medium">₹ प्रति इकाई (per unit)</span>
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-sm">₹</span>
+                        <input
+                          type="number"
+                          value={wholesalePrice}
+                          onChange={(e) => setWholesalePrice(Number(e.target.value))}
+                          className="w-full pl-8 pr-4 py-2.5 rounded-lg border border-gray-300 text-gray-900 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                          placeholder="500"
+                        />
+                      </div>
+                      <p className="text-[11px] text-gray-500">
+                        {language === 'hi'
+                          ? 'सरकारी विभागों के लिए आपका थोक मूल्य (Wholesale price for government orders)'
+                          : 'Wholesale price for government procurement orders'}
                       </p>
-                    )}
+                    </div>
+
+                    {/* 2. Available Stock (स्टॉक) */}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-bold text-gray-900 flex items-center justify-between">
+                        <span>{language === 'hi' ? 'उपलब्ध स्टॉक (Available Stock)' : 'Available Stock (स्टॉक)'}</span>
+                        <span className="text-[11px] text-gray-500 font-medium">इकाइयां (Units)</span>
+                      </label>
+                      <input
+                        type="number"
+                        value={stock}
+                        onChange={(e) => setStock(Number(e.target.value))}
+                        className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 text-gray-900 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        placeholder="25"
+                      />
+                      <p className="text-[11px] text-gray-500">
+                        {language === 'hi'
+                          ? 'तुरंत आपूर्ति के लिए तैयार कुल शिल्पों की संख्या (Total craft units ready to ship)'
+                          : 'Total units immediately available to fulfill purchase orders'}
+                      </p>
+                    </div>
+
+                    {/* 3. HSN Code (कर कोड / HSN) */}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-bold text-gray-900 flex items-center justify-between">
+                        <span>{language === 'hi' ? 'कर कोड / HSN (HSN Code)' : 'HSN Code (कर कोड / HSN)'}</span>
+                        <span className="text-[11px] text-green-700 bg-green-50 px-2 py-0.5 rounded font-semibold border border-green-200">
+                          {language === 'hi' ? 'एआई द्वारा सत्यापित' : 'AI Verified'}
+                        </span>
+                      </label>
+                      <input
+                        type="text"
+                        value={hsnCode}
+                        onChange={(e) => setHsnCode(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 text-gray-900 font-mono text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        placeholder="69120010"
+                      />
+                      <p className="text-[11px] text-gray-500">
+                        {language === 'hi'
+                          ? 'हस्तशिल्प उत्पाद कर श्रेणी कोड (Handicraft tax category code)'
+                          : 'Official GST tax classification code for this craft discipline'}
+                      </p>
+                    </div>
+
+                    {/* Minimum Order Quantity (न्यूनतम ऑर्डर मात्रा) */}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-bold text-gray-900 flex items-center justify-between">
+                        <span>{language === 'hi' ? 'न्यूनतम ऑर्डर मात्रा (Minimum Order)' : 'Minimum Order (न्यूनतम ऑर्डर मात्रा)'}</span>
+                        <span className="text-[11px] text-gray-500 font-medium">MOQ</span>
+                      </label>
+                      <input
+                        type="number"
+                        value={moq}
+                        onChange={(e) => setMoq(Number(e.target.value))}
+                        className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 text-gray-900 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        placeholder="10"
+                      />
+                      <p className="text-[11px] text-gray-500">
+                        {language === 'hi'
+                          ? 'एक सरकारी ऑर्डर में न्यूनतम संख्या (Minimum pieces per institutional order)'
+                          : 'Minimum quantity an institution must order in a single PO'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* GeM Listing Push Button */}
+                  <div className="pt-1">
+                    <button
+                      type="button"
+                      onClick={handlePublish}
+                      disabled={isPublishing}
+                      className="w-full py-3 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium text-sm transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">account_balance</span>
+                      <span>
+                        {isPublishing
+                          ? (language === 'hi' ? 'GeM पर प्रकाशित हो रहा है...' : 'Publishing to GeM...')
+                          : (language === 'hi' ? 'GeM सरकारी पोर्टल पर लिस्ट करें' : 'Publish to GeM Marketplace')}
+                      </span>
+                    </button>
                   </div>
                 </div>
 

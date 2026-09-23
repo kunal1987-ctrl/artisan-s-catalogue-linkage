@@ -42,6 +42,37 @@ export const SCENE_PRESETS = [
   }
 ];
 
+export const compressImageBeforeUpload = (file) => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_DIM = 1200;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height && width > MAX_DIM) {
+          height *= MAX_DIM / width;
+          width = MAX_DIM;
+        } else if (height > MAX_DIM) {
+          width *= MAX_DIM / height;
+          height = MAX_DIM;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.8);
+      };
+    };
+  });
+};
+
 /**
  * Enterprise Generative AI Image Pipeline:
  * 1. Generative AI Contextual Background replacement via Fal.ai (bria/background/replace)
@@ -66,14 +97,17 @@ export async function processImagePipeline(
     }
   };
 
-  // ── Step 1: Generative AI Contextual Background (Fal.ai + Bria) ──
+  // ── Step 1: Lightweight Canvas Downscaler (Under 1MB / 1200px max) ──
+  const compressedBlob = await compressImageBeforeUpload(file);
+
+  // ── Step 2: Generative AI Contextual Background (Fal.ai + Bria) ──
   updateStatus('AI आपके उत्पाद के लिए एक सुंदर दृश्य तैयार कर रहा है...');
 
   const base64DataUrl = await new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result);
     reader.onerror = (err) => reject(new Error('Failed to read image file: ' + err.message));
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(compressedBlob);
   });
 
   const falApiKey = import.meta.env.VITE_FAL_API_KEY;

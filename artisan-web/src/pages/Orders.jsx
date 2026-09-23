@@ -679,7 +679,7 @@ export default function Orders() {
   const { t } = useTranslation();
   const { language } = useLanguage();
   const { user } = useAuth();
-  const [orders, setOrders] = useState(() => FALLBACK_MOCK_ORDERS.map(mapOrderRecord));
+  const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('ALL');
   const [showTenders, setShowTenders] = useState(false);
@@ -710,95 +710,70 @@ export default function Orders() {
     return () => window.removeEventListener('keydown', handleKeyCombo);
   }, []);
 
-  // ── 1. Dynamic Order Load (User Catalogue & Supabase) ──────────────────────
+  // ── Dynamic Supabase fetch effect ──────────────────────────────────────────
   useEffect(() => {
-    async function loadOrders() {
+    const loadDynamicOrders = async () => {
       setIsLoading(true);
       try {
-        let activeUser = user;
-        if (!activeUser) {
-          const { data: authData } = await supabase.auth.getUser();
-          activeUser = authData?.user;
-        }
+        // 1. Get current user
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) throw authError;
 
-        // 1. Fetch authenticated user's products from Supabase
-        let userProducts = [];
-        if (activeUser?.id) {
-          const { data: pData, error: pErr } = await supabase
-            .from('products')
-            .select('*')
-            .or(`user_id.eq.${activeUser.id},artisan_id.eq.${activeUser.id}`)
-            .order('created_at', { ascending: false });
+        // 2. Fetch artisan's real catalogue
+        const { data: myProducts, error: dbError } = await supabase
+          .from('products')
+          .select('*')
+          .or(`artisan_id.eq.${user.id},user_id.eq.${user.id}`);
 
-          if (!pErr && pData && pData.length > 0) {
-            userProducts = pData;
-          } else {
-            // Also check items view if direct products returned empty
-            const { data: iData } = await supabase
-              .from('items')
-              .select('*')
-              .or(`user_id.eq.${activeUser.id},artisan_id.eq.${activeUser.id}`)
-              .order('created_at', { ascending: false });
-            if (iData && iData.length > 0) {
-              userProducts = iData;
-            }
-          }
-        }
+        if (dbError) throw dbError;
 
-        // 2. Fetch any real persistent orders from Supabase
-        let dbOrders = [];
-        try {
-          const { data: oData, error: oErr } = await supabase
-            .from('orders')
-            .select('*')
-            .order('created_at', { ascending: false });
-          if (!oErr && oData && oData.length > 0) {
-            dbOrders = oData;
-          }
-        } catch (oErr) {
-          console.warn('[Orders] Could not fetch DB orders:', oErr);
-        }
+        // 3. Conditional Logic: Real vs. Fallback
+        if (myProducts && myProducts.length > 0) {
+          // Generate realistic orders using the artisan's actual products
+          const generatedOrders = myProducts.map((prod, index) => {
+            const isGem = index % 2 === 0;
+            const qty = Math.floor(Math.random() * 50) + 10; // Random quantity 10-60
 
-        // 3. Dynamic Order Generation vs Fallback
-        if (userProducts && userProducts.length > 0) {
-          // Dynamically generate realistic orders for those specific user products
-          const dynamicOrders = generateDynamicOrdersFromProducts(userProducts).map(mapOrderRecord);
+            return {
+              id: `${isGem ? '#GEM' : '#ONDC'}-PO-${Math.floor(100000 + Math.random() * 900000)}`,
+              order_id: `${isGem ? 'GEM' : 'ONDC'}-PO-${Math.floor(100000 + Math.random() * 900000)}`,
+              status: index % 3 === 0 ? 'लंबित' : 'स्वीकृत', // Pending vs Accepted
+              channel: isGem ? 'GeM — सरकारी खरीद' : 'ONDC नेटवर्क',
+              source: isGem ? 'GeM' : 'ONDC',
+              order_type: isGem ? 'gem' : 'ondc',
+              product_title: prod.title || prod.name,
+              item_title: prod.title || prod.name,
+              buyer: isGem ? 'Ministry of Tourism & Culture' : 'Local Boutique Vendor',
+              buyer_name: isGem ? 'Ministry of Tourism & Culture' : 'Local Boutique Vendor',
+              quantity: qty,
+              total_amount: (prod.price || 500) * qty,
+              total_payout: (prod.price || 500) * qty,
+              image: prod.image_url || prod.image,
+              product_image_url: prod.image_url || prod.image,
+              time: 'Just now',
+              address: 'New Delhi • Central State Guest House',
+              shipping_address: 'New Delhi • Central State Guest House',
+              hsn_code: prod.hsn_code || '69120010',
+            };
+          });
 
-          // If there are real saved orders belonging to the user or newly placed, merge them
-          if (dbOrders.length > 0) {
-            const userDbOrders = dbOrders
-              .filter((o) => !activeUser?.id || o.user_id === activeUser.id || o.artisan_id === activeUser.id)
-              .map(mapOrderRecord);
-
-            if (userDbOrders.length > 0) {
-              const existingIds = new Set(userDbOrders.map((o) => o.order_id || o.id));
-              const combined = [
-                ...userDbOrders,
-                ...dynamicOrders.filter((o) => !existingIds.has(o.order_id) && !existingIds.has(o.id)),
-              ];
-              setOrders(combined);
-              return;
-            }
-          }
-
-          setOrders(dynamicOrders);
-        } else if (dbOrders.length > 0) {
-          // If user has no products, but DB has orders, use mapped DB orders
-          setOrders(dbOrders.map(mapOrderRecord));
+          // Optionally duplicate or slice to ensure a good number of cards on screen
+          const finalOrders = (generatedOrders.length < 3 ? [...generatedOrders, ...generatedOrders] : generatedOrders).map(mapOrderRecord);
+          setOrders(finalOrders);
         } else {
-          // If the user has no products, fallback to the default mock array
+          // No products found, use fallback
           setOrders(FALLBACK_MOCK_ORDERS.map(mapOrderRecord));
         }
-      } catch (err) {
-        console.warn('[Orders] Error loading orders:', err);
-        setOrders(FALLBACK_MOCK_ORDERS.map(mapOrderRecord));
+      } catch (error) {
+        console.error('Error loading orders:', error);
+        setOrders(FALLBACK_MOCK_ORDERS.map(mapOrderRecord)); // Failsafe
       } finally {
         setIsLoading(false);
       }
-    }
+    };
 
-    loadOrders();
-  }, [user]);
+    loadDynamicOrders();
+  }, []);
 
   // ── 2. Supabase Realtime subscription ──────────────────────────────────────
   useEffect(() => {
@@ -1229,34 +1204,40 @@ export default function Orders() {
           </section>
 
           {/* ── ORDER CARDS GRID ─────────────────────────────────────────── */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6" id="orders-list">
-            {displayedOrders.length === 0 ? (
-              <div className="col-span-full py-12 text-center flex flex-col items-center justify-center gap-2 bg-surface-container-low rounded-3xl border border-border-delicate/60 p-6">
-                <span className="material-symbols-outlined text-4xl text-outline">inventory_2</span>
-                <p className="text-sm font-bold text-on-surface">
-                  {language === 'hi' ? 'इस श्रेणी में कोई आर्डर नहीं है' : 'No orders found for this filter'}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setActiveFilter('ALL')}
-                  className="mt-2 px-4 py-1.5 rounded-full bg-emerald-600 text-white text-xs font-bold cursor-pointer active:scale-95"
-                >
-                  {language === 'hi' ? 'सभी आर्डर देखें (View All)' : 'View All Orders'}
-                </button>
-              </div>
-            ) : (
-              displayedOrders.map((order) => (
-                <OrderCard
-                  key={order.id}
-                  order={order}
-                  onMarkPacked={handleMarkPacked}
-                  onAcceptPO={handleAcceptPO}
-                  onDispatchPO={handleDispatchPO}
-                  setSelectedPO={setSelectedPO}
-                />
-              ))
-            )}
-          </div>
+          {isLoading ? (
+            <div className="flex justify-center p-8 animate-pulse text-amber-600 font-bold text-sm">
+              Loading orders...
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6" id="orders-list">
+              {displayedOrders.length === 0 ? (
+                <div className="col-span-full py-12 text-center flex flex-col items-center justify-center gap-2 bg-surface-container-low rounded-3xl border border-border-delicate/60 p-6">
+                  <span className="material-symbols-outlined text-4xl text-outline">inventory_2</span>
+                  <p className="text-sm font-bold text-on-surface">
+                    {language === 'hi' ? 'इस श्रेणी में कोई आर्डर नहीं है' : 'No orders found for this filter'}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setActiveFilter('ALL')}
+                    className="mt-2 px-4 py-1.5 rounded-full bg-emerald-600 text-white text-xs font-bold cursor-pointer active:scale-95"
+                  >
+                    {language === 'hi' ? 'सभी आर्डर देखें (View All)' : 'View All Orders'}
+                  </button>
+                </div>
+              ) : (
+                displayedOrders.map((order, idx) => (
+                  <OrderCard
+                    key={order.id || idx}
+                    order={order}
+                    onMarkPacked={handleMarkPacked}
+                    onAcceptPO={handleAcceptPO}
+                    onDispatchPO={handleDispatchPO}
+                    setSelectedPO={setSelectedPO}
+                  />
+                ))
+              )}
+            </div>
+          )}
 
           {/* ── FOOTER ───────────────────────────────────────────────────── */}
           <div className="text-center py-6 flex flex-col items-center justify-center gap-1.5 text-on-surface-variant border-t border-border-delicate/40 mt-4">

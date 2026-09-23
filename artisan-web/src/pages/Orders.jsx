@@ -488,6 +488,12 @@ export default function Orders() {
 
   // ── 2. Supabase Realtime subscription ──────────────────────────────────────
   useEffect(() => {
+    // If a channel already exists, remove it first to avoid duplicate subscriptions
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
     const channel = supabase
       .channel('custom-orders-channel')
       .on(
@@ -545,7 +551,10 @@ export default function Orders() {
 
     channelRef.current = channel;
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
   }, [showToast]);
 
@@ -627,25 +636,29 @@ export default function Orders() {
     announceOrder(text);
 
     // Background insert to Supabase
-    supabase.from('orders').insert([{
-      order_id: tenderOrder.order_id,
-      buyer_name: tenderOrder.buyer_name,
-      channel: tenderOrder.channel,
-      source: 'GeM',
-      order_type: 'gem',
-      item_title: tenderOrder.item_title,
-      product_title: tenderOrder.product_title,
-      product_image_url: tenderOrder.product_image_url,
-      quantity: tenderOrder.quantity,
-      total_payout: tenderOrder.total_payout,
-      total_amount: tenderOrder.total_amount,
-      status: 'accepted',
-      shipping_address: tenderOrder.shipping_address,
-      payment_mode: tenderOrder.payment_mode,
-      notes: tenderOrder.notes,
-      city: tenderOrder.city,
-    }]).then(({ error }) => {
-      if (error) console.warn('[Orders] Tender insert error:', error);
+    supabase.auth.getUser().then(({ data: authData }) => {
+      const activeUser = authData?.user;
+      supabase.from('orders').insert([{
+        order_id: tenderOrder.order_id,
+        buyer_name: tenderOrder.buyer_name,
+        channel: tenderOrder.channel,
+        source: 'GeM',
+        order_type: 'gem',
+        item_title: tenderOrder.item_title,
+        product_title: tenderOrder.product_title,
+        product_image_url: tenderOrder.product_image_url,
+        quantity: tenderOrder.quantity,
+        total_payout: tenderOrder.total_payout,
+        total_amount: tenderOrder.total_amount,
+        status: 'accepted',
+        shipping_address: tenderOrder.shipping_address,
+        payment_mode: tenderOrder.payment_mode,
+        notes: tenderOrder.notes,
+        city: tenderOrder.city,
+        ...(activeUser?.id ? { artisan_id: activeUser.id, user_id: activeUser.id, artisan_user_id: activeUser.id } : {}),
+      }]).then(({ error }) => {
+        if (error) console.warn('[Orders] Tender insert error:', error);
+      });
     });
   }, [showToast, language]);
 

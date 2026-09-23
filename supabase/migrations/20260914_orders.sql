@@ -40,9 +40,11 @@ ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS source TEXT;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS product_title TEXT;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS product_image_url TEXT;
 
--- Fulfillment financials
+-- Fulfillment financials & geography
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS quantity INTEGER;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS total_payout NUMERIC;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS city TEXT;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS hsn_code TEXT;
 
 -- Extended status workflow: new → packed → shipped → delivered | cancelled
 -- Drop the old check constraint (from seed migration) and re-add with full workflow

@@ -26,7 +26,7 @@ const FALLBACK_EVENTS = [
     is_govt_sponsored: true,
     status: 'REGISTRATION OPEN',
     description_hi: 'सरस आजीविका मेला, ग्रामीण विकास मंत्रालय द्वारा भोपाल हाट में 25 अक्टूबर से 5 नवंबर तक आयोजित किया जा रहा है। इसमें हस्तशिल्प और हथकरघा उत्पादों के लिए स्टॉल उपलब्ध हैं। पंजीकरण अभी खुला है।',
-    registration_url: 'https://rural.nic.in',
+    registration_url: 'https://rural.gov.in',
   },
   {
     id: '877cdf6d-28da-4220-a7f9-cf83431dd9b4',
@@ -239,10 +239,22 @@ export default function HaatEventCard({ artisanProfile = null, user = null, curr
     }
   };
 
+  // Dead-domain interception map: known deprecated .nic.in → active replacements
+  const DEAD_DOMAIN_MAP = {
+    'rural.nic.in': 'https://rural.gov.in',
+    'handicrafts.nic.in': 'https://indiahandmade.com',
+  };
+
   const getSanitizedUrl = (url) => {
-    if (!url) return 'https://handicrafts.nic.in/';
+    if (!url) return 'https://indiahandmade.com';
     const match = String(url).match(/https?:\/\/[^\s)\]]+/);
-    return match ? match[0] : 'https://handicrafts.nic.in/';
+    const cleaned = match ? match[0] : 'https://indiahandmade.com';
+
+    // Intercept any known dead/deprecated government domains
+    for (const [deadDomain, activeDomain] of Object.entries(DEAD_DOMAIN_MAP)) {
+      if (cleaned.includes(deadDomain)) return activeDomain;
+    }
+    return cleaned;
   };
 
   const handleToggleSpeech = () => {

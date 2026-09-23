@@ -1998,16 +1998,20 @@ export default function Capture() {
                     <button 
                       type="button"
                       onClick={toggleRecording}
-                      className={`relative p-5 rounded-full transition-all duration-300 ${
+                      className={`relative p-5 rounded-full transition-all duration-300 focus:outline-none ${
                         isRecording 
-                          ? 'bg-red-500 text-white animate-pulse shadow-[0_0_20px_rgba(239,68,68,0.6)] scale-105' 
-                          : 'bg-stone-100 text-stone-700 hover:bg-stone-200 hover:scale-105'
+                          ? 'bg-amber-600 text-white shadow-[0_0_0_15px_rgba(217,119,6,0.3)] animate-pulse scale-110' 
+                          : 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 hover:scale-105 shadow-md'
                       }`}
                     >
-                      {isRecording ? <SquareIcon className="w-7 h-7 fill-current"/> : <MicrophoneIcon className="w-7 h-7"/>}
+                      {/* Ripple rings behind button when recording */}
+                      {isRecording && (
+                        <span className="absolute inset-0 rounded-full bg-amber-400 opacity-75 animate-ping pointer-events-none"></span>
+                      )}
+                      {isRecording ? <SquareIcon className="w-7 h-7 fill-current relative z-10"/> : <MicrophoneIcon className="w-7 h-7 relative z-10"/>}
                     </button>
                   </div>
-                  {isRecording && <p className="text-center text-xs text-red-500 font-bold animate-pulse">Listening... tap square to stop</p>}
+                  {isRecording && <p className="text-center text-xs text-amber-600 font-bold animate-pulse">Listening... tap square to stop</p>}
 
                   {/* Audio Playback & Deletion List */}
                   {recordings.length > 0 && (

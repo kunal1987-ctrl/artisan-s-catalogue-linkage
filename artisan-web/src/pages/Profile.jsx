@@ -11,8 +11,6 @@ import {
   User, 
   MapPin, 
   Tag, 
-  Phone, 
-  Mail,
   Loader2,
   IndianRupee,
   Landmark,
@@ -378,10 +376,10 @@ export default function Profile() {
         </div>
 
         {/* ── 2. Profile Header (Identity & Transparency) ── */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-left">
+        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-6 flex items-center gap-6">
           
-          {/* Photo Section with Upload Button */}
-          <div className="relative group shrink-0">
+          {/* Profile Picture */}
+          <div className="relative shrink-0">
             <div className="w-24 h-24 rounded-full shadow-sm border-4 border-white bg-gray-100 overflow-hidden flex items-center justify-center ring-1 ring-gray-200 relative">
               {uploadingPhoto ? (
                 <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white p-2 text-center z-10 animate-in fade-in duration-150">
@@ -393,7 +391,7 @@ export default function Profile() {
               ) : profileData.profile_picture_url ? (
                 <img
                   src={profileData.profile_picture_url}
-                  alt={profileData.full_name}
+                  alt={profileData.full_name || 'Artisan Profile'}
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -427,28 +425,14 @@ export default function Profile() {
             </button>
           </div>
 
-          {/* Identity Info */}
-          <div className="space-y-1.5 flex-1 min-w-0">
-            <div className="inline-block px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-[11px] font-bold uppercase tracking-wider mb-1">
-              {language === 'hi' ? 'पंजीकृत कारीगर' : 'Registered Artisan'}
-            </div>
-            <h1 className="text-xl font-bold text-gray-900 truncate">
-              {profileData.full_name}
-            </h1>
-            <div className="flex flex-col gap-1 text-xs text-gray-500">
-              {profileData.phone && (
-                <div className="flex items-center justify-center sm:justify-start gap-1.5 font-mono">
-                  <Phone className="w-3.5 h-3.5 text-gray-400" />
-                  <span>{profileData.phone}</span>
-                </div>
-              )}
-              {profileData.email && (
-                <div className="flex items-center justify-center sm:justify-start gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-gray-400" />
-                  <span className="truncate">{profileData.email}</span>
-                </div>
-              )}
-            </div>
+          {/* Artisan Identity Details */}
+          <div className="flex flex-col">
+            <h2 className="text-2xl font-bold text-gray-900">
+              {profileData.full_name || 'Artisan Name'}
+            </h2>
+            <p className="text-gray-500 font-medium mt-1">
+              {profileData.email || profileData.phone || 'No contact info provided'}
+            </p>
           </div>
         </div>
 

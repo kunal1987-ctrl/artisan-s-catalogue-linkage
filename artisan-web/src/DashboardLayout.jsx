@@ -89,10 +89,38 @@ export default function DashboardLayout() {
     return <Navigate to="/login" replace />;
   }
 
+  // Dynamic badge counts from Supabase
+  const [productCount, setProductCount] = useState(0);
+  const [newOrderCount, setNewOrderCount] = useState(0);
+
+  useEffect(() => {
+    async function fetchBadgeCounts() {
+      try {
+        // Products count scoped to current user
+        let productQuery = supabase.from('items').select('id', { count: 'exact', head: true });
+        if (session?.user?.id) {
+          productQuery = productQuery.or(`artisan_id.eq.${session.user.id},user_id.eq.${session.user.id}`);
+        }
+        const { count: pCount } = await productQuery;
+        if (typeof pCount === 'number') setProductCount(pCount);
+
+        // New orders count
+        const { count: oCount } = await supabase
+          .from('orders')
+          .select('id', { count: 'exact', head: true })
+          .in('status', ['pending', 'new', 'PENDING', 'NEW']);
+        if (typeof oCount === 'number') setNewOrderCount(oCount);
+      } catch (err) {
+        console.warn('DashboardLayout badge count fetch notice:', err);
+      }
+    }
+    fetchBadgeCounts();
+  }, [session?.user?.id]);
+
   const navItems = [
     { to: '/home', label: t('sidebar.home', 'Home'), icon: 'cottage' },
-    { to: '/catalog', label: t('sidebar.catalog', 'Catalog'), icon: 'inventory_2', badge: '12' },
-    { to: '/orders', label: t('sidebar.orders', 'Orders'), icon: 'receipt_long', badge: t('sidebar.new_badge', '3 New'), badgeColor: 'bg-[#ff9062]/20 text-[#9c441c]' },
+    { to: '/catalog', label: t('sidebar.catalog', 'Catalog'), icon: 'inventory_2', badge: String(productCount) },
+    { to: '/orders', label: t('sidebar.orders', 'Orders'), icon: 'receipt_long', badge: newOrderCount > 0 ? `${newOrderCount} ${t('sidebar.new_badge_suffix', 'New')}` : null, badgeColor: 'bg-[#ff9062]/20 text-[#9c441c]' },
   ];
 
   return (
@@ -421,7 +449,9 @@ export default function DashboardLayout() {
         >
           <span className="material-symbols-outlined text-[22px]">receipt_long</span>
           <span>{t('sidebar.orders', 'Orders')}</span>
-          <span className="w-2 h-2 rounded-full bg-[#9c441c] absolute top-1 right-2"></span>
+          {newOrderCount > 0 && (
+            <span className="w-2 h-2 rounded-full bg-[#9c441c] absolute top-1 right-2 animate-pulse" />
+          )}
         </NavLink>
       </nav>
     </div>

@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation, Link } from 'react-router-dom';
 import { HelpCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { handleAddCraftNavigation } from '../utils/authGuard';
+import { supabase } from '../supabaseClient';
 
 /**
  * Sidebar Component for Shilp Setu
@@ -15,17 +16,45 @@ export default function Sidebar({ className = '' }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
-  const { artisanName } = useAuth();
+  const { artisanName, session } = useAuth();
   const { openAtmLanguageModal, currentLanguageConfig } = useLanguage();
+
+  // Dynamic badge counts from Supabase
+  const [productCount, setProductCount] = useState(0);
+  const [newOrderCount, setNewOrderCount] = useState(0);
+
+  useEffect(() => {
+    async function fetchCounts() {
+      try {
+        // Products count
+        let productQuery = supabase.from('items').select('id', { count: 'exact', head: true });
+        if (session?.user?.id) {
+          productQuery = productQuery.or(`artisan_id.eq.${session.user.id},user_id.eq.${session.user.id}`);
+        }
+        const { count: pCount } = await productQuery;
+        if (typeof pCount === 'number') setProductCount(pCount);
+
+        // New orders count
+        const { count: oCount } = await supabase
+          .from('orders')
+          .select('id', { count: 'exact', head: true })
+          .in('status', ['pending', 'new', 'PENDING', 'NEW']);
+        if (typeof oCount === 'number') setNewOrderCount(oCount);
+      } catch (err) {
+        console.warn('Sidebar badge count fetch notice:', err);
+      }
+    }
+    fetchCounts();
+  }, [session?.user?.id]);
 
   const navItems = [
     { to: '/home', label: t('sidebar.home', 'Home'), icon: 'cottage' },
-    { to: '/catalog', label: t('sidebar.catalog', 'Catalog'), icon: 'inventory_2', badge: '12' },
+    { to: '/catalog', label: t('sidebar.catalog', 'Catalog'), icon: 'inventory_2', badge: String(productCount) },
     {
       to: '/orders',
       label: t('sidebar.orders', 'Orders'),
       icon: 'receipt_long',
-      badge: t('sidebar.new_badge', '3 New'),
+      badge: newOrderCount > 0 ? `${newOrderCount} ${t('sidebar.new_badge_suffix', 'New')}` : null,
       badgeColor: 'bg-[#ff9062]/20 text-[#9c441c]',
     },
   ];

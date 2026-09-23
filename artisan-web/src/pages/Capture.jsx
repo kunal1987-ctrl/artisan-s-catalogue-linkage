@@ -1962,22 +1962,6 @@ export default function Capture() {
                   )}
                 </div>
 
-                {/* Voice Error Alert Banner */}
-                {voiceError && (
-                  <div className="p-3 rounded-xl bg-red-900/50 border border-red-500/40 text-red-200 text-xs font-medium flex items-center gap-2 mb-3 animate-in fade-in duration-200">
-                    <span className="material-symbols-outlined text-[18px] text-red-400 shrink-0">warning</span>
-                    <span>{voiceError}</span>
-                    <button
-                      type="button"
-                      onClick={() => setVoiceError('')}
-                      className="ml-auto shrink-0 w-6 h-6 rounded-full bg-red-800/60 hover:bg-red-700/60 text-red-300 flex items-center justify-center transition-colors cursor-pointer"
-                      aria-label="Dismiss"
-                    >
-                      <span className="material-symbols-outlined text-[14px]">close</span>
-                    </button>
-                  </div>
-                )}
-
                 {/* Microphone Button with visual feedback and pulsing ripple effect */}
                 <div className="relative my-3 flex items-center justify-center">
                   {!isRecording && !isLoading && !audioBase64 && (
@@ -2015,8 +1999,8 @@ export default function Capture() {
                   </button>
                 </div>
 
-                {/* Recording Status / Timer */}
-                <div className="text-center px-4 mt-2">
+                {/* Dynamic Transcription Display */}
+                <div className="text-center px-4 mt-2 min-h-[3rem]">
                   <h3 className="text-[16px] font-bold text-white mb-1">
                     {isRecording
                       ? (language === 'hi' ? `रिकॉर्डिंग चालू... ${formatDuration(recordingDuration)}` : `Recording... ${formatDuration(recordingDuration)}`)
@@ -2031,11 +2015,25 @@ export default function Capture() {
                           : (language === 'hi' ? 'अपनी भाषा में बोलें (सामग्री, बनाने का समय, उचित मूल्य)...' : 'Speak naturally (materials, crafting time, expected price)...'))
                       : transcript
                       ? <span className="text-emerald-300 not-italic font-medium">"{transcript}"</span>
-                      : voiceError
-                      ? <span className="text-red-300 not-italic font-medium">{voiceError}</span>
                       : (language === 'hi' ? 'माइक दबाएं और अपने शिल्प के बारे में बोलें' : 'Tap mic and describe your craft in your own words')}
                   </p>
                 </div>
+
+                {/* Strict Error Handling Feedback — rendered directly below mic button */}
+                {voiceError && (
+                  <div className="mt-3 mx-auto max-w-sm p-3 rounded-xl bg-red-900/50 border border-red-500/40 text-red-200 text-xs font-medium flex items-center justify-center gap-2 animate-in fade-in duration-200">
+                    <span className="material-symbols-outlined text-[18px] text-red-400 shrink-0">warning</span>
+                    <span>{voiceError}</span>
+                    <button
+                      type="button"
+                      onClick={() => setVoiceError('')}
+                      className="ml-auto shrink-0 w-6 h-6 rounded-full bg-red-800/60 hover:bg-red-700/60 text-red-300 flex items-center justify-center transition-colors cursor-pointer"
+                      aria-label="Dismiss"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">close</span>
+                    </button>
+                  </div>
+                )}
 
 
                 {/* ── Fallback Text & 1-Tap Craft Chips ── */}

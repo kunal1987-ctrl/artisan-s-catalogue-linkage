@@ -5,6 +5,7 @@ import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { clearStaleCatalogCache } from '../utils/cacheCleaner';
 import { handleAddCraftNavigation } from '../utils/authGuard';
+import MoqBadge from '../components/MoqBadge';
 
 export default function Catalog() {
   const navigate = useNavigate();
@@ -516,45 +517,16 @@ export default function Catalog() {
                             </span>
                           )}
                         </div>
-                        {editingMoqId === p.id ? (
-                          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                            <input
-                              type="number"
-                              min="1"
-                              value={newMoq}
-                              onChange={(e) => setNewMoq(Math.max(1, Number(e.target.value)))}
-                              className="w-14 h-6 text-xs text-center font-semibold text-primary border border-secondary/40 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-secondary/60"
-                              autoFocus
-                              onKeyDown={(e) => { if (e.key === 'Enter') handleUpdateMoq(p.id); if (e.key === 'Escape') setEditingMoqId(null); }}
-                            />
-                            <button
-                              type="button"
-                              disabled={isSavingMoq}
-                              onClick={() => handleUpdateMoq(p.id)}
-                              className="w-6 h-6 rounded-md bg-emerald-600 text-white flex items-center justify-center hover:bg-emerald-700 active:scale-90 transition-all cursor-pointer disabled:opacity-50"
-                              title="Save"
-                            >
-                              <span className="material-symbols-outlined text-[14px]">{isSavingMoq ? 'hourglass_top' : 'check'}</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setEditingMoqId(null)}
-                              className="w-6 h-6 rounded-md bg-gray-200 text-gray-600 flex items-center justify-center hover:bg-gray-300 active:scale-90 transition-all cursor-pointer"
-                              title="Cancel"
-                            >
-                              <span className="material-symbols-outlined text-[14px]">close</span>
-                            </button>
-                          </div>
-                        ) : (
-                          <span
-                            className="text-xs font-semibold text-on-surface-variant flex items-center gap-1 cursor-pointer hover:text-primary transition-colors group/moq"
-                            onClick={(e) => { e.stopPropagation(); setEditingMoqId(p.id); setNewMoq(p.min_order_quantity || p.qty || 1); }}
-                            title={language === 'hi' ? 'MOQ संपादित करें' : 'Edit MOQ'}
-                          >
-                            {language === 'hi' ? 'न्यूनतम आर्डर' : 'MOQ'}: {p.min_order_quantity || p.qty || 1}
-                            <span className="material-symbols-outlined text-[12px] opacity-0 group-hover/moq:opacity-100 transition-opacity">edit</span>
-                          </span>
-                        )}
+                        <MoqBadge
+                          product={p}
+                          onMoqUpdated={(id, updatedMoq) => {
+                            setProducts((prev) =>
+                              prev.map((item) =>
+                                item.id === id ? { ...item, min_order_quantity: updatedMoq, moq: updatedMoq } : item
+                              )
+                            );
+                          }}
+                        />
                       </div>
                     </div>
                   </div>

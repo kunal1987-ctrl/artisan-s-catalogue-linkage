@@ -9,6 +9,7 @@ import { clearStaleCatalogCache } from '../utils/cacheCleaner';
 import { handleAddCraftNavigation } from '../utils/authGuard';
 import HaatEventCard from '../components/HaatEventCard';
 import RestockModal from '../components/RestockModal';
+import MoqBadge from '../components/MoqBadge';
 
 export default function Home({ customArtisanName } = {}) {
   const navigate = useNavigate();
@@ -394,9 +395,16 @@ export default function Home({ customArtisanName } = {}) {
                                                 <span className="text-[18px] font-bold text-primary flex items-center gap-1">
                                                     ✨ ₹{product.price}
                                                 </span>
-                                                <span className="text-[12px] text-on-surface-variant font-medium flex items-center gap-1">
-                                                    <span className="material-symbols-outlined text-[14px]">inventory_2</span> MOQ: {product.min_order_quantity || product.moq || 1}
-                                                </span>
+                                                <MoqBadge
+                                                    product={product}
+                                                    onMoqUpdated={(id, updatedMoq) => {
+                                                        setProducts((prev) =>
+                                                            prev.map((p) =>
+                                                                p.id === id ? { ...p, moq: updatedMoq, min_order_quantity: updatedMoq } : p
+                                                            )
+                                                        );
+                                                    }}
+                                                />
                                             </div>
                                         </div>
                                     </div>

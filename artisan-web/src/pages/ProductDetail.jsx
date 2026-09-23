@@ -21,7 +21,7 @@ function normalizeProduct(row, fallbackArtisan = 'Master Artisan') {
 
   const retail = Number(row.retail_price ?? row.price ?? row.suggested_retail_price_inr ?? 0);
   const bulk = Number(row.bulk_price ?? row.wholesale_price ?? 0);
-  const moqVal = Number(row.moq ?? row.min_order_quantity ?? 20);
+  const moqVal = Number(row.moq ?? row.min_order_quantity ?? 1);
 
   return {
     id: row.id,

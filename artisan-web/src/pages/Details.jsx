@@ -225,7 +225,7 @@ export default function Details() {
   const image = product.image_url || product.image || 'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=800&q=80';
   const price = product.price || 0;
   const bulkPrice = product.bulk_price || Math.round(price * 0.72);
-  const moq = product.min_order_quantity || product.moq || 20;
+  const moq = Number(product.min_order_quantity || product.moq || 1);
 
   return (
     <div className="w-full min-h-screen bg-[#fdf9f3] text-on-surface">

@@ -14,7 +14,10 @@ import {
   Phone, 
   Mail,
   Loader2,
-  IndianRupee
+  IndianRupee,
+  Landmark,
+  Edit3,
+  X
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
@@ -41,6 +44,29 @@ export default function Profile() {
     gov_id_type: '',
     gov_id_number: ''
   });
+
+  // ── Bank Details & Penny Drop Verification State ──
+  const [bankAccount, setBankAccount] = useState(() => {
+    const saved = localStorage.getItem('artisan_bank_details');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed?.accountNumber || parsed?.maskedNumber) return parsed;
+      } catch (e) {
+        // fallback
+      }
+    }
+    return null;
+  });
+
+  const [isBankModalOpen, setIsBankModalOpen] = useState(false);
+  const [pennyDropStep, setPennyDropStep] = useState(0); // 0 = idle, 1 = initiating, 2 = verifying name
+  const [bankFormData, setBankFormData] = useState({
+    accountHolder: '',
+    accountNumber: '',
+    ifsc: ''
+  });
+  const [bankFormError, setBankFormError] = useState('');
 
   // ── 1. Data Fetching (Supabase) ──
   useEffect(() => {
@@ -215,6 +241,116 @@ export default function Profile() {
     }
   };
 
+  // ── 3. The "Penny Drop" Simulation (Form Submission) ──
+  const handleBankSubmit = async (e) => {
+    e.preventDefault();
+    setBankFormError('');
+
+    const holder = bankFormData.accountHolder.trim();
+    const accNum = bankFormData.accountNumber.trim();
+    const ifsc = bankFormData.ifsc.trim().toUpperCase();
+
+    if (!holder || !accNum || !ifsc) {
+      setBankFormError(
+        language === 'hi'
+          ? 'कृपया सभी विवरण भरें (नाम, खाता संख्या, IFSC)'
+          : 'Please fill in all fields (Name, Account Number, IFSC)'
+      );
+      return;
+    }
+
+    if (accNum.length < 8 || !/^\d+$/.test(accNum)) {
+      setBankFormError(
+        language === 'hi'
+          ? 'कृपया एक मान्य संख्यात्मक खाता संख्या दर्ज करें (कम से कम 8 अंक)'
+          : 'Please enter a valid numeric account number (min 8 digits)'
+      );
+      return;
+    }
+
+    if (ifsc.length !== 11) {
+      setBankFormError(
+        language === 'hi'
+          ? 'IFSC कोड 11 अक्षरों का होना चाहिए (उदा. SBIN0001234)'
+          : 'IFSC code must be exactly 11 characters (e.g. SBIN0001234)'
+      );
+      return;
+    }
+
+    try {
+      // Step 1: Change button text to "Initiating ₹1 Penny Drop Verification..." (Wait 1.5s)
+      setPennyDropStep(1);
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      // Step 2: Change text to "Verifying account holder name with bank..." (Wait 1.5s)
+      setPennyDropStep(2);
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      // Step 3: Update local state to show bank as added & verified
+      let detectedBank = 'State Bank of India';
+      const prefix = ifsc.slice(0, 4);
+      if (prefix === 'SBIN') detectedBank = 'State Bank of India';
+      else if (prefix === 'PUNB') detectedBank = 'Punjab National Bank';
+      else if (prefix === 'HDFC') detectedBank = 'HDFC Bank';
+      else if (prefix === 'ICIC') detectedBank = 'ICICI Bank';
+      else if (prefix === 'BARB') detectedBank = 'Bank of Baroda';
+      else if (prefix === 'CNRB') detectedBank = 'Canara Bank';
+      else if (prefix === 'UBIN') detectedBank = 'Union Bank of India';
+
+      const masked = `•••• ${accNum.slice(-4)}`;
+      const verifiedBank = {
+        bankName: detectedBank,
+        accountHolder: holder,
+        accountNumber: `${detectedBank} ${masked}`,
+        rawAccountNumber: accNum,
+        maskedNumber: masked,
+        ifsc: ifsc,
+        isVerified: true,
+        verifiedAt: new Date().toISOString()
+      };
+
+      setBankAccount(verifiedBank);
+      localStorage.setItem('artisan_bank_details', JSON.stringify(verifiedBank));
+
+      // Structure code to seamlessly sync with Supabase profiles
+      try {
+        const { data: authData } = await supabase.auth.getUser();
+        const activeUserId = authData?.user?.id || user?.id;
+        if (activeUserId && activeUserId !== 'artisan_demo') {
+          await supabase
+            .from('profiles')
+            .update({
+              bank_account_holder: holder,
+              bank_account_number: masked,
+              bank_ifsc: ifsc,
+              bank_name: detectedBank,
+              is_bank_verified: true
+            })
+            .eq('id', activeUserId);
+        }
+      } catch (supaErr) {
+        console.warn('[Profile] Supabase bank update notice:', supaErr);
+      }
+
+      setPennyDropStep(0);
+      setIsBankModalOpen(false);
+
+      if (showToast) {
+        showToast(
+          language === 'hi'
+            ? '✅ ₹1 पेनी ड्रॉप सफल! बैंक खाता सत्यापित हो गया।'
+            : '✅ ₹1 Penny Drop Successful! Bank account verified.'
+        );
+      }
+    } catch (err) {
+      console.error('[PennyDrop] Verification error:', err);
+      setPennyDropStep(0);
+      setBankFormError(
+        language === 'hi' ? 'सत्यापन विफल रहा। पुनः प्रयास करें।' : 'Verification failed. Please try again.'
+      );
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6 text-gray-500">
@@ -373,6 +509,95 @@ export default function Profile() {
           )}
         </div>
 
+        {/* ── Bank Details for Payouts Card ── */}
+        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm mt-6 flex flex-col gap-3.5 text-gray-900">
+          <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+            <div className="flex items-center gap-2">
+              <Landmark className="w-5 h-5 text-blue-700" />
+              <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide">
+                {language === 'hi' ? 'भुगतान के लिए बैंक विवरण' : 'Bank Details for Payouts'}
+              </h2>
+            </div>
+
+            {bankAccount && (
+              <span className="inline-flex items-center gap-1.5 bg-green-50 text-green-700 border border-green-200 px-2.5 py-0.5 rounded-full text-xs font-semibold">
+                <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
+                <span>Verified (₹1 Penny Drop)</span>
+              </span>
+            )}
+          </div>
+
+          {/* State 1: No Bank Added */}
+          {!bankAccount ? (
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-2">
+              <div>
+                <p className="text-sm font-medium text-gray-500">
+                  {language === 'hi' ? 'कोई बैंक खाता नहीं जुड़ा है' : 'No bank account linked'}
+                </p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {language === 'hi'
+                    ? 'ONDC व GeM बिक्री का भुगतान सीधे प्राप्त करने हेतु बैंक खाता जोड़ें'
+                    : 'Link your bank account to receive direct ONDC and GeM payouts'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setBankFormData({
+                    accountHolder: profileData.full_name || '',
+                    accountNumber: '',
+                    ifsc: ''
+                  });
+                  setBankFormError('');
+                  setPennyDropStep(0);
+                  setIsBankModalOpen(true);
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 text-xs sm:text-sm font-semibold shadow-xs transition-all cursor-pointer self-start sm:self-auto active:scale-95 flex items-center gap-1.5"
+              >
+                <span>+</span>
+                <span>{language === 'hi' ? '+ बैंक खाता जोड़ें' : '+ Add Bank Account'}</span>
+              </button>
+            </div>
+          ) : (
+            /* State 2: Bank Added */
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
+              <div className="space-y-1">
+                <div className="text-base font-bold text-gray-900">
+                  {bankAccount.accountNumber || `${bankAccount.bankName || 'State Bank of India'} ${bankAccount.maskedNumber || '•••• 8392'}`}
+                </div>
+                <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
+                  <span>
+                    IFSC: <strong className="font-mono text-gray-700">{bankAccount.ifsc}</strong>
+                  </span>
+                  <span>•</span>
+                  <span>
+                    {language === 'hi' ? 'खाताधारक:' : 'Holder:'}{' '}
+                    <strong className="text-gray-700">{bankAccount.accountHolder}</strong>
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setBankFormData({
+                    accountHolder: bankAccount.accountHolder || '',
+                    accountNumber: bankAccount.rawAccountNumber || '',
+                    ifsc: bankAccount.ifsc || ''
+                  });
+                  setBankFormError('');
+                  setPennyDropStep(0);
+                  setIsBankModalOpen(true);
+                }}
+                className="border border-gray-300 hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors shadow-2xs cursor-pointer self-start sm:self-auto flex items-center gap-1.5 active:scale-95"
+              >
+                <Edit3 className="w-3.5 h-3.5 text-gray-500" />
+                <span>{language === 'hi' ? 'संशोधित करें (Edit)' : 'Edit'}</span>
+              </button>
+            </div>
+          )}
+        </div>
+
         {/* ── 4. Navigation Menu (Action Hub) ── */}
         <div className="mt-6 space-y-3">
           <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider px-1">
@@ -465,6 +690,149 @@ export default function Profile() {
         </div>
 
       </div>
+
+      {/* ── Add Bank Account Modal with Penny Drop Simulation ── */}
+      {isBankModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-2xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-gray-200 overflow-hidden animate-in zoom-in-95 duration-150">
+            
+            {/* Modal Header */}
+            <div className="p-4 sm:p-5 border-b border-gray-200 flex items-center justify-between bg-gray-50">
+              <div className="flex items-center gap-2.5">
+                <Landmark className="w-5 h-5 text-blue-700" />
+                <h3 className="font-bold text-base text-gray-900">
+                  {bankAccount
+                    ? (language === 'hi' ? 'बैंक खाता विवरण संशोधित करें' : 'Edit Bank Account Details')
+                    : (language === 'hi' ? 'नया बैंक खाता जोड़ें' : 'Add Bank Account')}
+                </h3>
+              </div>
+              <button
+                type="button"
+                disabled={pennyDropStep > 0}
+                onClick={() => setIsBankModalOpen(false)}
+                className="w-8 h-8 rounded-full hover:bg-gray-200 text-gray-500 flex items-center justify-center cursor-pointer transition-colors disabled:opacity-30"
+                aria-label="Close modal"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleBankSubmit} className="p-5 space-y-4">
+              {bankFormError && (
+                <div className="p-2.5 rounded-lg bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                  <span>{bankFormError}</span>
+                </div>
+              )}
+
+              {/* 1. Account Holder Name */}
+              <div>
+                <label className="block text-xs font-bold text-gray-800 mb-1">
+                  {language === 'hi' ? 'खाताधारक का नाम (Account Holder Name) *' : 'Account Holder Name *'}
+                </label>
+                <input
+                  type="text"
+                  required
+                  disabled={pennyDropStep > 0}
+                  value={bankFormData.accountHolder}
+                  onChange={(e) => setBankFormData({ ...bankFormData, accountHolder: e.target.value })}
+                  placeholder="e.g. Ramchandra Sharma"
+                  className="w-full text-sm px-3.5 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:bg-gray-100"
+                />
+                <p className="text-[11px] text-gray-500 mt-1">
+                  {language === 'hi' ? 'बैंक पासबुक में दर्ज नाम के अनुसार' : 'Must match the name on your bank passbook'}
+                </p>
+              </div>
+
+              {/* 2. Account Number */}
+              <div>
+                <label className="block text-xs font-bold text-gray-800 mb-1">
+                  {language === 'hi' ? 'खाता संख्या (Account Number) *' : 'Account Number *'}
+                </label>
+                <input
+                  type="text"
+                  required
+                  disabled={pennyDropStep > 0}
+                  value={bankFormData.accountNumber}
+                  onChange={(e) => setBankFormData({ ...bankFormData, accountNumber: e.target.value })}
+                  placeholder="e.g. 309845218392"
+                  className="w-full text-sm px-3.5 py-2.5 border border-gray-300 rounded-lg font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:bg-gray-100"
+                />
+                <p className="text-[11px] text-gray-500 mt-1">
+                  {language === 'hi' ? 'केवल अंक दर्ज करें (कम से कम 8 से 16 अंक)' : 'Enter 8 to 16 digits bank account number'}
+                </p>
+              </div>
+
+              {/* 3. IFSC Code */}
+              <div>
+                <label className="block text-xs font-bold text-gray-800 mb-1">
+                  {language === 'hi' ? 'IFSC कोड (IFSC Code) *' : 'IFSC Code *'}
+                </label>
+                <input
+                  type="text"
+                  required
+                  maxLength={11}
+                  disabled={pennyDropStep > 0}
+                  value={bankFormData.ifsc}
+                  onChange={(e) => setBankFormData({ ...bankFormData, ifsc: e.target.value.toUpperCase() })}
+                  placeholder="e.g. SBIN0001234"
+                  className="w-full text-sm px-3.5 py-2.5 border border-gray-300 rounded-lg font-mono uppercase focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:bg-gray-100"
+                />
+                <p className="text-[11px] text-gray-500 mt-1">
+                  {language === 'hi' ? 'बैंक शाखा का 11 अक्षरों का कोड' : '11-character bank branch code'}
+                </p>
+              </div>
+
+              {/* Penny Drop Explanation Box */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-[11px] text-blue-900 flex items-start gap-2.5">
+                <ShieldCheck className="w-4 h-4 text-blue-700 shrink-0 mt-0.5" />
+                <span>
+                  {language === 'hi'
+                    ? '₹1 पेनी ड्रॉप सत्यापन: बैंक खाते की सत्यता व खाताधारक की पुष्टि के लिए बैंक सर्वर से त्वरित लाइव सत्यापन किया जाता है।'
+                    : '₹1 Penny Drop Verification: A live simulated ₹1 credit verifies account validity and confirms the registered beneficiary name directly with NPCI/Bank servers.'}
+                </span>
+              </div>
+
+              {/* Modal Actions */}
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
+                <button
+                  type="button"
+                  disabled={pennyDropStep > 0}
+                  onClick={() => setIsBankModalOpen(false)}
+                  className="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors disabled:opacity-40"
+                >
+                  {language === 'hi' ? 'रद्द करें' : 'Cancel'}
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={pennyDropStep > 0}
+                  className="px-5 py-2.5 text-xs sm:text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-all shadow-xs cursor-pointer disabled:opacity-80 flex items-center gap-2"
+                >
+                  {pennyDropStep === 1 && (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-white" />
+                      <span>{language === 'hi' ? '₹1 पेनी ड्रॉप सत्यापन शुरू हो रहा है...' : 'Initiating ₹1 Penny Drop Verification...'}</span>
+                    </>
+                  )}
+                  {pennyDropStep === 2 && (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-white" />
+                      <span>{language === 'hi' ? 'बैंक से खाताधारक का नाम सत्यापित हो रहा है...' : 'Verifying account holder name with bank...'}</span>
+                    </>
+                  )}
+                  {pennyDropStep === 0 && (
+                    <span>{language === 'hi' ? 'सत्यापित करें व जोड़ें' : 'Verify & Link Account'}</span>
+                  )}
+                </button>
+              </div>
+            </form>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

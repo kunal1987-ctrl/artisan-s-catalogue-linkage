@@ -1,13 +1,26 @@
+import exifr from 'exifr';
+
 /**
- * Tier 2: Micro-Canvas Fast Client Check (<5ms Execution)
- * ─────────────────────────────────────────────────────────────────────────────
- * Instead of calculating Laplacian variance on an 8MP image (which freezes budget devices),
- * downsamples the image in-memory to a 128×128 pixel thumbnail on an offscreen HTML5 canvas.
- *
- * At 128×128, the image data array contains only ~16,000 pixels. A simple gradient/variance pass
- * takes less than 5 milliseconds on a low-end Android device with 2GB RAM.
- * ─────────────────────────────────────────────────────────────────────────────
+ * EXIF Metadata Fraud Detection
+ * Checks if software tags indicate digital manipulation (e.g. Photoshop, Canva, Lightroom).
  */
+export const verifyImageMetadata = async (file) => {
+  try {
+    const data = await exifr.parse(file, ['Software', 'Make', 'Model']);
+    if (data?.Software) {
+      const software = data.Software.toLowerCase();
+      if (software.includes('photoshop') || software.includes('canva') || software.includes('lightroom')) {
+        alert("Digital manipulation detected. Please capture a real, unedited photo.");
+        return false;
+      }
+    }
+    return true;
+  } catch (error) {
+    console.warn("No EXIF data found - proceed with AI visual check.", error);
+    return true;
+  }
+};
+
 export const validateImageLightweight = (file) => {
   return new Promise((resolve) => {
     if (!file) {

@@ -4,8 +4,29 @@ import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { validateImageLightweight, getLocalizedValidationReason } from '../utils/imageValidator';
 import { addGeoWatermark } from '../utils/geoWatermark';
+import exifr from 'exifr';
 
 const MAX_IMAGES = 3;
+
+const verifyImageMetadata = async (file) => {
+  try {
+    // Extract basic EXIF data and software tags
+    const data = await exifr.parse(file, ['Software', 'Make', 'Model']);
+    
+    if (data?.Software) {
+      const software = data.Software.toLowerCase();
+      if (software.includes('photoshop') || software.includes('canva') || software.includes('lightroom')) {
+        alert("Digital manipulation detected. Please capture a real, unedited photo.");
+        return false;
+      }
+    }
+    return true; // Clean file
+  } catch (error) {
+    // If EXIF is stripped entirely, it might be a WhatsApp/Web download
+    console.warn("No EXIF data found - proceed with AI visual check.", error);
+    return true; 
+  }
+};
 
 export default function AiStudio() {
   const navigate = useNavigate();
@@ -55,6 +76,12 @@ export default function AiStudio() {
         const validation = await validateImageLightweight(file);
         if (!validation.valid) {
           alert(`⚠️ ${validation.reason}`);
+          return;
+        }
+
+        // EXIF Metadata Fraud Detection (Photoshop / Canva / Lightroom check)
+        const isClean = await verifyImageMetadata(file);
+        if (!isClean) {
           return;
         }
 

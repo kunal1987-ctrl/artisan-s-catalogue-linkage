@@ -493,87 +493,78 @@ export default function Home({ customArtisanName } = {}) {
 
               {/* Body Content */}
               <div className="p-6 overflow-y-auto space-y-4">
-                {/* Traffic summary card */}
-                <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-transparent border border-amber-500/30 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-[28px] text-amber-700">hub</span>
-                    <div>
-                      <span className="text-xs font-bold text-amber-950 uppercase tracking-wider block">
-                        {language === 'hi' ? 'कुल ओएनडीसी दृश्य' : 'Total ONDC Traffic'}
-                      </span>
-                      <span className="text-2xl font-extrabold text-[#180f0a]">
-                        45 {language === 'hi' ? 'दर्शक' : 'Views'}
-                      </span>
-                    </div>
-                  </div>
-                  <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">
-                    +18% {language === 'hi' ? 'इस सप्ताह' : 'this week'}
-                  </span>
-                </div>
+                {/* Traffic summary card – dynamic total */}
+                {(() => {
+                  // Sort products by views desc for the modal list
+                  const sortedProducts = [...products].sort((a, b) => (b.views ?? 0) - (a.views ?? 0));
+                  const totalViews = sortedProducts.reduce((sum, p) => sum + (p.views ?? 0), 0);
+                  return (
+                    <>
+                      <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-transparent border border-amber-500/30 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className="material-symbols-outlined text-[28px] text-amber-700">hub</span>
+                          <div>
+                            <span className="text-xs font-bold text-amber-950 uppercase tracking-wider block">
+                              {language === 'hi' ? 'कुल ओएनडीसी दृश्य' : 'Total ONDC Traffic'}
+                            </span>
+                            <span className="text-2xl font-extrabold text-[#180f0a]">
+                              {totalViews} {language === 'hi' ? 'दर्शक' : 'Views'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
 
-                {/* Section title */}
-                <div className="flex items-center justify-between pt-1">
-                  <span className="text-xs font-bold uppercase tracking-wider text-secondary">
-                    {language === 'hi' ? 'शीर्ष लोकप्रिय शिल्प (ओएनडीसी नेटवर्क)' : 'Top Viewed Crafts (ONDC Network)'}
-                  </span>
-                  <span className="text-[11px] text-on-surface-variant font-medium">
-                    {language === 'hi' ? 'पिछले 7 दिन' : 'Last 7 Days'}
-                  </span>
-                </div>
+                      {/* Section title */}
+                      <div className="flex items-center justify-between pt-1">
+                        <span className="text-xs font-bold uppercase tracking-wider text-secondary">
+                          {language === 'hi' ? 'शीर्ष लोकप्रिय शिल्प (ओएनडीसी नेटवर्क)' : 'Top Viewed Crafts (ONDC Network)'}
+                        </span>
+                      </div>
 
-                {/* Top Item 1 */}
-                <div className="p-4 rounded-2xl bg-white border border-[#d1c4bd]/60 shadow-xs flex items-center gap-4 hover:border-secondary/40 transition-colors">
-                  <img
-                    src="https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=800&q=80"
-                    alt="Terracotta Surahi"
-                    className="w-16 h-16 rounded-xl object-cover border border-outline-variant/30 shrink-0"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-bold text-primary truncate">
-                      {language === 'hi' ? 'पारंपरिक हस्तनिर्मित मिट्टी की सुराही' : 'Handcrafted Terracotta Earthen Pitcher (Surahi)'}
-                    </h4>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="inline-flex items-center gap-1 text-xs font-bold text-blue-900 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md">
-                        <span className="material-symbols-outlined text-[13px]">shopping_bag</span>
-                        <span>ONDC Network</span>
-                      </span>
-                      <span className="text-xs text-on-surface-variant font-semibold">
-                        • 28 {language === 'hi' ? 'दर्शक' : 'views'}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <span className="text-lg font-extrabold text-primary">28</span>
-                    <span className="block text-[11px] text-emerald-700 font-bold">+62%</span>
-                  </div>
-                </div>
-
-                {/* Top Item 2 */}
-                <div className="p-4 rounded-2xl bg-white border border-[#d1c4bd]/60 shadow-xs flex items-center gap-4 hover:border-secondary/40 transition-colors">
-                  <img
-                    src="https://images.unsplash.com/photo-1610701596007-11502861dcfa?auto=format&fit=crop&w=800&q=80"
-                    alt="Jaipur Blue Pottery Plate"
-                    className="w-16 h-16 rounded-xl object-cover border border-outline-variant/30 shrink-0"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-bold text-primary truncate">
-                      {language === 'hi' ? 'जयपुर ब्लू पॉटरी प्लेट' : 'Jaipur Blue Pottery Plate'}
-                    </h4>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="inline-flex items-center gap-1 text-xs font-bold text-blue-900 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md">
-                        <span className="material-symbols-outlined text-[13px]">shopping_bag</span>
-                        <span>ONDC Network</span>
-                      </span>
-                      <span className="text-xs text-on-surface-variant font-semibold">
-                        • 17 {language === 'hi' ? 'दर्शक' : 'views'}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <span className="text-lg font-extrabold text-primary">17</span>
-                    <span className="block text-[11px] text-emerald-700 font-bold">+38%</span>
-                  </div>
-                </div>
+                      {/* Dynamic product rows */}
+                      {sortedProducts.length === 0 ? (
+                        <div className="p-4 rounded-2xl bg-[#f1ede7] text-center text-sm text-on-surface-variant">
+                          {language === 'hi'
+                            ? 'आपने अभी तक कोई उत्पाद अपलोड नहीं किया है।'
+                            : 'You have not uploaded any products yet.'}
+                        </div>
+                      ) : (
+                        sortedProducts.map((product) => (
+                          <div key={product.id} className="p-4 rounded-2xl bg-white border border-[#d1c4bd]/60 shadow-xs flex items-center gap-4 hover:border-secondary/40 transition-colors">
+                            {product.image_url ? (
+                              <img
+                                src={product.image_url}
+                                alt={product.title || product.name || 'Craft'}
+                                className="w-16 h-16 rounded-xl object-cover border border-outline-variant/30 shrink-0"
+                              />
+                            ) : (
+                              <div className="w-16 h-16 rounded-xl bg-[#f1ede7] border border-outline-variant/30 flex items-center justify-center text-[#80756f] shrink-0">
+                                <span className="material-symbols-outlined text-[24px]">image</span>
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-sm font-bold text-primary truncate">
+                                {product.title || product.name || (language === 'hi' ? 'शिल्प' : 'Craft')}
+                              </h4>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="inline-flex items-center gap-1 text-xs font-bold text-blue-900 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md">
+                                  <span className="material-symbols-outlined text-[13px]">shopping_bag</span>
+                                  <span>ONDC Network</span>
+                                </span>
+                                <span className="text-xs text-on-surface-variant font-semibold">
+                                  • {product.views ?? 0} {language === 'hi' ? 'दर्शक' : 'views'}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <span className="text-lg font-extrabold text-primary">{product.views ?? 0}</span>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </>
+                  );
+                })()}
 
                 {/* Channel Footnote */}
                 <div className="p-3 bg-[#f1ede7] rounded-xl text-xs text-on-surface-variant flex items-center gap-2">

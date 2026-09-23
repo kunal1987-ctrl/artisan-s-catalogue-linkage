@@ -16,8 +16,8 @@ export default function Sidebar({ className = '' }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
-  const { artisanName, session } = useAuth();
-  const { openAtmLanguageModal, currentLanguageConfig } = useLanguage();
+  const { artisanName, session, artisanProfile } = useAuth();
+  const { openAtmLanguageModal, currentLanguageConfig, language = 'en' } = useLanguage();
 
   // Dynamic badge counts from Supabase
   const [productCount, setProductCount] = useState(0);
@@ -56,6 +56,15 @@ export default function Sidebar({ className = '' }) {
       icon: 'receipt_long',
       badge: newOrderCount > 0 ? `${newOrderCount} ${t('sidebar.new_badge_suffix', 'New')}` : null,
       badgeColor: 'bg-[#ff9062]/20 text-[#9c441c]',
+    },
+    {
+      to: '/verification',
+      label: language === 'hi' ? 'सरकारी सत्यापन' : 'Gov Verification',
+      icon: 'verified_user',
+      badge: artisanProfile?.isGovVerified || artisanProfile?.verified ? '✓ GeM' : 'Verify',
+      badgeColor: artisanProfile?.isGovVerified || artisanProfile?.verified
+        ? 'bg-emerald-100 text-emerald-800'
+        : 'bg-amber-100 text-amber-800',
     },
   ];
 

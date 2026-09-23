@@ -142,6 +142,15 @@ export default function DashboardLayout() {
     { to: '/home', label: t('sidebar.home', 'Home'), icon: 'cottage' },
     { to: '/catalog', label: t('sidebar.catalog', 'Catalog'), icon: 'inventory_2', badge: String(productCount) },
     { to: '/orders', label: t('sidebar.orders', 'Orders'), icon: 'receipt_long', badge: newOrderCount > 0 ? `${newOrderCount} ${t('sidebar.new_badge_suffix', 'New')}` : null, badgeColor: 'bg-[#ff9062]/20 text-[#9c441c]' },
+    {
+      to: '/verification',
+      label: language === 'hi' ? 'सरकारी सत्यापन' : 'Gov Verification',
+      icon: 'verified_user',
+      badge: artisanProfile?.isGovVerified || artisanProfile?.verified ? '✓ GeM' : 'Verify',
+      badgeColor: artisanProfile?.isGovVerified || artisanProfile?.verified
+        ? 'bg-emerald-100 text-emerald-800'
+        : 'bg-amber-100 text-amber-800',
+    },
   ];
 
   return (

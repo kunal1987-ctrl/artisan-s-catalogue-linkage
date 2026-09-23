@@ -509,6 +509,24 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const updateGovVerification = useCallback((verificationData) => {
+    if (!verificationData) return;
+    setArtisanProfile((prev) => ({
+      ...prev,
+      verified: true,
+      isGovVerified: true,
+      govIdType: verificationData.gov_id_type,
+      govIdNumber: verificationData.gov_id_number,
+      verificationDate: verificationData.verification_date,
+    }));
+    try {
+      localStorage.setItem('artisan_gov_verified', 'true');
+      localStorage.setItem('artisan_gov_id_type', verificationData.gov_id_type || '');
+      localStorage.setItem('artisan_gov_id_number', verificationData.gov_id_number || '');
+      localStorage.setItem('artisan_gov_verification_date', verificationData.verification_date || '');
+    } catch {}
+  }, []);
+
   useEffect(() => {
     let mounted = true;
 
@@ -549,6 +567,29 @@ export function AuthProvider({ children }) {
                 verified: true,
               }));
             }
+
+            // Check Supabase profiles table for official Government Verification status
+            try {
+              const { data: profData } = await supabase
+                .from('profiles')
+                .select('is_verified, gov_id_type, gov_id_number, verification_date')
+                .eq('id', activeUser.id)
+                .maybeSingle();
+
+              if (profData?.is_verified && mounted) {
+                setArtisanProfile((prev) => ({
+                  ...prev,
+                  verified: true,
+                  isGovVerified: true,
+                  govIdType: profData.gov_id_type,
+                  govIdNumber: profData.gov_id_number,
+                  verificationDate: profData.verification_date,
+                }));
+              }
+            } catch (profErr) {
+              console.warn('[Auth] Profiles verification check notice:', profErr);
+            }
+
             setIsLoading(false);
           }
           return;
@@ -712,6 +753,7 @@ export function AuthProvider({ children }) {
     signInWithGoogle,
     executePostAuthSuccess,
     signOut,
+    updateGovVerification,
   };
 
   return (

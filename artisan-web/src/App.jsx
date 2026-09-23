@@ -21,6 +21,7 @@ import Details from './pages/Details.jsx';
 import ProductDetail from './pages/ProductDetail.jsx';
 import PublicProduct from './pages/PublicProduct.jsx';
 import Support from './pages/Support.jsx';
+import VerificationCenter from './pages/VerificationCenter.jsx';
 import Onboarding from './pages/Onboarding.jsx';
 import AuthGuard from './components/AuthGuard.jsx';
 
@@ -106,7 +107,19 @@ export default function App() {
             <Route path="/details/:id" element={<Details />} />
             <Route path="/details" element={<Details />} />
             <Route path="/support" element={<Support />} />
+            <Route path="/verification" element={<VerificationCenter />} />
+            <Route path="/verify" element={<VerificationCenter />} />
           </Route>
+
+          {/* Standalone route fallback */}
+          <Route
+            path="/verification-center"
+            element={
+              <AuthGuard>
+                <VerificationCenter />
+              </AuthGuard>
+            }
+          />
 
           {/* Catch-all redirect */}
           <Route path="*" element={<Navigate to="/" replace />} />

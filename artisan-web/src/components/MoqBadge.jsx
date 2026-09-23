@@ -18,57 +18,49 @@ export default function MoqBadge({
 
   const [isEditingMoq, setIsEditingMoq] = useState(false);
   const [moqValue, setMoqValue] = useState(currentMoq);
-  const [isSaving, setIsSaving] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     setMoqValue(Number(product?.moq ?? product?.min_order_quantity ?? 1));
   }, [product?.moq, product?.min_order_quantity]);
 
-  const handleSave = async (e) => {
-    if (e) e.stopPropagation();
+  const handleUpdateMoq = async (newMoq) => {
     if (!product?.id) return;
-
-    const val = Math.max(1, Math.round(Number(moqValue) || 1));
-    setIsSaving(true);
+    setIsUpdating(true);
 
     try {
-      // 1. Try 'products' table
       let { error } = await supabase
         .from('products')
-        .update({ moq: val, min_order_quantity: val })
+        .update({ moq: Number(newMoq), min_order_quantity: Number(newMoq) })
         .eq('id', product.id);
 
-      // 2. Also try 'items' table for complete consistency across app
+      // Also ensure 'items' table receives the update for complete compatibility
       const itemsRes = await supabase
         .from('items')
-        .update({ moq: val, min_order_quantity: val })
+        .update({ moq: Number(newMoq), min_order_quantity: Number(newMoq) })
         .eq('id', product.id);
 
       if (error && itemsRes.error) {
         throw error || itemsRes.error;
       }
 
+      // Update in local state / context so UI updates immediately
       if (onMoqUpdated) {
-        onMoqUpdated(product.id, val);
+        onMoqUpdated(product.id, Number(newMoq));
       }
 
       const msg =
         language === 'hi'
-          ? `✅ न्यूनतम आदेश (MOQ) ${val} पर सहेजा गया!`
-          : `✅ MOQ updated to ${val} units!`;
+          ? `✅ न्यूनतम आदेश (MOQ) ${newMoq} पर सहेजा गया!`
+          : `✅ MOQ updated to ${newMoq} units!`;
       if (showToast) showToast(msg);
 
       setIsEditingMoq(false);
     } catch (err) {
-      console.error('Failed to update MOQ in database:', err);
-      const errMsg =
-        language === 'hi'
-          ? '❌ MOQ अपडेट विफल। कृपया पुनः प्रयास करें।'
-          : '❌ Failed to update MOQ. Please try again.';
-      if (showToast) showToast(errMsg);
-      else alert(errMsg);
+      console.error('Error updating MOQ:', err);
+      alert('Failed to update MOQ. Please try again.');
     } finally {
-      setIsSaving(false);
+      setIsUpdating(false);
     }
   };
 
@@ -80,7 +72,7 @@ export default function MoqBadge({
       >
         <button
           type="button"
-          disabled={isSaving}
+          disabled={isUpdating}
           onClick={() => setMoqValue((prev) => Math.max(1, prev - 1))}
           className="w-7 h-7 rounded-lg bg-stone-100 font-bold text-stone-700 hover:bg-stone-200 active:scale-90 transition flex items-center justify-center cursor-pointer select-none disabled:opacity-50"
           title="Decrease MOQ"
@@ -95,7 +87,7 @@ export default function MoqBadge({
           value={moqValue}
           onChange={(e) => setMoqValue(Math.max(1, parseInt(e.target.value) || 1))}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') handleSave(e);
+            if (e.key === 'Enter') handleUpdateMoq(moqValue);
             if (e.key === 'Escape') setIsEditingMoq(false);
           }}
           className="w-14 text-center border border-stone-300 rounded-lg py-0.5 font-semibold text-xs text-stone-900 focus:outline-none focus:ring-1 focus:ring-amber-800"
@@ -104,7 +96,7 @@ export default function MoqBadge({
 
         <button
           type="button"
-          disabled={isSaving}
+          disabled={isUpdating}
           onClick={() => setMoqValue((prev) => prev + 1)}
           className="w-7 h-7 rounded-lg bg-stone-100 font-bold text-stone-700 hover:bg-stone-200 active:scale-90 transition flex items-center justify-center cursor-pointer select-none disabled:opacity-50"
           title="Increase MOQ"
@@ -115,14 +107,14 @@ export default function MoqBadge({
 
         <button
           type="button"
-          disabled={isSaving}
-          onClick={handleSave}
+          disabled={isUpdating}
+          onClick={() => handleUpdateMoq(moqValue)}
           className="w-7 h-7 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center cursor-pointer transition active:scale-90 disabled:opacity-50 shadow-2xs"
           title="Save MOQ"
           aria-label="Save MOQ"
         >
           <span className="material-symbols-outlined text-[14px]">
-            {isSaving ? 'hourglass_top' : 'check'}
+            {isUpdating ? 'hourglass_top' : 'check'}
           </span>
         </button>
 

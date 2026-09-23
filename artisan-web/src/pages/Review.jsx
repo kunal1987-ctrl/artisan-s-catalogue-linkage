@@ -73,7 +73,7 @@ export default function Review() {
       Math.round(resolvedInitialPrice * 0.72)
     )
   );
-  const [moq, setMoq] = useState(Number(aiData.moq || 10));
+  const [moq, setMoq] = useState(Number(aiData.moq || 1));
   const [stock, setStock] = useState(Number(aiData.stock || aiData.available_stock || 25));
   const [gemCategory, setGemCategory] = useState(
     aiData.gem_category || 'Handicrafts & Traditional Artware'
@@ -747,23 +747,24 @@ export default function Review() {
                       </p>
                     </div>
 
-                    {/* Minimum Order Quantity (न्यूनतम ऑर्डर मात्रा) */}
+                    {/* Minimum Order Quantity (MOQ / न्यूनतम ऑर्डर मात्रा) */}
                     <div className="flex flex-col gap-1.5">
                       <label className="text-xs font-bold text-gray-900 flex items-center justify-between">
-                        <span>{language === 'hi' ? 'न्यूनतम ऑर्डर मात्रा (Minimum Order)' : 'Minimum Order (न्यूनतम ऑर्डर मात्रा)'}</span>
-                        <span className="text-[11px] text-gray-500 font-medium">MOQ</span>
+                        <span>MOQ (न्यूनतम ऑर्डर मात्रा)</span>
+                        <span className="text-[11px] text-gray-500 font-medium">Wholesale Lot</span>
                       </label>
                       <input
                         type="number"
+                        min="1"
                         value={moq}
-                        onChange={(e) => setMoq(Number(e.target.value))}
+                        onChange={(e) => setMoq(Math.max(1, parseInt(e.target.value) || 1))}
                         className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 text-gray-900 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                        placeholder="10"
+                        placeholder="1"
                       />
                       <p className="text-[11px] text-gray-500">
                         {language === 'hi'
-                          ? 'एक सरकारी ऑर्डर में न्यूनतम संख्या (Minimum pieces per institutional order)'
-                          : 'Minimum quantity an institution must order in a single PO'}
+                          ? 'एक सरकारी या थोक ऑर्डर में न्यूनतम संख्या (खुदरा बिक्री के लिए डिफ़ॉल्ट 1 इकाई)'
+                          : 'Minimum order quantity for bulk procurement (defaults to 1 for retail sales)'}
                       </p>
                     </div>
                   </div>

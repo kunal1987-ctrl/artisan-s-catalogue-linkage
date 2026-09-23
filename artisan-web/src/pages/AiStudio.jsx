@@ -2,16 +2,207 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
-import { validateImageLightweight, getLocalizedValidationReason } from '../utils/imageValidator';
+import { validateImageLightweight } from '../utils/imageValidator';
 import { addGeoWatermark } from '../utils/geoWatermark';
 import MicroVideoCapture from '../components/MicroVideoCapture';
 import exifr from 'exifr';
 
 const MAX_IMAGES = 3;
 
+/**
+ * Enterprise Image Pipeline:
+ * 1. AI Background Removal via Fal.ai (bria-rmbg)
+ * 2. Client-Side Studio Formatting (HTML5 Canvas 800x800, #FFFFFF, Drop Shadow, 10% Padding)
+ * 3. Supabase Storage Upload ('products' bucket)
+ */
+export async function processImagePipeline(file, userId = 'anonymous', statusCallback = null) {
+  const updateStatus = (msg) => {
+    if (statusCallback && typeof statusCallback === 'function') {
+      statusCallback(msg);
+    }
+  };
+
+  // ── Step 1: AI Background Removal (Fal.ai API) ──
+  updateStatus('AI पृष्ठभूमि हटा रहा है...');
+
+  const base64DataUrl = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = (err) => reject(new Error('Failed to read image file: ' + err.message));
+    reader.readAsDataURL(file);
+  });
+
+  const falApiKey = import.meta.env.VITE_FAL_API_KEY;
+  if (!falApiKey) {
+    throw new Error('VITE_FAL_API_KEY is not configured in environment variables');
+  }
+
+  let transparentImageUrl = null;
+
+  // Primary POST to Fal.ai queue endpoint as specified in requirements
+  try {
+    const response = await fetch('https://queue.fal.run/fal-ai/bria-rmbg', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Key ${falApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ image_url: base64DataUrl }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data?.image?.url || data?.image_url || data?.url) {
+        transparentImageUrl = data?.image?.url || data?.image_url || data?.url;
+      } else if (data?.response_url || data?.status_url) {
+        const pollUrl = data.response_url || data.status_url;
+        let attempts = 0;
+        while (!transparentImageUrl && attempts < 30) {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+          attempts++;
+          const pollRes = await fetch(pollUrl, {
+            headers: { Authorization: `Key ${falApiKey}` },
+          });
+          if (pollRes.ok) {
+            const pollData = await pollRes.json();
+            if (pollData?.image?.url || pollData?.image_url || pollData?.url) {
+              transparentImageUrl = pollData?.image?.url || pollData?.image_url || pollData?.url;
+            } else if (pollData?.status === 'COMPLETED' && pollData?.payload) {
+              transparentImageUrl = pollData.payload?.image?.url || pollData.payload?.image_url;
+            }
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[processImagePipeline] Queue endpoint exception:', err);
+  }
+
+  // Fallback to synchronous endpoint if queue didn't return image URL
+  if (!transparentImageUrl) {
+    const syncRes = await fetch('https://fal.run/fal-ai/bria-rmbg', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Key ${falApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ image_url: base64DataUrl }),
+    });
+
+    if (!syncRes.ok) {
+      const errText = await syncRes.text();
+      throw new Error(`Fal.ai API error (${syncRes.status}): ${errText}`);
+    }
+
+    const syncData = await syncRes.json();
+    transparentImageUrl = syncData?.image?.url || syncData?.image_url || syncData?.url;
+  }
+
+  if (!transparentImageUrl) {
+    throw new Error('Fal.ai background removal did not return a valid image URL');
+  }
+
+  // Load transparent image into HTML Image object
+  const img = new Image();
+  img.crossOrigin = 'Anonymous';
+  await new Promise((resolve, reject) => {
+    img.onload = resolve;
+    img.onerror = () => reject(new Error('Failed to load transparent image from Fal.ai'));
+    img.src = transparentImageUrl;
+  });
+
+  // ── Step 2: Client-Side Studio Formatting (HTML5 Canvas) ──
+  updateStatus('स्टूडियो लाइटिंग लागू की जा रही है...');
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 800;
+  canvas.height = 800;
+  const ctx = canvas.getContext('2d');
+
+  // Fill White Canvas
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, 800, 800);
+
+  // Drop Shadow Configuration
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
+  ctx.shadowBlur = 25;
+  ctx.shadowOffsetY = 15;
+  ctx.shadowOffsetX = 0;
+
+  // Calculate Aspect Ratio to fit inside 800x800 with 10% padding
+  const padding = 0.10; // 10% padding
+  const maxW = 800 * (1 - 2 * padding); // 640px
+  const maxH = 800 * (1 - 2 * padding); // 640px
+
+  const scale = Math.min(maxW / img.width, maxH / img.height);
+  const drawW = img.width * scale;
+  const drawH = img.height * scale;
+  const drawX = (800 - drawW) / 2;
+  const drawY = (800 - drawH) / 2;
+
+  ctx.drawImage(img, drawX, drawY, drawW, drawH);
+
+  // ── Step 3: Supabase Storage Upload ──
+  updateStatus('उत्पाद छवि सहेजी जा रही है...');
+
+  const blob = await new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (b) => {
+        if (b) resolve(b);
+        else reject(new Error('Canvas export to JPEG blob failed'));
+      },
+      'image/jpeg',
+      0.9
+    );
+  });
+
+  const fileName = `${userId}/product_${Date.now()}.jpg`;
+  let publicUrl = '';
+
+  try {
+    const { data: uploadData, error: uploadErr } = await supabase.storage
+      .from('products')
+      .upload(fileName, blob, {
+        contentType: 'image/jpeg',
+        upsert: true,
+      });
+
+    if (uploadErr) {
+      console.warn('[processImagePipeline] Bucket "products" upload error:', uploadErr.message);
+      // Fallback to 'artisan-images' bucket if 'products' is not configured
+      const { data: fbData, error: fbErr } = await supabase.storage
+        .from('artisan-images')
+        .upload(fileName, blob, {
+          contentType: 'image/jpeg',
+          upsert: true,
+        });
+      if (!fbErr && fbData) {
+        const { data: pubData } = supabase.storage.from('artisan-images').getPublicUrl(fileName);
+        publicUrl = pubData?.publicUrl || '';
+      }
+    } else if (uploadData) {
+      const { data: pubData } = supabase.storage.from('products').getPublicUrl(fileName);
+      publicUrl = pubData?.publicUrl || '';
+    }
+  } catch (err) {
+    console.warn('[processImagePipeline] Supabase upload exception:', err);
+  }
+
+  // Fallback data URL if storage upload failed
+  if (!publicUrl) {
+    publicUrl = canvas.toDataURL('image/jpeg', 0.9);
+  }
+
+  return {
+    publicUrl,
+    transparentImageUrl,
+    blob,
+    fileName,
+  };
+}
+
 const verifyImageMetadata = async (file) => {
   try {
-    // Extract basic EXIF data and software tags
     const data = await exifr.parse(file, ['Software', 'Make', 'Model']);
     
     if (data?.Software) {
@@ -21,9 +212,8 @@ const verifyImageMetadata = async (file) => {
         return false;
       }
     }
-    return true; // Clean file
+    return true; 
   } catch (error) {
-    // If EXIF is stripped entirely, it might be a WhatsApp/Web download
     console.warn("No EXIF data found - proceed with AI visual check.", error);
     return true; 
   }
@@ -38,6 +228,7 @@ export default function AiStudio() {
   const [recordedVideoBlob, setRecordedVideoBlob] = useState(null);
   const [capturedImages, setCapturedImages] = useState([]);
   const [isEnhancing, setIsEnhancing] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
   const [isWatermarking, setIsWatermarking] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -106,20 +297,17 @@ export default function AiStudio() {
     if (capturedImages.length < MAX_IMAGES) {
       setIsWatermarking(true);
       try {
-        // Fast lightweight validation
         const validation = await validateImageLightweight(file);
         if (!validation.valid) {
           alert(`⚠️ ${validation.reason}`);
           return;
         }
 
-        // EXIF Metadata Fraud Detection (Photoshop / Canva / Lightroom check)
         const isClean = await verifyImageMetadata(file);
         if (!isClean) {
           return;
         }
 
-        // Apply native Geo-Stamping & Live Watermark (GPS, timestamp & artisan ID)
         const artisanId = artisanProfile?.id || user?.id?.substring(0, 8) || "A-1029";
         const watermarkedFile = await addGeoWatermark(file, artisanId);
 
@@ -127,13 +315,12 @@ export default function AiStudio() {
           id: Date.now(),
           file: watermarkedFile,
           previewUrl: URL.createObjectURL(watermarkedFile),
-          status: 'pending' // pending, enhancing, ready
+          status: 'pending'
         };
 
         setCapturedImages((prev) => {
           if (prev.length >= MAX_IMAGES) return prev;
           const next = [...prev, newImageObj];
-          // Once limit is reached (3 images), automatically send all images to AI enhancement
           if (next.length === MAX_IMAGES) {
             setTimeout(() => {
               handleBatchEnhance(next);
@@ -160,33 +347,18 @@ export default function AiStudio() {
     });
   };
 
-  // ── AI Batch Enhancement Pipeline ──
+  // ── AI Batch Enhancement Pipeline (Fal.ai + Canvas + Supabase) ──
   const handleBatchEnhance = useCallback(async (imagesToEnhance = capturedImages) => {
     if (imagesToEnhance.length === 0 || isEnhancing) return;
 
     setIsEnhancing(true);
+    setStatusMessage('AI पृष्ठभूमि हटा रहा है...');
 
-    // Mark pending images as enhancing
     setCapturedImages((prev) =>
       prev.map((img) => (img.status === 'pending' ? { ...img, status: 'enhancing' } : img))
     );
 
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
-
-    let token = '';
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      token = sessionData?.session?.access_token || '';
-      if (!token) {
-        const { data: anonData } = await supabase.auth.signInAnonymously();
-        token = anonData?.session?.access_token || '';
-      }
-    } catch (e) {
-      console.warn('[AiStudio] Auth session warning:', e);
-    }
-
-    const authHeader = token ? `Bearer ${token}` : `Bearer ${supabaseKey}`;
+    const activeUserId = user?.id || 'anonymous';
     const updatedImages = [...imagesToEnhance];
 
     for (let i = 0; i < updatedImages.length; i++) {
@@ -194,38 +366,21 @@ export default function AiStudio() {
       if (item.status === 'ready' && item.enhancedUrl) continue;
 
       try {
-        const base64String = await fileToBase64(item.file);
-        const response = await fetch(`${supabaseUrl}/functions/v1/generate-lifestyle-image`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: authHeader,
-          },
-          body: JSON.stringify({ imageBase64: base64String }),
+        const result = await processImagePipeline(item.file, activeUserId, (msg) => {
+          setStatusMessage(msg);
         });
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data && (data.is_authentic_photo === false || data.is_valid === false)) {
-            const reason = data.rejection_reason || 'Photo failed authenticity verification (pure white background, stock photo or watermark detected).';
-            alert(`Authenticity Check Failed / सत्यापन अस्वीकृत:\n${reason}`);
-            removeImage(item.id);
-            continue;
-          }
-          if (data?.imageUrl) {
-            updatedImages[i] = {
-              ...item,
-              status: 'ready',
-              enhancedUrl: data.imageUrl,
-              base64: base64String,
-            };
-            setCapturedImages([...updatedImages]);
-            continue;
-          }
-        }
-        throw new Error('Edge function fallback');
+        const rawBase64 = await fileToBase64(item.file);
+
+        updatedImages[i] = {
+          ...item,
+          status: 'ready',
+          enhancedUrl: result.publicUrl,
+          base64: rawBase64,
+        };
+        setCapturedImages([...updatedImages]);
       } catch (err) {
-        console.warn(`[AiStudio] Fallback on angle #${i + 1}:`, err);
+        console.warn(`[AiStudio] Image pipeline error on photo #${i + 1}:`, err);
         let rawBase64 = '';
         try {
           rawBase64 = await fileToBase64(item.file);
@@ -243,11 +398,11 @@ export default function AiStudio() {
     }
 
     setIsEnhancing(false);
-  }, [capturedImages, isEnhancing]);
+    setStatusMessage('');
+  }, [capturedImages, isEnhancing, user]);
 
-  // Proceed to catalog listing / review (Action-Gated Interceptor)
+  // Proceed to catalog listing / review
   const handleProceedToReview = () => {
-    // ── Mandatory Government Verification Gatekeeper ──
     if (!isVerified) {
       setShowVerificationModal(true);
       return;
@@ -333,144 +488,149 @@ export default function AiStudio() {
           <>
             {/* Main Viewfinder / Placeholder */}
             <div className="relative flex-1 bg-black rounded-xl flex items-center justify-center border border-white/10 mb-4 overflow-hidden min-h-[300px]">
-          {/* Frame markers */}
-          <div className="absolute top-4 left-4 w-8 h-8 border-t-2 border-l-2 border-orange-500 z-10"></div>
-          <div className="absolute top-4 right-4 w-8 h-8 border-t-2 border-r-2 border-orange-500 z-10"></div>
-          <div className="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 border-orange-500 z-10"></div>
-          <div className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-orange-500 z-10"></div>
-
-          {capturedImages.length > 0 && (
-            <img 
-              src={capturedImages[capturedImages.length - 1].enhancedUrl || capturedImages[capturedImages.length - 1].previewUrl} 
-              alt="Active preview"
-              className="absolute inset-0 w-full h-full object-contain"
-            />
-          )}
-
-          {isWatermarking ? (
-            <p className="text-orange-300 text-xs sm:text-sm z-10 bg-black/80 px-4 py-2 rounded-full backdrop-blur-xs flex items-center gap-2 border border-orange-500/30 animate-pulse">
-              <svg className="animate-spin h-3.5 w-3.5 text-orange-400" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-              <span>GPS वॉटरमार्क जोड़ रहे हैं (Geo-stamping)...</span>
-            </p>
-          ) : (
-            <p className="text-stone-500 text-sm z-10 bg-black/70 px-3 py-1.5 rounded-full backdrop-blur-xs">
-              {capturedImages.length < MAX_IMAGES 
-                ? `Capture angle ${capturedImages.length + 1} of ${MAX_IMAGES}` 
-                : "Maximum angles captured"}
-            </p>
-          )}
-        </div>
-
-        {/* Hidden Native Camera Input */}
-        <input 
-          type="file" 
-          accept="image/*" 
-          capture="environment" 
-          className="hidden" 
-          ref={fileInputRef}
-          onChange={handleCapture} 
-        />
-
-        {/* Controls & Thumbnail Tray */}
-        <div className="flex flex-col gap-4">
-          {/* Thumbnails */}
-          {capturedImages.length > 0 && (
-            <div className="flex gap-3 overflow-x-auto pb-2">
-              {capturedImages.map((img, index) => (
-                <div key={img.id} className="relative w-16 h-16 shrink-0 rounded-lg overflow-hidden border border-orange-500/50">
-                  <img src={img.previewUrl} alt={`Angle ${index + 1}`} className="w-full h-full object-cover" />
-                  <button 
-                    onClick={() => removeImage(img.id)}
-                    className="absolute top-0.5 right-0.5 bg-black/60 rounded-full p-1 hover:bg-red-500 text-white"
-                  >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-            {/* Action Buttons */}
-            <div className="flex justify-center gap-4">
-              {capturedImages.length < MAX_IMAGES && (
-                <div className="relative flex items-center justify-center">
-                  <div className="absolute inset-0 rounded-full bg-orange-500/30 animate-ping pointer-events-none" />
-                  <button 
-                    disabled={isWatermarking || isEnhancing}
-                    onClick={() => fileInputRef.current.click()} 
-                    className="relative z-10 flex flex-col items-center justify-center w-16 h-16 bg-white rounded-full text-stone-800 shadow-md hover:scale-105 active:scale-95 transition-transform duration-200 disabled:opacity-50 cursor-pointer"
-                  >
-                    <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  </button>
-                </div>
-              )}
+              {/* Frame markers */}
+              <div className="absolute top-4 left-4 w-8 h-8 border-t-2 border-l-2 border-orange-500 z-10"></div>
+              <div className="absolute top-4 right-4 w-8 h-8 border-t-2 border-r-2 border-orange-500 z-10"></div>
+              <div className="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 border-orange-500 z-10"></div>
+              <div className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-orange-500 z-10"></div>
 
               {capturedImages.length > 0 && (
-                <button 
-                  disabled={isEnhancing}
-                  onClick={handleEnhanceClick}
-                  className="flex-1 py-3 bg-gradient-to-r from-orange-600 to-amber-500 font-bold rounded-xl text-white shadow-lg shadow-orange-500/40 animate-pulse hover:scale-105 hover:-translate-y-1 transition-all duration-300 active:scale-95 disabled:opacity-50 cursor-pointer"
-                >
-                  {isEnhancing ? 'AI Enhancing...' : `Enhance ${capturedImages.length} Images ✨`}
-                </button>
+                <img 
+                  src={capturedImages[capturedImages.length - 1].enhancedUrl || capturedImages[capturedImages.length - 1].previewUrl} 
+                  alt="Active preview"
+                  className="absolute inset-0 w-full h-full object-contain"
+                />
+              )}
+
+              {isWatermarking ? (
+                <p className="text-orange-300 text-xs sm:text-sm z-10 bg-black/80 px-4 py-2 rounded-full backdrop-blur-xs flex items-center gap-2 border border-orange-500/30 animate-pulse">
+                  <svg className="animate-spin h-3.5 w-3.5 text-orange-400" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                  <span>GPS वॉटरमार्क जोड़ रहे हैं (Geo-stamping)...</span>
+                </p>
+              ) : isEnhancing ? (
+                <p className="text-amber-300 text-xs sm:text-sm z-10 bg-black/85 px-4 py-2 rounded-full backdrop-blur-xs flex items-center gap-2 border border-amber-500/40 animate-pulse">
+                  <svg className="animate-spin h-4 w-4 text-amber-400" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                  <span>{statusMessage || 'AI प्रोसेस हो रहा है...'}</span>
+                </p>
+              ) : (
+                <p className="text-stone-500 text-sm z-10 bg-black/70 px-3 py-1.5 rounded-full backdrop-blur-xs">
+                  {capturedImages.length < MAX_IMAGES 
+                    ? `Capture angle ${capturedImages.length + 1} of ${MAX_IMAGES}` 
+                    : "Maximum angles captured"}
+                </p>
               )}
             </div>
-        </div>
-      </>
-    )}
-  </div>
 
-  {/* ── Government Verification Gatekeeper Modal ── */}
-  {showVerificationModal && (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in">
-      <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-200 flex flex-col gap-4 text-gray-900">
-        <div className="flex items-center justify-between">
-          <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 shrink-0">
-            <span className="text-2xl">⚠️</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowVerificationModal(false)}
-            className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700 flex items-center justify-center transition cursor-pointer"
-          >
-            ✕
-          </button>
-        </div>
+            {/* Hidden Native Camera Input */}
+            <input 
+              type="file" 
+              accept="image/*" 
+              capture="environment" 
+              className="hidden" 
+              ref={fileInputRef}
+              onChange={handleCapture} 
+            />
 
-        <div>
-          <h3 className="text-lg font-bold text-gray-900">
-            Verification Required (सत्यापन आवश्यक है)
-          </h3>
-          <p className="text-xs sm:text-sm text-gray-600 mt-2 leading-relaxed">
-            Verification Required. You must be a verified MoSJE/Pehchan artisan to publish catalogs to government marketplaces.
-          </p>
-        </div>
+            {/* Controls & Thumbnail Tray */}
+            <div className="flex flex-col gap-4">
+              {/* Thumbnails */}
+              {capturedImages.length > 0 && (
+                <div className="flex gap-3 overflow-x-auto pb-2">
+                  {capturedImages.map((img, index) => (
+                    <div key={img.id} className="relative w-16 h-16 shrink-0 rounded-lg overflow-hidden border border-orange-500/50">
+                      <img src={img.enhancedUrl || img.previewUrl} alt={`Angle ${index + 1}`} className="w-full h-full object-cover" />
+                      <button 
+                        onClick={() => removeImage(img.id)}
+                        className="absolute top-0.5 right-0.5 bg-black/60 rounded-full p-1 hover:bg-red-500 text-white"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
 
-        <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-2">
-          <button
-            type="button"
-            onClick={() => {
-              setShowVerificationModal(false);
-              navigate('/verification');
-            }}
-            className="w-full sm:flex-1 py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-sm transition text-center cursor-pointer"
-          >
-            Complete Verification Now
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowVerificationModal(false)}
-            className="w-full sm:w-auto py-3 px-4 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-sm transition cursor-pointer"
-          >
-            Cancel
-          </button>
-        </div>
+              {/* Action Buttons */}
+              <div className="flex justify-center gap-4">
+                {capturedImages.length < MAX_IMAGES && (
+                  <div className="relative flex items-center justify-center">
+                    <div className="absolute inset-0 rounded-full bg-orange-500/30 animate-ping pointer-events-none" />
+                    <button 
+                      disabled={isWatermarking || isEnhancing}
+                      onClick={() => fileInputRef.current.click()} 
+                      className="relative z-10 flex flex-col items-center justify-center w-16 h-16 bg-white rounded-full text-stone-800 shadow-md hover:scale-105 active:scale-95 transition-transform duration-200 disabled:opacity-50 cursor-pointer"
+                    >
+                      <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+
+                {capturedImages.length > 0 && (
+                  <button 
+                    disabled={isEnhancing}
+                    onClick={handleEnhanceClick}
+                    className="flex-1 py-3 bg-gradient-to-r from-orange-600 to-amber-500 font-bold rounded-xl text-white shadow-lg shadow-orange-500/40 animate-pulse hover:scale-105 hover:-translate-y-1 transition-all duration-300 active:scale-95 disabled:opacity-50 cursor-pointer"
+                  >
+                    {isEnhancing ? (statusMessage || 'AI Enhancing...') : capturedImages.every(i => i.status === 'ready') ? 'Proceed to Catalog Review ➔' : `Enhance ${capturedImages.length} Images ✨`}
+                  </button>
+                )}
+              </div>
+            </div>
+          </>
+        )}
       </div>
+
+      {/* ── Government Verification Gatekeeper Modal ── */}
+      {showVerificationModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-200 flex flex-col gap-4 text-gray-900">
+            <div className="flex items-center justify-between">
+              <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 shrink-0">
+                <span className="text-2xl">⚠️</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowVerificationModal(false)}
+                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700 flex items-center justify-center transition cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">
+                Verification Required (सत्यापन आवश्यक है)
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-600 mt-2 leading-relaxed">
+                Verification Required. You must be a verified MoSJE/Pehchan artisan to publish catalogs to government marketplaces.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowVerificationModal(false);
+                  navigate('/verification');
+                }}
+                className="w-full sm:flex-1 py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-sm transition text-center cursor-pointer"
+              >
+                Complete Verification Now
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowVerificationModal(false)}
+                className="w-full sm:w-auto py-3 px-4 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-sm transition cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-  )}
-</div>
   );
 }

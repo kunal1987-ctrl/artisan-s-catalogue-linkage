@@ -247,26 +247,26 @@ export default function VerificationCenter() {
 
   return (
     <div className="min-h-screen bg-[#fdfbf7] text-stone-900 pb-16">
-      {/* ── Top Header Banner ── */}
-      <div className="bg-[#18110d] text-white border-b border-[#2e211a] px-4 py-8 sm:px-8">
+      {/* ── Top Header Banner - Clean Light Government Portal Theme ── */}
+      <div className="bg-white border-b border-gray-200 px-4 py-6 sm:py-8 sm:px-8">
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="mb-2">
-              <span className="text-gray-400 text-sm font-medium tracking-wide uppercase">
+          <div className="space-y-2">
+            <div className="mb-1">
+              <span className="text-blue-600 text-xs sm:text-sm font-semibold tracking-wide uppercase">
                 {language === 'hi' 
                   ? 'राष्ट्रीय शिल्पकार सत्यापन • MoSJE / GeM / ONDC' 
                   : 'National Artisan Verification • MoSJE / GeM / ONDC'}
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2.5">
-              <ShieldCheck className="w-8 h-8 text-[#ff9062]" />
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900 flex items-center gap-2.5">
+              <ShieldCheck className="w-8 h-8 text-blue-600 shrink-0" />
               <span>
                 {language === 'hi' 
                   ? 'सरकारी विक्रेता सत्यापन केंद्र' 
                   : 'Government Seller Verification Center'}
               </span>
             </h1>
-            <p className="text-stone-400 text-xs sm:text-sm max-w-2xl leading-relaxed">
+            <p className="text-gray-600 text-xs sm:text-sm max-w-2xl leading-relaxed">
               {language === 'hi'
                 ? 'MoSJE आईडी, पहचान पत्र या उद्यम आधार से प्रमाणित होकर सीधे सरकारी निविदाओं (GeM) और ONDC पर थोक ऑर्डर प्राप्त करें।'
                 : 'Authenticate with MoSJE ID, Pehchan Card or Udyam Aadhaar to unlock direct GeM Government Tenders and zero-commission ONDC institutional procurement.'}

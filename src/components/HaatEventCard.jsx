@@ -12,14 +12,107 @@ const LANG_VOICE_MAP = {
   en: 'en-IN',
 };
 
+// ── i18n Translation Dictionary for all static UI strings ──
+const UI_TRANSLATIONS = {
+  en: {
+    liveExhibition: 'LIVE EXHIBITION',
+    stallsAvailable: 'Stalls Available',
+    listenDetails: 'Listen',
+    stop: 'Stop',
+    registerNow: 'Register Now',
+    officialWebsite: 'Official Website',
+    liveMelas: 'Live Melas:',
+    prev: 'Prev',
+    next: 'Next',
+    monthMap: {
+      Jan: 'Jan',
+      Feb: 'Feb',
+      Mar: 'Mar',
+      Apr: 'Apr',
+      May: 'May',
+      Jun: 'Jun',
+      Jul: 'Jul',
+      Aug: 'Aug',
+      Sep: 'Sep',
+      Oct: 'Oct',
+      Nov: 'Nov',
+      Dec: 'Dec',
+    },
+    locationLabel: 'Location',
+    durationLabel: 'Duration',
+    oneClickApp: '1-Click Application',
+    successTitle: 'Application Submitted Successfully!',
+    successDesc: 'Your details have been sent to the Government Haat sales team. Official confirmation will be received on your registered number.',
+    openPortal: 'Open Official Portal',
+    close: 'Close',
+    cancel: 'Cancel',
+    fullName: 'Full Name',
+    mobileNumber: 'Mobile Number',
+    craftCategory: 'Craft Category',
+    emailOptional: 'Email (Optional)',
+    namePlaceholder: 'Enter your name',
+    mobilePlaceholder: '10-digit mobile number',
+    craftPlaceholder: 'e.g. Terracotta, Chanderi Silk, Gond Painting',
+    submitting: 'Submitting registration...',
+    confirmSubmit: 'Submit Application →',
+    speechUnavailable: 'Speech Synthesis is not available in your browser.',
+  },
+  hi: {
+    liveExhibition: 'सरकारी हाट',
+    stallsAvailable: 'स्टॉल उपलब्ध हैं',
+    listenDetails: 'विवरण सुनें',
+    stop: 'रोकें',
+    registerNow: 'अभी पंजीकरण करें',
+    officialWebsite: 'आधिकारिक वेबसाइट',
+    liveMelas: 'लाइव मेले:',
+    prev: 'पिछला',
+    next: 'अगला',
+    monthMap: {
+      Jan: 'जनवरी',
+      Feb: 'फ़रवरी',
+      Mar: 'मार्च',
+      Apr: 'अप्रैल',
+      May: 'मई',
+      Jun: 'जून',
+      Jul: 'जुलाई',
+      Aug: 'अगस्त',
+      Sep: 'सितंबर',
+      Oct: 'अक्टूबर',
+      Nov: 'नवंबर',
+      Dec: 'दिसंबर',
+    },
+    locationLabel: 'स्थान',
+    durationLabel: 'अवधि',
+    oneClickApp: '1-क्लिक आवेदन',
+    successTitle: 'आवेदन सफलतापूर्वक दर्ज हुआ!',
+    successDesc: 'आपकी विवरण सरकारी हाट सेल टीम को भेज दी गई है। आधिकारिक सूचना आपके नंबर पर प्राप्त होगी।',
+    openPortal: 'आधिकारिक पोर्टल खोलें',
+    close: 'समाप्त',
+    cancel: 'रद्द करें',
+    fullName: 'कारीगर का पूरा नाम',
+    mobileNumber: 'मोबाइल नंबर',
+    craftCategory: 'शिल्प श्रेणी / क्लस्टर',
+    emailOptional: 'ईमेल पता (वैकल्पिक)',
+    namePlaceholder: 'आपका नाम दर्ज करें',
+    mobilePlaceholder: '10 अंकों का मोबाइल नंबर',
+    craftPlaceholder: 'उदा. टेराकोटा, चंदेरी रेशम, गोंड पेंटिंग',
+    submitting: 'पंजीकरण दर्ज हो रहा है...',
+    confirmSubmit: 'आवेदन जमा करें →',
+    speechUnavailable: 'आपके ब्राउज़र में आवाज़ (Speech Synthesis) उपलब्ध नहीं है।',
+  },
+};
+
 const CACHE_KEY = 'shilp_cached_haats';
 
 const FALLBACK_EVENTS = [
   {
     id: 'a8429859-6c20-489e-b886-f3f84999dc7e',
     title: 'SARAS Aajeevika Mela',
+    title_hi: 'सरस आजीविका मेला',
     organizer: 'Ministry of Rural Development',
+    organizer_hi: 'ग्रामीण विकास मंत्रालय',
     location: 'Bhopal Haat, MP',
+    location_hi: 'भोपाल हाट, मध्य प्रदेश',
     state: 'Madhya Pradesh',
     start_date: '2026-10-25',
     end_date: '2026-11-05',
@@ -31,8 +124,11 @@ const FALLBACK_EVENTS = [
   {
     id: '877cdf6d-28da-4220-a7f9-cf83431dd9b4',
     title: 'TRIBES India Shilp Mahotsav',
+    title_hi: 'ट्राइब्स इंडिया शिल्प महोत्सव',
     organizer: 'TRIFED & Ministry of Tribal Affairs',
+    organizer_hi: 'ट्राइफेड एवं जनजातीय कार्य मंत्रालय',
     location: 'Indore Ground, MP',
+    location_hi: 'इंदौर मैदान, मध्य प्रदेश',
     state: 'Madhya Pradesh',
     start_date: '2026-11-12',
     end_date: '2026-11-20',
@@ -45,6 +141,9 @@ const FALLBACK_EVENTS = [
 
 export default function HaatEventCard({ artisanProfile = null, user = null, currentLang = 'hi' }) {
   const slideTimerRef = useRef(null);
+
+  // i18n: resolve translation dictionary for current language
+  const t = UI_TRANSLATIONS[currentLang] || UI_TRANSLATIONS['hi'];
   // Cache-First State Initialization
   const [events, setEvents] = useState(() => {
     try {
@@ -219,6 +318,14 @@ export default function HaatEventCard({ artisanProfile = null, user = null, curr
   const safeIndex = currentIndex >= events.length ? 0 : currentIndex;
   const activeEvent = events[safeIndex] || FALLBACK_EVENTS[0];
 
+  // Helper to get localized DB fields (falls back to default English field if Hindi is missing)
+  const getLocalizedField = (field) => {
+    if (currentLang === 'hi' && activeEvent[`${field}_hi`]) {
+      return activeEvent[`${field}_hi`];
+    }
+    return activeEvent[field] || '';
+  };
+
   const formatDateRange = (startDateStr, endDateStr) => {
     if (!startDateStr || !endDateStr) return '';
     try {
@@ -227,8 +334,13 @@ export default function HaatEventCard({ artisanProfile = null, user = null, curr
       const e = new Date(endDateStr);
       const sDay = String(s.getDate()).padStart(2, '0');
       const eDay = String(e.getDate()).padStart(2, '0');
-      const sMonth = months[s.getMonth()];
-      const eMonth = months[e.getMonth()];
+      let sMonth = months[s.getMonth()];
+      let eMonth = months[e.getMonth()];
+
+      if (t.monthMap) {
+        sMonth = t.monthMap[sMonth] || sMonth;
+        eMonth = t.monthMap[eMonth] || eMonth;
+      }
 
       if (sMonth === eMonth) {
         return `${sDay} - ${eDay} ${sMonth}`;
@@ -259,7 +371,7 @@ export default function HaatEventCard({ artisanProfile = null, user = null, curr
 
   const handleToggleSpeech = () => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-      alert('आपके ब्राउज़र में आवाज़ (Speech Synthesis) उपलब्ध नहीं है।');
+      alert(t.speechUnavailable);
       return;
     }
 
@@ -277,10 +389,14 @@ export default function HaatEventCard({ artisanProfile = null, user = null, curr
       const targetCode = LANG_VOICE_MAP[selectedLang] || 'hi-IN';
 
       // Construct spoken narration text dynamically per active event
+      const title = getLocalizedField('title');
+      const organizer = getLocalizedField('organizer');
+      const location = getLocalizedField('location');
+
       const spokenText =
         selectedLang === 'hi'
-          ? `${activeEvent.title}। आयोजक: ${activeEvent.organizer}। स्थान: ${activeEvent.location}। तारीख: ${activeEvent.start_date} से ${activeEvent.end_date} तक। ${activeEvent.description_hi || ''}`
-          : `${activeEvent.title}, organized by ${activeEvent.organizer} at ${activeEvent.location}. Scheduled from ${activeEvent.start_date} to ${activeEvent.end_date}. Direct stalls available for artisans.`;
+          ? `${title}। आयोजक: ${organizer}। स्थान: ${location}। तारीख: ${activeEvent.start_date} से ${activeEvent.end_date} तक। ${activeEvent.description_hi || ''}`
+          : `${title}, organized by ${organizer} at ${location}. Scheduled from ${activeEvent.start_date} to ${activeEvent.end_date}. Direct stalls available for artisans.`;
 
       const utterance = new SpeechSynthesisUtterance(spokenText);
       utterance.lang = targetCode;
@@ -354,7 +470,7 @@ export default function HaatEventCard({ artisanProfile = null, user = null, curr
           <div className="flex-1">
             <div className="flex items-center justify-between gap-3 mb-2">
               <h3 className="text-xl sm:text-2xl font-black text-white leading-tight tracking-tight">
-                {activeEvent.title}
+                {getLocalizedField('title')}
               </h3>
 
               {events.length > 1 && (
@@ -364,6 +480,7 @@ export default function HaatEventCard({ artisanProfile = null, user = null, curr
                     onClick={() =>
                       setCurrentIndex((prev) => (prev === 0 ? events.length - 1 : prev - 1))
                     }
+                    title={t.prev}
                     className="hover:text-white p-0.5 transition-colors cursor-pointer"
                   >
                     ‹
@@ -372,6 +489,7 @@ export default function HaatEventCard({ artisanProfile = null, user = null, curr
                     onClick={() =>
                       setCurrentIndex((prev) => (prev === events.length - 1 ? 0 : prev + 1))
                     }
+                    title={t.next}
                     className="hover:text-white p-0.5 transition-colors cursor-pointer"
                   >
                     ›
@@ -381,8 +499,8 @@ export default function HaatEventCard({ artisanProfile = null, user = null, curr
             </div>
 
             <div className="text-[#d1c4bd] text-sm font-medium mb-4 flex flex-wrap items-center gap-x-4 gap-y-2">
-              <span>🏛️ {activeEvent.organizer}</span>
-              <span>📍 {activeEvent.location}</span>
+              <span>🏛️ {getLocalizedField('organizer')}</span>
+              <span>📍 {getLocalizedField('location')}</span>
               <span>📅 {formatDateRange(activeEvent.start_date, activeEvent.end_date)}</span>
             </div>
 
@@ -396,7 +514,7 @@ export default function HaatEventCard({ artisanProfile = null, user = null, curr
                     : 'bg-white/10 hover:bg-white/20 text-white border-white/10 hover:border-white/20'
                 }`}
               >
-                {isSpeaking ? '⏹ रोकें (Stop)' : '🔊 विवरण सुनें'}
+                {isSpeaking ? `⏹ ${t.stop}` : `🔊 ${t.listenDetails}`}
               </button>
 
               <button
@@ -404,7 +522,7 @@ export default function HaatEventCard({ artisanProfile = null, user = null, curr
                 onClick={handleOpenRegistration}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#ff9062] hover:bg-[#e87a4d] text-white text-sm font-black transition-all shadow-lg hover:shadow-orange-500/25 active:scale-95 cursor-pointer"
               >
-                <span>अभी पंजीकरण करें</span>
+                <span>{t.registerNow}</span>
                 <span>→</span>
               </button>
 
@@ -415,7 +533,7 @@ export default function HaatEventCard({ artisanProfile = null, user = null, curr
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-sm font-medium text-amber-500 hover:text-amber-400 border-b border-amber-500/50 pb-0.5 transition-colors cursor-pointer"
               >
-                आधिकारिक वेबसाइट
+                {t.officialWebsite}
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
                 </svg>
@@ -425,7 +543,7 @@ export default function HaatEventCard({ artisanProfile = null, user = null, curr
             {/* Multi-Event Carousel Dots / Quick Navigation */}
             {events.length > 1 && (
               <div className="flex items-center gap-1.5 mt-4 pt-3 border-t border-white/10">
-                <span className="text-[10px] text-gray-400 mr-1">मेले:</span>
+                <span className="text-[10px] text-gray-400 mr-1">{t.liveMelas}</span>
                 {events.map((ev, idx) => (
                   <button
                     key={ev.id || idx}
@@ -450,8 +568,8 @@ export default function HaatEventCard({ artisanProfile = null, user = null, curr
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
               </svg>
             </div>
-            <span className="text-xs font-semibold text-amber-200 tracking-wide uppercase">Live Exhibition</span>
-            <span className="text-[10px] text-gray-300">Stalls Available</span>
+            <span className="text-xs font-semibold text-amber-200 tracking-wide uppercase">{t.liveExhibition}</span>
+            <span className="text-[10px] text-gray-300">{t.stallsAvailable}</span>
           </div>
         </div>
       </div>
@@ -461,9 +579,9 @@ export default function HaatEventCard({ artisanProfile = null, user = null, curr
           <div className="relative w-full max-w-lg bg-[#241c17] border border-[#4a3b32] rounded-3xl p-6 sm:p-7 text-white shadow-2xl">
             <div className="flex items-start justify-between gap-4 mb-4">
               <div>
-                <h4 className="text-xl font-black text-white">{activeEvent.title}</h4>
+                <h4 className="text-xl font-black text-white">{getLocalizedField('title')}</h4>
                 <p className="text-xs text-[#d1c4bd] mt-0.5">
-                  स्थान: {activeEvent.location} • अवधि: {formatDateRange(activeEvent.start_date, activeEvent.end_date)}
+                  {t.locationLabel}: {getLocalizedField('location')} • {t.durationLabel}: {formatDateRange(activeEvent.start_date, activeEvent.end_date)}
                 </p>
               </div>
               <button
@@ -480,13 +598,13 @@ export default function HaatEventCard({ artisanProfile = null, user = null, curr
                 <div className="w-16 h-16 mx-auto rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30 text-2xl font-bold">
                   ✓
                 </div>
-                <h5 className="text-lg font-black text-white">आवेदन सफलतापूर्वक दर्ज हुआ!</h5>
+                <h5 className="text-lg font-black text-white">{t.successTitle}</h5>
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
                   className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold"
                 >
-                  समाप्त
+                   {t.close}
                 </button>
               </div>
             ) : (
@@ -494,7 +612,7 @@ export default function HaatEventCard({ artisanProfile = null, user = null, curr
                 <div className="bg-[#1b1511] p-3.5 rounded-2xl border border-white/5 space-y-3">
                   <div>
                     <label className="block text-[11px] font-bold text-[#ffdeaa] uppercase tracking-wider mb-1">
-                      कारीगर का पूरा नाम
+                      {t.fullName}
                     </label>
                     <input
                       type="text"
@@ -506,7 +624,7 @@ export default function HaatEventCard({ artisanProfile = null, user = null, curr
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-[#ffdeaa] uppercase tracking-wider mb-1">
-                      मोबाइल नंबर
+                      {t.mobileNumber}
                     </label>
                     <input
                       type="tel"
@@ -518,7 +636,7 @@ export default function HaatEventCard({ artisanProfile = null, user = null, curr
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-[#ffdeaa] uppercase tracking-wider mb-1">
-                      शिल्प श्रेणी
+                      {t.craftCategory}
                     </label>
                     <input
                       type="text"
@@ -536,14 +654,14 @@ export default function HaatEventCard({ artisanProfile = null, user = null, curr
                     onClick={() => setIsModalOpen(false)}
                     className="px-4 py-2.5 rounded-xl bg-white/5 text-gray-300 text-xs font-bold"
                   >
-                    रद्द करें
+                    {t.cancel}
                   </button>
                   <button
                     type="submit"
                     disabled={isSubmitting}
                     className="px-5 py-2.5 rounded-xl bg-[#ff9062] hover:bg-[#e87a4d] text-white text-xs font-black"
                   >
-                    {isSubmitting ? 'पंजीकरण हो रहा है...' : 'आवेदन जमा करें →'}
+                    {isSubmitting ? t.submitting : t.confirmSubmit}
                   </button>
                 </div>
               </form>

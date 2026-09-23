@@ -271,23 +271,6 @@ export default function VerificationCenter() {
                 : 'Authenticate with MoSJE ID, Pehchan Card or Udyam Aadhaar to unlock direct GeM Government Tenders and zero-commission ONDC institutional procurement.'}
             </p>
           </div>
-
-          {/* Status Badge */}
-          {verificationRecord?.is_verified && (
-            <div className="shrink-0 bg-emerald-950/80 border border-emerald-500/50 rounded-2xl p-4 flex items-center gap-3 shadow-lg">
-              <div className="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
-                <CheckCircle2 className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-emerald-400 font-bold text-xs uppercase tracking-wider">
-                  {language === 'hi' ? 'सत्यापित सरकारी विक्रेता' : 'Government Verified'}
-                </p>
-                <p className="text-[11px] text-stone-300">
-                  {language === 'hi' ? 'GeM एवं ONDC सक्रिय' : 'GeM & ONDC Active'}
-                </p>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 

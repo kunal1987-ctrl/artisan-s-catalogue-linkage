@@ -14,6 +14,7 @@ import Dashboard from './pages/Dashboard.jsx';
 import Catalog from './pages/Catalog.jsx';
 import Orders from './pages/Orders.jsx';
 import Capture from './pages/Capture.jsx';
+import AiStudio from './pages/AiStudio.jsx';
 import Review from './pages/Review.jsx';
 import Success from './pages/Success.jsx';
 import Details from './pages/Details.jsx';
@@ -49,6 +50,30 @@ export default function App() {
             element={
               <AuthGuard>
                 <Capture />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/studio"
+            element={
+              <AuthGuard>
+                <AiStudio />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/aistudio"
+            element={
+              <AuthGuard>
+                <AiStudio />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/ai-studio"
+            element={
+              <AuthGuard>
+                <AiStudio />
               </AuthGuard>
             }
           />

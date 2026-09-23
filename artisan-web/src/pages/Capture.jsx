@@ -60,6 +60,8 @@ const compressImage = (fileOrDataUrl, maxWidth = 800, quality = 0.6) => {
   });
 };
 
+const MAX_IMAGES = 3;
+
 const dataUrlToBlob = (dataUrl) => {
   const arr = dataUrl.split(',');
   const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
@@ -428,103 +430,131 @@ export default function Capture() {
   // ASYNC LIFESTYLE ENHANCEMENT
   // ════════════════════════════════════════════
 
-  const triggerLifestyleEnhancement = useCallback(async (base64String, workingBlob) => {
-    if (!base64String) return;
+  // ════════════════════════════════════════════
+  // BATCH & ASYNC LIFESTYLE ENHANCEMENT
+  // ════════════════════════════════════════════
+
+  const triggerBatchEnhancement = useCallback(async (candidateImages) => {
+    const targets = candidateImages || images;
+    if (!targets || targets.length === 0) return;
+
     setIsProcessingImage(true);
     setBgRemovalStatus('processing');
     setAiStatusText(
       language === 'hi'
-        ? 'एआई लाइफस्टाइल दृश्य तैयार किया जा रहा है...'
-        : 'Generating lifestyle scene via Photoroom AI...'
+        ? `एआई सभी ${targets.length} कोणों को संवार रहा है...`
+        : `AI enhancing all ${targets.length} captured angles...`
     );
 
+    // Mark pending items as enhancing
+    setImages((prev) =>
+      prev.map((img) => (img.status === 'ready' ? img : { ...img, status: 'enhancing' }))
+    );
+
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+    let token = '';
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
       const { data: sessionData } = await supabase.auth.getSession();
-      let token = sessionData?.session?.access_token;
+      token = sessionData?.session?.access_token;
       if (!token) {
         const { data: anonData } = await supabase.auth.signInAnonymously();
         token = anonData?.session?.access_token;
       }
-      const activeAuth = token
-        ? `Bearer ${token}`
-        : `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`;
-
-      const response = await fetch(`${supabaseUrl}/functions/v1/generate-lifestyle-image`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: activeAuth,
-        },
-        body: JSON.stringify({
-          imageBase64: base64String,
-        }),
-      });
-
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`Edge function returned HTTP ${response.status}: ${errText}`);
-      }
-
-      const data = await response.json();
-      if (data?.imageUrl) {
-        setImageUrl(data.imageUrl);
-        setProcessedPreview(data.imageUrl);
-        setBgRemovalStatus('done');
-        setAiStatusText(
-          language === 'hi'
-            ? 'लाइफस्टाइल फ़ोटो तैयार ✓'
-            : 'Lifestyle scene ready ✓'
-        );
-        if (showToast) {
-          showToast(
-            language === 'hi'
-              ? '✨ लाइफस्टाइल बैकग्राउंड तैयार!'
-              : '✨ AI lifestyle background generated!'
-          );
-        }
-      } else {
-        throw new Error(data?.error || data?.message || 'No image URL received from Edge Function');
-      }
-    } catch (cloudErr) {
-      console.warn('[Capture] Photoroom Edge Function fallback activated:', cloudErr);
-      setBgRemovalStatus('error');
-      setAiStatusText(
-        language === 'hi'
-          ? 'मूल फ़ोटो सुरक्षित की गई'
-          : 'Original photo preserved'
-      );
-
-      // Fallback: Upload compressed raw image to Supabase Storage bucket product-images
-      try {
-        const fileName = `craft_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('product-images')
-          .upload(fileName, workingBlob, {
-            contentType: 'image/jpeg',
-            upsert: false,
-          });
-
-        if (!uploadError && uploadData) {
-          const { data: urlData } = supabase.storage
-            .from('product-images')
-            .getPublicUrl(uploadData.path);
-          setImageUrl(urlData.publicUrl);
-        }
-      } catch (storageErr) {
-        console.warn('[Capture] Storage fallback upload skipped:', storageErr);
-      }
-    } finally {
-      setIsProcessingImage(false);
+    } catch (e) {
+      console.warn('[Capture] Session retrieval warning:', e);
     }
-  }, [language, showToast]);
+    const activeAuth = token
+      ? `Bearer ${token}`
+      : `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`;
+
+    for (let i = 0; i < targets.length; i++) {
+      const item = targets[i];
+      if (item.status === 'ready' && item.enhancedUrl) continue;
+
+      try {
+        const response = await fetch(`${supabaseUrl}/functions/v1/generate-lifestyle-image`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: activeAuth,
+          },
+          body: JSON.stringify({
+            imageBase64: item.base64,
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data?.imageUrl) {
+            setImages((prev) =>
+              prev.map((img) =>
+                img.id === item.id
+                  ? {
+                      ...img,
+                      status: 'ready',
+                      enhancedUrl: data.imageUrl,
+                      previewUrl: data.imageUrl,
+                    }
+                  : img
+              )
+            );
+            if (i === 0) {
+              setImageUrl(data.imageUrl);
+              setProcessedPreview(data.imageUrl);
+            }
+            continue;
+          }
+        }
+        throw new Error('Edge function fallback required');
+      } catch (err) {
+        console.warn(`[Capture] Angle #${i + 1} enhancement fallback:`, err);
+        setImages((prev) =>
+          prev.map((img) =>
+            img.id === item.id
+              ? {
+                  ...img,
+                  status: 'ready',
+                  enhancedUrl: img.previewUrl,
+                }
+              : img
+          )
+        );
+      }
+    }
+
+    setBgRemovalStatus('done');
+    setIsProcessingImage(false);
+    setAiStatusText(
+      language === 'hi' ? 'सभी कोण तैयार ✓' : 'All angles ready ✓'
+    );
+    if (showToast) {
+      showToast(
+        language === 'hi'
+          ? '✨ सभी कोणों का एआई संवर्धन संपन्न!'
+          : '✨ AI batch enhancement complete for all angles!'
+      );
+    }
+  }, [images, language, showToast]);
+
+  const triggerLifestyleEnhancement = triggerBatchEnhancement;
 
   // ════════════════════════════════════════════
   // MULTI-IMAGE STATE MANAGEMENT
   // ════════════════════════════════════════════
 
   const addImageToState = useCallback(async (fileOrBlob) => {
-    if (!fileOrBlob) return;
+    if (!fileOrBlob) return null;
+    if (images.length >= MAX_IMAGES) {
+      if (showToast) {
+        showToast(
+          language === 'hi'
+            ? 'अधिकतम 3 कोण ही कैप्चर किए जा सकते हैं।'
+            : 'Maximum 3 angles allowed. Remove an angle to retake.'
+        );
+      }
+      return null;
+    }
+
     const id = `img_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
     // Compress image to 800px max width at 0.6 quality via in-memory HTML5 Canvas
@@ -553,9 +583,12 @@ export default function Capture() {
       file: fileOrBlob instanceof File ? fileOrBlob : null,
       previewUrl: localUrl,
       base64: base64String,
+      status: 'pending', // pending, enhancing, ready
+      enhancedUrl: null,
     };
 
     setImages((prev) => {
+      if (prev.length >= MAX_IMAGES) return prev;
       const isFirst = prev.length === 0;
       const updated = [...prev, newImageItem];
       setSelectedImageIndex(updated.length - 1);
@@ -567,13 +600,20 @@ export default function Capture() {
         setPreviewUrl(localUrl);
         setImageBase64(base64String);
         setBase64String(base64String);
-        triggerLifestyleEnhancement(base64String, workingBlob);
       }
+
+      // Once limit of 3 is reached, auto-send to AI batch enhancement pipeline!
+      if (updated.length === MAX_IMAGES) {
+        setTimeout(() => {
+          triggerBatchEnhancement(updated);
+        }, 250);
+      }
+
       return updated;
     });
 
     return newImageItem;
-  }, [triggerLifestyleEnhancement]);
+  }, [images.length, language, showToast, triggerBatchEnhancement]);
 
   const removeImage = useCallback((indexToRemove) => {
     setImages((prev) => {
@@ -1592,12 +1632,14 @@ export default function Capture() {
                     <span className="material-symbols-outlined text-[#ff9062] text-[18px]">photo_library</span>
                     <span className="text-xs sm:text-sm font-bold text-[#ffdeaa]">
                       {language === 'hi'
-                        ? `शिल्प के विभिन्न कोण (${images.length})`
-                        : `Multi-Angle Craft Photos (${images.length})`}
+                        ? `शिल्प के विभिन्न कोण (${images.length} / ${MAX_IMAGES})`
+                        : `Multi-Angle Craft Photos (${images.length} / ${MAX_IMAGES})`}
                     </span>
                   </div>
                   <span className="text-[11px] text-stone-400 font-medium">
-                    {language === 'hi' ? 'बेहतर AI सटीकता हेतु विभिन्न कोण जोड़ें' : 'Add 2-4 angles for Gemini AI'}
+                    {images.length >= MAX_IMAGES 
+                      ? (language === 'hi' ? '✓ अधिकतम 3 कोण कैप्चर' : '✓ Max 3 angles captured')
+                      : (language === 'hi' ? 'अधिकतम 3 कोणों से बेहतर AI सटीकता' : 'Up to 3 angles for Gemini AI')}
                   </span>
                 </div>
 
@@ -1618,10 +1660,22 @@ export default function Capture() {
                         alt={`Angle ${idx + 1}`}
                         className="w-full h-full object-cover"
                       />
-                      {/* Angle Badge */}
-                      <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded-md bg-black/80 backdrop-blur-xs text-[10px] font-bold text-white">
-                        #{idx + 1}
-                      </span>
+                      {/* Angle Badge & Status Indicator */}
+                      <div className="absolute bottom-1 left-1 flex items-center gap-1">
+                        <span className="px-1.5 py-0.5 rounded-md bg-black/80 backdrop-blur-xs text-[10px] font-bold text-white">
+                          #{idx + 1}
+                        </span>
+                        {img.status === 'ready' && (
+                          <span className="px-1 py-0.5 rounded-md bg-emerald-600/90 text-white text-[9px] font-bold shadow">
+                            Ready
+                          </span>
+                        )}
+                        {img.status === 'enhancing' && (
+                          <span className="px-1 py-0.5 rounded-md bg-amber-500/90 text-black text-[9px] font-bold animate-pulse shadow">
+                            AI...
+                          </span>
+                        )}
+                      </div>
                       {/* Remove thumbnail button */}
                       <button
                         type="button"
@@ -1637,20 +1691,45 @@ export default function Capture() {
                     </div>
                   ))}
 
-                  {/* PROMINENT "+" BUTTON FOR EXTRA ANGLES */}
+                  {/* PROMINENT "+" BUTTON FOR EXTRA ANGLES (Only if < MAX_IMAGES) */}
+                  {images.length < MAX_IMAGES && (
+                    <button
+                      type="button"
+                      id="add-angle-photo-btn"
+                      onClick={() => openLiveCamera()}
+                      className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl border-2 border-dashed border-[#ff9062] bg-[#ff9062]/10 hover:bg-[#ff9062]/20 text-[#ff9062] flex flex-col items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 shrink-0 shadow-md group"
+                      title={language === 'hi' ? 'अन्य कोण से तस्वीर लें' : 'Take another angle photo'}
+                    >
+                      <div className="w-8 h-8 rounded-full bg-[#ff9062] text-white flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
+                        <span className="material-symbols-outlined text-[20px] font-bold">add</span>
+                      </div>
+                      <span className="text-[11px] font-bold text-[#ffdeaa]">
+                        {language === 'hi' ? '+ नया कोण' : '+ Add Angle'}
+                      </span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Batch Action Bar */}
+                <div className="flex items-center justify-between pt-1 border-t border-white/5">
+                  {images.some((img) => img.status === 'pending') && (
+                    <button
+                      type="button"
+                      onClick={() => triggerBatchEnhancement(images)}
+                      disabled={isProcessingImage}
+                      className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold flex items-center gap-1.5 shadow transition-all cursor-pointer disabled:opacity-50"
+                    >
+                      <span className="material-symbols-outlined text-[15px]">auto_fix_high</span>
+                      <span>{language === 'hi' ? '✨ सभी कोण संवारें (Enhance)' : '✨ AI Enhance All Angles'}</span>
+                    </button>
+                  )}
                   <button
                     type="button"
-                    id="add-angle-photo-btn"
-                    onClick={() => openLiveCamera()}
-                    className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl border-2 border-dashed border-[#ff9062] bg-[#ff9062]/10 hover:bg-[#ff9062]/20 text-[#ff9062] flex flex-col items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 shrink-0 shadow-md group"
-                    title={language === 'hi' ? 'अन्य कोण से तस्वीर लें' : 'Take another angle photo'}
+                    onClick={() => navigate('/studio')}
+                    className="text-stone-400 hover:text-[#ff9062] text-[11px] font-medium flex items-center gap-1 ml-auto"
                   >
-                    <div className="w-8 h-8 rounded-full bg-[#ff9062] text-white flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
-                      <span className="material-symbols-outlined text-[20px] font-bold">add</span>
-                    </div>
-                    <span className="text-[11px] font-bold text-[#ffdeaa]">
-                      {language === 'hi' ? '+ नया कोण' : '+ Add Angle'}
-                    </span>
+                    <span>{language === 'hi' ? 'एआई स्टूडियो मोड' : 'Open Multi-Angle Studio'}</span>
+                    <span className="material-symbols-outlined text-[13px]">arrow_forward</span>
                   </button>
                 </div>
               </div>

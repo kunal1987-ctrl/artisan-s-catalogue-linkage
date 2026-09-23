@@ -159,66 +159,48 @@ export default function RestockModal({
   const handleIncrement = () => setStockCount((prev) => prev + 1);
   const handleQuickAdd = (delta) => setStockCount((prev) => Math.max(0, prev + delta));
 
-  // ── Strict Supabase Mutation ──
+  // ── Strict Supabase Mutation & State Propagation ──
   const handleUpdateStock = async () => {
-    if (!activeProduct) return;
-    const newStock = Math.max(0, Math.round(Number(stockCount)));
-
+    if (!activeProduct?.id) return;
     setIsUpdating(true);
-    setFeedbackMsg('');
 
     try {
-      // 1. Update in 'items' table
+      // 1. Update in 'products' table
       let { error } = await supabase
-        .from('items')
-        .update({ stock: newStock })
+        .from('products')
+        .update({ stock: stockCount })
         .eq('id', activeProduct.id);
 
-      // 2. Also try 'products' table if needed
-      if (error) {
-        const prodRes = await supabase
-          .from('products')
-          .update({ stock: newStock })
-          .eq('id', activeProduct.id);
-        if (!prodRes.error) {
-          error = null;
-        }
+      // 2. Also update 'items' table to ensure complete sync across app
+      const itemsRes = await supabase
+        .from('items')
+        .update({ stock: stockCount })
+        .eq('id', activeProduct.id);
+
+      if (error && itemsRes.error) {
+        throw error || itemsRes.error;
       }
 
-      if (error) {
-        throw error;
-      }
-
-      // 3. Mutate local state immediately
+      // Mutate local state immediately so catalogue screens update
       setCatalogueProducts((prev) =>
-        prev.map((p, idx) => (idx === selectedIndex ? { ...p, stock: newStock } : p))
+        prev.map((p, idx) => (idx === selectedIndex ? { ...p, stock: stockCount } : p))
       );
 
-      // 4. Notify parent view
       if (onStockUpdated) {
-        onStockUpdated(activeProduct.id, newStock);
+        onStockUpdated(activeProduct.id, stockCount);
       }
 
       const msg =
         language === 'hi'
-          ? `✅ "${activeProduct.title}" का स्टॉक बदलकर ${newStock} किया गया!`
-          : `✅ Stock for "${activeProduct.title}" updated to ${newStock} units!`;
-
+          ? `✅ "${activeProduct.title}" का स्टॉक बदलकर ${stockCount} किया गया!`
+          : `✅ Stock updated to ${stockCount} units!`;
       if (showToast) showToast(msg);
-      setFeedbackMsg(msg);
 
-      // Optional brief delay before closing or staying open
-      setTimeout(() => {
-        onClose();
-      }, 900);
+      // Close modal
+      onClose();
     } catch (err) {
-      console.error('[RestockModal] Stock update error:', err);
-      const errMsg =
-        language === 'hi'
-          ? '❌ स्टॉक अपडेट विफल। कृपया पुनः प्रयास करें।'
-          : '❌ Failed to update stock in database. Please try again.';
-      setFeedbackMsg(errMsg);
-      if (showToast) showToast(errMsg);
+      console.error('Failed to update stock:', err);
+      alert('Stock update failed. Please try again.');
     } finally {
       setIsUpdating(false);
     }
@@ -378,55 +360,56 @@ export default function RestockModal({
                 </div>
               </div>
 
-              {/* ── Active Product Card ── */}
+              {/* ── Active Product Carousel Card with ‹ and › ── */}
               {activeProduct && (
-                <div className="p-4 rounded-2xl bg-white border border-[#d1c4bd]/60 shadow-xs flex items-center gap-4">
-                  <div className="relative shrink-0">
-                    <img
-                      src={activeProduct.image_url}
-                      alt={activeProduct.title}
-                      className="w-20 h-20 rounded-xl object-cover border border-[#d1c4bd]/40"
+                <div className="flex items-center justify-between gap-3 p-3.5 bg-white rounded-2xl border border-stone-200 shadow-sm mb-4">
+                  <button 
+                    type="button"
+                    onClick={() => setSelectedIndex((prev) => (prev > 0 ? prev - 1 : catalogueProducts.length - 1))}
+                    className="p-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-lg select-none cursor-pointer transition active:scale-90"
+                    aria-label="Previous Product"
+                  >
+                    ‹
+                  </button>
+
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <img 
+                      src={activeProduct.image_url || activeProduct.image} 
+                      alt={activeProduct.title || activeProduct.name}
+                      className="w-16 h-16 rounded-xl object-cover border border-stone-100 shrink-0" 
                     />
-                    {activeProduct.stock <= 3 && (
-                      <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-red-600 border-2 border-white animate-pulse" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <span className="text-[11px] font-bold text-[#9c441c] uppercase tracking-wider block">
-                      {activeProduct.category}
-                    </span>
-                    <h4 className="text-sm font-bold text-stone-900 truncate">
-                      {activeProduct.title}
-                    </h4>
-                    {activeProduct.hindi_title && (
-                      <p className="text-[11px] text-stone-500 truncate">{activeProduct.hindi_title}</p>
-                    )}
-                    <div className="flex items-center gap-2 mt-1.5">
-                      <span
-                        className={`text-xs font-bold px-2 py-0.5 rounded-md flex items-center gap-1 ${
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-amber-900 truncate">
+                        {activeProduct.category || 'General Craft'}
+                      </p>
+                      <h4 className="font-semibold text-stone-900 text-sm truncate">
+                        {activeProduct.title || activeProduct.name}
+                      </h4>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                           activeProduct.stock <= 3
-                            ? 'text-red-700 bg-red-50 border border-red-200'
-                            : 'text-emerald-700 bg-emerald-50 border border-emerald-200'
-                        }`}
-                      >
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full ${
-                            activeProduct.stock <= 3 ? 'bg-red-600 animate-pulse' : 'bg-emerald-500'
-                          }`}
-                        />
-                        <span>
-                          {language === 'hi'
-                            ? `वर्तमान: ${activeProduct.stock} इकाइयां`
-                            : `Current: ${activeProduct.stock} units`}
+                            ? 'bg-red-50 text-red-700 border border-red-200'
+                            : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        }`}>
+                          • Current: {activeProduct.stock} units
                         </span>
-                      </span>
-                      {activeProduct.price > 0 && (
-                        <span className="text-xs text-stone-600 font-bold">
-                          ₹{activeProduct.price}
-                        </span>
-                      )}
+                        {activeProduct.price > 0 && (
+                          <span className="text-xs text-stone-600 font-medium">
+                            ₹{activeProduct.price}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
+
+                  <button 
+                    type="button"
+                    onClick={() => setSelectedIndex((prev) => (prev < catalogueProducts.length - 1 ? prev + 1 : 0))}
+                    className="p-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-lg select-none cursor-pointer transition active:scale-90"
+                    aria-label="Next Product"
+                  >
+                    ›
+                  </button>
                 </div>
               )}
 

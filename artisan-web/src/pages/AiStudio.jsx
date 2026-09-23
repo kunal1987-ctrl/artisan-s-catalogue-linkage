@@ -145,6 +145,12 @@ export default function AiStudio() {
 
         if (response.ok) {
           const data = await response.json();
+          if (data && (data.is_authentic_photo === false || data.is_valid === false)) {
+            const reason = data.rejection_reason || 'Photo failed authenticity verification (pure white background, stock photo or watermark detected).';
+            alert(`Authenticity Check Failed / सत्यापन अस्वीकृत:\n${reason}`);
+            removeImage(item.id);
+            continue;
+          }
           if (data?.imageUrl) {
             updatedImages[i] = {
               ...item,

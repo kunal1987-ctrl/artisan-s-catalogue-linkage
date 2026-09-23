@@ -1,130 +1,121 @@
 /**
- * Indian Handicraft AI Categorization Engine
+ * Indian Handicraft AI Categorization Engine & Visual Fraud Detector
  * ─────────────────────────────────────────────────────────────────────────────
- * Provides strict category classification and system prompt for cataloging
- * crafts from product descriptions, voice transcripts, and artisan media.
+ * Provides strict category classification and authenticity verification prompt
+ * for detecting stock photos, digital white backgrounds, and watermarks.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
 export const ALLOWED_CATEGORIES = [
-  'Handloom & Textiles (e.g., Sarees, Silk, Khadi)',
-  'Terracotta & Clay Pottery',
-  'Metal Crafts (e.g., Brass, Dhokra, Copper)',
-  'Woodcraft & Carving (e.g., Sheesham, Wooden Toys)',
-  'Jute, Bamboo & Cane Products',
-  'Tribal Paintings & Art (e.g., Madhubani, Warli, Gond)',
-  'Leather Crafts',
-  'Imitation & Traditional Jewelry',
-  'Natural Fiber & Grass Crafts'
+  'Textiles',
+  'Pottery',
+  'Woodcraft',
+  'Metal',
+  'Jute',
+  'Art',
+  'Leather',
+  'Jewelry'
 ];
 
-export const systemPrompt = `You are an expert Indian Handicraft Cataloging AI. 
-Your sole task is to analyze the product description, voice transcript, or image provided by the artisan and classify it strictly into ONE of the following official categories.
+export const systemPrompt = `You are an expert Indian Handicraft Cataloging AI and Fraud Detector. 
 
-ALLOWED CATEGORIES:
-- Handloom & Textiles (e.g., Sarees, Silk, Khadi)
-- Terracotta & Clay Pottery
-- Metal Crafts (e.g., Brass, Dhokra, Copper)
-- Woodcraft & Carving (e.g., Sheesham, Wooden Toys)
-- Jute, Bamboo & Cane Products
-- Tribal Paintings & Art (e.g., Madhubani, Warli, Gond)
-- Leather Crafts
-- Imitation & Traditional Jewelry
-- Natural Fiber & Grass Crafts
+TASK 1: CLASSIFY
+Classify the product strictly into ONE allowed category: [Textiles, Pottery, Woodcraft, Metal, Jute, Art, Leather, Jewelry].
 
-RULES:
-1. You MUST choose exactly one category from the exact text in the ALLOWED CATEGORIES list.
-2. Do NOT invent, modify, or abbreviate categories.
-3. If the product bridges two categories, select the category of the primary base material.
-4. Output ONLY valid JSON in the exact format below. Do not include markdown blocks, conversational text, or explanations.
+TASK 2: AUTHENTICITY CHECK
+Analyze the image background and context. 
+- REJECT if the background is pure digital white, transparent, or a perfect studio gradient.
+- REJECT if there are digital watermarks, stock photo logos, or promotional text overlays.
+- ACCEPT ONLY if the image shows natural physical environments (e.g., human hands, workshop tables, raw materials, natural outdoor/indoor lighting, natural shadows).
 
 EXPECTED JSON FORMAT:
 {
-  "category": "Exact String from Allowed Categories",
-  "confidence": "High/Medium/Low"
+  "category": "Exact String or null",
+  "is_authentic_photo": boolean,
+  "rejection_reason": "Provide reason if is_authentic_photo is false, else null"
 }
 `;
 
 /**
  * Deterministic fallback classifier matching product text to allowed categories.
+ * Also performs local heuristic authenticity check on text.
  */
 export function classifyCraftLocally(description) {
   const text = (description || '').toLowerCase();
 
+  // Heuristic fraud check
   if (
-    text.includes('saree') || text.includes('sari') || text.includes('silk') ||
-    text.includes('khadi') || text.includes('handloom') || text.includes('textile') ||
-    text.includes('weave') || text.includes('cotton') || text.includes('chanderi') ||
-    text.includes('banarasi') || text.includes('साड़ी') || text.includes('वस्त्र') ||
-    text.includes('हथकरघा') || text.includes('रेशम')
+    text.includes('stock photo') || 
+    text.includes('shutterstock') || 
+    text.includes('getty') || 
+    text.includes('watermark') || 
+    text.includes('clipart') ||
+    text.includes('pure white background')
   ) {
-    return { category: 'Handloom & Textiles (e.g., Sarees, Silk, Khadi)', confidence: 'High' };
+    return {
+      category: null,
+      is_authentic_photo: false,
+      rejection_reason: 'Detected stock photo watermark or non-physical studio background.'
+    };
   }
 
+  let category = 'Textiles';
   if (
     text.includes('clay') || text.includes('terracotta') || text.includes('pottery') ||
     text.includes('ceramic') || text.includes('earthen') || text.includes('मिट्टी') ||
     text.includes('घड़ा') || text.includes('सुराही') || text.includes('दीया') ||
     text.includes('कुम्हार') || text.includes('टेराकोटा')
   ) {
-    return { category: 'Terracotta & Clay Pottery', confidence: 'High' };
-  }
-
-  if (
+    category = 'Pottery';
+  } else if (
+    text.includes('wood') || text.includes('sheesham') || text.includes('teak') ||
+    text.includes('carving') || text.includes('wooden toy') || text.includes('लकड़ी') ||
+    text.includes('काष्ठ') || text.includes('नक्काशी')
+  ) {
+    category = 'Woodcraft';
+  } else if (
     text.includes('brass') || text.includes('metal') || text.includes('copper') ||
     text.includes('bronze') || text.includes('dhokra') || text.includes('bell metal') ||
     text.includes('पीतल') || text.includes('तांबा') || text.includes('धातु') ||
     text.includes('कांसा')
   ) {
-    return { category: 'Metal Crafts (e.g., Brass, Dhokra, Copper)', confidence: 'High' };
-  }
-
-  if (
-    text.includes('wood') || text.includes('sheesham') || text.includes('teak') ||
-    text.includes('carving') || text.includes('wooden toy') || text.includes('लकड़ी') ||
-    text.includes('काष्ठ') || text.includes('नक्काशी')
-  ) {
-    return { category: 'Woodcraft & Carving (e.g., Sheesham, Wooden Toys)', confidence: 'High' };
-  }
-
-  if (
+    category = 'Metal';
+  } else if (
     text.includes('jute') || text.includes('bamboo') || text.includes('cane') ||
     text.includes('basket') || text.includes('जूट') || text.includes('बांस') ||
     text.includes('बेंत')
   ) {
-    return { category: 'Jute, Bamboo & Cane Products', confidence: 'High' };
-  }
-
-  if (
+    category = 'Jute';
+  } else if (
     text.includes('painting') || text.includes('madhubani') || text.includes('warli') ||
     text.includes('gond') || text.includes('pattachitra') || text.includes('tribal art') ||
     text.includes('मधुबनी') || text.includes('वारली') || text.includes('चित्रकला')
   ) {
-    return { category: 'Tribal Paintings & Art (e.g., Madhubani, Warli, Gond)', confidence: 'High' };
-  }
-
-  if (
+    category = 'Art';
+  } else if (
     text.includes('leather') || text.includes('mojari') || text.includes('jooti') ||
     text.includes('kolhapuri') || text.includes('चमड़ा') || text.includes('जूती')
   ) {
-    return { category: 'Leather Crafts', confidence: 'High' };
-  }
-
-  if (
+    category = 'Leather';
+  } else if (
     text.includes('jewelry') || text.includes('jewellery') || text.includes('kundan') ||
     text.includes('meenakari') || text.includes('bead') || text.includes('necklace') ||
     text.includes('earring') || text.includes('आभूषण') || text.includes('गहने')
   ) {
-    return { category: 'Imitation & Traditional Jewelry', confidence: 'High' };
+    category = 'Jewelry';
+  } else {
+    category = 'Textiles';
   }
 
-  if (
-    text.includes('grass') || text.includes('fiber') || text.includes('fibre') ||
-    text.includes('sabai') || text.includes('moonj') || text.includes('kauna') ||
-    text.includes('घास') || text.includes('मूंज')
-  ) {
-    return { category: 'Natural Fiber & Grass Crafts', confidence: 'Medium' };
-  }
-
-  return { category: 'Handloom & Textiles (e.g., Sarees, Silk, Khadi)', confidence: 'Low' };
+  return {
+    category,
+    is_authentic_photo: true,
+    rejection_reason: null
+  };
 }
+
+export default {
+  ALLOWED_CATEGORIES,
+  systemPrompt,
+  classifyCraftLocally
+};

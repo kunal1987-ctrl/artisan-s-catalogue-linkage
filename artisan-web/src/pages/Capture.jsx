@@ -1165,18 +1165,31 @@ export default function Capture() {
             const parsedData = parseGeminiResponse(data);
 
             // ── Step 3: Anti-Tamper & Authenticity Guardrail Check ──
-            if (parsedData && parsedData.is_valid === false) {
+            if (parsedData && (parsedData.is_authentic_photo === false || parsedData.is_valid === false)) {
               const reason = parsedData.rejection_reason || (
                 language === 'hi'
-                  ? 'यह तस्वीर प्रामाणिक हस्तशिल्प नहीं है या स्क्रीन से ली गई है।'
-                  : 'Image failed authenticity verification (not an authentic craft or screen recapture).'
+                  ? 'तस्वीर अस्वीकृत: पृष्ठभूमि प्रामाणिक नहीं है (डिजिटल सफेद बैकग्राउंड, स्टॉक फोटो या वॉटरमार्क पाया गया)।'
+                  : 'Image rejected: Background is not authentic (pure digital white background, studio gradient, stock photo, or digital watermark detected).'
               );
               console.warn('[Capture] Rejected by authenticity guardrail:', reason);
               if (showToast) showToast(`🚫 ${reason}`);
               if (language === 'hi') {
                 speakHindi(reason);
               }
-              alert(`Image Verification Failed:\n${reason}`);
+              alert(`Image Verification Failed / सत्यापन विफल:\n\n${reason}\n\nकृपया वास्तविक कार्यशाला या प्राकृतिक वातावरण में ली गई फोटो अपलोड करें।`);
+
+              // Clear the image state completely
+              setImages([]);
+              setImage(null);
+              setImageBlob(null);
+              setImageFile(null);
+              setPreviewUrl(null);
+              setProcessedPreview(null);
+              setImageBase64(null);
+              setImageUrl(null);
+              setSelectedImageIndex(0);
+              if (cameraRef.current) cameraRef.current.value = '';
+
               setIsGeneratingListing(false);
               return;
             }

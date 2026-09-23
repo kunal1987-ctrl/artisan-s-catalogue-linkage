@@ -18,6 +18,9 @@ export default function Catalog() {
   const [activeFilter, setActiveFilter] = useState('all'); // all | live | draft | sold_out
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [toastMsg, setToastMsg] = useState('');
+  const [editingMoqId, setEditingMoqId] = useState(null);
+  const [newMoq, setNewMoq] = useState(1);
+  const [isSavingMoq, setIsSavingMoq] = useState(false);
 
   const showToast = (msg) => {
     setToastMsg(msg);
@@ -158,6 +161,39 @@ export default function Catalog() {
       // Rollback optimistic update
       setProducts(previousProducts);
       showToast(language === 'hi' ? '❌ उत्पाद हटाने में विफल' : '❌ Failed to delete product');
+    }
+  };
+
+  // Handle inline MOQ update
+  const handleUpdateMoq = async (productId) => {
+    const value = Math.max(1, Math.round(Number(newMoq) || 1));
+    setIsSavingMoq(true);
+    try {
+      const { error } = await supabase
+        .from('items')
+        .update({ min_order_quantity: value, moq: value })
+        .eq('id', productId);
+      if (error) {
+        console.error('Supabase MOQ update error:', error);
+        showToast(language === 'hi' ? '❌ MOQ अपडेट विफल' : '❌ Failed to update MOQ');
+      } else {
+        // Optimistic local state update
+        setProducts((prev) =>
+          prev.map((p) =>
+            p.id === productId ? { ...p, min_order_quantity: value, qty: value } : p
+          )
+        );
+        if (selectedProduct?.id === productId) {
+          setSelectedProduct((prev) => ({ ...prev, min_order_quantity: value }));
+        }
+        showToast(language === 'hi' ? `✅ MOQ ${value} पर अपडेट किया गया` : `✅ MOQ updated to ${value}`);
+      }
+    } catch (err) {
+      console.error('Failed to update MOQ:', err);
+      showToast(language === 'hi' ? '❌ MOQ अपडेट विफल' : '❌ Failed to update MOQ');
+    } finally {
+      setIsSavingMoq(false);
+      setEditingMoqId(null);
     }
   };
 
@@ -480,9 +516,45 @@ export default function Catalog() {
                             </span>
                           )}
                         </div>
-                        <span className="text-xs font-semibold text-on-surface-variant">
-                          {language === 'hi' ? 'न्यूनतम आर्डर' : 'MOQ'}: {p.min_order_quantity || p.qty || 1}
-                        </span>
+                        {editingMoqId === p.id ? (
+                          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="number"
+                              min="1"
+                              value={newMoq}
+                              onChange={(e) => setNewMoq(Math.max(1, Number(e.target.value)))}
+                              className="w-14 h-6 text-xs text-center font-semibold text-primary border border-secondary/40 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-secondary/60"
+                              autoFocus
+                              onKeyDown={(e) => { if (e.key === 'Enter') handleUpdateMoq(p.id); if (e.key === 'Escape') setEditingMoqId(null); }}
+                            />
+                            <button
+                              type="button"
+                              disabled={isSavingMoq}
+                              onClick={() => handleUpdateMoq(p.id)}
+                              className="w-6 h-6 rounded-md bg-emerald-600 text-white flex items-center justify-center hover:bg-emerald-700 active:scale-90 transition-all cursor-pointer disabled:opacity-50"
+                              title="Save"
+                            >
+                              <span className="material-symbols-outlined text-[14px]">{isSavingMoq ? 'hourglass_top' : 'check'}</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingMoqId(null)}
+                              className="w-6 h-6 rounded-md bg-gray-200 text-gray-600 flex items-center justify-center hover:bg-gray-300 active:scale-90 transition-all cursor-pointer"
+                              title="Cancel"
+                            >
+                              <span className="material-symbols-outlined text-[14px]">close</span>
+                            </button>
+                          </div>
+                        ) : (
+                          <span
+                            className="text-xs font-semibold text-on-surface-variant flex items-center gap-1 cursor-pointer hover:text-primary transition-colors group/moq"
+                            onClick={(e) => { e.stopPropagation(); setEditingMoqId(p.id); setNewMoq(p.min_order_quantity || p.qty || 1); }}
+                            title={language === 'hi' ? 'MOQ संपादित करें' : 'Edit MOQ'}
+                          >
+                            {language === 'hi' ? 'न्यूनतम आर्डर' : 'MOQ'}: {p.min_order_quantity || p.qty || 1}
+                            <span className="material-symbols-outlined text-[12px] opacity-0 group-hover/moq:opacity-100 transition-opacity">edit</span>
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>

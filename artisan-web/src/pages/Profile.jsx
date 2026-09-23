@@ -40,7 +40,8 @@ export default function Profile() {
     region: '',
     is_verified: false,
     gov_id_type: '',
-    gov_id_number: ''
+    gov_id_number: '',
+    certificate_id: ''
   });
   const [showGovIdDetails, setShowGovIdDetails] = useState(false);
 
@@ -111,7 +112,8 @@ export default function Profile() {
               region: contextProfile?.hub || 'गोरखपुर, उत्तर प्रदेश (Gorakhpur, UP)',
               is_verified: localStorage.getItem('artisan_gov_verified') === 'true',
               gov_id_type: localStorage.getItem('artisan_gov_id_type') || 'MoSJE Beneficiary ID',
-              gov_id_number: localStorage.getItem('artisan_gov_id_number') || 'MSJE/2026/89412'
+              gov_id_number: localStorage.getItem('artisan_gov_id_number') || 'MSJE/2026/89412',
+              certificate_id: localStorage.getItem('artisan_certificate_id') || localStorage.getItem('artisan_gov_id_number') || 'DL-ART-98412'
             });
             setLoading(false);
           }
@@ -120,7 +122,7 @@ export default function Profile() {
 
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('full_name, name, email, phone, profile_picture_url, avatar, craft_category, craft, region, hub, is_verified, gov_id_type, gov_id_number')
+          .select('full_name, name, email, phone, profile_picture_url, avatar, craft_category, craft, region, hub, is_verified, gov_id_type, gov_id_number, certificate_id')
           .eq('id', activeUserId)
           .maybeSingle();
 
@@ -142,7 +144,8 @@ export default function Profile() {
             region: profile?.region || profile?.hub || contextProfile?.hub || 'गोरखपुर, उत्तर प्रदेश (Gorakhpur, UP)',
             is_verified: verified,
             gov_id_type: profile?.gov_id_type || localStorage.getItem('artisan_gov_id_type') || 'MoSJE Beneficiary ID',
-            gov_id_number: profile?.gov_id_number || localStorage.getItem('artisan_gov_id_number') || 'MSJE/2026/89412'
+            gov_id_number: profile?.gov_id_number || localStorage.getItem('artisan_gov_id_number') || 'MSJE/2026/89412',
+            certificate_id: profile?.certificate_id || profile?.gov_id_number || localStorage.getItem('artisan_certificate_id') || localStorage.getItem('artisan_gov_id_number') || ''
           });
         }
       } catch (err) {
@@ -385,6 +388,20 @@ export default function Profile() {
     );
   }
 
+  const isVerified = Boolean(
+    profileData.is_verified ||
+    contextProfile?.isGovVerified ||
+    contextProfile?.verified ||
+    localStorage.getItem('artisan_gov_verified') === 'true'
+  );
+  const certificateId = profileData.certificate_id || 
+                        profileData.gov_id_number || 
+                        contextProfile?.certificate_id || 
+                        contextProfile?.govIdNumber || 
+                        localStorage.getItem('artisan_certificate_id') || 
+                        localStorage.getItem('artisan_gov_id_number') || 
+                        (isVerified ? 'DL-ART-98412' : '');
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-xl mx-auto">
@@ -457,26 +474,49 @@ export default function Profile() {
                 {userName}
               </h2>
 
-              {/* Minimalist Verified Artisan Badge */}
-              <button
-                type="button"
-                onClick={() => setShowGovIdDetails((prev) => !prev)}
-                title="Click to view DigiLocker verification details"
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm cursor-pointer hover:bg-emerald-100 transition-colors"
-              >
-                <svg className="w-3 h-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-                <span>DigiLocker Verified</span>
-              </button>
+              {/* Minimalist Verified / Not Verified Artisan Badge with Dynamic Certificate ID */}
+              {isVerified ? (
+                <button
+                  type="button"
+                  onClick={() => setShowGovIdDetails((prev) => !prev)}
+                  title="Click to view DigiLocker verification details"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs cursor-pointer hover:bg-emerald-100 transition-colors"
+                >
+                  <svg className="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>DigiLocker Verified</span>
+                  {certificateId && (
+                    <>
+                      <span className="text-emerald-300">•</span>
+                      <span className="font-mono text-[11px] font-bold text-emerald-800">
+                        {certificateId}
+                      </span>
+                    </>
+                  )}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => navigate('/verification')}
+                  title="Click to complete DigiLocker / Government verification"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200 shadow-2xs cursor-pointer hover:bg-amber-100 transition-colors"
+                >
+                  <svg className="w-3.5 h-3.5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <span>Not Verified</span>
+                  <span className="text-amber-700 text-[11px] underline">Verify Now →</span>
+                </button>
+              )}
             </div>
 
             {/* Subtle Collapsed Details / Tooltip on Click */}
-            {showGovIdDetails && (
+            {showGovIdDetails && isVerified && (
               <div className="inline-flex items-center gap-3 px-3 py-1.5 rounded-lg bg-emerald-50/90 border border-emerald-200 text-xs text-emerald-900 w-fit animate-in fade-in shadow-xs">
-                <span><span className="font-semibold text-emerald-700">ID:</span> <span className="font-mono font-bold">{profileData.gov_id_number || 'MSJE/2026/89412'}</span></span>
+                <span><span className="font-semibold text-emerald-700">Certificate ID:</span> <span className="font-mono font-bold">{certificateId || profileData.gov_id_number || 'MSJE/2026/89412'}</span></span>
                 <span className="text-emerald-300">•</span>
-                <span><span className="font-semibold text-emerald-700">Scheme:</span> <span className="font-medium">{profileData.gov_id_type || 'MOSJE'}</span></span>
+                <span><span className="font-semibold text-emerald-700">Scheme:</span> <span className="font-medium">{profileData.gov_id_type || 'DigiLocker / MoSJE'}</span></span>
               </div>
             )}
 

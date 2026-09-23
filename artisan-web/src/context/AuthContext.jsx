@@ -572,7 +572,7 @@ export function AuthProvider({ children }) {
             try {
               const { data: profData } = await supabase
                 .from('profiles')
-                .select('full_name, name, is_verified, gov_id_type, gov_id_number, verification_date')
+                .select('full_name, name, is_verified, gov_id_type, gov_id_number, certificate_id, verification_date')
                 .eq('id', activeUser.id)
                 .maybeSingle();
 
@@ -581,11 +581,13 @@ export function AuthProvider({ children }) {
                 setArtisanProfile((prev) => ({
                   ...prev,
                   ...(dbName ? { name: dbName } : {}),
+                  certificate_id: profData.certificate_id || profData.gov_id_number || null,
                   ...(profData.is_verified ? {
                     verified: true,
                     isGovVerified: true,
                     govIdType: profData.gov_id_type,
                     govIdNumber: profData.gov_id_number,
+                    certificate_id: profData.certificate_id || profData.gov_id_number,
                     verificationDate: profData.verification_date,
                   } : {}),
                 }));

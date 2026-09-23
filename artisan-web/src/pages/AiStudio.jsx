@@ -9,21 +9,65 @@ import exifr from 'exifr';
 
 const MAX_IMAGES = 3;
 
+export const SCENE_PRESETS = [
+  {
+    id: 'rustic-wood',
+    label: 'Rustic Wood & Sunlight (देहाती लकड़ी और धूप)',
+    icon: '🪵',
+    prompt: 'A beautiful, rustic wooden table bathed in warm morning sunlight, soft studio lighting, photorealistic interior design.'
+  },
+  {
+    id: 'marble-studio',
+    label: 'Minimalist Marble Pedestal (संगमरमर स्टूडियो)',
+    icon: '🏛️',
+    prompt: 'A sleek, minimalist white marble pedestal with subtle directional gallery spotlight, clean high-end luxury backdrop.'
+  },
+  {
+    id: 'traditional-jute',
+    label: 'Handcrafted Jute & Terracotta (हस्तशिल्प जूट और मिट्टी)',
+    icon: '🏺',
+    prompt: 'A natural handwoven earthy jute mat, soft warm terracotta walls, golden hour soft diffused craft studio lighting.'
+  },
+  {
+    id: 'festive-heritage',
+    label: 'Festive Heritage & Warm Brass (पारंपरिक उत्सव चमक)',
+    icon: '✨',
+    prompt: 'A festive Indian heritage living room table with soft glowing bokeh fairy lights, brass accents, warm ambient lighting.'
+  },
+  {
+    id: 'clean-podium',
+    label: 'E-Commerce White Studio Podium (ई-कॉमर्स पोडियम)',
+    icon: '📸',
+    prompt: 'A clean neutral off-white product podium with ultra-realistic soft ground contact shadows and commercial studio light.'
+  }
+];
+
 /**
- * Enterprise Image Pipeline:
- * 1. AI Background Removal via Fal.ai (bria-rmbg)
- * 2. Client-Side Studio Formatting (HTML5 Canvas 800x800, #FFFFFF, Drop Shadow, 10% Padding)
- * 3. Supabase Storage Upload ('products' bucket)
+ * Enterprise Generative AI Image Pipeline:
+ * 1. Generative AI Contextual Background replacement via Fal.ai (bria/background/replace)
+ * 2. Directly fetch Fal.ai composition and upload Blob to Supabase Storage ('products' bucket)
  */
-export async function processImagePipeline(file, userId = 'anonymous', statusCallback = null) {
+export async function processImagePipeline(
+  file,
+  scenePrompt = 'A beautiful, rustic wooden table bathed in warm morning sunlight, soft studio lighting, photorealistic interior design.',
+  userId = 'anonymous',
+  statusCallback = null
+) {
+  // Backward compatibility check if called as processImagePipeline(file, userId, statusCallback)
+  if (typeof scenePrompt === 'string' && scenePrompt.length < 40 && !scenePrompt.includes(' ') && typeof userId === 'function') {
+    statusCallback = userId;
+    userId = scenePrompt;
+    scenePrompt = 'A beautiful, rustic wooden table bathed in warm morning sunlight, soft studio lighting, photorealistic interior design.';
+  }
+
   const updateStatus = (msg) => {
     if (statusCallback && typeof statusCallback === 'function') {
       statusCallback(msg);
     }
   };
 
-  // ── Step 1: AI Background Removal (Fal.ai API) ──
-  updateStatus('AI पृष्ठभूमि हटा रहा है...');
+  // ── Step 1: Generative AI Contextual Background (Fal.ai + Bria) ──
+  updateStatus('AI आपके उत्पाद के लिए एक सुंदर दृश्य तैयार कर रहा है...');
 
   const base64DataUrl = await new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -37,27 +81,31 @@ export async function processImagePipeline(file, userId = 'anonymous', statusCal
     throw new Error('VITE_FAL_API_KEY is not configured in environment variables');
   }
 
-  let transparentImageUrl = null;
+  const effectivePrompt = scenePrompt || 'A beautiful, rustic wooden table bathed in warm morning sunlight, soft studio lighting, photorealistic interior design.';
+  let generatedImageUrl = null;
 
   // Primary POST to Fal.ai queue endpoint as specified in requirements
   try {
-    const response = await fetch('https://queue.fal.run/fal-ai/bria-rmbg', {
+    const response = await fetch('https://queue.fal.run/fal-ai/bria/background/replace', {
       method: 'POST',
       headers: {
         'Authorization': `Key ${falApiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ image_url: base64DataUrl }),
+      body: JSON.stringify({
+        image_url: base64DataUrl,
+        prompt: effectivePrompt,
+      }),
     });
 
     if (response.ok) {
       const data = await response.json();
       if (data?.image?.url || data?.image_url || data?.url) {
-        transparentImageUrl = data?.image?.url || data?.image_url || data?.url;
+        generatedImageUrl = data?.image?.url || data?.image_url || data?.url;
       } else if (data?.response_url || data?.status_url) {
         const pollUrl = data.response_url || data.status_url;
         let attempts = 0;
-        while (!transparentImageUrl && attempts < 30) {
+        while (!generatedImageUrl && attempts < 35) {
           await new Promise((resolve) => setTimeout(resolve, 1000));
           attempts++;
           const pollRes = await fetch(pollUrl, {
@@ -66,9 +114,9 @@ export async function processImagePipeline(file, userId = 'anonymous', statusCal
           if (pollRes.ok) {
             const pollData = await pollRes.json();
             if (pollData?.image?.url || pollData?.image_url || pollData?.url) {
-              transparentImageUrl = pollData?.image?.url || pollData?.image_url || pollData?.url;
+              generatedImageUrl = pollData?.image?.url || pollData?.image_url || pollData?.url;
             } else if (pollData?.status === 'COMPLETED' && pollData?.payload) {
-              transparentImageUrl = pollData.payload?.image?.url || pollData.payload?.image_url;
+              generatedImageUrl = pollData.payload?.image?.url || pollData.payload?.image_url || pollData.payload?.url;
             }
           }
         }
@@ -79,14 +127,17 @@ export async function processImagePipeline(file, userId = 'anonymous', statusCal
   }
 
   // Fallback to synchronous endpoint if queue didn't return image URL
-  if (!transparentImageUrl) {
-    const syncRes = await fetch('https://fal.run/fal-ai/bria-rmbg', {
+  if (!generatedImageUrl) {
+    const syncRes = await fetch('https://fal.run/fal-ai/bria/background/replace', {
       method: 'POST',
       headers: {
         'Authorization': `Key ${falApiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ image_url: base64DataUrl }),
+      body: JSON.stringify({
+        image_url: base64DataUrl,
+        prompt: effectivePrompt,
+      }),
     });
 
     if (!syncRes.ok) {
@@ -95,66 +146,18 @@ export async function processImagePipeline(file, userId = 'anonymous', statusCal
     }
 
     const syncData = await syncRes.json();
-    transparentImageUrl = syncData?.image?.url || syncData?.image_url || syncData?.url;
+    generatedImageUrl = syncData?.image?.url || syncData?.image_url || syncData?.url;
   }
 
-  if (!transparentImageUrl) {
-    throw new Error('Fal.ai background removal did not return a valid image URL');
+  if (!generatedImageUrl) {
+    throw new Error('Fal.ai background replacement did not return a valid image URL');
   }
 
-  // Load transparent image into HTML Image object
-  const img = new Image();
-  img.crossOrigin = 'Anonymous';
-  await new Promise((resolve, reject) => {
-    img.onload = resolve;
-    img.onerror = () => reject(new Error('Failed to load transparent image from Fal.ai'));
-    img.src = transparentImageUrl;
-  });
-
-  // ── Step 2: Client-Side Studio Formatting (HTML5 Canvas) ──
-  updateStatus('स्टूडियो लाइटिंग लागू की जा रही है...');
-
-  const canvas = document.createElement('canvas');
-  canvas.width = 800;
-  canvas.height = 800;
-  const ctx = canvas.getContext('2d');
-
-  // Fill White Canvas
-  ctx.fillStyle = '#FFFFFF';
-  ctx.fillRect(0, 0, 800, 800);
-
-  // Drop Shadow Configuration
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
-  ctx.shadowBlur = 25;
-  ctx.shadowOffsetY = 15;
-  ctx.shadowOffsetX = 0;
-
-  // Calculate Aspect Ratio to fit inside 800x800 with 10% padding
-  const padding = 0.10; // 10% padding
-  const maxW = 800 * (1 - 2 * padding); // 640px
-  const maxH = 800 * (1 - 2 * padding); // 640px
-
-  const scale = Math.min(maxW / img.width, maxH / img.height);
-  const drawW = img.width * scale;
-  const drawH = img.height * scale;
-  const drawX = (800 - drawW) / 2;
-  const drawY = (800 - drawH) / 2;
-
-  ctx.drawImage(img, drawX, drawY, drawW, drawH);
-
-  // ── Step 3: Supabase Storage Upload ──
+  // ── Step 2: Fetch Composed Image Blob & Upload Directly to Supabase Storage ──
   updateStatus('उत्पाद छवि सहेजी जा रही है...');
 
-  const blob = await new Promise((resolve, reject) => {
-    canvas.toBlob(
-      (b) => {
-        if (b) resolve(b);
-        else reject(new Error('Canvas export to JPEG blob failed'));
-      },
-      'image/jpeg',
-      0.9
-    );
-  });
+  const imgResponse = await fetch(generatedImageUrl);
+  const blob = await imgResponse.blob();
 
   const fileName = `${userId}/product_${Date.now()}.jpg`;
   let publicUrl = '';
@@ -163,7 +166,7 @@ export async function processImagePipeline(file, userId = 'anonymous', statusCal
     const { data: uploadData, error: uploadErr } = await supabase.storage
       .from('products')
       .upload(fileName, blob, {
-        contentType: 'image/jpeg',
+        contentType: blob.type || 'image/jpeg',
         upsert: true,
       });
 
@@ -173,7 +176,7 @@ export async function processImagePipeline(file, userId = 'anonymous', statusCal
       const { data: fbData, error: fbErr } = await supabase.storage
         .from('artisan-images')
         .upload(fileName, blob, {
-          contentType: 'image/jpeg',
+          contentType: blob.type || 'image/jpeg',
           upsert: true,
         });
       if (!fbErr && fbData) {
@@ -188,14 +191,14 @@ export async function processImagePipeline(file, userId = 'anonymous', statusCal
     console.warn('[processImagePipeline] Supabase upload exception:', err);
   }
 
-  // Fallback data URL if storage upload failed
+  // Fallback to generated image URL if storage upload failed
   if (!publicUrl) {
-    publicUrl = canvas.toDataURL('image/jpeg', 0.9);
+    publicUrl = generatedImageUrl;
   }
 
   return {
     publicUrl,
-    transparentImageUrl,
+    generatedImageUrl,
     blob,
     fileName,
   };
@@ -231,6 +234,13 @@ export default function AiStudio() {
   const [statusMessage, setStatusMessage] = useState('');
   const [isWatermarking, setIsWatermarking] = useState(false);
   const fileInputRef = useRef(null);
+
+  // ── Generative Scene Prompt State ──
+  const [scenePrompt, setScenePrompt] = useState(
+    'A beautiful, rustic wooden table bathed in warm morning sunlight, soft studio lighting, photorealistic interior design.'
+  );
+  const [selectedPresetId, setSelectedPresetId] = useState('rustic-wood');
+  const [isCustomPrompt, setIsCustomPrompt] = useState(false);
 
   // Government Verification State (Gatekeeper)
   const [isVerified, setIsVerified] = useState(() => {
@@ -347,12 +357,12 @@ export default function AiStudio() {
     });
   };
 
-  // ── AI Batch Enhancement Pipeline (Fal.ai + Canvas + Supabase) ──
+  // ── AI Batch Generative Scene Pipeline (Fal.ai Bria Background Replace + Supabase) ──
   const handleBatchEnhance = useCallback(async (imagesToEnhance = capturedImages) => {
     if (imagesToEnhance.length === 0 || isEnhancing) return;
 
     setIsEnhancing(true);
-    setStatusMessage('AI पृष्ठभूमि हटा रहा है...');
+    setStatusMessage('AI आपके उत्पाद के लिए एक सुंदर दृश्य तैयार कर रहा है...');
 
     setCapturedImages((prev) =>
       prev.map((img) => (img.status === 'pending' ? { ...img, status: 'enhancing' } : img))
@@ -366,7 +376,7 @@ export default function AiStudio() {
       if (item.status === 'ready' && item.enhancedUrl) continue;
 
       try {
-        const result = await processImagePipeline(item.file, activeUserId, (msg) => {
+        const result = await processImagePipeline(item.file, scenePrompt, activeUserId, (msg) => {
           setStatusMessage(msg);
         });
 
@@ -380,7 +390,7 @@ export default function AiStudio() {
         };
         setCapturedImages([...updatedImages]);
       } catch (err) {
-        console.warn(`[AiStudio] Image pipeline error on photo #${i + 1}:`, err);
+        console.warn(`[AiStudio] Generative pipeline error on photo #${i + 1}:`, err);
         let rawBase64 = '';
         try {
           rawBase64 = await fileToBase64(item.file);
@@ -399,7 +409,21 @@ export default function AiStudio() {
 
     setIsEnhancing(false);
     setStatusMessage('');
-  }, [capturedImages, isEnhancing, user]);
+  }, [capturedImages, isEnhancing, scenePrompt, user]);
+
+  // Handle Preset Selection Change
+  const handlePresetSelect = (presetId) => {
+    setSelectedPresetId(presetId);
+    if (presetId === 'custom') {
+      setIsCustomPrompt(true);
+    } else {
+      setIsCustomPrompt(false);
+      const found = SCENE_PRESETS.find((p) => p.id === presetId);
+      if (found) {
+        setScenePrompt(found.prompt);
+      }
+    }
+  };
 
   // Proceed to catalog listing / review
   const handleProceedToReview = () => {
@@ -440,7 +464,7 @@ export default function AiStudio() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
-              <span className="font-bold tracking-wide uppercase text-stone-200">AI Studio Camera</span>
+              <span className="font-bold tracking-wide uppercase text-stone-200">AI Lifestyle Studio</span>
               <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                 GPS Active
@@ -487,7 +511,7 @@ export default function AiStudio() {
         ) : (
           <>
             {/* Main Viewfinder / Placeholder */}
-            <div className="relative flex-1 bg-black rounded-xl flex items-center justify-center border border-white/10 mb-4 overflow-hidden min-h-[300px]">
+            <div className="relative flex-1 bg-black rounded-xl flex items-center justify-center border border-white/10 mb-3 overflow-hidden min-h-[280px]">
               {/* Frame markers */}
               <div className="absolute top-4 left-4 w-8 h-8 border-t-2 border-l-2 border-orange-500 z-10"></div>
               <div className="absolute top-4 right-4 w-8 h-8 border-t-2 border-r-2 border-orange-500 z-10"></div>
@@ -508,9 +532,9 @@ export default function AiStudio() {
                   <span>GPS वॉटरमार्क जोड़ रहे हैं (Geo-stamping)...</span>
                 </p>
               ) : isEnhancing ? (
-                <p className="text-amber-300 text-xs sm:text-sm z-10 bg-black/85 px-4 py-2 rounded-full backdrop-blur-xs flex items-center gap-2 border border-amber-500/40 animate-pulse">
-                  <svg className="animate-spin h-4 w-4 text-amber-400" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                  <span>{statusMessage || 'AI प्रोसेस हो रहा है...'}</span>
+                <p className="text-amber-300 text-xs sm:text-sm z-10 bg-black/85 px-4 py-2 rounded-full backdrop-blur-xs flex items-center gap-2 border border-amber-500/40 animate-pulse text-center max-w-[90%]">
+                  <svg className="animate-spin h-4 w-4 text-amber-400 shrink-0" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                  <span>{statusMessage || 'AI आपके उत्पाद के लिए एक सुंदर दृश्य तैयार कर रहा है...'}</span>
                 </p>
               ) : (
                 <p className="text-stone-500 text-sm z-10 bg-black/70 px-3 py-1.5 rounded-full backdrop-blur-xs">
@@ -531,17 +555,65 @@ export default function AiStudio() {
               onChange={handleCapture} 
             />
 
+            {/* ── Contextual Scene Selection / Prompt State UI ── */}
+            <div className="bg-black/30 border border-white/10 rounded-xl p-2.5 mb-3 flex flex-col gap-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-amber-300 flex items-center gap-1.5">
+                  <span>🎨</span>
+                  <span>दृश्य शैली चुनें (Select Scene Vibe)</span>
+                </span>
+                <span className="text-[10px] text-stone-400">Fal.ai Bria AI</span>
+              </div>
+
+              {/* Scene Dropdown Selector */}
+              <div className="relative">
+                <select
+                  disabled={isEnhancing}
+                  value={selectedPresetId}
+                  onChange={(e) => handlePresetSelect(e.target.value)}
+                  className="w-full bg-[#120d0a] border border-orange-500/30 rounded-lg px-3 py-2 text-xs text-amber-100 font-medium focus:outline-none focus:border-orange-500 cursor-pointer disabled:opacity-50"
+                >
+                  {SCENE_PRESETS.map((preset) => (
+                    <option key={preset.id} value={preset.id} className="bg-stone-900 text-stone-200">
+                      {preset.icon} {preset.label}
+                    </option>
+                  ))}
+                  <option value="custom" className="bg-stone-900 text-stone-200">
+                    ✏️ Custom Prompt (कस्टम दृश्य विवरण लिखें)
+                  </option>
+                </select>
+              </div>
+
+              {/* Prompt Text Input / Editable Preview */}
+              <div className="flex flex-col gap-1">
+                <textarea
+                  rows={2}
+                  disabled={isEnhancing}
+                  value={scenePrompt}
+                  onChange={(e) => {
+                    setScenePrompt(e.target.value);
+                    if (selectedPresetId !== 'custom') {
+                      setSelectedPresetId('custom');
+                      setIsCustomPrompt(true);
+                    }
+                  }}
+                  placeholder="A beautiful, rustic wooden table bathed in warm morning sunlight, soft studio lighting..."
+                  className="w-full bg-black/40 border border-white/5 rounded-lg p-2 text-[11px] text-stone-300 placeholder-stone-500 focus:outline-none focus:border-orange-500/50 resize-none font-mono leading-relaxed disabled:opacity-50"
+                />
+              </div>
+            </div>
+
             {/* Controls & Thumbnail Tray */}
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3">
               {/* Thumbnails */}
               {capturedImages.length > 0 && (
-                <div className="flex gap-3 overflow-x-auto pb-2">
+                <div className="flex gap-2.5 overflow-x-auto pb-1">
                   {capturedImages.map((img, index) => (
-                    <div key={img.id} className="relative w-16 h-16 shrink-0 rounded-lg overflow-hidden border border-orange-500/50">
+                    <div key={img.id} className="relative w-14 h-14 shrink-0 rounded-lg overflow-hidden border border-orange-500/50">
                       <img src={img.enhancedUrl || img.previewUrl} alt={`Angle ${index + 1}`} className="w-full h-full object-cover" />
                       <button 
                         onClick={() => removeImage(img.id)}
-                        className="absolute top-0.5 right-0.5 bg-black/60 rounded-full p-1 hover:bg-red-500 text-white"
+                        className="absolute top-0.5 right-0.5 bg-black/60 rounded-full p-1 hover:bg-red-500 text-white cursor-pointer"
                       >
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
                       </button>
@@ -551,16 +623,16 @@ export default function AiStudio() {
               )}
 
               {/* Action Buttons */}
-              <div className="flex justify-center gap-4">
+              <div className="flex justify-center gap-3">
                 {capturedImages.length < MAX_IMAGES && (
-                  <div className="relative flex items-center justify-center">
+                  <div className="relative flex items-center justify-center shrink-0">
                     <div className="absolute inset-0 rounded-full bg-orange-500/30 animate-ping pointer-events-none" />
                     <button 
                       disabled={isWatermarking || isEnhancing}
                       onClick={() => fileInputRef.current.click()} 
-                      className="relative z-10 flex flex-col items-center justify-center w-16 h-16 bg-white rounded-full text-stone-800 shadow-md hover:scale-105 active:scale-95 transition-transform duration-200 disabled:opacity-50 cursor-pointer"
+                      className="relative z-10 flex flex-col items-center justify-center w-14 h-14 bg-white rounded-full text-stone-800 shadow-md hover:scale-105 active:scale-95 transition-transform duration-200 disabled:opacity-50 cursor-pointer"
                     >
-                      <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
@@ -572,9 +644,21 @@ export default function AiStudio() {
                   <button 
                     disabled={isEnhancing}
                     onClick={handleEnhanceClick}
-                    className="flex-1 py-3 bg-gradient-to-r from-orange-600 to-amber-500 font-bold rounded-xl text-white shadow-lg shadow-orange-500/40 animate-pulse hover:scale-105 hover:-translate-y-1 transition-all duration-300 active:scale-95 disabled:opacity-50 cursor-pointer"
+                    className="flex-1 py-3 px-4 bg-gradient-to-r from-orange-600 to-amber-500 font-bold text-sm rounded-xl text-white shadow-lg shadow-orange-500/40 animate-pulse hover:scale-[1.02] hover:-translate-y-0.5 transition-all duration-300 active:scale-95 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
                   >
-                    {isEnhancing ? (statusMessage || 'AI Enhancing...') : capturedImages.every(i => i.status === 'ready') ? 'Proceed to Catalog Review ➔' : `Enhance ${capturedImages.length} Images ✨`}
+                    {isEnhancing ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>दृश्य तैयार हो रहा है...</span>
+                      </>
+                    ) : capturedImages.every(i => i.status === 'ready') ? (
+                      'Proceed to Catalog Review ➔'
+                    ) : (
+                      `Generate AI Scene (${capturedImages.length} Images) ✨`
+                    )}
                   </button>
                 )}
               </div>

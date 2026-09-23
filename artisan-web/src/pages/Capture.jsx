@@ -157,7 +157,7 @@ const speakHindi = (text = 'माफ करें, आवाज़ साफ �
 
 export default function Capture() {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const {
     user,
     artisanProfile,
@@ -393,6 +393,37 @@ export default function Capture() {
   const [isLangModalOpen, setIsLangModalOpen] = useState(false);
   const [transcriptionLang, setTranscriptionLang] = useState('hi');
 
+  const langMap = {
+    hi: 'hi-IN',
+    'hi-IN': 'hi-IN',
+    en: 'en-IN',
+    'en-IN': 'en-IN',
+    mr: 'mr-IN',
+    'mr-IN': 'mr-IN',
+    bn: 'bn-IN',
+    'bn-IN': 'bn-IN',
+    ta: 'ta-IN',
+    'ta-IN': 'ta-IN',
+    te: 'te-IN',
+    'te-IN': 'te-IN',
+    gu: 'gu-IN',
+    'gu-IN': 'gu-IN',
+    kn: 'kn-IN',
+    'kn-IN': 'kn-IN',
+    ml: 'ml-IN',
+    'ml-IN': 'ml-IN',
+    pa: 'pa-IN',
+    'pa-IN': 'pa-IN',
+    or: 'or-IN',
+    'or-IN': 'or-IN',
+    as: 'as-IN',
+    'as-IN': 'as-IN',
+    ur: 'ur-IN',
+    'ur-IN': 'ur-IN',
+  };
+  const activeLangCode = transcriptionLang || language || i18n?.language || 'en';
+  const selectedLanguage = langMap[activeLangCode] || activeLangCode || 'en-IN';
+
   const deleteRecording = useCallback((idToRemove) => {
     setRecordings((prev) => {
       const target = prev.find((rec) => rec.id === idToRemove);
@@ -404,7 +435,7 @@ export default function Capture() {
   }, []);
 
   // Derive the full description for the database/Gemini by joining all valid text blocks
-  const fullDescription = recordings.map((rec) => rec.text).join('. ');
+  const fullDescription = recordings.map((rec) => rec.text).join(' ');
 
   // ── AI Processing State ──
   const [aiStatus, setAiStatus] = useState('idle'); // idle | transcribing | analyzing | done | error
@@ -980,24 +1011,8 @@ export default function Capture() {
         throw new Error('Speech recognition not supported in this browser.');
       }
 
-      const langMap = {
-        hi: 'hi-IN',
-        en: 'en-IN',
-        bn: 'bn-IN',
-        ta: 'ta-IN',
-        te: 'te-IN',
-        mr: 'mr-IN',
-        gu: 'gu-IN',
-        kn: 'kn-IN',
-        ml: 'ml-IN',
-        pa: 'pa-IN',
-        or: 'or-IN',
-        as: 'as-IN',
-        ur: 'ur-IN',
-      };
-
       const recognition = new SpeechRecognition();
-      recognition.lang = langMap[transcriptionLang] || 'en-IN';
+      recognition.lang = selectedLanguage || 'en-IN'; // Dynamically respects app language changes
       recognition.interimResults = true;
       recognition.continuous = true;
       currentTranscriptRef.current = '';
@@ -1107,7 +1122,7 @@ export default function Capture() {
           : 'Error accessing microphone. Please try again.'
       );
     }
-  }, [isRecording, language, stop, transcriptionLang]);
+  }, [isRecording, language, selectedLanguage, stop]);
 
   const startRecording = toggleRecording;
   const stopRecording = toggleRecording;
@@ -1972,15 +1987,19 @@ export default function Capture() {
 
                 <div className="flex flex-col w-full max-w-md mx-auto space-y-4 p-4">
                   
-                  {/* Cumulative Description Display */}
-                  <div className="w-full min-h-[5rem] p-4 bg-stone-50 border border-stone-200 rounded-xl">
-                    {fullDescription ? (
-                      <p className="text-sm font-medium text-stone-800 leading-relaxed">
-                        {fullDescription}.
-                      </p>
+                  {/* Cumulative Description Display Box */}
+                  <div className="w-full min-h-[5rem] p-4 bg-amber-50/40 border border-amber-200/60 rounded-2xl shadow-sm">
+                    {recordings.length > 0 ? (
+                      <div className="space-y-2">
+                        {recordings.map((rec, idx) => (
+                          <span key={rec.id} className="text-sm font-medium text-stone-800 inline">
+                            {rec.text}{idx < recordings.length - 1 ? ' ' : ''}
+                          </span>
+                        ))}
+                      </div>
                     ) : (
                       <p className="text-sm text-stone-400 italic">
-                        Product description will appear here...
+                        Product description in {selectedLanguage || 'selected language'} will appear here...
                       </p>
                     )}
                   </div>

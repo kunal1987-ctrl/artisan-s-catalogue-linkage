@@ -16,7 +16,26 @@ export default function Sidebar({ className = '' }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
-  const { artisanName, session, artisanProfile } = useAuth();
+  const { artisanName: contextName, user: contextUser, session, artisanProfile } = useAuth();
+  const [userName, setUserName] = useState(contextName || 'Artisan');
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (contextUser?.user_metadata?.full_name || contextUser?.user_metadata?.name) {
+        setUserName(contextUser.user_metadata?.full_name || contextUser.user_metadata?.name);
+        return;
+      }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const name = user.user_metadata?.full_name || user.user_metadata?.name || user.user_metadata?.artisan_name || (contextName && contextName !== 'कारीगर' && contextName !== 'Artisan' ? contextName : 'Artisan');
+        setUserName(name);
+      } else if (contextName) {
+        setUserName(contextName);
+      }
+    };
+    fetchUser();
+  }, [contextUser, contextName]);
+
   const { openAtmLanguageModal, currentLanguageConfig, language = 'en' } = useLanguage();
 
   // Dynamic badge counts from Supabase
@@ -184,12 +203,12 @@ export default function Sidebar({ className = '' }) {
           className="flex items-center gap-3 p-2.5 rounded-xl bg-[#ebe8e2]/60 border border-[#d1c4bd]/30 cursor-pointer hover:bg-[#ebe8e2] transition-all"
         >
           <img
-            alt={artisanName}
+            alt={userName || contextName || 'Artisan'}
             className="w-10 h-10 rounded-full object-cover shadow-sm shrink-0"
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmvGYszZXuA45tASeKKSeAVzVfFnHtKAGtNsa4IB8eSEDv7aMN2Dj5pKYYgdmAj_qpHqPikrwnevchRmdRCCcuMRXPRl7fhyfOt-_XjOQic4K5XzVtP9-UCofnVEe570fnmUd_GNT4uQVrjHGKIIoPPyo1B2RZ4vXYFmloLyQfCyNa2hjDllGlTqYSywEQevMYAYPK6K6FMsX9YfKjc5nGMVc5iOINi_PYrPZd2lLY5bqH9AK1mI1L"
           />
           <span className="font-bold text-[13px] text-primary truncate min-w-0">
-            {artisanName}
+            {userName || contextName || 'Artisan'}
           </span>
         </div>
       </div>

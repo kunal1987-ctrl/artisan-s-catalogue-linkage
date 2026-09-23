@@ -67,6 +67,20 @@ export default function Profile() {
   });
   const [bankFormError, setBankFormError] = useState('');
 
+  const [userName, setUserName] = useState('Artisan');
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // Supabase stores user details in user_metadata if signed up via OAuth or explicit metadata
+        const name = user.user_metadata?.full_name || user.user_metadata?.name || 'Artisan';
+        setUserName(name);
+      }
+    };
+    fetchUser();
+  }, []);
+
   // ── 1. Data Fetching (Supabase) ──
   useEffect(() => {
     let isMounted = true;
@@ -77,12 +91,19 @@ export default function Profile() {
         const { data: authData } = await supabase.auth.getUser();
         const currentUser = authData?.user || user;
         const activeUserId = currentUser?.id;
+        const metaName = currentUser?.user_metadata?.full_name || 
+                         currentUser?.user_metadata?.name || 
+                         currentUser?.user_metadata?.artisan_name;
+
+        if (metaName && isMounted) {
+          setUserName(metaName);
+        }
 
         if (!activeUserId) {
           // Fallback to local profile / context
           if (isMounted) {
             setProfileData({
-              full_name: contextProfile?.name || localStorage.getItem('artisan_name') || 'रामचंद्र शर्मा (Ramchandra Sharma)',
+              full_name: metaName || contextProfile?.name || localStorage.getItem('artisan_name') || userName || 'Artisan',
               email: currentUser?.email || 'artisan.sharma@shilpsetu.gov.in',
               phone: contextProfile?.phone || currentUser?.phone || '+91 98290 12345',
               profile_picture_url: contextProfile?.avatar || 'https://lh3.googleusercontent.com/aida-public/AB6AXuAmvGYszZXuA45tASeKKSeAVzVfFnHtKAGtNsa4IB8eSEDv7aMN2Dj5pKYYgdmAj_qpHqPikrwnevchRmdRCCcuMRXPRl7fhyfOt-_XjOQic4K5XzVtP9-UCofnVEe570fnmUd_GNT4uQVrjHGKIIoPPyo1B2RZ4vXYFmloLyQfCyNa2hjDllGlTqYSywEQevMYAYPK6K6FMsX9YfKjc5nGMVc5iOINi_PYrPZd2lLY5bqH9AK1mI1L',
@@ -103,22 +124,25 @@ export default function Profile() {
           .eq('id', activeUserId)
           .maybeSingle();
 
-        if (profile && isMounted) {
+        if (isMounted) {
           const verified = Boolean(
-            profile.is_verified || 
+            profile?.is_verified || 
             localStorage.getItem('artisan_gov_verified') === 'true'
           );
 
+          const resolvedName = profile?.full_name || profile?.name || metaName || contextProfile?.name || userName || 'Artisan';
+          setUserName(resolvedName);
+
           setProfileData({
-            full_name: profile.full_name || profile.name || contextProfile?.name || currentUser?.user_metadata?.full_name || 'रामचंद्र शर्मा (Ramchandra Sharma)',
-            email: profile.email || currentUser?.email || 'artisan.sharma@shilpsetu.gov.in',
-            phone: profile.phone || currentUser?.phone || contextProfile?.phone || '+91 98290 12345',
-            profile_picture_url: profile.profile_picture_url || profile.avatar || contextProfile?.avatar || 'https://lh3.googleusercontent.com/aida-public/AB6AXuAmvGYszZXuA45tASeKKSeAVzVfFnHtKAGtNsa4IB8eSEDv7aMN2Dj5pKYYgdmAj_qpHqPikrwnevchRmdRCCcuMRXPRl7fhyfOt-_XjOQic4K5XzVtP9-UCofnVEe570fnmUd_GNT4uQVrjHGKIIoPPyo1B2RZ4vXYFmloLyQfCyNa2hjDllGlTqYSywEQevMYAYPK6K6FMsX9YfKjc5nGMVc5iOINi_PYrPZd2lLY5bqH9AK1mI1L',
-            craft_category: profile.craft_category || profile.craft || contextProfile?.craft || 'टेराकोटा एवं मृत्तिका शिल्प (Terracotta Pottery)',
-            region: profile.region || profile.hub || contextProfile?.hub || 'गोरखपुर, उत्तर प्रदेश (Gorakhpur, UP)',
+            full_name: resolvedName,
+            email: profile?.email || currentUser?.email || 'artisan.sharma@shilpsetu.gov.in',
+            phone: profile?.phone || currentUser?.phone || contextProfile?.phone || '+91 98290 12345',
+            profile_picture_url: profile?.profile_picture_url || profile?.avatar || contextProfile?.avatar || 'https://lh3.googleusercontent.com/aida-public/AB6AXuAmvGYszZXuA45tASeKKSeAVzVfFnHtKAGtNsa4IB8eSEDv7aMN2Dj5pKYYgdmAj_qpHqPikrwnevchRmdRCCcuMRXPRl7fhyfOt-_XjOQic4K5XzVtP9-UCofnVEe570fnmUd_GNT4uQVrjHGKIIoPPyo1B2RZ4vXYFmloLyQfCyNa2hjDllGlTqYSywEQevMYAYPK6K6FMsX9YfKjc5nGMVc5iOINi_PYrPZd2lLY5bqH9AK1mI1L',
+            craft_category: profile?.craft_category || profile?.craft || contextProfile?.craft || 'टेराकोटा एवं मृत्तिका शिल्प (Terracotta Pottery)',
+            region: profile?.region || profile?.hub || contextProfile?.hub || 'गोरखपुर, उत्तर प्रदेश (Gorakhpur, UP)',
             is_verified: verified,
-            gov_id_type: profile.gov_id_type || localStorage.getItem('artisan_gov_id_type') || 'MoSJE Beneficiary ID',
-            gov_id_number: profile.gov_id_number || localStorage.getItem('artisan_gov_id_number') || 'MSJE/2026/89412'
+            gov_id_type: profile?.gov_id_type || localStorage.getItem('artisan_gov_id_type') || 'MoSJE Beneficiary ID',
+            gov_id_number: profile?.gov_id_number || localStorage.getItem('artisan_gov_id_number') || 'MSJE/2026/89412'
           });
         }
       } catch (err) {
@@ -430,7 +454,7 @@ export default function Profile() {
           <div className="flex flex-col gap-1.5">
             <div className="flex flex-wrap items-center gap-2.5">
               <h2 className="text-2xl font-bold text-gray-900">
-                {profileData.full_name || 'Artisan Name'}
+                {userName}
               </h2>
 
               {/* Minimalist Verified Artisan Badge */}

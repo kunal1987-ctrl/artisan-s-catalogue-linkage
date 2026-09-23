@@ -568,22 +568,26 @@ export function AuthProvider({ children }) {
               }));
             }
 
-            // Check Supabase profiles table for official Government Verification status
+            // Check Supabase profiles table for official Government Verification status & profile name
             try {
               const { data: profData } = await supabase
                 .from('profiles')
-                .select('is_verified, gov_id_type, gov_id_number, verification_date')
+                .select('full_name, name, is_verified, gov_id_type, gov_id_number, verification_date')
                 .eq('id', activeUser.id)
                 .maybeSingle();
 
-              if (profData?.is_verified && mounted) {
+              if (profData && mounted) {
+                const dbName = profData.full_name || profData.name;
                 setArtisanProfile((prev) => ({
                   ...prev,
-                  verified: true,
-                  isGovVerified: true,
-                  govIdType: profData.gov_id_type,
-                  govIdNumber: profData.gov_id_number,
-                  verificationDate: profData.verification_date,
+                  ...(dbName ? { name: dbName } : {}),
+                  ...(profData.is_verified ? {
+                    verified: true,
+                    isGovVerified: true,
+                    govIdType: profData.gov_id_type,
+                    govIdNumber: profData.gov_id_number,
+                    verificationDate: profData.verification_date,
+                  } : {}),
                 }));
               }
             } catch (profErr) {

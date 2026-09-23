@@ -83,6 +83,15 @@ export default function DashboardLayout() {
     loadLayoutProfile();
   }, [user?.id, session?.user?.id]);
 
+  const displayName = 
+    userProfile?.full_name || 
+    userProfile?.name || 
+    user?.user_metadata?.full_name || 
+    user?.user_metadata?.name || 
+    user?.user_metadata?.artisan_name || 
+    artisanName || 
+    'Artisan';
+
   const isVerified = Boolean(
     artisanProfile?.verified ||
     isAuthenticated ||
@@ -358,10 +367,10 @@ export default function DashboardLayout() {
             >
               <img
                 src={userProfile?.profile_picture_url || "https://lh3.googleusercontent.com/aida-public/AB6AXuAmvGYszZXuA45tASeKKSeAVzVfFnHtKAGtNsa4IB8eSEDv7aMN2Dj5pKYYgdmAj_qpHqPikrwnevchRmdRCCcuMRXPRl7fhyfOt-_XjOQic4K5XzVtP9-UCofnVEe570fnmUd_GNT4uQVrjHGKIIoPPyo1B2RZ4vXYFmloLyQfCyNa2hjDllGlTqYSywEQevMYAYPK6K6FMsX9YfKjc5nGMVc5iOINi_PYrPZd2lLY5bqH9AK1mI1L"}
-                alt={artisanName}
+                alt={displayName}
                 className="w-6 h-6 rounded-full object-cover shrink-0 border border-gray-200"
               />
-              <span className="max-w-[70px] sm:max-w-[110px] truncate">{artisanName}</span>
+              <span className="max-w-[70px] sm:max-w-[110px] truncate">{displayName}</span>
             </button>
 
             {/* Profile / Logout */}
@@ -444,12 +453,12 @@ export default function DashboardLayout() {
                   className="flex items-center gap-3 p-3 rounded-2xl bg-[#ebe8e2]/60 border border-[#d1c4bd]/40 cursor-pointer hover:bg-[#ebe8e2] transition-all"
                 >
                   <img
-                    alt={artisanName}
+                    alt={displayName}
                     className="w-11 h-11 rounded-full object-cover shadow-sm shrink-0"
                     src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmvGYszZXuA45tASeKKSeAVzVfFnHtKAGtNsa4IB8eSEDv7aMN2Dj5pKYYgdmAj_qpHqPikrwnevchRmdRCCcuMRXPRl7fhyfOt-_XjOQic4K5XzVtP9-UCofnVEe570fnmUd_GNT4uQVrjHGKIIoPPyo1B2RZ4vXYFmloLyQfCyNa2hjDllGlTqYSywEQevMYAYPK6K6FMsX9YfKjc5nGMVc5iOINi_PYrPZd2lLY5bqH9AK1mI1L"
                   />
                   <span className="font-bold text-sm text-primary truncate min-w-0">
-                    {artisanName}
+                    {displayName}
                   </span>
                 </div>
 

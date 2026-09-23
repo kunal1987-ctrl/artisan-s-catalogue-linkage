@@ -101,7 +101,7 @@ export default function Home({ customArtisanName } = {}) {
                         <span>{t('dashboard.breadcrumb', 'Artisan Dashboard')}</span>
                     </div>
                     <h2 className="text-xl sm:text-[24px] font-bold text-primary mt-0.5">
-                        {t('dashboard.welcome', 'Welcome, Artisan!')}
+                        {language === 'hi' ? `स्वागत है, ${artisanName}!` : `Welcome, ${artisanName}!`}
                     </h2>
                 </div>
                 

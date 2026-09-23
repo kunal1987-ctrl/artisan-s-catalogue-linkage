@@ -674,14 +674,15 @@ export default function HaatEventCard({ artisanProfile = null, user = null, curr
             <div className="flex flex-wrap items-center gap-3">
               <button
                 type="button"
-                onClick={handleToggleSpeech}
+                onClick={handleToggleVoice}
+                aria-label={t.listenDetails}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all border active:scale-95 cursor-pointer ${
                   isSpeaking
                     ? 'bg-amber-500/25 text-amber-200 border-amber-400/40 shadow-inner'
                     : 'bg-white/10 hover:bg-white/20 text-white border-white/10 hover:border-white/20'
                 }`}
               >
-                {isSpeaking ? `⏹ ${t.stop}` : `🔊 ${t.listenDetails}`}
+                {isSpeaking ? t.stop : t.listenDetails}
               </button>
 
               <button

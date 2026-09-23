@@ -743,8 +743,8 @@ export default function HaatEventCard({ currentLang = 'hi' }) {
               {/* Native Voice Narration Button */}
               <button
                 type="button"
-                onClick={handleToggleSpeech}
-                aria-label="विवरण सुनें"
+                onClick={handleToggleVoice}
+                aria-label={t.listenDetails}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all border active:scale-95 cursor-pointer ${
                   isSpeaking
                     ? 'bg-amber-500/25 text-amber-200 border-amber-400/40 shadow-inner'

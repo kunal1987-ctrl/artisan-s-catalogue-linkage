@@ -72,20 +72,44 @@ export default function VerificationCenter({ userProfile, onVerificationSuccess 
 
   if (userProfile?.is_verified || status === 'success') {
     return (
-      <div className="bg-emerald-950/40 border border-emerald-500/40 rounded-2xl p-5 space-y-3">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold">
-            ✓
+      <div className="bg-white border border-gray-200 shadow-md rounded-2xl p-5 sm:p-6 space-y-4 text-gray-900">
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 rounded-xl bg-green-50 border border-green-200 flex items-center justify-center text-green-700 font-bold shrink-0">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+            </svg>
           </div>
           <div>
-            <h3 className="text-emerald-400 font-bold">DigiLocker Verified Artisan</h3>
-            <p className="text-xs text-emerald-300/80">Authorized for GeM & ONDC Procurement Tenders</p>
+            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green-50 border border-green-200 text-green-700 text-xs font-semibold mb-1">
+              <span>Government Accredited Artisan</span>
+            </div>
+            <h3 className="text-gray-900 font-bold text-base sm:text-lg">DigiLocker Verified Artisan</h3>
+            <p className="text-xs text-gray-600">Authorized for GeM & ONDC Procurement Tenders</p>
           </div>
         </div>
-        <div className="pt-2 border-t border-emerald-500/20 text-xs text-stone-400 space-y-1">
-          <p>Ref ID: <span className="font-mono text-amber-200">{refId}</span></p>
-          <p>Timestamp: {new Date().toLocaleString()}</p>
-          <p>Issuer: National Informatics Centre (NIC) Sandbox</p>
+
+        {/* Stacked ID Metadata */}
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-3.5 space-y-2 text-xs">
+          <div className="flex justify-between items-center">
+            <span className="text-gray-600 font-medium">Scheme / ID Type:</span>
+            <span className="font-semibold text-gray-900 uppercase">{idType}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-gray-600 font-medium">ID Number:</span>
+            <span className="font-mono font-bold text-gray-900">{idNumber || 'MSJE/2026/89412'}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-gray-600 font-medium">Status:</span>
+            <span className="inline-flex items-center gap-1 text-green-700 font-semibold">
+              <span className="w-2 h-2 rounded-full bg-green-500"></span> Verified
+            </span>
+          </div>
+        </div>
+
+        {/* Subtle Sandbox Footer Box */}
+        <div className="bg-gray-50 text-gray-500 text-xs py-2 px-3.5 rounded-lg border border-gray-100 flex flex-wrap items-center justify-between gap-1.5">
+          <span>Ref ID: <strong className="font-mono text-gray-700">{refId}</strong></span>
+          <span>Issuer: <strong className="text-gray-700">National Informatics Centre (NIC) Sandbox</strong></span>
         </div>
       </div>
     );

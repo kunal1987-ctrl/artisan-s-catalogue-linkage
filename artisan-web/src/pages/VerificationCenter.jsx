@@ -305,111 +305,113 @@ export default function VerificationCenter() {
         {/* ── Case 1: ALREADY VERIFIED ARTISAN PROFILE ── */}
         {!isLoadingProfile && verificationRecord?.is_verified ? (
           <div className="flex flex-col gap-6 animate-in fade-in">
-            {/* Official Digital Certificate Card */}
-            <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#1d1510] via-[#241a14] to-[#170f0b] text-white p-6 sm:p-8 border-2 border-[#ff9062]/40 shadow-2xl">
-              {/* Decorative Corner Seals */}
-              <div className="absolute -top-12 -right-12 w-40 h-40 bg-[#ff9062]/10 rounded-full blur-2xl pointer-events-none" />
+            {/* Official Digital Certificate Card - Light & Clean Government Portal Theme */}
+            <div className="bg-white border border-gray-200 rounded-3xl p-6 sm:p-8 shadow-md flex flex-col gap-6 text-gray-900">
               
-              <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 border-b border-white/10 pb-6">
+              {/* Header: Badge & Artisan Details */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-gray-100">
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-600 to-[#ff9062] text-white flex items-center justify-center shadow-xl shrink-0">
-                    <Award className="w-9 h-9" />
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-green-50 border border-green-200 text-green-700 flex items-center justify-center shrink-0">
+                    <Award className="w-8 h-8 sm:w-9 sm:h-9" />
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-amber-400 tracking-wider uppercase">
-                        Government Accredited Artisan
-                      </span>
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-green-50 border border-green-200 text-green-700 text-xs font-semibold mb-1">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
+                      <span>{language === 'hi' ? 'सरकारी मान्यता प्राप्त शिल्पकार' : 'Government Accredited Artisan'}</span>
                     </div>
-                    <h2 className="text-xl sm:text-2xl font-black text-white">
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
                       {artisanProfile?.name || (language === 'hi' ? 'प्रमाणित कारीगर' : 'Certified Artisan')}
                     </h2>
-                    <p className="text-xs text-stone-400 mt-0.5">
+                    <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
                       {artisanCluster} • {currentTypeConfig.title}
                     </p>
                   </div>
                 </div>
 
-                <div className="text-right sm:text-right w-full sm:w-auto bg-black/40 px-4 py-2 rounded-xl border border-white/10">
-                  <span className="text-[10px] text-stone-400 uppercase tracking-widest block font-bold">
-                    Credential Certificate ID
+                <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-left sm:text-right w-full sm:w-auto">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 block">
+                    Certificate ID
                   </span>
-                  <span className="font-mono text-xs sm:text-sm font-bold text-emerald-400">
+                  <span className="font-mono text-xs sm:text-sm font-bold text-gray-900">
                     GEM-ART-{verificationRecord.gov_id_number || '2026-9841'}
                   </span>
                 </div>
               </div>
 
-              {/* Certificate Metadata Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 py-6 text-xs border-b border-white/10">
-                <div>
-                  <span className="text-stone-400 text-[11px] block">{language === 'hi' ? 'पहचान पत्र प्रकार' : 'ID Scheme'}</span>
-                  <span className="font-bold text-white uppercase">{verificationRecord.gov_id_type || 'MoSJE'}</span>
-                </div>
-                <div>
-                  <span className="text-stone-400 text-[11px] block">{language === 'hi' ? 'पहचान क्रमांक' : 'ID Number'}</span>
-                  <span className="font-mono font-bold text-[#ffdeaa]">{verificationRecord.gov_id_number || 'MSJE/2026/89412'}</span>
-                </div>
-                <div>
-                  <span className="text-stone-400 text-[11px] block">{language === 'hi' ? 'सत्यापन तिथि' : 'Verified On'}</span>
-                  <span className="font-bold text-white">
-                    {new Date(verificationRecord.verification_date || Date.now()).toLocaleDateString()}
+              {/* Simplified Stacked Metadata Card */}
+              <div className="bg-gray-50 rounded-2xl p-5 border border-gray-200 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-1">
+                  <span className="text-xs text-gray-500 font-medium block">
+                    {language === 'hi' ? 'दस्तावेज़ प्रकार' : 'ID Scheme'}
+                  </span>
+                  <span className="inline-block px-2.5 py-0.5 bg-white border border-gray-200 rounded-md text-xs font-bold text-gray-800 uppercase">
+                    {verificationRecord.gov_id_type || selectedType || 'MoSJE'}
                   </span>
                 </div>
-                <div>
-                  <span className="text-stone-400 text-[11px] block">{language === 'hi' ? 'मान्यता स्थिति' : 'Accreditation'}</span>
-                  <span className="inline-flex items-center gap-1 font-bold text-emerald-400">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    <span>Active & Verified</span>
+
+                <div className="space-y-1">
+                  <span className="text-xs text-gray-500 font-medium block">
+                    {language === 'hi' ? 'पहचान क्रमांक' : 'ID Number'}
                   </span>
+                  <span className="font-mono text-sm sm:text-base font-bold text-gray-900 block">
+                    {verificationRecord.gov_id_number || govIdNumber || 'MSJE/2026/89412'}
+                  </span>
+                </div>
+
+                <div className="space-y-1 sm:text-right">
+                  <span className="text-xs text-gray-500 font-medium block">
+                    {language === 'hi' ? 'सत्यापन स्थिति एवं तिथि' : 'Verification Status & Date'}
+                  </span>
+                  <div className="flex items-center sm:justify-end gap-1.5 text-sm font-semibold text-green-700">
+                    <span className="w-2 h-2 rounded-full bg-green-500" />
+                    <span>Verified ({new Date(verificationRecord.verification_date || Date.now()).toLocaleDateString()})</span>
+                  </div>
                 </div>
               </div>
 
-              {/* DigiLocker & NIC Validation Metadata */}
-              <div className="mt-4 py-3 px-4 rounded-xl bg-black/40 border border-emerald-500/20 text-xs text-stone-400 flex flex-wrap items-center justify-between gap-3">
-                <p>Ref ID: <span className="font-mono text-amber-200">{verificationRecord.ref_id || localStorage.getItem('artisan_gov_ref_id') || 'DIGI-749201-IN'}</span></p>
-                <p>Timestamp: {new Date(verificationRecord.verification_date || Date.now()).toLocaleString()}</p>
-                <p>Issuer: <span className="text-emerald-300 font-medium">National Informatics Centre (NIC) Sandbox</span></p>
-              </div>
-
-              {/* Unlocked Benefits Summary */}
-              <div className="pt-6 flex flex-col gap-3">
-                <span className="text-xs font-bold text-stone-300 uppercase tracking-wider">
+              {/* Simplified Privileges: Clean, Light Cards with Friendly Recognizable Icons */}
+              <div className="pt-2 flex flex-col gap-3">
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
                   {language === 'hi' ? 'सक्रिय संस्थागत लाभ' : 'Unlocked Institutional Privileges'}
-                </span>
+                </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-start gap-2.5">
-                    <Building2 className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                  <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-100 flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                      <Building2 className="w-5 h-5" />
+                    </div>
                     <div>
-                      <h3 className="font-bold text-xs text-white">
+                      <h4 className="font-bold text-sm text-gray-900">
                         {language === 'hi' ? 'GeM सरकारी निविदाएं' : 'GeM Public Tenders'}
-                      </h3>
-                      <p className="text-[11px] text-stone-400 mt-0.5">
+                      </h4>
+                      <p className="text-xs text-gray-600 mt-1 leading-relaxed">
                         {language === 'hi' ? 'बिना न्यूनतम टर्नओवर सरकारी टेंडर में बोली लगाएं।' : 'Exempt from turnover thresholds for government orders.'}
                       </p>
                     </div>
                   </div>
 
-                  <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-start gap-2.5">
-                    <BadgeCheck className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                  <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-100 flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-green-100 text-green-700 flex items-center justify-center shrink-0">
+                      <BadgeCheck className="w-5 h-5" />
+                    </div>
                     <div>
-                      <h3 className="font-bold text-xs text-white">
+                      <h4 className="font-bold text-sm text-gray-900">
                         {language === 'hi' ? 'ONDC प्राथमिकता रैंकिंग' : 'ONDC Buyer Badge'}
-                      </h3>
-                      <p className="text-[11px] text-stone-400 mt-0.5">
+                      </h4>
+                      <p className="text-xs text-gray-600 mt-1 leading-relaxed">
                         {language === 'hi' ? 'सत्यापित बैज के साथ खरीदार ऐप्स पर शीर्ष लिस्टिंग।' : 'Gold verified badge on Paytm, Mystore & Pincode.'}
                       </p>
                     </div>
                   </div>
 
-                  <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-start gap-2.5">
-                    <FileText className="w-5 h-5 text-[#ff9062] shrink-0 mt-0.5" />
+                  <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-100 flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                      <FileText className="w-5 h-5" />
+                    </div>
                     <div>
-                      <h3 className="font-bold text-xs text-white">
+                      <h4 className="font-bold text-sm text-gray-900">
                         {language === 'hi' ? 'डिजिटल प्रमाणिक QR' : 'Official QR Stamp'}
-                      </h3>
-                      <p className="text-[11px] text-stone-400 mt-0.5">
+                      </h4>
+                      <p className="text-xs text-gray-600 mt-1 leading-relaxed">
                         {language === 'hi' ? 'प्रत्येक उत्पाद पर मुद्रित सरकारी सत्यापन सील।' : 'Verifiable authenticity QR on every exported catalog.'}
                       </p>
                     </div>
@@ -417,34 +419,42 @@ export default function VerificationCenter() {
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="mt-6 flex flex-wrap items-center gap-3">
+              {/* Clean Sandbox Footer Box */}
+              <div className="bg-gray-50 text-gray-500 text-xs py-2.5 px-4 rounded-lg border border-gray-100 flex flex-wrap items-center justify-between gap-2">
+                <span>Ref ID: <strong className="font-mono text-gray-700 font-bold">{verificationRecord.ref_id || localStorage.getItem('artisan_gov_ref_id') || 'DIGI-749201-IN'}</strong></span>
+                <span>Timestamp: {new Date(verificationRecord.verification_date || Date.now()).toLocaleString()}</span>
+                <span>Issuer: <strong className="text-gray-700 font-medium">National Informatics Centre (NIC) Sandbox</strong></span>
+              </div>
+
+              {/* Primary & Secondary Action Buttons */}
+              <div className="pt-2 flex flex-wrap items-center gap-3">
                 <button
                   type="button"
                   onClick={() => navigate('/capture')}
-                  className="py-3 px-6 rounded-2xl bg-[#ff9062] hover:bg-[#ff7b44] text-white font-bold text-xs shadow-lg flex items-center gap-2 transition-transform active:scale-95 cursor-pointer"
+                  className="py-3.5 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm sm:text-base shadow-sm flex items-center justify-center gap-2 transition cursor-pointer"
                 >
-                  <Sparkles className="w-4 h-4" />
+                  <Sparkles className="w-4 h-4 text-blue-200" />
                   <span>{language === 'hi' ? 'GeM कैटलॉग में नया शिल्प जोड़ें' : 'Create GeM Catalog Listing'}</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => navigate('/orders')}
-                  className="py-3 px-5 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs border border-white/10 flex items-center gap-2 transition-colors cursor-pointer"
+                  className="py-3.5 px-5 rounded-xl bg-white hover:bg-gray-50 text-gray-700 font-bold text-sm border border-gray-300 flex items-center justify-center gap-2 transition cursor-pointer"
                 >
                   <span>{language === 'hi' ? 'संस्थागत ऑर्डर देखें' : 'View Institutional Orders'}</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-4 h-4 text-gray-500" />
                 </button>
 
                 <button
                   type="button"
                   onClick={handleResetVerification}
-                  className="py-3 px-4 rounded-2xl text-stone-400 hover:text-red-400 text-xs font-semibold ml-auto transition-colors cursor-pointer"
+                  className="py-2.5 px-3.5 text-gray-500 hover:text-red-600 text-xs font-medium ml-auto transition cursor-pointer"
                 >
                   {language === 'hi' ? 'आईडी बदलें / पुनः सत्यापित करें' : 'Update or Re-verify ID'}
                 </button>
               </div>
+
             </div>
           </div>
         ) : (

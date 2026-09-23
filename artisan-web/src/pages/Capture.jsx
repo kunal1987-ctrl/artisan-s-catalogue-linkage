@@ -264,12 +264,14 @@ export default function Capture() {
   const [transcript, setTranscript] = useState('');
   const [audioTranscript, setAudioTranscript] = useState(null);
   const [customTranscript, setCustomTranscript] = useState('');
+  const [voiceError, setVoiceError] = useState('');
   const [category, setCategory] = useState(null);
   const [hsnCode, setHsnCode] = useState(null);
   const [extractedPrice, setExtractedPrice] = useState(null);
   const [extractedName, setExtractedName] = useState('');
   const [showAdvancedText, setShowAdvancedText] = useState(false);
   const mediaRecorderRef = useRef(null);
+  const recognitionRef = useRef(null);
   const audioChunksRef = useRef([]);
   const timerRef = useRef(null);
   const audioContextRef = useRef(null);
@@ -344,8 +346,13 @@ export default function Capture() {
     audioChunksRef.current = [];
     setRecordingDuration(0);
     setTranscript('');
+    setVoiceError('');
     setAudioTranscript(null);
     setCustomTranscript('');
+    if (recognitionRef.current) {
+      try { recognitionRef.current.abort(); } catch (_e) { /* already stopped */ }
+      recognitionRef.current = null;
+    }
     setCategory(null);
     setHsnCode(null);
     setShowAdvancedText(false);
@@ -874,6 +881,8 @@ export default function Capture() {
   const startRecording = useCallback(async () => {
     // Immediately silence any active audio assistant speech before microphone turns on
     stop();
+    setVoiceError('');
+    setTranscript('');
     try {
       if (!navigator.mediaDevices?.getUserMedia) {
         throw new Error('MediaDevices API not supported on this browser');
@@ -947,6 +956,94 @@ export default function Capture() {
       timerRef.current = setInterval(() => {
         setRecordingDuration((prev) => prev + 1);
       }, 1000);
+
+      // ── Parallel Web Speech API for real-time transcription ──
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        const recognition = new SpeechRecognition();
+        // Map transcriptionLang code to BCP-47 for SpeechRecognition
+        const langMap = {
+          hi: 'hi-IN',
+          en: 'en-IN',
+          bn: 'bn-IN',
+          ta: 'ta-IN',
+          te: 'te-IN',
+          mr: 'mr-IN',
+          gu: 'gu-IN',
+          kn: 'kn-IN',
+          ml: 'ml-IN',
+          pa: 'pa-IN',
+          or: 'or-IN',
+          as: 'as-IN',
+          ur: 'ur-IN',
+        };
+        recognition.lang = langMap[transcriptionLang] || 'hi-IN';
+        recognition.interimResults = true;
+        recognition.continuous = true;
+        recognition.maxAlternatives = 1;
+
+        recognition.onresult = (event) => {
+          let finalTranscript = '';
+          let interimTranscript = '';
+          for (let i = 0; i < event.results.length; i++) {
+            const result = event.results[i];
+            if (result.isFinal) {
+              finalTranscript += result[0].transcript;
+            } else {
+              interimTranscript += result[0].transcript;
+            }
+          }
+          const combinedText = (finalTranscript || interimTranscript).trim();
+          if (combinedText) {
+            setTranscript(combinedText);
+            setVoiceError('');
+          }
+        };
+
+        recognition.onerror = (event) => {
+          console.error('Speech recognition error:', event.error);
+          if (event.error === 'no-speech' || event.error === 'audio-capture') {
+            setVoiceError(
+              language === 'hi'
+                ? 'आवाज़ ठीक से रिकॉर्ड नहीं हुई। कृपया माइक दबाकर दोबारा बोलें।'
+                : 'Voice did not properly record. Please tap the microphone and speak again.'
+            );
+          } else if (event.error === 'not-allowed') {
+            setVoiceError(
+              language === 'hi'
+                ? 'माइक्रोफ़ोन अनुमति अस्वीकृत। कृपया ब्राउज़र सेटिंग्स में माइक की अनुमति दें।'
+                : 'Microphone access denied. Please allow microphone permissions in browser settings.'
+            );
+          } else if (event.error !== 'aborted') {
+            setVoiceError(
+              language === 'hi'
+                ? 'रिकॉर्डिंग में त्रुटि हुई। कृपया पुनः प्रयास करें।'
+                : 'An error occurred while recording. Please try again.'
+            );
+          }
+        };
+
+        recognition.onend = () => {
+          // If recognition ended but transcript is still empty, alert user
+          setTranscript((prev) => {
+            if (!prev) {
+              setVoiceError(
+                language === 'hi'
+                  ? 'कोई आवाज़ नहीं मिली। कृपया माइक के पास स्पष्ट रूप से बोलें।'
+                  : 'No voice detected. Please speak clearly into the microphone.'
+              );
+            }
+            return prev;
+          });
+        };
+
+        try {
+          recognition.start();
+          recognitionRef.current = recognition;
+        } catch (speechErr) {
+          console.warn('SpeechRecognition start error:', speechErr);
+        }
+      }
     } catch (err) {
       console.warn('Microphone access unavailable or denied:', err);
       setMicUnavailable(true);
@@ -969,7 +1066,7 @@ export default function Capture() {
               : 'Microphone unavailable. Using text fallback.')
       );
     }
-  }, [language, showToast]);
+  }, [language, showToast, transcriptionLang]);
 
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
@@ -983,6 +1080,19 @@ export default function Capture() {
       }
       setAudioLevel(0);
     }
+    // Stop parallel SpeechRecognition gracefully
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch (_e) { /* already stopped */ }
+      recognitionRef.current = null;
+    }
+    // Propagate final transcript to audioTranscript / customTranscript for edge function
+    setTranscript((prev) => {
+      if (prev && prev.trim()) {
+        setAudioTranscript(prev.trim());
+        setCustomTranscript(prev.trim());
+      }
+      return prev;
+    });
   }, []);
 
   const toggleRecording = useCallback(async () => {
@@ -1852,6 +1962,22 @@ export default function Capture() {
                   )}
                 </div>
 
+                {/* Voice Error Alert Banner */}
+                {voiceError && (
+                  <div className="p-3 rounded-xl bg-red-900/50 border border-red-500/40 text-red-200 text-xs font-medium flex items-center gap-2 mb-3 animate-in fade-in duration-200">
+                    <span className="material-symbols-outlined text-[18px] text-red-400 shrink-0">warning</span>
+                    <span>{voiceError}</span>
+                    <button
+                      type="button"
+                      onClick={() => setVoiceError('')}
+                      className="ml-auto shrink-0 w-6 h-6 rounded-full bg-red-800/60 hover:bg-red-700/60 text-red-300 flex items-center justify-center transition-colors cursor-pointer"
+                      aria-label="Dismiss"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">close</span>
+                    </button>
+                  </div>
+                )}
+
                 {/* Microphone Button with visual feedback and pulsing ripple effect */}
                 <div className="relative my-3 flex items-center justify-center">
                   {!isRecording && !isLoading && !audioBase64 && (
@@ -1900,8 +2026,14 @@ export default function Capture() {
                   </h3>
                   <p className="text-[12px] text-[#d4c3ba] leading-relaxed italic">
                     {isRecording
-                      ? (language === 'hi' ? 'अपनी भाषा में बोलें (सामग्री, बनाने का समय, उचित मूल्य)...' : 'Speak naturally (materials, crafting time, expected price)...')
-                      : (language === 'hi' ? '"हाथ से बनी टेराकोटा हांडी, स्थानीय मिट्टी से निर्मित, कीमत लगभग ₹450"' : '"Handmade terracotta clay pot, natural alluvial kiln-fired, price ₹450"')}
+                      ? (transcript
+                          ? <span className="text-emerald-300 not-italic font-medium">"{transcript}"</span>
+                          : (language === 'hi' ? 'अपनी भाषा में बोलें (सामग्री, बनाने का समय, उचित मूल्य)...' : 'Speak naturally (materials, crafting time, expected price)...'))
+                      : transcript
+                      ? <span className="text-emerald-300 not-italic font-medium">"{transcript}"</span>
+                      : voiceError
+                      ? <span className="text-red-300 not-italic font-medium">{voiceError}</span>
+                      : (language === 'hi' ? 'माइक दबाएं और अपने शिल्प के बारे में बोलें' : 'Tap mic and describe your craft in your own words')}
                   </p>
                 </div>
 

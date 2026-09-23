@@ -1,11 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import HaatEventCard from '../components/HaatEventCard';
 
 export default function Dashboard() {
+  const [selectedLanguage] = useState(
+    () => localStorage.getItem('app_lang') || 'hi'
+  );
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
       {/* Live Government Haats & Melas Smart Dashboard Component */}
-      <HaatEventCard />
+      <HaatEventCard currentLang={selectedLanguage || 'hi'} />
 
       {/* Catalog & Inventory Section */}
       <div className="mt-8">

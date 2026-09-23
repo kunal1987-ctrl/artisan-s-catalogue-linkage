@@ -1,5 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient';
+
+// Language voice code mappings for regional narration
+const LANG_VOICE_MAP = {
+  hi: 'hi-IN',
+  bn: 'bn-IN',
+  mr: 'mr-IN',
+  ta: 'ta-IN',
+  te: 'te-IN',
+  gu: 'gu-IN',
+  en: 'en-IN',
+};
 
 const CACHE_KEY = 'shilp_cached_haats';
 
@@ -32,7 +43,8 @@ const FALLBACK_EVENTS = [
   },
 ];
 
-export default function HaatEventCard({ artisanProfile = null, user = null }) {
+export default function HaatEventCard({ artisanProfile = null, user = null, currentLang = 'hi' }) {
+  const slideTimerRef = useRef(null);
   // Cache-First State Initialization
   const [events, setEvents] = useState(() => {
     try {
@@ -248,23 +260,30 @@ export default function HaatEventCard({ artisanProfile = null, user = null }) {
     try {
       window.speechSynthesis.cancel();
 
-      const textToSpeak = activeEvent?.description_hi || activeEvent?.title || '';
-      const utterance = new SpeechSynthesisUtterance(textToSpeak);
-      utterance.rate = 0.9;
+      // Determine target speech language (from prop or localStorage fallback)
+      const selectedLang = currentLang || localStorage.getItem('app_lang') || 'hi';
+      const targetCode = LANG_VOICE_MAP[selectedLang] || 'hi-IN';
+
+      // Construct spoken narration text dynamically per active event
+      const spokenText =
+        selectedLang === 'hi'
+          ? `${activeEvent.title}। आयोजक: ${activeEvent.organizer}। स्थान: ${activeEvent.location}। तारीख: ${activeEvent.start_date} से ${activeEvent.end_date} तक। ${activeEvent.description_hi || ''}`
+          : `${activeEvent.title}, organized by ${activeEvent.organizer} at ${activeEvent.location}. Scheduled from ${activeEvent.start_date} to ${activeEvent.end_date}. Direct stalls available for artisans.`;
+
+      const utterance = new SpeechSynthesisUtterance(spokenText);
+      utterance.lang = targetCode;
+      utterance.rate = 0.9; // Clear, comfortable cadence for rural artisans
 
       const voicesList =
         availableVoices.length > 0 ? availableVoices : window.speechSynthesis.getVoices();
 
-      const suitableVoice = voicesList.find(
-        (voice) => voice.lang && (voice.lang.includes('hi') || voice.lang.includes('IN'))
-      );
+      // Pick best matching system voice with fallback hierarchy
+      const matchedVoice =
+        voicesList.find((v) => v.lang === targetCode) ||
+        voicesList.find((v) => v.lang.startsWith(selectedLang)) ||
+        voicesList.find((v) => v.lang.includes('IN'));
 
-      if (suitableVoice) {
-        utterance.voice = suitableVoice;
-        utterance.lang = suitableVoice.lang;
-      } else {
-        utterance.lang = 'hi-IN';
-      }
+      if (matchedVoice) utterance.voice = matchedVoice;
 
       utterance.onstart = () => setIsSpeaking(true);
       utterance.onend = () => setIsSpeaking(false);

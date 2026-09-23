@@ -260,7 +260,7 @@ export default function Home({ customArtisanName } = {}) {
                 </div>
                 
                 {/* ── Government Opportunities & Live Fairs ── */}
-                <HaatEventCard />
+                <HaatEventCard currentLang={language || 'hi'} />
 
                 {/* Recent Uploads Section */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-4">

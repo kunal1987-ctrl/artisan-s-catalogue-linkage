@@ -355,6 +355,22 @@ export default function DashboardLayout() {
               </span>
             )}
 
+            {/* User Profile Pill */}
+            <button
+              onClick={() => navigate('/profile')}
+              className="flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-full bg-white hover:bg-gray-50 border border-gray-200 text-gray-800 text-xs font-semibold shadow-2xs transition-all cursor-pointer active:scale-95"
+              title={t('nav.profile', 'Artisan Profile')}
+              aria-label={t('nav.profile', 'Artisan Profile')}
+              type="button"
+            >
+              <img
+                src={userProfile?.profile_picture_url || "https://lh3.googleusercontent.com/aida-public/AB6AXuAmvGYszZXuA45tASeKKSeAVzVfFnHtKAGtNsa4IB8eSEDv7aMN2Dj5pKYYgdmAj_qpHqPikrwnevchRmdRCCcuMRXPRl7fhyfOt-_XjOQic4K5XzVtP9-UCofnVEe570fnmUd_GNT4uQVrjHGKIIoPPyo1B2RZ4vXYFmloLyQfCyNa2hjDllGlTqYSywEQevMYAYPK6K6FMsX9YfKjc5nGMVc5iOINi_PYrPZd2lLY5bqH9AK1mI1L"}
+                alt={artisanName}
+                className="w-6 h-6 rounded-full object-cover shrink-0 border border-gray-200"
+              />
+              <span className="max-w-[70px] sm:max-w-[110px] truncate">{artisanName}</span>
+            </button>
+
             {/* Profile / Logout */}
             {isVerified ? (
               <button
@@ -429,7 +445,7 @@ export default function DashboardLayout() {
                 {/* Artisan Profile Card */}
                 <div
                   onClick={() => {
-                    navigate('/catalog');
+                    navigate('/profile');
                     setIsMobileMenuOpen(false);
                   }}
                   className="flex items-center gap-3 p-3 rounded-2xl bg-[#ebe8e2]/60 border border-[#d1c4bd]/40 cursor-pointer hover:bg-[#ebe8e2] transition-all"

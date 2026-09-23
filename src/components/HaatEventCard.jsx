@@ -312,8 +312,6 @@ export default function HaatEventCard({ artisanProfile = null, user = null }) {
     }
   };
 
-  const isRegistrationOpen = activeEvent.status === 'REGISTRATION OPEN';
-
   return (
     <>
       <div
@@ -323,26 +321,13 @@ export default function HaatEventCard({ artisanProfile = null, user = null }) {
       >
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex-1">
-            <div className="flex flex-wrap items-center gap-2 mb-3">
-              {activeEvent.is_govt_sponsored && (
-                <span className="px-2.5 py-0.5 rounded-full bg-[#ff9062]/20 text-[#ffdeaa] text-[10px] font-bold uppercase tracking-wider border border-[#ff9062]/30 flex items-center gap-1.5 shadow-sm">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#ff9062] animate-pulse"></span>
-                  Govt Sponsored
-                </span>
-              )}
-
-              <span
-                className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border flex items-center gap-1 shadow-sm ${
-                  isRegistrationOpen
-                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30 ring-1 ring-emerald-500/20'
-                    : 'bg-sky-500/20 text-sky-300 border-sky-500/30 ring-1 ring-sky-500/20'
-                }`}
-              >
-                {activeEvent.status}
-              </span>
+            <div className="flex items-center justify-between gap-3 mb-2">
+              <h3 className="text-xl sm:text-2xl font-black text-white leading-tight tracking-tight">
+                {activeEvent.title}
+              </h3>
 
               {events.length > 1 && (
-                <div className="ml-auto sm:ml-2 flex items-center gap-1.5 bg-black/40 rounded-full px-2.5 py-0.5 border border-white/10 text-[10px] text-[#d1c4bd]">
+                <div className="flex items-center gap-1.5 bg-black/40 rounded-full px-2.5 py-0.5 border border-white/10 text-[10px] text-[#d1c4bd] shrink-0">
                   <span>{safeIndex + 1} / {events.length}</span>
                   <button
                     onClick={() =>
@@ -363,10 +348,6 @@ export default function HaatEventCard({ artisanProfile = null, user = null }) {
                 </div>
               )}
             </div>
-
-            <h3 className="text-xl sm:text-2xl font-black text-white leading-tight mb-1 tracking-tight">
-              {activeEvent.title}
-            </h3>
 
             <div className="text-[#d1c4bd] text-sm font-medium mb-4 flex flex-wrap items-center gap-x-4 gap-y-2">
               <span>🏛️ {activeEvent.organizer}</span>

@@ -20,6 +20,7 @@ import Details from './pages/Details.jsx';
 import ProductDetail from './pages/ProductDetail.jsx';
 import PublicProduct from './pages/PublicProduct.jsx';
 import Support from './pages/Support.jsx';
+import Onboarding from './pages/Onboarding.jsx';
 import AuthGuard from './components/AuthGuard.jsx';
 
 export default function App() {
@@ -35,6 +36,14 @@ export default function App() {
           {/* Fullscreen Root & Public Flows */}
           <Route path="/" element={<Auth />} />
           <Route path="/login" element={<Login />} />
+          <Route
+            path="/onboarding"
+            element={
+              <AuthGuard>
+                <Onboarding />
+              </AuthGuard>
+            }
+          />
           <Route
             path="/capture"
             element={

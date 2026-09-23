@@ -31,7 +31,34 @@ export default function Login() {
   const emailInputRef = useRef(null);
   const otpRefs = useRef([]);
 
-  // If session is already verified, redirect straight to /dashboard
+  // Check onboarding status and redirect accordingly
+  const routeUserAfterLogin = async (userId) => {
+    try {
+      if (userId) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('has_onboarded')
+          .eq('id', userId)
+          .maybeSingle();
+
+        if (profile && profile.has_onboarded === false) {
+          navigate('/onboarding', { replace: true });
+          return;
+        }
+        if (!profile) {
+          // New profile: send to onboarding
+          navigate('/onboarding', { replace: true });
+          return;
+        }
+      }
+      navigate('/dashboard', { replace: true });
+    } catch (err) {
+      console.warn('[Login] routeUserAfterLogin notice:', err);
+      navigate('/dashboard', { replace: true });
+    }
+  };
+
+  // If session is already verified, check onboarding status before redirect
   useEffect(() => {
     const isAuthed = Boolean(
       artisanProfile?.verified ||
@@ -41,7 +68,8 @@ export default function Login() {
       localStorage.getItem('artisan_verified_phone')
     );
     if (isAuthed) {
-      navigate('/dashboard', { replace: true });
+      const activeId = user?.id || session?.user?.id || localStorage.getItem('artisan_user_id');
+      routeUserAfterLogin(activeId);
     }
   }, [session, user, artisanProfile, navigate]);
 
@@ -199,10 +227,11 @@ export default function Login() {
 
       showToast?.(
         language === 'hi'
-          ? 'लॉगिन सफल! डैशबोर्ड पर भेजा जा रहा है...'
-          : 'Login successful! Redirecting to dashboard...'
+          ? 'लॉगिन सफल!'
+          : 'Login successful!'
       );
-      navigate('/dashboard', { replace: true });
+      const activeId = user?.id || session?.user?.id || (await supabase.auth.getUser())?.data?.user?.id;
+      await routeUserAfterLogin(activeId);
     } catch (err) {
       console.error('[Login] verifyOtp error:', err);
       const msg = language === 'hi'

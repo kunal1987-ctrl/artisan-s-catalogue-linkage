@@ -8,6 +8,7 @@ import useAudioAssistant from '../hooks/useAudioAssistant';
 import { clearStaleCatalogCache } from '../utils/cacheCleaner';
 import { handleAddCraftNavigation } from '../utils/authGuard';
 import HaatEventCard from '../components/HaatEventCard';
+import RestockModal from '../components/RestockModal';
 
 export default function Home({ customArtisanName } = {}) {
   const navigate = useNavigate();
@@ -39,9 +40,12 @@ export default function Home({ customArtisanName } = {}) {
   const [isLoading, setIsLoading] = useState(true);
   const [showInsightsModal, setShowInsightsModal] = useState(false);
   const [showRestockModal, setShowRestockModal] = useState(false);
-  const [stockQty, setStockQty] = useState(2);
   const [toastMsg, setToastMsg] = useState('');
   const [dismissTip, setDismissTip] = useState(false);
+
+  // Dynamic Inventory Metric Calculation from real products
+  const lowStockProducts = products.filter((p) => Number(p.stock ?? 0) <= 5);
+  const totalStockCount = products.reduce((acc, p) => acc + Number(p.stock ?? 0), 0);
 
   // Live Fetching of real rows from Supabase items table
   useEffect(() => {
@@ -207,27 +211,27 @@ export default function Home({ customArtisanName } = {}) {
                         </div>
                     </div>
                     
-                    {/* Card 4: Inventory Alert -> Quick Restock Bottom Sheet */}
+                    {/* Card 4: Inventory Alert -> Dynamic Quick Restock Modal */}
                     <div
                         onClick={() => setShowRestockModal(true)}
                         className={`p-5 rounded-2xl ${
-                            stockQty <= 2 ? 'bg-[#ff9062]/10 border-[#ff9062]/30' : 'bg-[#f7f3ed] border-[#d1c4bd]/40'
+                            lowStockProducts.length > 0 ? 'bg-[#ff9062]/10 border-[#ff9062]/30' : 'bg-[#f7f3ed] border-[#d1c4bd]/40'
                         } border shadow-sm flex flex-col justify-between hover:shadow-md cursor-pointer active:scale-95 transition-transform`}
                     >
                         <div className="flex items-center justify-between">
                             <span className={`w-10 h-10 rounded-xl ${
-                                stockQty <= 2 ? 'bg-[#ff9062]/20 text-[#9c441c]' : 'bg-[#ebe8e2] text-primary'
+                                lowStockProducts.length > 0 ? 'bg-[#ff9062]/20 text-[#9c441c]' : 'bg-[#ebe8e2] text-primary'
                             } flex items-center justify-center`}>
                                 <span className="material-symbols-outlined text-[22px]">
-                                    {stockQty <= 2 ? 'notification_important' : 'inventory_2'}
+                                    {lowStockProducts.length > 0 ? 'notification_important' : 'inventory_2'}
                                 </span>
                             </span>
                             <span className={`text-[11px] font-bold uppercase ${
-                                stockQty <= 2 ? 'text-[#9c441c] bg-white' : 'text-emerald-800 bg-emerald-100'
+                                lowStockProducts.length > 0 ? 'text-[#9c441c] bg-white' : 'text-emerald-800 bg-emerald-100'
                             } px-2 py-0.5 rounded-full shadow-sm`}>
-                                {stockQty <= 2 
-                                    ? (language === 'hi' ? 'ध्यान दें' : 'Attention')
-                                    : (language === 'hi' ? 'पुनः स्टॉक' : 'Restocked')}
+                                {lowStockProducts.length > 0 
+                                    ? (language === 'hi' ? 'अल्प स्टॉक' : 'Low Stock')
+                                    : (language === 'hi' ? 'पर्याप्त स्टॉक' : 'In Stock')}
                             </span>
                         </div>
                         <div className="mt-4">
@@ -236,9 +240,9 @@ export default function Home({ customArtisanName } = {}) {
                             </span>
                             <div className="mt-1.5 flex flex-col items-start gap-2.5">
                                 <span className="text-[22px] font-bold text-primary leading-none">
-                                    {stockQty <= 2
-                                        ? t('home.low_stock_notice', '1 Low Stock')
-                                        : t('home.in_stock_count', { count: stockQty, defaultValue: `${stockQty} In Stock` })}
+                                    {lowStockProducts.length > 0
+                                        ? `${lowStockProducts.length} ${language === 'hi' ? 'अल्प-स्टॉक शिल्प' : 'Low Stock'}`
+                                        : `${totalStockCount} ${language === 'hi' ? 'कुल स्टॉक' : 'In Stock'}`}
                                 </span>
                                 <button
                                     type="button"
@@ -249,9 +253,9 @@ export default function Home({ customArtisanName } = {}) {
                                     className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#9c441c] hover:bg-[#7e3514] text-white text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
                                 >
                                     <span>
-                                        {stockQty <= 2
-                                            ? t('home.restock_button', 'Restock Surahi →')
-                                            : t('home.adjust_stock_button', 'Adjust Stock →')}
+                                        {lowStockProducts.length > 0
+                                            ? (language === 'hi' ? 'स्टॉक रीस्टॉक करें →' : 'Restock Items →')
+                                            : (language === 'hi' ? 'स्टॉक समायोजित करें →' : 'Adjust Stock →')}
                                     </span>
                                 </button>
                             </div>
@@ -591,143 +595,17 @@ export default function Home({ customArtisanName } = {}) {
           </div>
         )}
 
-        {/* ── MODAL 2: QUICK RESTOCK BOTTOM SHEET ── */}
-        {showRestockModal && (
-          <div
-            role="dialog"
-            aria-modal="true"
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200"
-          >
-            {/* Click outside to close */}
-            <div className="absolute inset-0" onClick={() => setShowRestockModal(false)} />
-
-            <div className="relative w-full max-w-md bg-[#fdf9f3] text-stone-900 rounded-t-3xl sm:rounded-3xl shadow-2xl border border-[#d1c4bd]/60 overflow-hidden z-10 max-h-[90vh] flex flex-col">
-              {/* Header Banner */}
-              <div className="bg-[#1e140e] text-white p-5 border-b border-white/10 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#ba1a1a]/20 text-[#ffb4ab] flex items-center justify-center">
-                    <span className="material-symbols-outlined text-[24px]">inventory_2</span>
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-white tracking-wide">
-                      {language === 'hi' ? 'स्टॉक अपडेट (Quick Restock)' : 'Quick Restock (स्टॉक अपडेट)'}
-                    </h3>
-                    <p className="text-xs text-[#d4c3ba]">
-                      {language === 'hi' ? 'अल्प-स्टॉक शिल्प की संख्या तुरंत बढ़ाएं' : 'Replenish low-stock craft units'}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setShowRestockModal(false)}
-                  className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center cursor-pointer transition-colors"
-                  type="button"
-                  aria-label="Close"
-                >
-                  <span className="material-symbols-outlined text-[20px]">close</span>
-                </button>
-              </div>
-
-              {/* Body Content */}
-              <div className="p-6 overflow-y-auto space-y-5">
-                {/* Product Card Info */}
-                <div className="p-4 rounded-2xl bg-white border border-[#d1c4bd]/60 shadow-xs flex items-center gap-4">
-                  <img
-                    src="https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=800&q=80"
-                    alt="Terracotta Surahi"
-                    className="w-16 h-16 rounded-xl object-cover border border-outline-variant/30 shrink-0"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <span className="text-[11px] font-bold text-secondary uppercase tracking-wider block">
-                      {language === 'hi' ? 'पारंपरिक मिट्टी शिल्प' : 'Terracotta Pottery'}
-                    </span>
-                    <h4 className="text-sm font-bold text-primary truncate">
-                      {language === 'hi' ? 'पारंपरिक हस्तनिर्मित मिट्टी की सुराही' : 'Handcrafted Terracotta Earthen Pitcher (Surahi)'}
-                    </h4>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs font-bold text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded-md flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse"></span>
-                        <span>{language === 'hi' ? `वर्तमान स्टॉक: ${stockQty} इकाइयां` : `Current: ${stockQty} units`}</span>
-                      </span>
-                      <span className="text-xs text-on-surface-variant font-bold">₹450</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Quantity Stepper */}
-                <div className="bg-[#f1ede7] rounded-2xl p-5 border border-[#d1c4bd]/40 text-center space-y-3">
-                  <span className="text-xs font-bold uppercase tracking-wider text-on-surface-variant block">
-                    {language === 'hi' ? 'नया स्टॉक निर्धारित करें' : 'Adjust Stock Quantity'}
-                  </span>
-
-                  <div className="flex items-center justify-center gap-4 py-2">
-                    <button
-                      onClick={() => setStockQty((prev) => Math.max(0, prev - 1))}
-                      className="w-14 h-14 rounded-2xl bg-white hover:bg-white/80 border border-[#d1c4bd] shadow-sm text-2xl font-bold flex items-center justify-center text-primary active:scale-90 transition-all cursor-pointer select-none"
-                      type="button"
-                      aria-label="Decrease quantity"
-                    >
-                      −
-                    </button>
-
-                    <div className="w-24 flex flex-col items-center">
-                      <span className="text-4xl font-extrabold text-primary font-mono select-none">
-                        {stockQty}
-                      </span>
-                      <span className="text-[11px] font-semibold text-on-surface-variant">
-                        {language === 'hi' ? 'इकाइयां' : 'units'}
-                      </span>
-                    </div>
-
-                    <button
-                      onClick={() => setStockQty((prev) => prev + 1)}
-                      className="w-14 h-14 rounded-2xl bg-white hover:bg-white/80 border border-[#d1c4bd] shadow-sm text-2xl font-bold flex items-center justify-center text-primary active:scale-90 transition-all cursor-pointer select-none"
-                      type="button"
-                      aria-label="Increase quantity"
-                    >
-                      +
-                    </button>
-                  </div>
-
-                  {/* Quick Add Presets */}
-                  <div className="flex items-center justify-center gap-2 pt-2 border-t border-[#d1c4bd]/40">
-                    <span className="text-[11px] font-bold text-on-surface-variant mr-1">
-                      {language === 'hi' ? 'त्वरित जोड़ें:' : 'Quick Add:'}
-                    </span>
-                    {[+5, +10, +25, +50].map((delta) => (
-                      <button
-                        key={delta}
-                        type="button"
-                        onClick={() => setStockQty((prev) => prev + delta)}
-                        className="px-3 py-1 rounded-full bg-white hover:bg-primary hover:text-white text-primary border border-[#d1c4bd]/60 font-bold text-xs shadow-xs active:scale-95 transition-all cursor-pointer"
-                      >
-                        +{delta}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Footer Actions */}
-              <div className="p-4 border-t border-[#d1c4bd]/40 bg-[#f7f3ed] flex flex-col sm:flex-row items-center gap-3">
-                <button
-                  onClick={() => setShowRestockModal(false)}
-                  className="w-full sm:w-1/3 py-3 rounded-full bg-white hover:bg-stone-100 border border-[#d1c4bd] text-primary font-bold text-xs transition-all cursor-pointer"
-                  type="button"
-                >
-                  {language === 'hi' ? 'रद्द करें' : 'Cancel'}
-                </button>
-                <button
-                  onClick={handleUpdateStock}
-                  className="w-full sm:w-2/3 py-3 rounded-full bg-[#9c441c] hover:bg-[#7e3514] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all cursor-pointer"
-                  type="button"
-                >
-                  <span className="material-symbols-outlined text-[18px]">check_circle</span>
-                  <span>{language === 'hi' ? 'स्टॉक सहेजें' : 'Update Stock'}</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* ── MODAL 2: DYNAMIC CATALOGUE RESTOCK MODAL ── */}
+        <RestockModal
+          isOpen={showRestockModal}
+          onClose={() => setShowRestockModal(false)}
+          initialProducts={products}
+          onStockUpdated={(productId, newStock) => {
+            setProducts((prev) =>
+              prev.map((p) => (p.id === productId ? { ...p, stock: newStock } : p))
+            );
+          }}
+        />
 
         {/* ── TOAST NOTIFICATION ── */}
         {toastMsg && (

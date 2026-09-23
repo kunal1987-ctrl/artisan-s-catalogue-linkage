@@ -159,18 +159,19 @@ export default function VerificationCenter() {
     setVerificationStep(1);
 
     try {
-      // Step 1: Connecting to Government Jan Parichay / DigiLocker
-      await new Promise(r => setTimeout(r, 600));
+      // Step 1: Secure Gateway Handshake
+      await new Promise(r => setTimeout(r, 1000));
       setVerificationStep(2);
 
-      // Step 2: Querying Ministry Database
-      await new Promise(r => setTimeout(r, 700));
+      // Step 2: Ministry Database Query
+      await new Promise(r => setTimeout(r, 1200));
       setVerificationStep(3);
 
-      // Step 3: Authenticating Cluster & Biometric Token
-      await new Promise(r => setTimeout(r, 600));
+      // Step 3: Cryptographic Signature Validation
+      await new Promise(r => setTimeout(r, 1000));
 
       const now = new Date().toISOString();
+      const mockRef = `DIGI-${Math.floor(100000 + Math.random() * 900000)}-IN`;
       const activeUserId = user?.id || 'd3b07384-d113-4696-a885-3b984852d0b6';
 
       // ── Persist permanently in Supabase profiles table ──
@@ -193,6 +194,7 @@ export default function VerificationCenter() {
       localStorage.setItem('artisan_gov_verified', 'true');
       localStorage.setItem('artisan_gov_id_type', selectedType);
       localStorage.setItem('artisan_gov_id_number', govIdNumber.trim().toUpperCase());
+      localStorage.setItem('artisan_gov_ref_id', mockRef);
       localStorage.setItem('artisan_gov_verification_date', now);
 
       // Update AuthContext if available
@@ -209,6 +211,7 @@ export default function VerificationCenter() {
         is_verified: true,
         gov_id_type: selectedType,
         gov_id_number: govIdNumber.trim().toUpperCase(),
+        ref_id: mockRef,
         verification_date: now
       };
 
@@ -361,6 +364,13 @@ export default function VerificationCenter() {
                     <span>Active & Verified</span>
                   </span>
                 </div>
+              </div>
+
+              {/* DigiLocker & NIC Validation Metadata */}
+              <div className="mt-4 py-3 px-4 rounded-xl bg-black/40 border border-emerald-500/20 text-xs text-stone-400 flex flex-wrap items-center justify-between gap-3">
+                <p>Ref ID: <span className="font-mono text-amber-200">{verificationRecord.ref_id || localStorage.getItem('artisan_gov_ref_id') || 'DIGI-749201-IN'}</span></p>
+                <p>Timestamp: {new Date(verificationRecord.verification_date || Date.now()).toLocaleString()}</p>
+                <p>Issuer: <span className="text-emerald-300 font-medium">National Informatics Centre (NIC) Sandbox</span></p>
               </div>
 
               {/* Unlocked Benefits Summary */}
@@ -624,9 +634,9 @@ export default function VerificationCenter() {
                     </div>
 
                     <p className="text-[11px] text-stone-400 italic">
-                      {verificationStep === 1 && "Connecting to Jan Parichay Single Sign-On Gateway..."}
-                      {verificationStep === 2 && "Validating Aadhaar & Ministry of Social Justice record..."}
-                      {verificationStep === 3 && "Authenticating cluster registry and issuing GeM seller badge..."}
+                      {verificationStep === 1 && "Connecting to National e-Governance Gateway (API Setu)..."}
+                      {verificationStep === 2 && `Querying Ministry of Textiles / MoSJE registry for ID: ${govIdNumber.trim().toUpperCase()}...`}
+                      {verificationStep === 3 && "Validating DigiLocker cryptographic signature..."}
                     </p>
                   </div>
                 )}

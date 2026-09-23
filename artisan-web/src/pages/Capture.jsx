@@ -1353,13 +1353,7 @@ export default function Capture() {
             </div>
 
             <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
-              {/* Authenticated Artisan Badge */}
-              {isVerified ? (
-                <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold text-[11px] shadow-2xs">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                  <span className="hidden sm:inline">{t('nav.verified', 'Verified Artisan')}</span>
-                </span>
-              ) : (
+              {!isVerified && (
                 <button
                   type="button"
                   onClick={() => openAuthModal()}

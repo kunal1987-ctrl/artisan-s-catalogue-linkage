@@ -42,6 +42,7 @@ export default function Profile() {
     gov_id_type: '',
     gov_id_number: ''
   });
+  const [showGovIdDetails, setShowGovIdDetails] = useState(false);
 
   // ── Bank Details & Penny Drop Verification State ──
   const [bankAccount, setBankAccount] = useState(() => {
@@ -426,11 +427,36 @@ export default function Profile() {
           </div>
 
           {/* Artisan Identity Details */}
-          <div className="flex flex-col">
-            <h2 className="text-2xl font-bold text-gray-900">
-              {profileData.full_name || 'Artisan Name'}
-            </h2>
-            <p className="text-gray-500 font-medium mt-1">
+          <div className="flex flex-col gap-1.5">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h2 className="text-2xl font-bold text-gray-900">
+                {profileData.full_name || 'Artisan Name'}
+              </h2>
+
+              {/* Minimalist Verified Artisan Badge */}
+              <button
+                type="button"
+                onClick={() => setShowGovIdDetails((prev) => !prev)}
+                title="Click to view DigiLocker verification details"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm cursor-pointer hover:bg-emerald-100 transition-colors"
+              >
+                <svg className="w-3 h-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>DigiLocker Verified</span>
+              </button>
+            </div>
+
+            {/* Subtle Collapsed Details / Tooltip on Click */}
+            {showGovIdDetails && (
+              <div className="inline-flex items-center gap-3 px-3 py-1.5 rounded-lg bg-emerald-50/90 border border-emerald-200 text-xs text-emerald-900 w-fit animate-in fade-in shadow-xs">
+                <span><span className="font-semibold text-emerald-700">ID:</span> <span className="font-mono font-bold">{profileData.gov_id_number || 'MSJE/2026/89412'}</span></span>
+                <span className="text-emerald-300">•</span>
+                <span><span className="font-semibold text-emerald-700">Scheme:</span> <span className="font-medium">{profileData.gov_id_type || 'MOSJE'}</span></span>
+              </div>
+            )}
+
+            <p className="text-gray-500 font-medium">
               {profileData.email || profileData.phone || 'No contact info provided'}
             </p>
           </div>

@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { validateImageLightweight, getLocalizedValidationReason } from '../utils/imageValidator';
+import { addGeoWatermark } from '../utils/geoWatermark';
 
 const MAX_IMAGES = 3;
 
@@ -11,6 +12,7 @@ export default function AiStudio() {
   // ── State Management ──
   const [capturedImages, setCapturedImages] = useState([]);
   const [isEnhancing, setIsEnhancing] = useState(false);
+  const [isWatermarking, setIsWatermarking] = useState(false);
   const fileInputRef = useRef(null);
 
   // Clean up object URLs on unmount to avoid memory leaks
@@ -52,10 +54,23 @@ export default function AiStudio() {
         return;
       }
 
+      setIsWatermarking(true);
+      let watermarkedFile = file;
+      try {
+        const artisanId = localStorage.getItem('artisan_gov_id_number') || 
+                          localStorage.getItem('artisan_user_id') || 
+                          "A-1029";
+        watermarkedFile = await addGeoWatermark(file, artisanId);
+      } catch (err) {
+        console.warn('[AiStudio] Geo-watermarking fallback:', err);
+      } finally {
+        setIsWatermarking(false);
+      }
+
       const newImageObj = {
         id: Date.now(),
-        file: file,
-        previewUrl: URL.createObjectURL(file),
+        file: watermarkedFile,
+        previewUrl: URL.createObjectURL(watermarkedFile),
         status: 'pending' // pending, enhancing, ready
       };
 
@@ -198,9 +213,14 @@ export default function AiStudio() {
             <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
             <span className="font-bold tracking-wide uppercase text-stone-200">AI Studio Multi-Angle Camera</span>
           </div>
-          <span className="text-orange-400 font-semibold">
-            {capturedImages.length}/{MAX_IMAGES} Angles
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-mono font-semibold">
+              📍 Geo-Stamp
+            </span>
+            <span className="text-orange-400 font-semibold">
+              {capturedImages.length}/{MAX_IMAGES} Angles
+            </span>
+          </div>
         </div>
 
         {/* Main Viewfinder / Placeholder */}
@@ -210,6 +230,14 @@ export default function AiStudio() {
           <div className="absolute top-4 right-4 w-8 h-8 border-t-2 border-r-2 border-orange-500 z-10"></div>
           <div className="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 border-orange-500 z-10"></div>
           <div className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-orange-500 z-10"></div>
+
+          {/* Watermarking Loading Overlay */}
+          {isWatermarking && (
+            <div className="absolute inset-0 z-20 bg-black/80 flex flex-col items-center justify-center gap-3 backdrop-blur-xs text-amber-200 p-4 text-center">
+              <div className="w-8 h-8 border-3 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-xs font-mono font-semibold animate-pulse">📍 Embedding GPS & Authenticity Watermark...</p>
+            </div>
+          )}
 
           {capturedImages.length > 0 && (
             <img 
@@ -260,7 +288,8 @@ export default function AiStudio() {
             {capturedImages.length < MAX_IMAGES && (
               <button 
                 onClick={() => fileInputRef.current.click()} 
-                className="flex flex-col items-center justify-center w-16 h-16 bg-white rounded-full text-stone-800 shadow-md hover:scale-105 transition-transform"
+                disabled={isWatermarking}
+                className="flex flex-col items-center justify-center w-16 h-16 bg-white rounded-full text-stone-800 shadow-md hover:scale-105 transition-transform disabled:opacity-50 cursor-pointer"
               >
                 <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />

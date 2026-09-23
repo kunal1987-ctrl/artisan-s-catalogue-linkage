@@ -4,18 +4,25 @@ import { useLanguage, SUPPORTED_LANGUAGES } from '../context/LanguageContext';
 import { Globe, Check, X, Sparkles } from 'lucide-react';
 import useAudioAssistant from '../hooks/useAudioAssistant';
 
-/**
- * Per-language hardcoded confirmation phrases spoken immediately after selection.
- * These are intentionally NOT fetched from i18n — we need them in the NEW language
- * before i18next has finished switching its internal state (race-condition bypass).
- */
-const LANG_CONFIRMATION = {
-  hi: 'हिंदी भाषा चुनी गई।',
-  en: 'English language selected.',
-  bn: 'বাংলা ভাষা নির্বাচিত হয়েছে।',
-  ta: 'தமிழ் மொழி தேர்ந்தெடுக்கப்பட்டது.',
-  te: 'తెలుగు భాష ఎంపిక చేయబడింది.',
-  mr: 'मराठी भाषा निवडली गेली.',
+// 1. Define the exact audio instructions in the native script
+// This ensures the TTS engine recognizes the words in its respective language.
+const AUDIO_INSTRUCTIONS = {
+  hi: "आपने हिंदी भाषा चुनी है। अब आप ऐप का उपयोग हिंदी में कर सकते हैं।",
+  en: "English language selected. You can now use the app in English.",
+  mr: "तुम्ही मराठी भाषा निवडली आहे. आता तुम्ही ॲप मराठीत वापरू शकता.",
+  bn: "আপনি বাংলা ভাষা निर्वाचन করেছেন। এখন আপনি বাংলায় অ্যাপটি ব্যবহার করতে পারেন।",
+  ta: "நீங்கள் தமிழ் மொழியைத் தேர்ந்தெடுத்துள்ளீர்கள். இப்போது நீங்கள் செயலியை தமிழில் பயன்படுத்தலாம்.",
+  te: "మీరు తెలుగు భాషను ఎంచుకున్నారు. ఇప్పుడు మీరు యాప్‌ను తెలుగులో ఉపయోగించవచ్చు.",
+};
+
+// 2. Strict BCP-47 Language Codes required by browsers
+const LANG_CODES = {
+  hi: 'hi-IN',
+  en: 'en-IN',
+  mr: 'mr-IN',
+  bn: 'bn-IN',
+  ta: 'ta-IN',
+  te: 'te-IN',
 };
 
 /**
@@ -39,6 +46,29 @@ export default function AtmLanguageSelector({
   const { t } = useTranslation();
   const { language, setLanguage, isAtmLanguageModalOpen, closeAtmLanguageModal } = useLanguage();
   const { speak } = useAudioAssistant();
+  const [voices, setVoices] = React.useState([]);
+
+  // Pre-load available voices on component mount to prevent mobile lag
+  React.useEffect(() => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+
+    const loadVoices = () => {
+      try {
+        setVoices(window.speechSynthesis.getVoices());
+      } catch (e) {
+        console.warn('Voice loading error:', e);
+      }
+    };
+
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+
+    return () => {
+      try {
+        window.speechSynthesis.cancel();
+      } catch {}
+    };
+  }, []);
 
   const activeCode = language || 'hi';
   const showModal = mode === 'modal' ? (isOpen || isAtmLanguageModalOpen) : false;
@@ -50,19 +80,44 @@ export default function AtmLanguageSelector({
     if (typeof onClose === 'function') onClose();
   };
 
-  const handleSelectLanguage = (code) => {
-    // 1. Switch the language in context + i18n (instant UI re-render)
-    setLanguage(code);
+  // 3. The hardened click handler attached to language cards
+  const handleSelectLanguage = (langKey) => {
+    // 1. Update app's state/context (triggers UI translation instantly)
+    setLanguage(langKey);
 
-    // 2. Play audio confirmation in the newly selected language.
-    //    We use speak() directly with an explicit `lang` override rather than
-    //    speakPrompt() to avoid the race condition where i18next hasn't finished
-    //    loading the new locale yet when we try to read the translation key.
-    const confirmText = LANG_CONFIRMATION[code] || LANG_CONFIRMATION.en;
-    // Small delay lets the voice engine pick up the new language setting
-    setTimeout(() => {
-      speak(confirmText, { lang: code, rate: 0.88 });
-    }, 150);
+    // 2. Trigger audio IMMEDIATELY inside the user interaction event
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      try {
+        // Instantly stop any previous audio
+        window.speechSynthesis.cancel();
+
+        // Create the new localized speech utterance
+        const textToSpeak = AUDIO_INSTRUCTIONS[langKey] || AUDIO_INSTRUCTIONS.en;
+        const targetCode = LANG_CODES[langKey] || 'hi-IN';
+
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+        utterance.lang = targetCode;
+        utterance.rate = 0.85; // Slightly slower for better rural comprehension
+
+        // Attempt to find the specific high-quality regional voice
+        const matchedVoice = voices.find((v) =>
+          v.lang === targetCode ||
+          v.lang.replace('_', '-').includes(targetCode) ||
+          v.lang.includes(langKey)
+        );
+
+        if (matchedVoice) {
+          utterance.voice = matchedVoice;
+        }
+
+        // Play the audio
+        window.speechSynthesis.speak(utterance);
+      } catch (e) {
+        console.warn('TTS playback notice:', e);
+        // Fallback to useAudioAssistant speak
+        speak(AUDIO_INSTRUCTIONS[langKey] || textToSpeak, { lang: langKey, rate: 0.85 });
+      }
+    }
 
     // 3. Close modal after selection
     if (mode === 'modal') {

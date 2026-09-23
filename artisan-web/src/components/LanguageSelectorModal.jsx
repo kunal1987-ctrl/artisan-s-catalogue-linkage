@@ -85,6 +85,24 @@ export const getDialectBadgeText = (code) => {
   return match ? match.badgeText : 'हिन्दी (Hindi)';
 };
 
+const AUDIO_INSTRUCTIONS = {
+  hi: "आपने हिंदी भाषा चुनी है। अब आप ऐप का उपयोग हिंदी में कर सकते हैं।",
+  en: "English language selected. You can now use the app in English.",
+  mr: "तुम्ही मराठी भाषा निवडली आहे. आता तुम्ही ॲप मराठीत वापरू शकता.",
+  bn: "আপনি বাংলা ভাষা নির্বাচন করেছেন। এখন আপনি বাংলায় অ্যাপটি ব্যবহার করতে পারেন।",
+  ta: "நீங்கள் தமிழ் மொழியைத் தேர்ந்தெடுத்துள்ளீர்கள். இப்போது நீங்கள் செயலியை தமிழில் பயன்படுத்தலாம்.",
+  te: "మీరు తెలుగు భాషను ఎంచుకున్నారు. ఇప్పుడు మీరు యాప్‌ను తెలుగులో ఉపయోగించవచ్చు.",
+};
+
+const LANG_CODES = {
+  hi: 'hi-IN',
+  en: 'en-IN',
+  mr: 'mr-IN',
+  bn: 'bn-IN',
+  ta: 'ta-IN',
+  te: 'te-IN',
+};
+
 export default function LanguageSelectorModal({
   isOpen,
   onClose,
@@ -93,6 +111,29 @@ export default function LanguageSelectorModal({
   uiLanguage = 'hi',
 }) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [voices, setVoices] = useState([]);
+
+  // Pre-load available voices on component mount to prevent mobile lag
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+
+    const loadVoices = () => {
+      try {
+        setVoices(window.speechSynthesis.getVoices());
+      } catch (e) {
+        console.warn('Voice loading error:', e);
+      }
+    };
+
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+
+    return () => {
+      try {
+        window.speechSynthesis.cancel();
+      } catch {}
+    };
+  }, []);
 
   // Close on Escape key
   useEffect(() => {
@@ -194,6 +235,29 @@ export default function LanguageSelectorModal({
                 type="button"
                 onClick={() => {
                   if (onSelectLang) onSelectLang(item.code);
+                  
+                  // Trigger regional TTS audio immediately inside click interaction
+                  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+                    try {
+                      window.speechSynthesis.cancel();
+                      const textToSpeak = AUDIO_INSTRUCTIONS[item.code] || `Selected ${item.englishName}`;
+                      const targetCode = LANG_CODES[item.code] || `${item.code}-IN`;
+                      const utterance = new SpeechSynthesisUtterance(textToSpeak);
+                      utterance.lang = targetCode;
+                      utterance.rate = 0.85;
+
+                      const matchedVoice = voices.find((v) =>
+                        v.lang === targetCode ||
+                        v.lang.replace('_', '-').includes(targetCode) ||
+                        v.lang.includes(item.code)
+                      );
+                      if (matchedVoice) utterance.voice = matchedVoice;
+                      window.speechSynthesis.speak(utterance);
+                    } catch (e) {
+                      console.warn('TTS playback notice in modal:', e);
+                    }
+                  }
+
                   onClose();
                 }}
                 className={`w-full flex items-center justify-between p-3 rounded-2xl border text-left cursor-pointer transition-all active:scale-98 ${

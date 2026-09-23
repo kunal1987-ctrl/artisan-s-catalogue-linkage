@@ -360,27 +360,10 @@ export default function Review() {
             </div>
           </div>
 
-          {/* Far Right: Audio Mute, Language Switcher, Auth Status & Publish Button */}
+          {/* Far Right: Audio Mute, Language Switcher & Publish Button */}
           <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             <AudioMuteButton variant="light" />
             <LanguageToggle variant="dark" />
-
-            {isVerified ? (
-              <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950 border border-emerald-500/50 text-emerald-300 text-[11px] font-bold shadow-2xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>{language === 'hi' ? 'सत्यापित' : 'Verified'}</span>
-              </span>
-            ) : (
-              <button
-                type="button"
-                id="verify-header-btn"
-                onClick={handlePublish}
-                className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-stone-950 text-[11px] font-bold cursor-pointer transition-all active:scale-95 animate-pulse shadow-xs"
-              >
-                <span className="material-symbols-outlined text-[15px]">verified</span>
-                <span>{language === 'hi' ? 'ईमेल सत्यापन' : 'Verify'}</span>
-              </button>
-            )}
 
             <button
               onClick={handlePublish}

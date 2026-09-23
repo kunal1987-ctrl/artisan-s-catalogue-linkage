@@ -22,6 +22,7 @@ import { useTranslation } from 'react-i18next';
 import { supabase } from '../supabaseClient';
 import POSlipModal from '../components/POSlipModal';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import InstitutionalTenderCard, { ACTIVE_INSTITUTIONAL_TENDERS } from '../components/InstitutionalTenderCard';
 import {
   announceOrder,
@@ -35,57 +36,93 @@ import {
   triggerHapticConfirmation,
 } from '../utils/fulfillmentNotifications';
 
-// ── Static demo data (shown while Supabase loads / when empty) ────────────────
-const STATIC_ORDERS = [
+// ── Fallback Mock Data (shown while loading or when user has no products) ─────
+const FALLBACK_MOCK_ORDERS = [
   {
-    id: 'b2c3d4e5-0001-4000-8000-000000000001',
-    order_id: 'GEM-PO-2026-8849102',
-    buyer_name: 'Ministry of Tourism & Culture (Govt. of India)',
-    channel: 'GeM',
-    order_type: 'gem',
+    id: '#GEM-PO-393140',
+    order_id: 'GEM-PO-393140',
+    status: 'स्वीकृत', // Accepted
+    channel: 'GeM — सरकारी खरीद',
     source: 'GeM',
+    order_type: 'gem',
+    product_title: 'GI-Certified Jaipur Blue Pottery Decorative Wall Plates (10 Inch)',
+    item_title: 'GI-Certified Jaipur Blue Pottery Decorative Wall Plates (10 Inch)',
+    buyer: 'TRIFED - Ministry of Tribal Affairs',
+    buyer_name: 'TRIFED - Ministry of Tribal Affairs',
+    quantity: 100,
+    total_amount: 78000,
+    total_payout: 78000,
+    unit_price_inr: 780,
+    image: 'https://images.unsplash.com/photo-1610701596007-11502861dcfa?auto=format&fit=crop&w=800&q=80',
+    product_image_url: 'https://images.unsplash.com/photo-1610701596007-11502861dcfa?auto=format&fit=crop&w=800&q=80',
+    time: 'Just now',
+    created_at: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+    address: 'New Delhi • TRIFED Central Distribution Center',
+    shipping_address: 'TRIFED Central Distribution Center, New Delhi - 110001',
+    city: 'New Delhi',
+    payment_mode: 'GeM PFMS Verified Institutional Escrow (Auto-settlement on Dispatch)',
+    notes: 'Urgent institutional procurement for National Tribal Conclave 2026',
+    hsn_code: '69120010',
+    voice_announcement_text: 'बधाई हो! सरकारी विभाग GeM से 100 पीस का नया आर्डर आया है। कुल राशि ₹78,000। जल्दी से सामान पैक करें।',
+  },
+  {
+    id: '#GEM-PO-2026-8849102',
+    order_id: 'GEM-PO-2026-8849102',
+    status: 'नया', // New
+    channel: 'GeM — सरकारी खरीद',
+    source: 'GeM',
+    order_type: 'gem',
     product_title: 'Handcrafted Terracotta Earthen Pitcher (Surahi)',
     item_title: 'Handcrafted Terracotta Earthen Pitcher (Surahi)',
-    product_image_url: 'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=800&q=80',
+    buyer: 'Ministry of Tourism & Culture (Govt. of India)',
+    buyer_name: 'Ministry of Tourism & Culture (Govt. of India)',
     quantity: 50,
+    total_amount: 13000,
     total_payout: 13000,
     unit_price_inr: 260,
-    total_amount: 13000,
-    total_price_inr: 13000,
-    status: 'new',
+    image: 'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=800&q=80',
+    product_image_url: 'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=800&q=80',
+    time: '25 min ago',
+    created_at: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
+    address: 'Central State Guest House, Chanakyapuri, New Delhi - 110021',
     shipping_address: 'Central State Guest House, Chanakyapuri, New Delhi - 110021',
     city: 'New Delhi',
     payment_mode: 'GeM PFMS Verified Institutional Escrow (Auto-settlement on Dispatch)',
     notes: 'Urgent institutional procurement for National Tourism Conclave 2026',
     hsn_code: '69120010',
     voice_announcement_text: 'बधाई हो! सरकारी विभाग GeM से 50 पीस का नया आर्डर आया है। कुल राशि ₹13,000। जल्दी से सामान पैक करें।',
-    created_at: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
   },
   {
-    id: 'b2c3d4e5-0002-4000-8000-000000000002',
+    id: '#ONDC-BECKN-PO-739218',
     order_id: 'ONDC-BECKN-PO-739218',
-    buyer_name: 'Tribal Co-operative Marketing Development Federation (TRIFED Store Network)',
-    channel: 'ONDC',
-    order_type: 'ondc',
+    status: 'पैक हो गया', // Packed
+    channel: 'ONDC — ओपन नेटवर्क',
     source: 'ONDC',
+    order_type: 'ondc',
     product_title: 'GI-Certified Jaipur Blue Pottery Decorative Wall Plate (10 Inch)',
     item_title: 'GI-Certified Jaipur Blue Pottery Decorative Wall Plate (10 Inch)',
-    product_image_url: 'https://images.unsplash.com/photo-1610701596007-11502861dcfa?auto=format&fit=crop&w=800&q=80',
+    buyer: 'Tribal Co-operative Marketing Development Federation (TRIFED Store Network)',
+    buyer_name: 'Tribal Co-operative Marketing Development Federation (TRIFED Store Network)',
     quantity: 25,
+    total_amount: 19500,
     total_payout: 19500,
     unit_price_inr: 780,
-    total_amount: 19500,
-    total_price_inr: 19500,
-    status: 'packed',
+    image: 'https://images.unsplash.com/photo-1610701596007-11502861dcfa?auto=format&fit=crop&w=800&q=80',
+    product_image_url: 'https://images.unsplash.com/photo-1610701596007-11502861dcfa?auto=format&fit=crop&w=800&q=80',
+    time: '1 hour ago',
+    created_at: new Date(Date.now() - 75 * 60 * 1000).toISOString(),
+    address: 'TRIFED Central Fulfillment Hub, Sector 62, Noida, Uttar Pradesh - 201309',
     shipping_address: 'TRIFED Central Fulfillment Hub, Sector 62, Noida, Uttar Pradesh - 201309',
     city: 'Noida',
     payment_mode: 'ONDC Protocol Settlement via UPI / BharatQR',
     notes: 'Tribal & Artisan Heritage Retail Distribution',
     hsn_code: '69139000',
     voice_announcement_text: 'नया आर्डर आया! ONDC नेटवर्क से 25 ब्लू पॉटरी प्लेट का ऑर्डर है। कुल कीमत ₹19,500। सामान तैयार करें।',
-    created_at: new Date(Date.now() - 75 * 60 * 1000).toISOString(),
   },
 ];
+
+// Retain STATIC_ORDERS for complete backward compatibility
+const STATIC_ORDERS = FALLBACK_MOCK_ORDERS;
 
 // ── Craft image fallbacks by keyword ─────────────────────────────────────────
 const CRAFT_IMAGE_FALLBACKS = {
@@ -129,8 +166,203 @@ function formatTimeAgo(isoDate) {
   return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + `, ${timeStr}`;
 }
 
-// ── Utility: normalize any DB row to frontend model ───────────────────────────
+// ── Generator: Dynamic realistic orders mapped to user's actual catalogue ─────
+function generateDynamicOrdersFromProducts(products) {
+  if (!products || !Array.isArray(products) || products.length === 0) {
+    return [];
+  }
+
+  const BUYER_TEMPLATES = [
+    {
+      channel: 'GeM — सरकारी खरीद',
+      source: 'GeM',
+      order_type: 'gem',
+      buyer: 'TRIFED - Ministry of Tribal Affairs',
+      address: 'New Delhi • TRIFED Central Distribution Center',
+      shipping_address: 'TRIFED Central Distribution Center, Ashok Road, New Delhi - 110001',
+      city: 'New Delhi',
+      payment_mode: 'GeM PFMS Verified Institutional Escrow (Auto-settlement on Dispatch)',
+      notes: 'Institutional allocation under ODOP Tribal Artisan Linkage Scheme',
+      status: 'accepted',
+      qtyMultiplier: 4,
+      minQty: 30,
+      timeAgoMinutes: 12,
+    },
+    {
+      channel: 'ONDC — ओपन नेटवर्क',
+      source: 'ONDC',
+      order_type: 'ondc',
+      buyer: 'Craftsvilla / Mystore BAP (ONDC Network)',
+      address: 'Bengaluru • ONDC Logistics Fulfillment Hub',
+      shipping_address: 'Whitefield Fulfillment Hub, EPIP Zone, Bengaluru, Karnataka - 560066',
+      city: 'Bengaluru',
+      payment_mode: 'ONDC Protocol Settlement via UPI / BharatQR',
+      notes: 'Customer direct purchase via ONDC Beckn 1.2.0 protocol',
+      status: 'new',
+      qtyMultiplier: 1,
+      minQty: 4,
+      timeAgoMinutes: 28,
+    },
+    {
+      channel: 'GeM — सरकारी खरीद',
+      source: 'GeM',
+      order_type: 'gem',
+      buyer: 'Ministry of Tourism & Culture (Govt. of India)',
+      address: 'New Delhi • Central State Guest House, Chanakyapuri',
+      shipping_address: 'Central State Guest House, Chanakyapuri, New Delhi - 110021',
+      city: 'New Delhi',
+      payment_mode: 'GeM PFMS Verified Institutional Escrow',
+      notes: 'Official souvenir procurement for National Heritage Tourism Conclave',
+      status: 'packed',
+      qtyMultiplier: 3,
+      minQty: 25,
+      timeAgoMinutes: 95,
+    },
+    {
+      channel: 'GeM — राज्य एम्पोरियम',
+      source: 'GeM',
+      order_type: 'gem',
+      buyer: 'CCIC — Central Cottage Industries Corporation',
+      address: 'New Delhi • Jawahar Vyapar Bhawan, Janpath',
+      shipping_address: 'Jawahar Vyapar Bhawan, Janpath, New Delhi - 110001',
+      city: 'New Delhi',
+      payment_mode: 'GeM Institutional Escrow (RSP Pre-credited)',
+      notes: 'ODOP State Emporium retail stock replenishment batch',
+      status: 'accepted',
+      qtyMultiplier: 2,
+      minQty: 20,
+      timeAgoMinutes: 240,
+    },
+    {
+      channel: 'GeM — सरकारी खरीद',
+      source: 'GeM',
+      order_type: 'gem',
+      buyer: 'Archaeological Survey of India (ASI Souvenir Division)',
+      address: 'Agra • Taj Cultural Souvenir Center, ASI',
+      shipping_address: 'Taj Protected Heritage Complex, Agra, Uttar Pradesh - 282001',
+      city: 'Agra',
+      payment_mode: 'GeM PFMS Verified Institutional Escrow',
+      notes: 'Monument visitor centre craft display & retail distribution',
+      status: 'new',
+      qtyMultiplier: 5,
+      minQty: 50,
+      timeAgoMinutes: 45,
+    },
+  ];
+
+  const generated = [];
+
+  // Generate realistic orders for up to 6 products
+  const selectedProducts = products.slice(0, 6);
+  selectedProducts.forEach((prod, index) => {
+    const template = BUYER_TEMPLATES[index % BUYER_TEMPLATES.length];
+    const rawId = String(prod.id || index).replace(/[^a-zA-Z0-9]/g, '');
+    const shortCode = rawId.slice(0, 6).toUpperCase() || `${index + 1000}`;
+
+    const prodTitle = prod.title || prod.name || prod.hindi_title || 'GI-Certified Artisan Handicraft';
+    const prodImg = prod.image_url || prod.image || (Array.isArray(prod.images) ? prod.images[0] : null) || getProductImage(prod);
+    const moq = Number(prod.moq || prod.min_order_quantity || 1);
+
+    const quantity = Math.max(moq * template.qtyMultiplier, template.minQty);
+
+    let unitPrice = template.source === 'GeM'
+      ? Number(prod.bulk_price || prod.wholesale_price || Math.round(Number(prod.price || 450) * 0.75) || 350)
+      : Number(prod.price || Math.round(Number(prod.bulk_price || 350) * 1.35) || 450);
+
+    if (!unitPrice || unitPrice <= 0) unitPrice = 450;
+    const totalAmount = quantity * unitPrice;
+
+    const orderId = template.source === 'GeM'
+      ? `GEM-PO-2026-${shortCode}`
+      : `ONDC-BECKN-PO-${shortCode}`;
+
+    const createdAt = new Date(Date.now() - (template.timeAgoMinutes + index * 25) * 60 * 1000).toISOString();
+
+    const voiceAnnouncement = template.source === 'GeM'
+      ? `बधाई हो! सरकारी विभाग GeM से ${quantity} पीस ${prodTitle} का नया आर्डर आया है। कुल राशि ₹${totalAmount.toLocaleString('en-IN')}। जल्दी से सामान पैक करें।`
+      : `नया आर्डर आया! ONDC नेटवर्क से ${quantity} पीस ${prodTitle} का ऑर्डर है। कुल राशि ₹${totalAmount.toLocaleString('en-IN')}। सामान तैयार करें।`;
+
+    generated.push({
+      id: `#${orderId}`,
+      order_id: orderId,
+      status: template.status,
+      channel: template.channel,
+      source: template.source,
+      order_type: template.order_type,
+      product_title: prodTitle,
+      item_title: prodTitle,
+      buyer: template.buyer,
+      buyer_name: template.buyer,
+      quantity,
+      unit_price_inr: unitPrice,
+      total_amount: totalAmount,
+      total_payout: totalAmount,
+      image: prodImg,
+      product_image_url: prodImg,
+      time: formatTimeAgo(createdAt),
+      created_at: createdAt,
+      address: template.address,
+      shipping_address: template.shipping_address,
+      city: template.city,
+      payment_mode: template.payment_mode,
+      notes: template.notes,
+      hsn_code: prod.hsn_code || '69120010',
+      voice_announcement_text: voiceAnnouncement,
+    });
+
+    // If the artisan has only 1 or 2 products, add a complementary ONDC order
+    if (selectedProducts.length <= 2) {
+      const ondcTemplate = BUYER_TEMPLATES[1];
+      const ondcOrderId = `ONDC-BECKN-PO-${shortCode}X`;
+      const ondcQty = Math.max(moq, 3 + index * 2);
+      const ondcUnitPrice = Number(prod.price || Math.round(Number(prod.bulk_price || 350) * 1.35) || 550);
+      const ondcTotal = ondcQty * ondcUnitPrice;
+      const ondcCreatedAt = new Date(Date.now() - (45 + index * 20) * 60 * 1000).toISOString();
+
+      generated.push({
+        id: `#${ondcOrderId}`,
+        order_id: ondcOrderId,
+        status: 'new',
+        channel: ondcTemplate.channel,
+        source: ondcTemplate.source,
+        order_type: ondcTemplate.order_type,
+        product_title: prodTitle,
+        item_title: prodTitle,
+        buyer: ondcTemplate.buyer,
+        buyer_name: ondcTemplate.buyer,
+        quantity: ondcQty,
+        unit_price_inr: ondcUnitPrice,
+        total_amount: ondcTotal,
+        total_payout: ondcTotal,
+        image: prodImg,
+        product_image_url: prodImg,
+        time: formatTimeAgo(ondcCreatedAt),
+        created_at: ondcCreatedAt,
+        address: ondcTemplate.address,
+        shipping_address: ondcTemplate.shipping_address,
+        city: ondcTemplate.city,
+        payment_mode: ondcTemplate.payment_mode,
+        notes: ondcTemplate.notes,
+        hsn_code: prod.hsn_code || '69120010',
+        voice_announcement_text: `नया आर्डर आया! ONDC नेटवर्क से ${ondcQty} पीस ${prodTitle} का ऑर्डर है। कुल राशि ₹${ondcTotal.toLocaleString('en-IN')}। सामान तैयार करें।`,
+      });
+    }
+  });
+
+  return generated;
+}
+
+// ── Utility: normalize any DB row / dynamic order to frontend model ───────────
 function mapOrderRecord(item) {
+  let rawStatus = item.status || 'new';
+  if (rawStatus === 'स्वीकृत' || rawStatus === 'स्वीकार') rawStatus = 'accepted';
+  else if (rawStatus === 'नया') rawStatus = 'new';
+  else if (rawStatus === 'लंबित') rawStatus = 'pending';
+  else if (rawStatus === 'पैक हो गया' || rawStatus === 'पैक') rawStatus = 'packed';
+  else if (rawStatus === 'डिस्पैच' || rawStatus === 'भेजा गया') rawStatus = 'shipped';
+  else if (rawStatus === 'डिलीवर हो गया') rawStatus = 'delivered';
+  else if (rawStatus === 'रद्द') rawStatus = 'cancelled';
+
   const source = item.source || (
     (item.channel || '').toLowerCase().includes('gem') ||
     (item.order_type || '') === 'gem' ? 'GeM' : 'ONDC'
@@ -141,30 +373,39 @@ function mapOrderRecord(item) {
     (item.unit_price_inr ? item.unit_price_inr * qty : 0)
   );
 
+  const orderId = item.order_id || item.id || `ORD-${Date.now()}`;
+  const prodImg = item.product_image_url || item.image || item.image_url || getProductImage(item);
+  const prodTitle = item.product_title || item.item_title || item.notes || 'Artisan Craft Product';
+  const buyer = item.buyer_name || item.buyer || 'Institutional Buyer';
+  const shipAddr = item.shipping_address || item.address || item.city || 'Transport Bhawan, New Delhi';
+
   return {
     ...item,
-    id: item.id || item.order_id,
-    order_id: item.order_id || item.id,
+    id: item.id || orderId,
+    order_id: orderId,
     source,
     order_type: item.order_type || (source === 'GeM' ? 'gem' : 'ondc'),
-    buyer_name: item.buyer_name || 'Institutional Buyer',
+    buyer_name: buyer,
+    buyer: buyer,
     channel: item.channel || (source === 'GeM' ? 'GeM Institutional PO' : 'ONDC Network'),
-    product_title: item.product_title || item.item_title || item.notes || 'Artisan Craft Product',
-    item_title: item.item_title || item.product_title || item.notes || 'Artisan Craft Product',
-    product_image_url: getProductImage(item),
+    product_title: prodTitle,
+    item_title: prodTitle,
+    image: prodImg,
+    product_image_url: prodImg,
     quantity: qty,
     total_payout: payout,
     total_amount: payout,
     unit_price_inr: Number(item.unit_price_inr || (payout && qty ? Math.round(payout / qty) : 0)),
     total_price_inr: payout,
-    status: item.status || 'new',
-    shipping_address: item.shipping_address || item.city || 'Transport Bhawan, New Delhi',
-    city: item.city || item.shipping_address || 'New Delhi',
+    status: rawStatus,
+    shipping_address: shipAddr,
+    address: shipAddr,
+    city: item.city || (shipAddr.includes('•') ? shipAddr.split('•')[0].trim() : (shipAddr.split(',')[0] || 'New Delhi')),
     payment_mode: item.payment_mode || (source === 'GeM' ? 'GeM PFMS Institutional Escrow' : 'ONDC Escrow RSP Prepaid'),
     notes: item.notes || item.item_title || 'Institutional Purchase Order',
     hsn_code: item.hsn_code || '69120010',
     voice_announcement_text: item.voice_announcement_text || null,
-    created_at: item.created_at || new Date().toISOString(),
+    created_at: item.created_at || (item.time ? new Date().toISOString() : new Date().toISOString()),
   };
 }
 
@@ -437,7 +678,9 @@ function OrderCard({ order, onMarkPacked, onAcceptPO, onDispatchPO, setSelectedP
 export default function Orders() {
   const { t } = useTranslation();
   const { language } = useLanguage();
-  const [orders, setOrders] = useState(STATIC_ORDERS);
+  const { user } = useAuth();
+  const [orders, setOrders] = useState(() => FALLBACK_MOCK_ORDERS.map(mapOrderRecord));
+  const [isLoading, setIsLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('ALL');
   const [showTenders, setShowTenders] = useState(false);
   const [selectedPO, setSelectedPO] = useState(null);
@@ -467,24 +710,95 @@ export default function Orders() {
     return () => window.removeEventListener('keydown', handleKeyCombo);
   }, []);
 
-  // ── 1. Initial Supabase load ────────────────────────────────────────────────
+  // ── 1. Dynamic Order Load (User Catalogue & Supabase) ──────────────────────
   useEffect(() => {
     async function loadOrders() {
+      setIsLoading(true);
       try {
-        const { data, error } = await supabase
-          .from('orders')
-          .select('*')
-          .order('created_at', { ascending: false });
+        let activeUser = user;
+        if (!activeUser) {
+          const { data: authData } = await supabase.auth.getUser();
+          activeUser = authData?.user;
+        }
 
-        if (!error && data && data.length > 0) {
-          setOrders(data.map(mapOrderRecord));
+        // 1. Fetch authenticated user's products from Supabase
+        let userProducts = [];
+        if (activeUser?.id) {
+          const { data: pData, error: pErr } = await supabase
+            .from('products')
+            .select('*')
+            .or(`user_id.eq.${activeUser.id},artisan_id.eq.${activeUser.id}`)
+            .order('created_at', { ascending: false });
+
+          if (!pErr && pData && pData.length > 0) {
+            userProducts = pData;
+          } else {
+            // Also check items view if direct products returned empty
+            const { data: iData } = await supabase
+              .from('items')
+              .select('*')
+              .or(`user_id.eq.${activeUser.id},artisan_id.eq.${activeUser.id}`)
+              .order('created_at', { ascending: false });
+            if (iData && iData.length > 0) {
+              userProducts = iData;
+            }
+          }
+        }
+
+        // 2. Fetch any real persistent orders from Supabase
+        let dbOrders = [];
+        try {
+          const { data: oData, error: oErr } = await supabase
+            .from('orders')
+            .select('*')
+            .order('created_at', { ascending: false });
+          if (!oErr && oData && oData.length > 0) {
+            dbOrders = oData;
+          }
+        } catch (oErr) {
+          console.warn('[Orders] Could not fetch DB orders:', oErr);
+        }
+
+        // 3. Dynamic Order Generation vs Fallback
+        if (userProducts && userProducts.length > 0) {
+          // Dynamically generate realistic orders for those specific user products
+          const dynamicOrders = generateDynamicOrdersFromProducts(userProducts).map(mapOrderRecord);
+
+          // If there are real saved orders belonging to the user or newly placed, merge them
+          if (dbOrders.length > 0) {
+            const userDbOrders = dbOrders
+              .filter((o) => !activeUser?.id || o.user_id === activeUser.id || o.artisan_id === activeUser.id)
+              .map(mapOrderRecord);
+
+            if (userDbOrders.length > 0) {
+              const existingIds = new Set(userDbOrders.map((o) => o.order_id || o.id));
+              const combined = [
+                ...userDbOrders,
+                ...dynamicOrders.filter((o) => !existingIds.has(o.order_id) && !existingIds.has(o.id)),
+              ];
+              setOrders(combined);
+              return;
+            }
+          }
+
+          setOrders(dynamicOrders);
+        } else if (dbOrders.length > 0) {
+          // If user has no products, but DB has orders, use mapped DB orders
+          setOrders(dbOrders.map(mapOrderRecord));
+        } else {
+          // If the user has no products, fallback to the default mock array
+          setOrders(FALLBACK_MOCK_ORDERS.map(mapOrderRecord));
         }
       } catch (err) {
-        console.warn('[Orders] Could not load from Supabase:', err);
+        console.warn('[Orders] Error loading orders:', err);
+        setOrders(FALLBACK_MOCK_ORDERS.map(mapOrderRecord));
+      } finally {
+        setIsLoading(false);
       }
     }
+
     loadOrders();
-  }, []);
+  }, [user]);
 
   // ── 2. Supabase Realtime subscription ──────────────────────────────────────
   useEffect(() => {
@@ -745,7 +1059,7 @@ export default function Orders() {
   }, [showToast]);
 
   // ── Filter logic ────────────────────────────────────────────────────────────
-  const allOrders = orders.length > 0 ? orders : STATIC_ORDERS;
+  const allOrders = orders.length > 0 ? orders : FALLBACK_MOCK_ORDERS;
   const displayedOrders = allOrders.filter((order) => {
     if (activeFilter === 'GEM') {
       return (

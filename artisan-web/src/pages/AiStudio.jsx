@@ -4,6 +4,7 @@ import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { validateImageLightweight, getLocalizedValidationReason } from '../utils/imageValidator';
 import { addGeoWatermark } from '../utils/geoWatermark';
+import MicroVideoCapture from '../components/MicroVideoCapture';
 import exifr from 'exifr';
 
 const MAX_IMAGES = 3;
@@ -33,6 +34,8 @@ export default function AiStudio() {
   const { user, artisanProfile } = useAuth?.() || {};
 
   // ── State Management ──
+  const [captureMode, setCaptureMode] = useState('photos'); // 'photos' | 'video'
+  const [recordedVideoBlob, setRecordedVideoBlob] = useState(null);
   const [capturedImages, setCapturedImages] = useState([]);
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [isWatermarking, setIsWatermarking] = useState(false);
@@ -241,22 +244,58 @@ export default function AiStudio() {
     <div className="min-h-screen bg-[#120c09] p-2 sm:p-6 flex items-center justify-center">
       <div className="w-full max-w-lg min-h-[580px] flex flex-col h-full bg-[#1a1614] text-amber-50 rounded-2xl overflow-hidden p-4 shadow-2xl border border-white/5">
         {/* Top Header Bar */}
-        <div className="flex items-center justify-between pb-3 mb-2 border-b border-white/10 text-xs">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
-            <span className="font-bold tracking-wide uppercase text-stone-200">AI Studio Multi-Angle Camera</span>
-            <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-              GPS Geo-Stamp
-            </span>
+        <div className="flex flex-col gap-2 pb-3 mb-2 border-b border-white/10 text-xs">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
+              <span className="font-bold tracking-wide uppercase text-stone-200">AI Studio Camera</span>
+              <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                GPS Active
+              </span>
+            </div>
+            {captureMode === 'photos' && (
+              <span className="text-orange-400 font-semibold">
+                {capturedImages.length}/{MAX_IMAGES} Angles
+              </span>
+            )}
           </div>
-          <span className="text-orange-400 font-semibold">
-            {capturedImages.length}/{MAX_IMAGES} Angles
-          </span>
+
+          {/* Mode Switcher Tabs */}
+          <div className="flex items-center gap-2 p-1 bg-black/40 rounded-xl border border-white/10 w-fit">
+            <button
+              type="button"
+              onClick={() => setCaptureMode('photos')}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${captureMode === 'photos' ? 'bg-orange-600 text-white shadow-sm' : 'text-stone-400 hover:text-stone-200'}`}
+            >
+              📸 3 Angles
+            </button>
+            <button
+              type="button"
+              onClick={() => setCaptureMode('video')}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${captureMode === 'video' ? 'bg-red-600 text-white shadow-sm' : 'text-stone-400 hover:text-stone-200'}`}
+            >
+              <span className="w-2 h-2 rounded-full bg-red-400 animate-ping" />
+              🎥 3s Video Proof
+            </button>
+          </div>
         </div>
 
-        {/* Main Viewfinder / Placeholder */}
-        <div className="relative flex-1 bg-black rounded-xl flex items-center justify-center border border-white/10 mb-4 overflow-hidden min-h-[300px]">
+        {/* Video Mode */}
+        {captureMode === 'video' ? (
+          <div className="flex-1 flex flex-col justify-center items-center">
+            <MicroVideoCapture 
+              onCaptureComplete={(blob) => {
+                setRecordedVideoBlob(blob);
+                alert("3-second 3D Turnaround proof captured successfully! (3D वीडियो प्रमाण सफलतापूर्वक रिकॉर्ड हो गया)");
+              }}
+              onCancel={() => setCaptureMode('photos')}
+            />
+          </div>
+        ) : (
+          <>
+            {/* Main Viewfinder / Placeholder */}
+            <div className="relative flex-1 bg-black rounded-xl flex items-center justify-center border border-white/10 mb-4 overflow-hidden min-h-[300px]">
           {/* Frame markers */}
           <div className="absolute top-4 left-4 w-8 h-8 border-t-2 border-l-2 border-orange-500 z-10"></div>
           <div className="absolute top-4 right-4 w-8 h-8 border-t-2 border-r-2 border-orange-500 z-10"></div>
@@ -340,7 +379,9 @@ export default function AiStudio() {
             )}
           </div>
         </div>
-      </div>
-    </div>
+      </>
+    )}
+  </div>
+</div>
   );
 }

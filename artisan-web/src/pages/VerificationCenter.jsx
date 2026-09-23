@@ -251,11 +251,12 @@ export default function VerificationCenter() {
       <div className="bg-[#18110d] text-white border-b border-[#2e211a] px-4 py-8 sm:px-8">
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wider uppercase bg-[#ff9062]/20 text-[#ff9062] border border-[#ff9062]/30">
-                {language === 'hi' ? 'राष्ट्रीय शिल्पकार सत्यापन' : 'National Artisan Verification'}
+            <div className="mb-2">
+              <span className="text-gray-400 text-sm font-medium tracking-wide uppercase">
+                {language === 'hi' 
+                  ? 'राष्ट्रीय शिल्पकार सत्यापन • MoSJE / GeM / ONDC' 
+                  : 'National Artisan Verification • MoSJE / GeM / ONDC'}
               </span>
-              <span className="text-stone-400 text-xs">• MoSJE / GeM / ONDC</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2.5">
               <ShieldCheck className="w-8 h-8 text-[#ff9062]" />

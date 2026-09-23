@@ -300,7 +300,7 @@ export default function ProductDetail() {
               </div>
 
               {/* Massive Bold H1 for English title */}
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#2e241e] leading-tight tracking-tight">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-[#2e241e] leading-tight tracking-tight">
                 {product.title_en}
               </h1>
 
@@ -323,7 +323,7 @@ export default function ProductDetail() {
                   {isHi ? 'प्रत्यक्ष खुदरा मूल्य' : 'DIRECT RETAIL PRICE'}
                 </span>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-4xl lg:text-5xl font-black text-[#9c441c]">
+                  <span className="text-2xl sm:text-3xl md:text-4xl font-black text-[#9c441c]">
                     ₹{retailLabel}
                   </span>
                   <span className="text-xs text-stone-500 font-semibold">

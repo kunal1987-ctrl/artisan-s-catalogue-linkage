@@ -732,8 +732,8 @@ export default function Payments() {
 
       {/* ── Update Bank Details Modal ── */}
       {isBankModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-2xs animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-gray-200 overflow-hidden animate-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-2xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl max-w-md w-full shadow-2xl border border-gray-200 overflow-hidden animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto transform transition-transform pb-6 sm:pb-0">
             
             {/* Modal Header */}
             <div className="p-4 sm:p-5 border-b border-gray-200 flex items-center justify-between bg-gray-50">

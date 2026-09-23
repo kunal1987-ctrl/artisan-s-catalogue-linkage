@@ -89,7 +89,7 @@ export default function Sidebar({ className = '' }) {
 
   return (
     <aside
-      className={`w-64 bg-[#fdf9f3] border-r border-[#d1c4bd]/40 flex flex-col justify-between p-4 shrink-0 hidden lg:flex sticky top-0 h-screen overflow-y-auto ${className}`}
+      className={`w-64 bg-[#fdf9f3] border-r border-[#d1c4bd]/40 flex flex-col justify-between p-4 shrink-0 hidden md:flex sticky top-0 h-screen overflow-y-auto ${className}`}
     >
       <div className="flex flex-col gap-6">
         {/* Brand Header */}

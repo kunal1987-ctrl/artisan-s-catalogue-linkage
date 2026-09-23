@@ -329,7 +329,7 @@ export default function Details() {
                     {language === 'hi' ? 'खुदरा मूल्य (Retail Price)' : 'Direct Retail Price'}
                   </span>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-3xl sm:text-4xl font-black text-primary">
+                    <span className="text-2xl sm:text-3xl md:text-4xl font-black text-primary">
                       ₹{price}
                     </span>
                     <span className="text-xs text-secondary font-semibold">

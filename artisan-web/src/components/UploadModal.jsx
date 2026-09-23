@@ -54,9 +54,9 @@ export default function UploadModal({ isOpen, onClose, onPhotoAccepted, language
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in"
+      className="fixed inset-0 z-50 flex items-end justify-center md:items-center bg-black/60 backdrop-blur-xs p-0 md:p-4 animate-in fade-in"
     >
-      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-stone-200 p-6 flex flex-col gap-4 text-stone-900">
+      <div className="relative w-full md:max-w-md bg-white rounded-t-2xl md:rounded-2xl shadow-2xl border border-stone-200 p-6 pb-8 md:pb-6 max-h-[90vh] overflow-y-auto transform transition-transform flex flex-col gap-4 text-stone-900">
         <div className="flex items-center justify-between border-b pb-3">
           <div className="flex items-center gap-2">
             <Camera className="w-5 h-5 text-amber-700" />

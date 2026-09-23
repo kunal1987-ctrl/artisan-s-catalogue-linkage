@@ -105,12 +105,12 @@ export default function AuthModal({ onAuthenticated, isOpen, onClose }) {
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
     >
       {/* Click backdrop to dismiss */}
       <div className="absolute inset-0" onClick={handleClose} />
 
-      <div className="auth-card relative p-6 max-w-sm w-full mx-auto bg-white rounded-xl shadow-md z-10">
+      <div className="auth-card relative p-6 pb-8 sm:pb-6 max-w-sm w-full mx-auto bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl z-10 max-h-[90vh] overflow-y-auto transform transition-transform">
         {/* Close Button */}
         <button
           type="button"

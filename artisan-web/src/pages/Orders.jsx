@@ -902,7 +902,7 @@ export default function Orders() {
           </section>
 
           {/* ── ORDER CARDS GRID ─────────────────────────────────────────── */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6" id="orders-list">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6" id="orders-list">
             {displayedOrders.length === 0 ? (
               <div className="col-span-full py-12 text-center flex flex-col items-center justify-center gap-2 bg-surface-container-low rounded-3xl border border-border-delicate/60 p-6">
                 <span className="material-symbols-outlined text-4xl text-outline">inventory_2</span>

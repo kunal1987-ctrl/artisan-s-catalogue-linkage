@@ -291,7 +291,7 @@ export default function Home({ customArtisanName } = {}) {
                 </div>
                 
                 {/* Product Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
                     {isLoading ? (
                         <div className="col-span-full flex flex-col items-center justify-center py-12">
                             <div className="w-8 h-8 border-3 border-primary/20 border-t-primary rounded-full animate-spin mb-3" />
@@ -336,7 +336,7 @@ export default function Home({ customArtisanName } = {}) {
                         </div>
                     ) : (
                         <>
-                            {products.slice(0, 3).map((product) => {
+                            {products.slice(0, 4).map((product) => {
                                 const isLow = (product.stock || product.qty || product.min_order_quantity || 1) <= 2;
                                 return (
                                     <div

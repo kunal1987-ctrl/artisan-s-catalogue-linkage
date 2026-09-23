@@ -703,8 +703,8 @@ export default function AiStudio() {
 
       {/* ── Government Verification Gatekeeper Modal ── */}
       {showVerificationModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-200 flex flex-col gap-4 text-gray-900">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl max-w-md w-full p-6 pb-8 sm:pb-6 shadow-2xl border border-gray-200 flex flex-col gap-4 text-gray-900 max-h-[90vh] overflow-y-auto transform transition-transform">
             <div className="flex items-center justify-between">
               <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 shrink-0">
                 <span className="text-2xl">⚠️</span>

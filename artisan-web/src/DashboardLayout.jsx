@@ -196,7 +196,7 @@ export default function DashboardLayout() {
       <Sidebar />
 
       {/* Main Routed Area */}
-      <main className="flex-1 flex flex-col min-w-0 min-h-screen bg-[#fdf9f3] pb-20 lg:pb-0 overflow-y-auto">
+      <main className="flex-1 flex flex-col min-w-0 min-h-screen bg-[#fdf9f3] pb-20 md:pb-6 overflow-y-auto">
         {/* Minimalist Mobile-First Sticky Top Navigation */}
         <header className="sticky top-0 z-40 w-full bg-white border-b border-gray-200 shadow-xs px-3 sm:px-4 py-2.5 sm:py-3 flex justify-between items-center">
           {/* Left-Side: Mobile Hamburger + Branding */}
@@ -205,7 +205,7 @@ export default function DashboardLayout() {
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen((prev) => !prev)}
-              className="lg:hidden w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 flex items-center justify-center transition-colors cursor-pointer border border-gray-200 active:scale-95"
+              className="md:hidden w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 flex items-center justify-center transition-colors cursor-pointer border border-gray-200 active:scale-95"
               aria-label={isMobileMenuOpen ? 'Close Menu' : 'Open Menu'}
               title="Menu"
             >
@@ -407,7 +407,7 @@ export default function DashboardLayout() {
 
         {/* Mobile Slide-Over Navigation Drawer */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden fixed inset-0 z-50 flex">
+          <div className="md:hidden fixed inset-0 z-50 flex">
             {/* Backdrop */}
             <div
               className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
@@ -589,19 +589,22 @@ export default function DashboardLayout() {
         <Outlet />
       </main>
 
-      {/* Mobile Bottom Navigation Bar */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#fdf9f3]/95 backdrop-blur-md border-t border-[#d1c4bd]/50 px-3 sm:px-4 py-2 flex items-center justify-around shadow-lg">
+      {/* Mobile Bottom Navigation Bar (Home, Catalog, AI Studio, Orders, Profile) */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-stone-200 flex justify-around items-center h-16 px-1 pb-safe shadow-lg">
+        {/* Home */}
         <NavLink
           to="/home"
           className={({ isActive }) =>
-            `flex flex-col items-center gap-0.5 text-[10px] sm:text-[11px] font-bold transition-colors min-w-[56px] py-1 ${
-              isActive ? 'text-primary' : 'text-on-surface-variant'
+            `flex flex-col items-center justify-center w-full h-full min-h-[44px] min-w-[44px] transition-colors ${
+              isActive ? 'text-[#9c441c] font-bold' : 'text-stone-500 hover:text-stone-800'
             }`
           }
         >
           <span className="material-symbols-outlined text-[22px]">cottage</span>
-          <span>{t('sidebar.home', 'Home')}</span>
+          <span className="text-[10px] font-medium mt-0.5">{t('sidebar.home', 'Home')}</span>
         </NavLink>
+
+        {/* Catalog */}
         <NavLink
           to="/catalog"
           className={({ isActive }) => {
@@ -609,35 +612,56 @@ export default function DashboardLayout() {
               isActive ||
               location.pathname.includes('/details') ||
               location.pathname.includes('/product');
-            return `flex flex-col items-center gap-0.5 text-[10px] sm:text-[11px] font-bold transition-colors min-w-[56px] py-1 ${
-              isCatalogActive ? 'text-primary' : 'text-on-surface-variant'
+            return `flex flex-col items-center justify-center w-full h-full min-h-[44px] min-w-[44px] transition-colors ${
+              isCatalogActive ? 'text-[#9c441c] font-bold' : 'text-stone-500 hover:text-stone-800'
             }`;
           }}
         >
           <span className="material-symbols-outlined text-[22px]">inventory_2</span>
-          <span>{t('sidebar.catalog', 'Catalog')}</span>
+          <span className="text-[10px] font-medium mt-0.5">{t('sidebar.catalog', 'Catalog')}</span>
         </NavLink>
-        {/* Floating Center Capture Button */}
+
+        {/* AI Studio (Center Primary Touch Target) */}
         <button
           onClick={(e) => handleAddCraftNavigation(navigate, e)}
-          className="w-12 h-12 -mt-5 rounded-full bg-primary text-white flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-transform border-2 border-white cursor-pointer shrink-0"
-          aria-label={t('sidebar.add_craft', 'Add Craft')}
+          type="button"
+          className="flex flex-col items-center justify-center w-full h-full min-h-[44px] min-w-[44px] text-stone-500 hover:text-amber-800 transition-colors group cursor-pointer"
+          title="AI Studio"
+          aria-label="AI Studio"
         >
-          <span className="material-symbols-outlined text-[24px]">photo_camera</span>
+          <div className="w-10 h-10 -mt-3 rounded-full bg-[#9c441c] text-white flex items-center justify-center shadow-md group-hover:scale-105 active:scale-95 transition-transform border-2 border-white shrink-0">
+            <span className="material-symbols-outlined text-[20px]">photo_camera</span>
+          </div>
+          <span className="text-[10px] font-bold text-[#9c441c] mt-0.5">Studio</span>
         </button>
+
+        {/* Orders */}
         <NavLink
           to="/orders"
           className={({ isActive }) =>
-            `flex flex-col items-center gap-0.5 text-[10px] sm:text-[11px] font-bold transition-colors relative min-w-[56px] py-1 ${
-              isActive ? 'text-primary' : 'text-on-surface-variant'
+            `flex flex-col items-center justify-center w-full h-full min-h-[44px] min-w-[44px] relative transition-colors ${
+              isActive ? 'text-[#9c441c] font-bold' : 'text-stone-500 hover:text-stone-800'
             }`
           }
         >
           <span className="material-symbols-outlined text-[22px]">receipt_long</span>
-          <span>{t('sidebar.orders', 'Orders')}</span>
+          <span className="text-[10px] font-medium mt-0.5">{t('sidebar.orders', 'Orders')}</span>
           {newOrderCount > 0 && (
-            <span className="w-2 h-2 rounded-full bg-[#9c441c] absolute top-1 right-2 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-[#9c441c] absolute top-2 right-1/4 animate-pulse ring-1 ring-white" />
           )}
+        </NavLink>
+
+        {/* Profile */}
+        <NavLink
+          to="/profile"
+          className={({ isActive }) =>
+            `flex flex-col items-center justify-center w-full h-full min-h-[44px] min-w-[44px] transition-colors ${
+              isActive ? 'text-[#9c441c] font-bold' : 'text-stone-500 hover:text-stone-800'
+            }`
+          }
+        >
+          <span className="material-symbols-outlined text-[22px]">person</span>
+          <span className="text-[10px] font-medium mt-0.5">{t('nav.profile', 'Profile')}</span>
         </NavLink>
       </nav>
     </div>

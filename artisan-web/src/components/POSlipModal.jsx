@@ -59,7 +59,7 @@ export default function POSlipModal({ order, onClose }) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="po-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 sm:p-6 overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs p-0 sm:p-6 overflow-y-auto"
       onClick={onClose}
     >
       <style>{`
@@ -81,6 +81,8 @@ export default function POSlipModal({ order, onClose }) {
             border: 1px solid #ddd !important;
             background: white !important;
             color: black !important;
+            max-height: none !important;
+            overflow: visible !important;
           }
           .no-print {
             display: none !important;
@@ -92,7 +94,7 @@ export default function POSlipModal({ order, onClose }) {
       <div
         id="po-slip-print-area"
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-3xl bg-white text-stone-900 rounded-2xl sm:rounded-3xl shadow-2xl border border-stone-200 overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200"
+        className="relative w-full max-w-3xl bg-white text-stone-900 rounded-t-3xl sm:rounded-3xl shadow-2xl border border-stone-200 overflow-hidden my-0 sm:my-auto max-h-[90vh] overflow-y-auto transform transition-transform animate-in fade-in duration-200"
       >
         {/* Top Header Controls (Hidden during print) */}
         <div className="no-print bg-stone-900 text-white px-3 sm:px-6 py-2.5 sm:py-3.5 flex items-center justify-between gap-2">
@@ -230,8 +232,8 @@ export default function POSlipModal({ order, onClose }) {
           </div>
 
           {/* Itemized Products Table */}
-          <div className="overflow-x-auto w-full rounded-2xl border border-stone-200 no-scrollbar">
-            <table className="w-full min-w-[480px] text-left border-collapse text-xs">
+          <div className="w-full overflow-x-auto rounded-xl border border-stone-200 shadow-sm">
+            <table className="w-full min-w-[600px] text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-stone-100 text-stone-700 uppercase font-extrabold tracking-wider border-b border-stone-200">
                   <th className="py-3 px-3 sm:px-4 w-10 sm:w-12 text-center">#</th>

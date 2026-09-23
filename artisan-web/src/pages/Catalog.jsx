@@ -407,7 +407,7 @@ export default function Catalog() {
                 </button>
               </div>
             ) : filteredProducts.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="productsGrid">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6" id="productsGrid">
                 {filteredProducts.map((p) => (
                   <div
                     key={p.id}
@@ -592,11 +592,11 @@ export default function Catalog() {
         {/* Product Quick Action Modal */}
         {selectedProduct && (
           <div
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4"
             onClick={() => setSelectedProduct(null)}
           >
             <div
-              className="bg-surface-container-lowest rounded-3xl max-w-md w-full p-6 shadow-2xl border border-surface-container flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-200"
+              className="bg-surface-container-lowest rounded-t-3xl sm:rounded-3xl max-w-md w-full p-6 pb-8 sm:pb-6 shadow-2xl border border-surface-container flex flex-col gap-4 animate-in fade-in duration-200 max-h-[90vh] overflow-y-auto transform transition-transform"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-start justify-between">

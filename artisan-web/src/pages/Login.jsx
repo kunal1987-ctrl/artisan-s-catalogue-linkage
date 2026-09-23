@@ -73,10 +73,12 @@ export default function Login() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin,
+          // This automatically uses the live URL in production and localhost during development
+          redirectTo: `${window.location.origin}/`,
         },
       });
       if (error) {
+        console.error("Error logging in:", error.message);
         setErrorMsg(error.message);
         setIsGoogleLoading(false);
       }

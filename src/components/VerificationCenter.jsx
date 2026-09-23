@@ -1,1 +1,1 @@
-export { default } from '../../artisan-web/src/pages/VerificationCenter';
+export { default } from '../../artisan-web/src/components/VerificationCenter';

@@ -55,6 +55,33 @@ export default function DashboardLayout() {
     };
   }, [isNotificationOpen]);
 
+  const [userProfile, setUserProfile] = useState(null);
+
+  useEffect(() => {
+    async function loadLayoutProfile() {
+      try {
+        let activeUserId = user?.id || session?.user?.id;
+        if (!activeUserId) {
+          const { data } = await supabase.auth.getUser();
+          activeUserId = data?.user?.id;
+        }
+        if (activeUserId) {
+          const { data } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', activeUserId)
+            .maybeSingle();
+          if (data) {
+            setUserProfile(data);
+          }
+        }
+      } catch (err) {
+        console.warn('DashboardLayout profile load notice:', err);
+      }
+    }
+    loadLayoutProfile();
+  }, [user?.id, session?.user?.id]);
+
   const isVerified = Boolean(
     artisanProfile?.verified ||
     isAuthenticated ||
@@ -317,6 +344,15 @@ export default function DashboardLayout() {
                 </div>
               )}
             </div>
+
+            {/* Dynamic Government Verified Badge: shown only if userProfile?.is_verified === true */}
+            {userProfile?.is_verified && (
+              <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-800 font-bold text-xs shadow-2xs">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span className="material-symbols-outlined text-[15px] text-emerald-600">verified</span>
+                <span>{t('nav.verified', 'Verified Artisan')}</span>
+              </span>
+            )}
 
             {/* Profile / Logout */}
             {isVerified ? (

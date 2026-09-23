@@ -1370,6 +1370,15 @@ export default function Capture() {
             </div>
 
             <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+              {/* Dynamic Government Verified Badge */}
+              {(artisanProfile?.isGovVerified || localStorage.getItem('artisan_gov_verified') === 'true') && (
+                <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-800 font-bold text-[11px] shadow-2xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span className="material-symbols-outlined text-[14px] text-emerald-600">verified</span>
+                  <span className="hidden sm:inline">{t('nav.verified', 'Verified Artisan')}</span>
+                </span>
+              )}
+
               {!isVerified && (
                 <button
                   type="button"

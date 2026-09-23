@@ -156,8 +156,37 @@ const speakHindi = (text = 'माफ करें, आवाज़ साफ �
 export default function Capture() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { user, artisanProfile, openAuthModal, showToast, language, toggleNotifications, unreadCount } = useAuth();
+  const {
+    user,
+    artisanProfile,
+    openAuthModal,
+    showToast,
+    language,
+    notifications = [],
+    markAllNotificationsRead,
+    toggleNotifications,
+    unreadCount,
+  } = useAuth();
   const isVerified = Boolean(artisanProfile?.verified || user?.is_phone_verified);
+
+  // State to control the notification dropdown
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const notificationRef = useRef(null);
+
+  // Close notification dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setIsNotificationOpen(false);
+      }
+    }
+    if (isNotificationOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isNotificationOpen]);
 
   // ── Camera & Gallery Input Refs ──
   const cameraRef = useRef(null);
@@ -1347,18 +1376,76 @@ export default function Capture() {
               {/* Language Toggle */}
               <LanguageToggle variant="light" className="h-8 sm:h-9" />
 
-              {/* Notification Bell */}
-              <button
-                onClick={toggleNotifications}
-                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#f1ede7] hover:bg-[#ebe8e2] border border-[#e8e2d9] flex items-center justify-center relative text-[#4e4540] cursor-pointer active:scale-95 transition-colors"
-                title="Notifications"
-                type="button"
-              >
-                <span className="material-symbols-outlined text-[17px] sm:text-[19px]">notifications</span>
-                {unreadCount > 0 && (
-                  <span className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-[#9c441c] absolute top-1 sm:top-1.5 right-1 sm:right-1.5 ring-2 ring-[#fdf9f3] animate-pulse"></span>
+              {/* Notification Bell with Dropdown Toggle */}
+              <div className="relative" ref={notificationRef}>
+                <button
+                  onClick={() => setIsNotificationOpen((prev) => !prev)}
+                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#f1ede7] hover:bg-[#ebe8e2] border border-[#e8e2d9] flex items-center justify-center relative text-[#4e4540] cursor-pointer active:scale-95 transition-colors"
+                  title="Notifications"
+                  aria-label="Notifications"
+                  aria-expanded={isNotificationOpen}
+                  type="button"
+                >
+                  <span className="material-symbols-outlined text-[17px] sm:text-[19px]">notifications</span>
+                  {unreadCount > 0 && (
+                    <span className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-[#9c441c] absolute top-1 sm:top-1.5 right-1 sm:right-1.5 ring-2 ring-[#fdf9f3] animate-pulse"></span>
+                  )}
+                </button>
+
+                {/* Dropdown Panel */}
+                {isNotificationOpen && (
+                  <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-white rounded-xl shadow-xl border border-stone-200 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+                    <div className="p-3 border-b border-stone-100 bg-stone-50 flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-stone-800 text-sm">Notifications</span>
+                        {unreadCount > 0 && (
+                          <span className="px-1.5 py-0.2 bg-[#ff9062] text-[#180f0a] rounded-full text-[10px] font-bold">
+                            {unreadCount}
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => setIsNotificationOpen(false)}
+                        className="text-stone-400 hover:text-stone-600 cursor-pointer"
+                        type="button"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">close</span>
+                      </button>
+                    </div>
+
+                    <div className="p-3 max-h-60 overflow-y-auto space-y-2">
+                      {notifications.length === 0 ? (
+                        <p className="text-sm text-stone-500 text-center py-3">No new notifications right now.</p>
+                      ) : (
+                        notifications.map((item) => (
+                          <div
+                            key={item.id}
+                            onClick={() => {
+                              if (item.link) {
+                                navigate(item.link);
+                                setIsNotificationOpen(false);
+                              }
+                            }}
+                            className={`p-2.5 rounded-lg border text-left cursor-pointer transition ${
+                              !item.read
+                                ? 'bg-[#fffaf7] border-[#ff9062]/40'
+                                : 'bg-white border-stone-100 opacity-80'
+                            }`}
+                          >
+                            <p className="text-xs font-bold text-stone-800 leading-tight">
+                              {language === 'hi' ? item.title_hi : item.title}
+                            </p>
+                            <p className="text-[11px] text-stone-600 mt-1 line-clamp-2">
+                              {language === 'hi' ? item.message_hi : item.message}
+                            </p>
+                            <span className="text-[10px] text-stone-400 mt-1 block">{item.time}</span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
                 )}
-              </button>
+              </div>
             </div>
           </div>
         </header>

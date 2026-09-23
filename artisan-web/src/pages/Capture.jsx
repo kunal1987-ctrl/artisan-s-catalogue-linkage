@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, Mic as MicrophoneIcon, AlertCircle as AlertCircleIcon } from 'lucide-react';
+import { Camera, Mic as MicrophoneIcon, AlertCircle as AlertCircleIcon, Trash2 as Trash2Icon } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
@@ -215,7 +215,7 @@ export default function Capture() {
   const [isCameraStarting, setIsCameraStarting] = useState(false);
   const [cameraError, setCameraError] = useState(null);
   const videoRef = useRef(null);
-  const streamRef = useRef(null);
+  const cameraStreamRef = useRef(null);
 
   // Object URL tracking to prevent memory leaks
   const previewUrlRef = useRef(null);
@@ -227,9 +227,9 @@ export default function Capture() {
       if (processedPreviewRef.current && processedPreviewRef.current.startsWith('blob:')) {
         URL.revokeObjectURL(processedPreviewRef.current);
       }
-      if (streamRef.current) {
+      if (cameraStreamRef.current) {
         try {
-          streamRef.current.getTracks().forEach((track) => track.stop());
+          cameraStreamRef.current.getTracks().forEach((track) => track.stop());
         } catch (e) {
           console.warn('Error stopping tracks on unmount:', e);
         }
@@ -253,7 +253,9 @@ export default function Capture() {
   }, [navigate]);
 
   // ── Audio / Description State ──
+  const [recordings, setRecordings] = useState([]); // Array of { id, text, audioUrl }
   const [isRecording, setIsRecording] = useState(false);
+  const [voiceError, setVoiceError] = useState('');
   const [audioLevel, setAudioLevel] = useState(0);
   const [audioBase64, setAudioBase64] = useState(null);
   const [audioBlob, setAudioBlob] = useState(null);
@@ -263,15 +265,18 @@ export default function Capture() {
   const [transcript, setTranscript] = useState('');
   const [audioTranscript, setAudioTranscript] = useState(null);
   const [customTranscript, setCustomTranscript] = useState('');
-  const [voiceError, setVoiceError] = useState('');
   const [category, setCategory] = useState(null);
   const [hsnCode, setHsnCode] = useState(null);
   const [extractedPrice, setExtractedPrice] = useState(null);
   const [extractedName, setExtractedName] = useState('');
   const [showAdvancedText, setShowAdvancedText] = useState(false);
+
+  // Refs to maintain stream references without triggering re-renders
   const mediaRecorderRef = useRef(null);
-  const recognitionRef = useRef(null);
+  const speechRecognitionRef = useRef(null);
   const audioChunksRef = useRef([]);
+  const currentTranscriptRef = useRef('');
+  const streamRef = useRef(null);
   const timerRef = useRef(null);
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
@@ -322,13 +327,13 @@ export default function Capture() {
     setBgRemovalStatus('idle');
 
     // Close any active camera stream
-    if (streamRef.current) {
+    if (cameraStreamRef.current) {
       try {
-        streamRef.current.getTracks().forEach((track) => track.stop());
+        cameraStreamRef.current.getTracks().forEach((track) => track.stop());
       } catch (e) {
         console.warn('Error stopping camera stream on reset:', e);
       }
-      streamRef.current = null;
+      cameraStreamRef.current = null;
     }
     if (videoRef.current) {
       videoRef.current.srcObject = null;
@@ -343,14 +348,23 @@ export default function Capture() {
     setAudioBlob(null);
     setLegacyAudioBlob(null);
     audioChunksRef.current = [];
+    currentTranscriptRef.current = '';
     setRecordingDuration(0);
     setTranscript('');
     setVoiceError('');
+    setRecordings((prev) => {
+      prev.forEach((r) => {
+        if (r.audioUrl) {
+          try { URL.revokeObjectURL(r.audioUrl); } catch (_) {}
+        }
+      });
+      return [];
+    });
     setAudioTranscript(null);
     setCustomTranscript('');
-    if (recognitionRef.current) {
-      try { recognitionRef.current.abort(); } catch (_e) { /* already stopped */ }
-      recognitionRef.current = null;
+    if (speechRecognitionRef.current) {
+      try { speechRecognitionRef.current.abort(); } catch (_e) { /* already stopped */ }
+      speechRecognitionRef.current = null;
     }
     setCategory(null);
     setHsnCode(null);
@@ -378,6 +392,19 @@ export default function Capture() {
   const [isLangModalOpen, setIsLangModalOpen] = useState(false);
   const [transcriptionLang, setTranscriptionLang] = useState('hi');
 
+  const deleteRecording = useCallback((idToRemove) => {
+    setRecordings((prev) => {
+      const target = prev.find((rec) => rec.id === idToRemove);
+      if (target?.audioUrl) {
+        try { URL.revokeObjectURL(target.audioUrl); } catch (_) {}
+      }
+      return prev.filter((rec) => rec.id !== idToRemove);
+    });
+  }, []);
+
+  // Derive the full description for the database/Gemini by joining all valid text blocks
+  const fullDescription = recordings.map((rec) => rec.text).join('. ');
+
   // ── AI Processing State ──
   const [aiStatus, setAiStatus] = useState('idle'); // idle | transcribing | analyzing | done | error
   const [aiStatusText, setAiStatusText] = useState('');
@@ -385,8 +412,8 @@ export default function Capture() {
 
   // ── Multi-Modal State Dependency Flags ──
   const hasImage = Boolean(images.length > 0 || image || imageFile || imageBase64 || imageUrl || processedPreview || previewUrl);
-  const textDescription = (transcript || customTranscript || audioTranscript || '').trim();
-  const hasDescription = Boolean(textDescription.length > 0 || Boolean(audioBase64) || Boolean(audioBlob) || Boolean(_audioBlob));
+  const textDescription = (fullDescription || transcript || customTranscript || audioTranscript || '').trim();
+  const hasDescription = Boolean(textDescription.length > 0 || recordings.length > 0 || Boolean(audioBase64) || Boolean(audioBlob) || Boolean(_audioBlob));
   const isReadyToProcess = Boolean(hasImage && hasDescription);
 
   const { speakPrompt, stop } = useAudioAssistant();
@@ -701,13 +728,13 @@ export default function Capture() {
   // ════════════════════════════════════════════
 
   const closeLiveCamera = useCallback(() => {
-    if (streamRef.current) {
+    if (cameraStreamRef.current) {
       try {
-        streamRef.current.getTracks().forEach((track) => track.stop());
+        cameraStreamRef.current.getTracks().forEach((track) => track.stop());
       } catch (err) {
         console.warn('Error stopping camera stream tracks:', err);
       }
-      streamRef.current = null;
+      cameraStreamRef.current = null;
     }
     if (videoRef.current) {
       videoRef.current.srcObject = null;
@@ -729,13 +756,13 @@ export default function Capture() {
     }
 
     // Stop existing stream if any
-    if (streamRef.current) {
+    if (cameraStreamRef.current) {
       try {
-        streamRef.current.getTracks().forEach((t) => t.stop());
+        cameraStreamRef.current.getTracks().forEach((t) => t.stop());
       } catch (e) {
         console.warn('Error stopping previous stream:', e);
       }
-      streamRef.current = null;
+      cameraStreamRef.current = null;
     }
 
     setIsCameraStarting(true);
@@ -762,7 +789,7 @@ export default function Capture() {
         });
       }
 
-      streamRef.current = stream;
+      cameraStreamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.setAttribute('playsinline', 'true');
@@ -877,21 +904,34 @@ export default function Capture() {
   // AUDIO RECORDING & FALLBACK
   // ════════════════════════════════════════════
 
-  const startRecording = useCallback(async () => {
-    // Immediately silence any active audio assistant speech before microphone turns on
-    stop();
-    setVoiceError('');
-    setTranscript('');
-    try {
-      if (!navigator.mediaDevices?.getUserMedia) {
-        throw new Error('MediaDevices API not supported on this browser');
-      }
+  // ════════════════════════════════════════════
+  // SYNCHRONIZED AUDIO RECORDING & WEB SPEECH API
+  // ════════════════════════════════════════════
 
+  const toggleRecording = useCallback(async () => {
+    setVoiceError('');
+
+    // If already recording, stop it manually
+    if (isRecording) {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+      }
+      if (speechRecognitionRef.current) {
+        try { speechRecognitionRef.current.stop(); } catch (_) {}
+      }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+      }
+      setIsRecording(false);
+      return;
+    }
+
+    // Start new recording
+    try {
+      // Immediately silence any active audio assistant speech before microphone turns on
+      stop();
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
-      setRecordingDuration(0);
+      streamRef.current = stream;
       setMicUnavailable(false);
 
       // Real-time audio level feedback via Web Audio API Analyser
@@ -924,22 +964,88 @@ export default function Capture() {
         console.warn('AudioContext analyser init:', audioErr);
       }
 
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      // 1. Setup Audio File Recording
+      mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      audioChunksRef.current = [];
+      setRecordingDuration(0);
+
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        if (event.data.size > 0) audioChunksRef.current.push(event.data);
       };
 
-      mediaRecorder.onstop = async () => {
-        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        setAudioBlob(blob);
+      // 2. Setup Speech Recognition
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        throw new Error('Speech recognition not supported in this browser.');
+      }
 
-        try {
-          const base64String = await blobToBase64(blob);
-          setAudioBase64(base64String);
-        } catch (err) {
-          console.error('Audio base64 conversion error:', err);
+      const langMap = {
+        hi: 'hi-IN',
+        en: 'en-IN',
+        bn: 'bn-IN',
+        ta: 'ta-IN',
+        te: 'te-IN',
+        mr: 'mr-IN',
+        gu: 'gu-IN',
+        kn: 'kn-IN',
+        ml: 'ml-IN',
+        pa: 'pa-IN',
+        or: 'or-IN',
+        as: 'as-IN',
+        ur: 'ur-IN',
+      };
+
+      const recognition = new SpeechRecognition();
+      recognition.lang = langMap[transcriptionLang] || 'en-IN';
+      recognition.interimResults = true;
+      recognition.continuous = true;
+      currentTranscriptRef.current = '';
+
+      recognition.onresult = (event) => {
+        let finalTranscript = '';
+        let interimTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+          } else {
+            interimTranscript += event.results[i][0].transcript;
+          }
         }
+        if (finalTranscript) {
+          currentTranscriptRef.current += (currentTranscriptRef.current ? ' ' : '') + finalTranscript;
+          setTranscript(currentTranscriptRef.current);
+          setVoiceError('');
+        } else if (interimTranscript) {
+          setTranscript(currentTranscriptRef.current ? `${currentTranscriptRef.current} ${interimTranscript}` : interimTranscript);
+        }
+      };
 
-        stream.getTracks().forEach((t) => t.stop());
+      recognition.onerror = (event) => {
+        console.warn('Speech recognition error:', event.error);
+        if (event.error === 'no-speech' || event.error === 'audio-capture') {
+          setVoiceError(
+            language === 'hi'
+              ? 'कोई आवाज़ नहीं मिली। कृपया माइक दबाकर स्पष्ट बोलें।'
+              : 'No voice detected. Please tap the mic and speak clearly.'
+          );
+        } else if (event.error === 'not-allowed') {
+          setVoiceError(
+            language === 'hi'
+              ? 'माइक्रोफ़ोन अनुमति अस्वीकृत। कृपया ब्राउज़र सेटिंग्स में अनुमति दें।'
+              : 'Microphone access denied. Please allow permissions.'
+          );
+        }
+      };
+
+      // 3. Handle Completion (Fires when artisan stops speaking)
+      recognition.onend = () => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+          mediaRecorderRef.current.stop(); // Stop audio recording when speech ends
+        }
+      };
+
+      mediaRecorderRef.current.onstop = () => {
+        setIsRecording(false);
         if (timerRef.current) clearInterval(timerRef.current);
         if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
         if (audioContextRef.current) {
@@ -947,161 +1053,63 @@ export default function Capture() {
           audioContextRef.current = null;
         }
         setAudioLevel(0);
+
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach((track) => track.stop()); // Kill mic light
+        }
+
+        // If nothing was transcribed, throw error
+        if (!currentTranscriptRef.current.trim()) {
+          setVoiceError('No voice detected. Please tap the mic and speak clearly.');
+          return;
+        }
+
+        // Save the combined audio file and text to state
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        setAudioBlob(audioBlob);
+        blobToBase64(audioBlob).then((b64) => setAudioBase64(b64)).catch(() => {});
+
+        const newText = currentTranscriptRef.current.trim();
+        setRecordings((prev) => [
+          ...prev,
+          {
+            id: Date.now(),
+            text: newText,
+            audioUrl,
+          },
+        ]);
+        setTranscript('');
       };
 
-      mediaRecorder.start(250);
+      speechRecognitionRef.current = recognition;
+
+      // Start both engines
+      mediaRecorderRef.current.start(250);
+      try {
+        recognition.start();
+      } catch (speechErr) {
+        console.warn('SpeechRecognition start error:', speechErr);
+      }
       setIsRecording(true);
 
       timerRef.current = setInterval(() => {
         setRecordingDuration((prev) => prev + 1);
       }, 1000);
 
-      // ── Parallel Web Speech API for real-time transcription ──
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        const recognition = new SpeechRecognition();
-        // Map transcriptionLang code to BCP-47 for SpeechRecognition
-        const langMap = {
-          hi: 'hi-IN',
-          en: 'en-IN',
-          bn: 'bn-IN',
-          ta: 'ta-IN',
-          te: 'te-IN',
-          mr: 'mr-IN',
-          gu: 'gu-IN',
-          kn: 'kn-IN',
-          ml: 'ml-IN',
-          pa: 'pa-IN',
-          or: 'or-IN',
-          as: 'as-IN',
-          ur: 'ur-IN',
-        };
-        recognition.lang = langMap[transcriptionLang] || 'hi-IN';
-        recognition.interimResults = true;
-        recognition.continuous = true;
-        recognition.maxAlternatives = 1;
-
-        recognition.onresult = (event) => {
-          let finalTranscript = '';
-          let interimTranscript = '';
-          for (let i = 0; i < event.results.length; i++) {
-            const result = event.results[i];
-            if (result.isFinal) {
-              finalTranscript += result[0].transcript;
-            } else {
-              interimTranscript += result[0].transcript;
-            }
-          }
-          const combinedText = (finalTranscript || interimTranscript).trim();
-          if (combinedText) {
-            setTranscript(combinedText);
-            setVoiceError('');
-          }
-        };
-
-        recognition.onerror = (event) => {
-          console.error('Speech recognition error:', event.error);
-          if (event.error === 'no-speech' || event.error === 'audio-capture') {
-            setVoiceError(
-              language === 'hi'
-                ? 'आवाज़ ठीक से रिकॉर्ड नहीं हुई। कृपया माइक दबाकर दोबारा बोलें।'
-                : 'Voice did not properly record. Please tap the microphone and speak again.'
-            );
-          } else if (event.error === 'not-allowed') {
-            setVoiceError(
-              language === 'hi'
-                ? 'माइक्रोफ़ोन अनुमति अस्वीकृत। कृपया ब्राउज़र सेटिंग्स में माइक की अनुमति दें।'
-                : 'Microphone access denied. Please allow microphone permissions in browser settings.'
-            );
-          } else if (event.error !== 'aborted') {
-            setVoiceError(
-              language === 'hi'
-                ? 'रिकॉर्डिंग में त्रुटि हुई। कृपया पुनः प्रयास करें।'
-                : 'An error occurred while recording. Please try again.'
-            );
-          }
-        };
-
-        recognition.onend = () => {
-          // If recognition ended but transcript is still empty, alert user
-          setTranscript((prev) => {
-            if (!prev) {
-              setVoiceError(
-                language === 'hi'
-                  ? 'कोई आवाज़ नहीं मिली। कृपया माइक के पास स्पष्ट रूप से बोलें।'
-                  : 'No voice detected. Please speak clearly into the microphone.'
-              );
-            }
-            return prev;
-          });
-        };
-
-        try {
-          recognition.start();
-          recognitionRef.current = recognition;
-        } catch (speechErr) {
-          console.warn('SpeechRecognition start error:', speechErr);
-        }
-      }
-    } catch (err) {
-      console.warn('Microphone access unavailable or denied:', err);
-      setMicUnavailable(true);
-      const isDenied =
-        err?.name === 'NotAllowedError' ||
-        err?.name === 'PermissionDeniedError' ||
-        String(err?.message || '').toLowerCase().includes('permission') ||
-        String(err?.message || '').toLowerCase().includes('denied');
-
-      if (showToast) {
-        showToast('Microphone access denied. Using text fallback.');
-      }
-      setErrorMsg(
-        isDenied
-          ? (language === 'hi'
-              ? 'माइक्रोफ़ोन अनुमति अस्वीकृत। कृपया नीचे दिए गए त्वरित विकल्पों में से चुनें या लिखें।'
-              : 'Microphone access denied. Using text fallback.')
-          : (language === 'hi'
-              ? 'माइक्रोफ़ोन अनुपलब्ध है। कृपया नीचे दिए गए विकल्पों में से चुनें।'
-              : 'Microphone unavailable. Using text fallback.')
+    } catch (error) {
+      console.error('Microphone Error:', error);
+      setIsRecording(false);
+      setVoiceError(
+        error.message?.includes('Permission') || error.message?.includes('denied')
+          ? 'Microphone access denied. Please allow permissions.'
+          : 'Error accessing microphone. Please try again.'
       );
     }
-  }, [language, showToast, transcriptionLang]);
+  }, [isRecording, language, stop, transcriptionLang]);
 
-  const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      if (timerRef.current) clearInterval(timerRef.current);
-      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-      if (audioContextRef.current) {
-        audioContextRef.current.close().catch(() => {});
-        audioContextRef.current = null;
-      }
-      setAudioLevel(0);
-    }
-    // Stop parallel SpeechRecognition gracefully
-    if (recognitionRef.current) {
-      try { recognitionRef.current.stop(); } catch (_e) { /* already stopped */ }
-      recognitionRef.current = null;
-    }
-    // Propagate final transcript to audioTranscript / customTranscript for edge function
-    setTranscript((prev) => {
-      if (prev && prev.trim()) {
-        setAudioTranscript(prev.trim());
-        setCustomTranscript(prev.trim());
-      }
-      return prev;
-    });
-  }, []);
-
-  const toggleRecording = useCallback(async () => {
-    if (isRecording) {
-      stopRecording();
-    } else {
-      await startRecording();
-    }
-  }, [isRecording, startRecording, stopRecording]);
-
+  const startRecording = toggleRecording;
+  const stopRecording = toggleRecording;
 
   const formatDuration = (secs) => {
     const m = Math.floor(secs / 60).toString().padStart(2, '0');
@@ -1121,8 +1129,8 @@ export default function Capture() {
     }
 
     const hasImg = Boolean(image || imageFile || imageBase64 || imageUrl || processedPreview || previewUrl);
-    const activeText = (transcript || customTranscript || audioTranscript || '').trim();
-    const hasDesc = Boolean(activeText.length > 0 || Boolean(audioBase64) || Boolean(audioBlob) || Boolean(_audioBlob));
+    const activeText = (fullDescription || transcript || customTranscript || audioTranscript || '').trim();
+    const hasDesc = Boolean(activeText.length > 0 || recordings.length > 0 || Boolean(audioBase64) || Boolean(audioBlob) || Boolean(_audioBlob));
 
     // ── Strict Sequential Validation (Image & Description Dependency) ──
     // Scenario A: Voice/Text only, No Image
@@ -1965,7 +1973,7 @@ export default function Capture() {
                   {/* Microphone Button */}
                   <button 
                     type="button"
-                    onClick={isRecording ? stopRecording : startRecording}
+                    onClick={toggleRecording}
                     className={`p-4 rounded-full transition-all duration-300 ${
                       isRecording 
                         ? 'bg-red-500 text-white animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.5)]' 
@@ -1981,9 +1989,9 @@ export default function Capture() {
                       <p className="text-sm font-medium text-amber-600 animate-pulse">
                         Listening...
                       </p>
-                    ) : transcript ? (
+                    ) : (fullDescription || transcript) ? (
                       <p className="text-sm font-medium text-stone-800 italic bg-stone-50 p-3 rounded-lg border border-stone-200">
-                        "{transcript}"
+                        "{fullDescription || transcript}"
                       </p>
                     ) : (
                       <p className="text-sm text-stone-400">
@@ -1996,6 +2004,44 @@ export default function Capture() {
                       <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg flex items-center justify-center gap-2 text-red-600 text-xs font-semibold">
                         <AlertCircleIcon className="w-4 h-4"/>
                         <span>{voiceError}</span>
+                      </div>
+                    )}
+
+                    {/* Playable Audio Clips List with Individual Deletion */}
+                    {recordings.length > 0 && (
+                      <div className="mt-4 flex flex-col gap-2 w-full text-left">
+                        <div className="text-xs font-semibold text-stone-600 flex items-center justify-between px-1">
+                          <span>{language === 'hi' ? 'वॉयस क्लिप्स' : 'Voice Clips'} ({recordings.length})</span>
+                          <span className="text-[11px] text-stone-400">{language === 'hi' ? 'हटाने हेतु क्लिक करें' : 'Tap to delete clip'}</span>
+                        </div>
+                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                          {recordings.map((rec, idx) => (
+                            <div 
+                              key={rec.id} 
+                              className="flex items-center gap-2 p-2 rounded-lg bg-stone-50 border border-stone-200 shadow-xs"
+                            >
+                              <span className="text-xs font-bold text-stone-500 w-5 text-center shrink-0">#{idx + 1}</span>
+                              <audio 
+                                src={rec.audioUrl} 
+                                controls 
+                                className="h-8 flex-1 max-w-[220px] sm:max-w-xs" 
+                                preload="metadata"
+                              />
+                              <span className="text-xs text-stone-700 truncate flex-1 hidden sm:inline" title={rec.text}>
+                                "{rec.text}"
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => deleteRecording(rec.id)}
+                                className="p-1.5 rounded-md text-red-500 hover:text-red-700 hover:bg-red-100 transition-colors shrink-0 cursor-pointer"
+                                title="Delete recording"
+                                aria-label="Delete recording"
+                              >
+                                <Trash2Icon className="w-4 h-4"/>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>

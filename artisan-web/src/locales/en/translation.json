@@ -127,7 +127,7 @@
   },
   "audio_prompts": {
     "home": "Welcome to Shilp Setu! To list a new handcrafted item, tap the Add Craft button.",
-    "camera_step": "Please take a clear photo of your craft or choose one from your gallery.",
+    "camera_step": "Please capture a clear live photo of your craft using the camera.",
     "voice_step": "Photo ready! Now tap the microphone and describe your craft in your own language.",
     "review": "Please review your craft details and price. When ready, tap Publish to list your product.",
     "soundbox_success": "Congratulations! Your {{title}} has been successfully listed for {{price}} rupees.",
@@ -136,7 +136,7 @@
     "unmute": "Unmute Audio Assistant",
     "audio_speaking": "Audio assistant is speaking — tap to mute",
     "product_readback": "{{title}}. {{description}} Price: {{price}} rupees.",
-    "capture_instruction": "Take a photo or choose from your gallery, then speak to describe your product.",
+    "capture_instruction": "Capture a live photo of your craft using the camera, then speak to describe your product.",
     "language_selected": "English language selected.",
     "smart_appraisal": "Market price suggested based on your photo. You can edit this if needed."
   },

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Camera, Upload } from 'lucide-react';
+import { Camera } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
@@ -188,9 +188,8 @@ export default function Capture() {
     };
   }, [isNotificationOpen]);
 
-  // ── Camera & Gallery Input Refs ──
+  // ── Camera Input Ref ──
   const cameraRef = useRef(null);
-  const galleryRef = useRef(null);
 
   // ── Multi-Image State & Dependencies ──
   const [images, setImages] = useState([]); // Array of { id, blob, file, previewUrl, base64 }
@@ -357,7 +356,6 @@ export default function Capture() {
     setErrorMsg('');
 
     if (cameraRef.current) cameraRef.current.value = '';
-    if (galleryRef.current) galleryRef.current.value = '';
   }, []);
 
   // State Cleanup: Explicitly reset imageBlob, base64String, and audioTranscript to null on mount
@@ -648,27 +646,6 @@ export default function Capture() {
     }
 
     await addImageToState(file);
-  }, [addImageToState, language, showToast]);
-
-  // File picker handler (supports multi-select with micro-canvas validation)
-  const handleFileSelect = useCallback(async (e) => {
-    const fileList = e.target.files;
-    if (!fileList || fileList.length === 0) return;
-    const files = Array.from(fileList);
-    e.target.value = '';
-
-    for (const file of files) {
-      const validation = await validateImageLightweight(file);
-      if (!validation.valid) {
-        const msg = getLocalizedValidationReason(validation.reason, language);
-        if (showToast) showToast(`⚠️ ${msg}`);
-        if (language === 'hi') {
-          speakHindi(msg);
-        }
-        continue;
-      }
-      await addImageToState(file);
-    }
   }, [addImageToState, language, showToast]);
 
   const handleImageSelection = handlePhotoCapture;
@@ -1527,7 +1504,7 @@ export default function Capture() {
                       <path d="M 84 100 L 100 100 L 100 84" fill="none" stroke="#ff9062" strokeLinecap="round" strokeWidth="3" />
                     </svg>
 
-                    <div className="flex justify-center items-center gap-6 my-4 z-10">
+                    <div className="flex flex-col items-center justify-center my-4 z-10">
                       <button 
                         type="button"
                         id="open-camera-btn"
@@ -1535,26 +1512,17 @@ export default function Capture() {
                           e.stopPropagation();
                           openLiveCamera();
                         }}
-                        className="p-4 bg-orange-100 text-orange-600 rounded-full hover:bg-orange-200 transition-colors shadow-sm flex flex-col items-center gap-1 cursor-pointer active:scale-95"
-                        title="Open Camera"
+                        className="p-5 bg-[#ff9062] text-white rounded-full hover:bg-[#ff7b44] transition-all shadow-lg flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95 group-hover:scale-105"
+                        title={language === 'hi' ? 'कैमरा खोलें' : 'Open Camera'}
                       >
-                        <Camera size={28}/>
-                        <span className="text-xs font-medium">Camera</span>
+                        <Camera size={32}/>
                       </button>
-
-                      <button 
-                        type="button"
-                        id="upload-gallery-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          galleryRef.current?.click();
-                        }}
-                        className="p-4 bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-colors shadow-sm flex flex-col items-center gap-1 cursor-pointer active:scale-95"
-                        title="Upload from Gallery"
-                      >
-                        <Upload size={28}/>
-                        <span className="text-xs font-medium">Gallery</span>
-                      </button>
+                      <span className="text-xs font-semibold text-white/90 mt-2 tracking-wide">
+                        {language === 'hi' ? 'लाइव कैमरा खोलें' : 'Open Live Camera'}
+                      </span>
+                      <span className="text-[10px] text-stone-400 mt-0.5">
+                        {language === 'hi' ? 'सत्यापन के लिए केवल लाइव फोटो मान्य' : 'Live photo verification required'}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -2089,9 +2057,10 @@ export default function Capture() {
                   cameraRef.current?.click();
                 }}
                 className="text-stone-400 hover:text-white text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                title={language === 'hi' ? 'कैमरा ऐप खोलें' : 'Open Device Camera'}
               >
-                <span className="material-symbols-outlined text-[16px]">file_upload</span>
-                <span>{language === 'hi' ? 'नेटिव ऐप' : 'Native App'}</span>
+                <span className="material-symbols-outlined text-[16px]">photo_camera</span>
+                <span>{language === 'hi' ? 'कैमरा ऐप' : 'Camera App'}</span>
               </button>
 
               {/* Shutter Button */}
@@ -2106,17 +2075,8 @@ export default function Capture() {
                 <div className="w-full h-full rounded-full bg-[#ff9062] group-hover:bg-[#ff7b44] group-active:scale-95 transition-all shadow-inner" />
               </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  closeLiveCamera();
-                  galleryRef.current?.click();
-                }}
-                className="text-stone-400 hover:text-white text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[16px]">photo_library</span>
-                <span>{language === 'hi' ? 'गैलरी' : 'Gallery'}</span>
-              </button>
+              {/* Layout spacer to keep shutter button centered */}
+              <div className="w-16 sm:w-20" aria-hidden="true" />
             </div>
           </div>
         </div>
@@ -2138,15 +2098,6 @@ export default function Capture() {
         capture="environment" 
         ref={cameraRef}
         onChange={handlePhotoCapture} 
-        className="hidden" 
-      />
-      {/* Opens native gallery / file picker with multiple support */}
-      <input 
-        type="file" 
-        accept="image/*" 
-        multiple
-        ref={galleryRef}
-        onChange={handleFileSelect} 
         className="hidden" 
       />
       {/* Global Notification Drawer & Toast Bar */}

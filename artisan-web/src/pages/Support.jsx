@@ -53,8 +53,8 @@ export default function Support() {
         ? 'एआई स्टूडियो से नया शिल्प कैसे जोड़ें?'
         : 'How do I capture and upload crafts with AI Studio?',
       answer: language === 'hi'
-        ? 'नीचे या साइडबार में दिए गए कैमरा आइकन पर क्लिक करें। अपने फोन से फोटो खींचें या गैलरी से चुनें। शिल्प सेतु का एआई सहायक स्वतः बैकग्राउंड हटा देगा, विवरण तैयार करेगा और उपयुक्त एचएसएन कोड सुझाएगा।'
-        : 'Click the Camera icon in your navigation, take a photo or select an image from your device gallery. Shilp Setu\'s AI Studio will automatically remove backgrounds, generate bilingual craft stories, and suggest official HSN codes.',
+        ? 'नीचे या साइडबार में दिए गए कैमरा आइकन पर क्लिक करें। अपने फोन के कैमरे से वास्तविक उत्पाद की लाइव फोटो खींचें। शिल्प सेतु का एआई सहायक स्वतः बैकग्राउंड हटा देगा, विवरण तैयार करेगा और उपयुक्त एचएसएन कोड सुझाएगा।'
+        : 'Click the Camera icon in your navigation and capture a live photo of your craft. Shilp Setu\'s AI Studio will automatically remove backgrounds, generate bilingual craft stories, and suggest official HSN codes.',
     },
     {
       id: 5,

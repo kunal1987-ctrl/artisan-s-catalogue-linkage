@@ -1,7 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import { Camera } from 'lucide-react';
+import { Camera, Mic as MicrophoneIcon, AlertCircle as AlertCircleIcon } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
@@ -1962,78 +1961,45 @@ export default function Capture() {
                   )}
                 </div>
 
-                {/* Microphone Button with visual feedback and pulsing ripple effect */}
-                <div className="relative my-3 flex items-center justify-center">
-                  {!isRecording && !isLoading && !audioBase64 && (
-                    <div className="absolute w-24 h-24 rounded-full bg-amber-600/30 animate-ping pointer-events-none" />
-                  )}
-                  {isRecording && (
-                    <>
-                      <div className="absolute w-36 h-36 rounded-full bg-red-500/20 animate-ping duration-1000" />
-                      <div className="absolute w-28 h-28 rounded-full bg-red-500/30 animate-pulse" />
-                      <div className="absolute w-24 h-24 rounded-full border-2 border-red-400/80 animate-ping" />
-                    </>
-                  )}
-                  <button
-                    id="record-mic-btn"
-                    aria-label={language === 'hi' ? 'माइक दबाकर बोलें' : 'Record Voice Note'}
-                    title={language === 'hi' ? 'माइक दबाकर बोलें' : 'Record Voice Note'}
-                    disabled={isLoading}
-                    onClick={() => {
-                      if (!isLoading) toggleRecording();
-                    }}
-                    className={`relative z-10 w-20 h-20 rounded-full shadow-2xl flex items-center justify-center transform transition-transform duration-200 hover:scale-105 active:scale-95 focus:outline-none border-2 ${
-                      isLoading
-                        ? 'opacity-40 cursor-not-allowed border-stone-600 bg-stone-800 text-stone-500'
-                        : isRecording
-                        ? 'bg-red-600 border-red-400 text-white animate-pulse cursor-pointer'
-                        : audioBase64
-                        ? 'bg-emerald-600 border-emerald-400 text-white cursor-pointer'
-                        : 'bg-[#9c441c] hover:bg-[#b04d20] border-[#ff9062]/40 text-white cursor-pointer'
-                    }`}
+                <div className="flex flex-col items-center justify-center w-full mt-4">
+                  {/* Microphone Button */}
+                  <button 
                     type="button"
+                    onClick={isRecording ? stopRecording : startRecording}
+                    className={`p-4 rounded-full transition-all duration-300 ${
+                      isRecording 
+                        ? 'bg-red-500 text-white animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.5)]' 
+                        : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                    }`}
                   >
-                    <span className="material-symbols-outlined text-[36px] text-white">
-                      {isRecording ? 'stop' : audioBase64 ? 'check' : 'mic'}
-                    </span>
+                    <MicrophoneIcon className="w-8 h-8"/>
                   </button>
-                </div>
 
-                {/* Dynamic Transcription Display */}
-                <div className="text-center px-4 mt-2 min-h-[3rem]">
-                  <h3 className="text-[16px] font-bold text-white mb-1">
-                    {isRecording
-                      ? (language === 'hi' ? `रिकॉर्डिंग चालू... ${formatDuration(recordingDuration)}` : `Recording... ${formatDuration(recordingDuration)}`)
-                      : audioBase64
-                      ? (language === 'hi' ? `वॉयस नोट सहेजा गया ✓ (${formatDuration(recordingDuration)})` : `Voice note recorded ✓ (${formatDuration(recordingDuration)})`)
-                      : (language === 'hi' ? 'बोलकर शिल्प की विशेषताएं बताएं' : 'Tap mic and describe your craft naturally')}
-                  </h3>
-                  <p className="text-[12px] text-[#d4c3ba] leading-relaxed italic">
-                    {isRecording
-                      ? (transcript
-                          ? <span className="text-emerald-300 not-italic font-medium">"{transcript}"</span>
-                          : (language === 'hi' ? 'अपनी भाषा में बोलें (सामग्री, बनाने का समय, उचित मूल्य)...' : 'Speak naturally (materials, crafting time, expected price)...'))
-                      : transcript
-                      ? <span className="text-emerald-300 not-italic font-medium">"{transcript}"</span>
-                      : (language === 'hi' ? 'माइक दबाएं और अपने शिल्प के बारे में बोलें' : 'Tap mic and describe your craft in your own words')}
-                  </p>
-                </div>
+                  {/* Dynamic Transcription Display */}
+                  <div className="mt-4 min-h-[3rem] text-center w-full max-w-md">
+                    {isRecording ? (
+                      <p className="text-sm font-medium text-amber-600 animate-pulse">
+                        Listening...
+                      </p>
+                    ) : transcript ? (
+                      <p className="text-sm font-medium text-stone-800 italic bg-stone-50 p-3 rounded-lg border border-stone-200">
+                        "{transcript}"
+                      </p>
+                    ) : (
+                      <p className="text-sm text-stone-400">
+                        Tap the microphone to describe your product
+                      </p>
+                    )}
 
-                {/* Strict Error Handling Feedback — rendered directly below mic button */}
-                {voiceError && (
-                  <div className="mt-3 mx-auto max-w-sm p-3 rounded-xl bg-red-900/50 border border-red-500/40 text-red-200 text-xs font-medium flex items-center justify-center gap-2 animate-in fade-in duration-200">
-                    <span className="material-symbols-outlined text-[18px] text-red-400 shrink-0">warning</span>
-                    <span>{voiceError}</span>
-                    <button
-                      type="button"
-                      onClick={() => setVoiceError('')}
-                      className="ml-auto shrink-0 w-6 h-6 rounded-full bg-red-800/60 hover:bg-red-700/60 text-red-300 flex items-center justify-center transition-colors cursor-pointer"
-                      aria-label="Dismiss"
-                    >
-                      <span className="material-symbols-outlined text-[14px]">close</span>
-                    </button>
+                    {/* Strict Error Handling Feedback */}
+                    {voiceError && (
+                      <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg flex items-center justify-center gap-2 text-red-600 text-xs font-semibold">
+                        <AlertCircleIcon className="w-4 h-4"/>
+                        <span>{voiceError}</span>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
 
 
                 {/* ── Fallback Text & 1-Tap Craft Chips ── */}

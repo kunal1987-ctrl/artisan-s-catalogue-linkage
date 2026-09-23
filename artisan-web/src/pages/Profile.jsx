@@ -13,7 +13,8 @@ import {
   Tag, 
   Phone, 
   Mail,
-  Loader2
+  Loader2,
+  IndianRupee
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
@@ -435,6 +436,27 @@ export default function Profile() {
                 </h3>
                 <p className="text-xs text-gray-500">
                   {language === 'hi' ? 'MoSJE, पहचान पत्र अथवा उद्यम आधार सत्यापन' : 'MoSJE ID, Pehchan card, or Udyam Aadhaar'}
+                </p>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-gray-700 group-hover:translate-x-0.5 transition-all" />
+          </div>
+
+          {/* 4. Payments & Settlements */}
+          <div
+            onClick={() => navigate('/payments')}
+            className="bg-white border border-gray-200 hover:bg-gray-50 p-4 rounded-xl flex items-center justify-between transition-colors cursor-pointer shadow-xs group"
+          >
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-lg bg-green-50 border border-green-100 text-green-700 flex items-center justify-center shrink-0">
+                <IndianRupee className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-sm text-gray-900 group-hover:text-blue-600 transition-colors">
+                  Payments & Settlements (भुगतान एवं निपटान)
+                </h3>
+                <p className="text-xs text-gray-500">
+                  {language === 'hi' ? '2% ONDC प्लेटफ़ॉर्म शुल्क विवरणी एवं बैंक जमा राशि' : 'Transparent 2% platform fee breakdown & bank payouts'}
                 </p>
               </div>
             </div>

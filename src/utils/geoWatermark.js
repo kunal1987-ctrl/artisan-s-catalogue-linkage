@@ -1,1 +1,1 @@
-export { default, addGeoWatermark } from '../../artisan-web/src/utils/geoWatermark';
+export { addGeoWatermark, default } from '../../artisan-web/src/utils/geoWatermark';

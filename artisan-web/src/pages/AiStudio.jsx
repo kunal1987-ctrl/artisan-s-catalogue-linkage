@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+import { useAuth } from '../context/AuthContext';
 import { validateImageLightweight, getLocalizedValidationReason } from '../utils/imageValidator';
 import { addGeoWatermark } from '../utils/geoWatermark';
 
@@ -8,6 +9,7 @@ const MAX_IMAGES = 3;
 
 export default function AiStudio() {
   const navigate = useNavigate();
+  const { user, artisanProfile } = useAuth?.() || {};
 
   // ── State Management ──
   const [capturedImages, setCapturedImages] = useState([]);
@@ -47,44 +49,42 @@ export default function AiStudio() {
     if (!file) return;
 
     if (capturedImages.length < MAX_IMAGES) {
-      // Fast lightweight validation
-      const validation = await validateImageLightweight(file);
-      if (!validation.valid) {
-        alert(`⚠️ ${validation.reason}`);
-        return;
-      }
-
       setIsWatermarking(true);
-      let watermarkedFile = file;
       try {
-        const artisanId = localStorage.getItem('artisan_gov_id_number') || 
-                          localStorage.getItem('artisan_user_id') || 
-                          "A-1029";
-        watermarkedFile = await addGeoWatermark(file, artisanId);
+        // Fast lightweight validation
+        const validation = await validateImageLightweight(file);
+        if (!validation.valid) {
+          alert(`⚠️ ${validation.reason}`);
+          return;
+        }
+
+        // Apply native Geo-Stamping & Live Watermark (GPS, timestamp & artisan ID)
+        const artisanId = artisanProfile?.id || user?.id?.substring(0, 8) || "A-1029";
+        const watermarkedFile = await addGeoWatermark(file, artisanId);
+
+        const newImageObj = {
+          id: Date.now(),
+          file: watermarkedFile,
+          previewUrl: URL.createObjectURL(watermarkedFile),
+          status: 'pending' // pending, enhancing, ready
+        };
+
+        setCapturedImages((prev) => {
+          if (prev.length >= MAX_IMAGES) return prev;
+          const next = [...prev, newImageObj];
+          // Once limit is reached (3 images), automatically send all images to AI enhancement
+          if (next.length === MAX_IMAGES) {
+            setTimeout(() => {
+              handleBatchEnhance(next);
+            }, 300);
+          }
+          return next;
+        });
       } catch (err) {
-        console.warn('[AiStudio] Geo-watermarking fallback:', err);
+        console.error('[AiStudio] Capture watermarking error:', err);
       } finally {
         setIsWatermarking(false);
       }
-
-      const newImageObj = {
-        id: Date.now(),
-        file: watermarkedFile,
-        previewUrl: URL.createObjectURL(watermarkedFile),
-        status: 'pending' // pending, enhancing, ready
-      };
-
-      setCapturedImages((prev) => {
-        if (prev.length >= MAX_IMAGES) return prev;
-        const next = [...prev, newImageObj];
-        // Once limit is reached (3 images), automatically send all images to AI enhancement
-        if (next.length === MAX_IMAGES) {
-          setTimeout(() => {
-            handleBatchEnhance(next);
-          }, 300);
-        }
-        return next;
-      });
     }
   };
 
@@ -212,15 +212,14 @@ export default function AiStudio() {
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
             <span className="font-bold tracking-wide uppercase text-stone-200">AI Studio Multi-Angle Camera</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-mono font-semibold">
-              📍 Geo-Stamp
-            </span>
-            <span className="text-orange-400 font-semibold">
-              {capturedImages.length}/{MAX_IMAGES} Angles
+            <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              GPS Geo-Stamp
             </span>
           </div>
+          <span className="text-orange-400 font-semibold">
+            {capturedImages.length}/{MAX_IMAGES} Angles
+          </span>
         </div>
 
         {/* Main Viewfinder / Placeholder */}
@@ -231,14 +230,6 @@ export default function AiStudio() {
           <div className="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 border-orange-500 z-10"></div>
           <div className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-orange-500 z-10"></div>
 
-          {/* Watermarking Loading Overlay */}
-          {isWatermarking && (
-            <div className="absolute inset-0 z-20 bg-black/80 flex flex-col items-center justify-center gap-3 backdrop-blur-xs text-amber-200 p-4 text-center">
-              <div className="w-8 h-8 border-3 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-xs font-mono font-semibold animate-pulse">📍 Embedding GPS & Authenticity Watermark...</p>
-            </div>
-          )}
-
           {capturedImages.length > 0 && (
             <img 
               src={capturedImages[capturedImages.length - 1].enhancedUrl || capturedImages[capturedImages.length - 1].previewUrl} 
@@ -247,11 +238,18 @@ export default function AiStudio() {
             />
           )}
 
-          <p className="text-stone-500 text-sm z-10 bg-black/70 px-3 py-1.5 rounded-full backdrop-blur-xs">
-            {capturedImages.length < MAX_IMAGES 
-              ? `Capture angle ${capturedImages.length + 1} of ${MAX_IMAGES}` 
-              : "Maximum angles captured"}
-          </p>
+          {isWatermarking ? (
+            <p className="text-orange-300 text-xs sm:text-sm z-10 bg-black/80 px-4 py-2 rounded-full backdrop-blur-xs flex items-center gap-2 border border-orange-500/30 animate-pulse">
+              <svg className="animate-spin h-3.5 w-3.5 text-orange-400" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              <span>GPS वॉटरमार्क जोड़ रहे हैं (Geo-stamping)...</span>
+            </p>
+          ) : (
+            <p className="text-stone-500 text-sm z-10 bg-black/70 px-3 py-1.5 rounded-full backdrop-blur-xs">
+              {capturedImages.length < MAX_IMAGES 
+                ? `Capture angle ${capturedImages.length + 1} of ${MAX_IMAGES}` 
+                : "Maximum angles captured"}
+            </p>
+          )}
         </div>
 
         {/* Hidden Native Camera Input */}
@@ -287,8 +285,8 @@ export default function AiStudio() {
           <div className="flex justify-center gap-4">
             {capturedImages.length < MAX_IMAGES && (
               <button 
+                disabled={isWatermarking || isEnhancing}
                 onClick={() => fileInputRef.current.click()} 
-                disabled={isWatermarking}
                 className="flex flex-col items-center justify-center w-16 h-16 bg-white rounded-full text-stone-800 shadow-md hover:scale-105 transition-transform disabled:opacity-50 cursor-pointer"
               >
                 <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -113,6 +113,60 @@ export default function Review() {
   const [newTag, setNewTag] = useState('');
   const [editingField, setEditingField] = useState(null); // 'title' | 'titleHi' | 'price' | 'wholesalePrice' | 'moq' | 'reasoning' | 'description' | 'descriptionHi' | null
 
+  // ── Government Verification State (Gatekeeper for GeM / ONDC) ──
+  const [isGovVerified, setIsGovVerified] = useState(() => {
+    try {
+      return localStorage.getItem('artisan_gov_verified') === 'true' || Boolean(artisanProfile?.is_verified);
+    } catch {
+      return false;
+    }
+  });
+  const [govIdNumber, setGovIdNumber] = useState(() => {
+    try {
+      return localStorage.getItem('artisan_gov_id_number') || artisanProfile?.gov_id_number || '';
+    } catch {
+      return '';
+    }
+  });
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+
+  // Requirement 1: Fetch Verification Status on Mount from Supabase
+  useEffect(() => {
+    let isMounted = true;
+    const fetchGovVerification = async () => {
+      try {
+        const { data: authData } = await supabase.auth.getUser();
+        const activeUserId = authData?.user?.id || user?.id;
+        if (!activeUserId) return;
+
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('is_verified, gov_id_number, gov_id_type')
+          .eq('id', activeUserId)
+          .maybeSingle();
+
+        if (!error && profile && isMounted) {
+          const verified = Boolean(profile.is_verified);
+          const idNum = profile.gov_id_number || '';
+          setIsGovVerified(verified);
+          if (idNum) setGovIdNumber(idNum);
+
+          try {
+            if (verified) {
+              localStorage.setItem('artisan_gov_verified', 'true');
+              if (idNum) localStorage.setItem('artisan_gov_id_number', idNum);
+            }
+          } catch {}
+        }
+      } catch (err) {
+        console.warn('[Review] Error fetching government verification status:', err);
+      }
+    };
+
+    fetchGovVerification();
+    return () => { isMounted = false; };
+  }, [user]);
+
   const hasAiData = !!location.state;
   const isVerified = Boolean(
     isEmailVerified ||
@@ -255,6 +309,12 @@ export default function Review() {
   };
 
   const handlePublish = async () => {
+    // ── Requirement 3: Mandatory Government Verification Gatekeeper ──
+    if (!isGovVerified) {
+      setShowVerificationModal(true);
+      return;
+    }
+
     // Intercept publishing if Email OTP is not verified
     if (!isVerified) {
       // 1. Preserve current reviewed product data across OTP authentication
@@ -488,6 +548,19 @@ export default function Review() {
 
               {/* ── Right Column: Editable Fields & Institutional B2B Section ── */}
               <section className="w-full lg:w-1/2 flex flex-col gap-5">
+                {/* ── Requirement 2: Verified Artisan Trust Badge (Light & Official) ── */}
+                {isGovVerified && (
+                  <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-green-50 text-green-700 border border-green-200 text-xs font-medium w-fit shadow-xs">
+                    <span className="material-symbols-outlined text-[16px] text-green-600">check_circle</span>
+                    <span className="font-semibold">{language === 'hi' ? 'सत्यापित कारीगर' : 'Verified Artisan'}</span>
+                    {govIdNumber && (
+                      <span className="font-mono bg-white px-2 py-0.5 rounded border border-green-200 text-green-800 text-[11px] font-bold">
+                        ID: {govIdNumber}
+                      </span>
+                    )}
+                  </div>
+                )}
+
                 {/* Error Banner */}
                 {publishError && (
                   <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-[13px] font-medium flex items-center gap-2">
@@ -1021,6 +1094,37 @@ export default function Review() {
 
                 {/* ── 7. PUBLISH ACTIONS ── */}
                 <div className="rounded-2xl p-4 sm:p-6 bg-surface-container-lowest border border-outline-variant/40 shadow-md flex flex-col gap-3 mt-2">
+                  {/* Trust Indicator near Submit Button */}
+                  {isGovVerified ? (
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-50 border border-green-200 text-green-700 text-xs font-medium w-fit">
+                      <span className="material-symbols-outlined text-[16px] text-green-600">check_circle</span>
+                      <span>Verified Artisan</span>
+                      {govIdNumber && (
+                        <span className="font-mono text-[11px] font-bold text-green-800">
+                          ID: {govIdNumber}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="material-symbols-outlined text-[18px] text-amber-700 shrink-0">shield</span>
+                        <span className="truncate">
+                          {language === 'hi'
+                            ? 'GeM/ONDC पर प्रकाशित करने के लिए सरकारी सत्यापन आवश्यक है।'
+                            : 'Government verification is required before publishing.'}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => navigate('/verification')}
+                        className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shrink-0 transition cursor-pointer"
+                      >
+                        {language === 'hi' ? 'सत्यापित करें' : 'Verify ID'}
+                      </button>
+                    </div>
+                  )}
+
                   <div className="flex flex-col sm:flex-row items-center gap-3">
                     <button
                       onClick={() => navigate('/capture')}
@@ -1050,7 +1154,7 @@ export default function Review() {
                         <>
                           <span className="text-[17px]">🚀</span>
                           <span>
-                            {isVerified
+                            {isGovVerified
                               ? 'Publish to ONDC & GeM Network'
                               : 'Verify & Publish to ONDC & GeM Network'}
                           </span>
@@ -1066,6 +1170,56 @@ export default function Review() {
                 </div>
               </section>
       </main>
+
+      {/* ── Requirement 3: Government Verification Gatekeeper Modal ── */}
+      {showVerificationModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-200 flex flex-col gap-4 text-gray-900">
+            <div className="flex items-center justify-between">
+              <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 shrink-0">
+                <span className="material-symbols-outlined text-[26px]">verified_user</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowVerificationModal(false)}
+                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700 flex items-center justify-center transition cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[18px]">close</span>
+              </button>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">
+                {language === 'hi' ? 'सरकारी सत्यापन आवश्यक है' : 'Government Verification Required'}
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-600 mt-2 leading-relaxed">
+                Government verification is required to publish products on GeM/ONDC. Please complete your profile verification first.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowVerificationModal(false);
+                  navigate('/verification');
+                }}
+                className="w-full sm:flex-1 py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-sm transition text-center cursor-pointer flex items-center justify-center gap-2"
+              >
+                <span>{language === 'hi' ? 'प्रोफ़ाइल सत्यापित करें' : 'Complete Verification Now'}</span>
+                <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowVerificationModal(false)}
+                className="w-full sm:w-auto py-3 px-4 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-sm transition cursor-pointer"
+              >
+                {language === 'hi' ? 'रद्द करें' : 'Cancel'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, Mic as MicrophoneIcon, AlertCircle as AlertCircleIcon, Trash2 as Trash2Icon } from 'lucide-react';
+import { Camera, Mic as MicrophoneIcon, AlertCircleIcon, SquareIcon, TrashIcon } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
@@ -1969,82 +1969,65 @@ export default function Capture() {
                   )}
                 </div>
 
-                <div className="flex flex-col items-center justify-center w-full mt-4">
-                  {/* Microphone Button */}
-                  <button 
-                    type="button"
-                    onClick={toggleRecording}
-                    className={`p-4 rounded-full transition-all duration-300 ${
-                      isRecording 
-                        ? 'bg-red-500 text-white animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.5)]' 
-                        : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
-                    }`}
-                  >
-                    <MicrophoneIcon className="w-8 h-8"/>
-                  </button>
-
-                  {/* Dynamic Transcription Display */}
-                  <div className="mt-4 min-h-[3rem] text-center w-full max-w-md">
-                    {isRecording ? (
-                      <p className="text-sm font-medium text-amber-600 animate-pulse">
-                        Listening...
-                      </p>
-                    ) : (fullDescription || transcript) ? (
-                      <p className="text-sm font-medium text-stone-800 italic bg-stone-50 p-3 rounded-lg border border-stone-200">
-                        "{fullDescription || transcript}"
+                <div className="flex flex-col w-full max-w-md mx-auto space-y-4 p-4">
+                  
+                  {/* Cumulative Description Display */}
+                  <div className="w-full min-h-[5rem] p-4 bg-stone-50 border border-stone-200 rounded-xl">
+                    {fullDescription ? (
+                      <p className="text-sm font-medium text-stone-800 leading-relaxed">
+                        {fullDescription}.
                       </p>
                     ) : (
-                      <p className="text-sm text-stone-400">
-                        Tap the microphone to describe your product
+                      <p className="text-sm text-stone-400 italic">
+                        Product description will appear here...
                       </p>
                     )}
-
-                    {/* Strict Error Handling Feedback */}
-                    {voiceError && (
-                      <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg flex items-center justify-center gap-2 text-red-600 text-xs font-semibold">
-                        <AlertCircleIcon className="w-4 h-4"/>
-                        <span>{voiceError}</span>
-                      </div>
-                    )}
-
-                    {/* Playable Audio Clips List with Individual Deletion */}
-                    {recordings.length > 0 && (
-                      <div className="mt-4 flex flex-col gap-2 w-full text-left">
-                        <div className="text-xs font-semibold text-stone-600 flex items-center justify-between px-1">
-                          <span>{language === 'hi' ? 'वॉयस क्लिप्स' : 'Voice Clips'} ({recordings.length})</span>
-                          <span className="text-[11px] text-stone-400">{language === 'hi' ? 'हटाने हेतु क्लिक करें' : 'Tap to delete clip'}</span>
-                        </div>
-                        <div className="space-y-2 max-h-48 overflow-y-auto">
-                          {recordings.map((rec, idx) => (
-                            <div 
-                              key={rec.id} 
-                              className="flex items-center gap-2 p-2 rounded-lg bg-stone-50 border border-stone-200 shadow-xs"
-                            >
-                              <span className="text-xs font-bold text-stone-500 w-5 text-center shrink-0">#{idx + 1}</span>
-                              <audio 
-                                src={rec.audioUrl} 
-                                controls 
-                                className="h-8 flex-1 max-w-[220px] sm:max-w-xs" 
-                                preload="metadata"
-                              />
-                              <span className="text-xs text-stone-700 truncate flex-1 hidden sm:inline" title={rec.text}>
-                                "{rec.text}"
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => deleteRecording(rec.id)}
-                                className="p-1.5 rounded-md text-red-500 hover:text-red-700 hover:bg-red-100 transition-colors shrink-0 cursor-pointer"
-                                title="Delete recording"
-                                aria-label="Delete recording"
-                              >
-                                <Trash2Icon className="w-4 h-4"/>
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                   </div>
+
+                  {/* Strict Error Handling Feedback */}
+                  {voiceError && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2 text-red-700 text-xs font-semibold">
+                      <AlertCircleIcon className="w-4 h-4 shrink-0 mt-0.5"/>
+                      <span>{voiceError}</span>
+                    </div>
+                  )}
+
+                  {/* Microphone Control */}
+                  <div className="flex justify-center py-2">
+                    <button 
+                      type="button"
+                      onClick={toggleRecording}
+                      className={`relative p-5 rounded-full transition-all duration-300 ${
+                        isRecording 
+                          ? 'bg-red-500 text-white animate-pulse shadow-[0_0_20px_rgba(239,68,68,0.6)] scale-105' 
+                          : 'bg-stone-100 text-stone-700 hover:bg-stone-200 hover:scale-105'
+                      }`}
+                    >
+                      {isRecording ? <SquareIcon className="w-7 h-7 fill-current"/> : <MicrophoneIcon className="w-7 h-7"/>}
+                    </button>
+                  </div>
+                  {isRecording && <p className="text-center text-xs text-red-500 font-bold animate-pulse">Listening... tap square to stop</p>}
+
+                  {/* Audio Playback & Deletion List */}
+                  {recordings.length > 0 && (
+                    <div className="flex flex-col gap-3 mt-4">
+                      <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider">Voice Recordings</h4>
+                      {recordings.map((rec, index) => (
+                        <div key={rec.id} className="flex items-center gap-2 p-2 bg-white border border-stone-200 rounded-xl shadow-sm">
+                          <span className="text-xs font-bold text-stone-400 w-5 text-center">{index + 1}</span>
+                          <audio controls src={rec.audioUrl} className="h-10 w-full max-w-[200px] md:max-w-full" />
+                          <button 
+                            type="button"
+                            onClick={() => deleteRecording(rec.id)}
+                            className="p-2 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors ml-auto cursor-pointer"
+                            title="Delete this recording"
+                          >
+                            <TrashIcon className="w-5 h-5"/>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
 

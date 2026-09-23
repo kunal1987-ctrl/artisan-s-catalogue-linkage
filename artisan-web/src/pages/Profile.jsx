@@ -106,52 +106,111 @@ export default function Profile() {
     return () => { isMounted = false; };
   }, [user, contextProfile]);
 
-  // ── Profile Photo Upload Handler ──
-  const handlePhotoUpload = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setUploadingPhoto(true);
+  // ── Phase 2: Secure Profile Picture Upload (Supabase Storage & RLS) ──
+  const uploadAvatar = async (event) => {
     try {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        const errorMsg = language === 'hi' 
+          ? 'कृपया केवल छवि (JPG, PNG, WebP) फ़ाइल चुनें।' 
+          : 'Please select an image file (JPG, PNG, WebP).';
+        if (showToast) showToast(errorMsg);
+        else alert(errorMsg);
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        const sizeMsg = language === 'hi'
+          ? 'फ़ाइल का आकार 5MB से कम होना चाहिए।'
+          : 'Image size must be less than 5MB.';
+        if (showToast) showToast(sizeMsg);
+        else alert(sizeMsg);
+        return;
+      }
+
+      setUploadingPhoto(true);
+
+      // 1. Grab authenticated user
       const { data: authData } = await supabase.auth.getUser();
-      const activeUserId = authData?.user?.id || user?.id || 'artisan_demo';
+      const currentUser = authData?.user || user;
+      const activeUserId = currentUser?.id;
+
+      if (!activeUserId) {
+        // Fallback for unauthenticated/demo sessions
+        const localPreview = URL.createObjectURL(file);
+        setProfileData((prev) => ({ ...prev, profile_picture_url: localPreview }));
+        localStorage.setItem('artisan_avatar', localPreview);
+        if (showToast) {
+          showToast(language === 'hi' ? '✅ प्रोफ़ाइल फ़ोटो पूर्वावलोकन सेट हो गया' : '✅ Profile picture updated (Demo mode)');
+        }
+        return;
+      }
+
+      // 2. Generate unique path matching RLS folder policy: ${user.id}/${Date.now()}.${fileExt}
       const fileExt = file.name.split('.').pop() || 'jpg';
-      const filePath = `avatars/${activeUserId}-${Date.now()}.${fileExt}`;
+      const filePath = `${activeUserId}/${Date.now()}.${fileExt}`;
 
-      // Upload to Supabase storage 'artisan-images'
-      const { error: uploadErr } = await supabase.storage
-        .from('artisan-images')
-        .upload(filePath, file, { upsert: true });
+      // 3. Upload file to 'avatars' bucket
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
 
-      let publicUrl = '';
-      if (!uploadErr) {
-        const { data: urlData } = supabase.storage
-          .from('artisan-images')
-          .getPublicUrl(filePath);
-        publicUrl = urlData?.publicUrl || '';
+      if (uploadError) {
+        console.error('[uploadAvatar] Storage upload error:', uploadError);
+        throw uploadError;
       }
 
-      // If upload failed or local preview
-      const resolvedUrl = publicUrl || URL.createObjectURL(file);
+      // 4. Retrieve public URL
+      const { data: urlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
 
-      // Update state
-      setProfileData((prev) => ({ ...prev, profile_picture_url: resolvedUrl }));
-
-      // Save to Supabase profile
-      if (activeUserId && activeUserId !== 'artisan_demo') {
-        await supabase
-          .from('profiles')
-          .update({ profile_picture_url: resolvedUrl })
-          .eq('id', activeUserId);
+      const publicUrl = urlData?.publicUrl;
+      if (!publicUrl) {
+        throw new Error('Failed to retrieve public URL from avatars storage');
       }
+
+      // 5. Database Update: Update profile_picture_url in profiles table
+      const { error: dbError } = await supabase
+        .from('profiles')
+        .update({ profile_picture_url: publicUrl })
+        .eq('id', activeUserId);
+
+      if (dbError) {
+        console.warn('[uploadAvatar] Database update warning:', dbError);
+      }
+
+      // 6. State Update: Instant component rendering without refresh
+      setProfileData((prev) => ({
+        ...prev,
+        profile_picture_url: publicUrl
+      }));
+
+      // Cache locally for instant loading across reloads
+      localStorage.setItem('artisan_avatar', publicUrl);
 
       if (showToast) {
-        showToast(language === 'hi' ? '✅ प्रोफ़ाइल फ़ोटो अपडेट हो गई' : '✅ Profile picture updated');
+        showToast(language === 'hi' ? '✅ प्रोफ़ाइल फ़ोटो सफलतापूर्वक अपडेट हो गई' : '✅ Profile picture updated successfully');
       }
-    } catch (err) {
-      console.warn('[Profile] Photo upload notice:', err);
+    } catch (error) {
+      console.error('[uploadAvatar] Exception:', error);
+      const errMsg = language === 'hi'
+        ? `फ़ोटो अपलोड विफल: ${error.message || 'कृपया पुनः प्रयास करें।'}`
+        : `Upload failed: ${error.message || 'Please try again.'}`;
+      if (showToast) showToast(errMsg);
+      else alert(errMsg);
     } finally {
       setUploadingPhoto(false);
+      if (event.target) {
+        event.target.value = '';
+      }
     }
   };
 
@@ -186,8 +245,15 @@ export default function Profile() {
           
           {/* Photo Section with Upload Button */}
           <div className="relative group shrink-0">
-            <div className="w-24 h-24 rounded-full shadow-sm border-4 border-white bg-gray-100 overflow-hidden flex items-center justify-center ring-1 ring-gray-200">
-              {profileData.profile_picture_url ? (
+            <div className="w-24 h-24 rounded-full shadow-sm border-4 border-white bg-gray-100 overflow-hidden flex items-center justify-center ring-1 ring-gray-200 relative">
+              {uploadingPhoto ? (
+                <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white p-2 text-center z-10 animate-in fade-in duration-150">
+                  <Loader2 className="w-6 h-6 animate-spin text-white mb-1" />
+                  <span className="text-[10px] font-semibold leading-tight text-white drop-shadow-xs">
+                    {language === 'hi' ? 'अपलोड हो रहा है...' : 'Uploading...'}
+                  </span>
+                </div>
+              ) : profileData.profile_picture_url ? (
                 <img
                   src={profileData.profile_picture_url}
                   alt={profileData.full_name}
@@ -202,18 +268,19 @@ export default function Profile() {
             <input
               type="file"
               ref={fileInputRef}
-              onChange={handlePhotoUpload}
+              onChange={uploadAvatar}
               accept="image/*"
               className="hidden"
             />
 
-            {/* Update Photo Button */}
+            {/* Edit / Camera Overlay Button */}
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={uploadingPhoto}
-              title={language === 'hi' ? 'फ़ोटो बदलें' : 'Update Photo'}
-              className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-md transition-transform active:scale-90 border-2 border-white cursor-pointer"
+              title={language === 'hi' ? 'फ़ोटो बदलें (अपलोड)' : 'Change Photo (Upload)'}
+              aria-label={language === 'hi' ? 'फ़ोटो बदलें' : 'Change Photo'}
+              className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-md transition-all active:scale-90 border-2 border-white cursor-pointer hover:shadow-lg disabled:opacity-50"
             >
               {uploadingPhoto ? (
                 <Loader2 className="w-4 h-4 animate-spin" />

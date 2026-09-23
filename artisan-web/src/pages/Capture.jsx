@@ -1560,18 +1560,21 @@ export default function Capture() {
                     </svg>
 
                     <div className="flex flex-col items-center justify-center my-4 z-10">
-                      <button 
-                        type="button"
-                        id="open-camera-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openLiveCamera();
-                        }}
-                        className="p-5 bg-[#ff9062] text-white rounded-full hover:bg-[#ff7b44] transition-all shadow-lg flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95 group-hover:scale-105"
-                        title={language === 'hi' ? 'कैमरा खोलें' : 'Open Camera'}
-                      >
-                        <Camera size={32}/>
-                      </button>
+                      <div className="relative flex items-center justify-center">
+                        <div className="absolute inset-0 rounded-full bg-[#ff9062]/30 animate-ping pointer-events-none" />
+                        <button 
+                          type="button"
+                          id="open-camera-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openLiveCamera();
+                          }}
+                          className="relative z-10 p-5 bg-[#ff9062] text-white rounded-full hover:bg-[#ff7b44] hover:scale-105 active:scale-95 transition-transform duration-200 shadow-lg flex flex-col items-center justify-center gap-1 cursor-pointer"
+                          title={language === 'hi' ? 'कैमरा खोलें' : 'Open Camera'}
+                        >
+                          <Camera size={32}/>
+                        </button>
+                      </div>
                       <span className="text-xs font-semibold text-white/90 mt-2 tracking-wide">
                         {language === 'hi' ? 'लाइव कैमरा खोलें' : 'Open Live Camera'}
                       </span>
@@ -1851,6 +1854,9 @@ export default function Capture() {
 
                 {/* Microphone Button with visual feedback and pulsing ripple effect */}
                 <div className="relative my-3 flex items-center justify-center">
+                  {!isRecording && !isLoading && !audioBase64 && (
+                    <div className="absolute w-24 h-24 rounded-full bg-amber-600/30 animate-ping pointer-events-none" />
+                  )}
                   {isRecording && (
                     <>
                       <div className="absolute w-36 h-36 rounded-full bg-red-500/20 animate-ping duration-1000" />
@@ -1866,14 +1872,14 @@ export default function Capture() {
                     onClick={() => {
                       if (!isLoading) toggleRecording();
                     }}
-                    className={`relative z-10 w-20 h-20 rounded-full shadow-2xl flex items-center justify-center transform transition-all duration-200 focus:outline-none border-2 ${
+                    className={`relative z-10 w-20 h-20 rounded-full shadow-2xl flex items-center justify-center transform transition-transform duration-200 hover:scale-105 active:scale-95 focus:outline-none border-2 ${
                       isLoading
                         ? 'opacity-40 cursor-not-allowed border-stone-600 bg-stone-800 text-stone-500'
                         : isRecording
-                        ? 'bg-red-600 border-red-400 text-white animate-pulse active:scale-95 cursor-pointer'
+                        ? 'bg-red-600 border-red-400 text-white animate-pulse cursor-pointer'
                         : audioBase64
-                        ? 'bg-emerald-600 border-emerald-400 text-white active:scale-95 cursor-pointer'
-                        : 'bg-[#9c441c] hover:bg-[#b04d20] border-[#ff9062]/40 text-white active:scale-95 cursor-pointer'
+                        ? 'bg-emerald-600 border-emerald-400 text-white cursor-pointer'
+                        : 'bg-[#9c441c] hover:bg-[#b04d20] border-[#ff9062]/40 text-white cursor-pointer'
                     }`}
                     type="button"
                   >
@@ -2025,10 +2031,10 @@ export default function Capture() {
                     onClick={() => {
                       if (!isLoading && !isProcessing) handleGenerateListing();
                     }}
-                    className={`w-full h-14 rounded-2xl font-bold text-base tracking-wide flex items-center justify-center gap-2 shadow-xl transition-all ${
+                    className={`w-full h-14 rounded-2xl font-bold text-base tracking-wide flex items-center justify-center gap-2 shadow-xl transition-all duration-300 ${
                       isLoading || isProcessing || !isReadyToProcess
                         ? 'bg-[#ff9062]/40 text-[#180f0a]/50 cursor-not-allowed pointer-events-none'
-                        : 'bg-[#ff9062] hover:bg-[#ff804a] text-[#180f0a] cursor-pointer active:scale-95'
+                        : 'bg-[#ff9062] hover:bg-[#ff804a] text-[#180f0a] cursor-pointer shadow-lg shadow-orange-500/40 animate-pulse hover:scale-105 hover:-translate-y-1 active:scale-95'
                     }`}
                     type="button"
                   >

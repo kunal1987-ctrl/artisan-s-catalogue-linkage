@@ -346,14 +346,7 @@ export default function DashboardLayout() {
               )}
             </div>
 
-            {/* Dynamic Government Verified Badge: shown only if userProfile?.is_verified === true */}
-            {userProfile?.is_verified && (
-              <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-800 font-bold text-xs shadow-2xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span className="material-symbols-outlined text-[15px] text-emerald-600">verified</span>
-                <span>{t('nav.verified', 'Verified Artisan')}</span>
-              </span>
-            )}
+
 
             {/* User Profile Pill */}
             <button

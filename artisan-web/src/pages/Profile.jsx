@@ -444,16 +444,7 @@ export default function Profile() {
             </h2>
             
             {/* Verification Status Badge */}
-            {profileData.is_verified ? (
-              <span className="inline-flex items-center gap-1.5 bg-green-50 text-green-700 border border-green-200 px-3 py-1 rounded-full text-sm font-medium">
-                <CheckCircle2 className="w-4 h-4 text-green-600" />
-                <span>
-                  {language === 'hi'
-                    ? `सत्यापित (${profileData.gov_id_type || 'MoSJE'})`
-                    : `Verified via ${profileData.gov_id_type || 'MoSJE'}`}
-                </span>
-              </span>
-            ) : (
+            {!profileData.is_verified && (
               <span className="inline-flex items-center gap-1.5 bg-yellow-50 text-yellow-700 border border-yellow-200 px-3 py-1 rounded-full text-sm font-medium">
                 <AlertCircle className="w-4 h-4 text-yellow-600" />
                 <span>{language === 'hi' ? 'सत्यापन लंबित (Pending)' : 'Verification Pending'}</span>
@@ -503,12 +494,7 @@ export default function Profile() {
               </h2>
             </div>
 
-            {bankAccount && (
-              <span className="inline-flex items-center gap-1.5 bg-green-50 text-green-700 border border-green-200 px-2.5 py-0.5 rounded-full text-xs font-semibold">
-                <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
-                <span>Verified (₹1 Penny Drop)</span>
-              </span>
-            )}
+
           </div>
 
           {/* State 1: No Bank Added */}

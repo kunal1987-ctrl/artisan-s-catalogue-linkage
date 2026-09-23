@@ -552,18 +552,7 @@ export default function Review() {
 
               {/* ── Right Column: Editable Fields & Institutional B2B Section ── */}
               <section className="w-full lg:w-1/2 flex flex-col gap-5">
-                {/* ── Requirement 2: Verified Artisan Trust Badge (Light & Official) ── */}
-                {isGovVerified && (
-                  <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-green-50 text-green-700 border border-green-200 text-xs font-medium w-fit shadow-xs">
-                    <span className="material-symbols-outlined text-[16px] text-green-600">check_circle</span>
-                    <span className="font-semibold">{language === 'hi' ? 'सत्यापित कारीगर' : 'Verified Artisan'}</span>
-                    {govIdNumber && (
-                      <span className="font-mono bg-white px-2 py-0.5 rounded border border-green-200 text-green-800 text-[11px] font-bold">
-                        ID: {govIdNumber}
-                      </span>
-                    )}
-                  </div>
-                )}
+
 
                 {/* Error Banner */}
                 {publishError && (
@@ -1034,18 +1023,7 @@ export default function Review() {
 
                 {/* ── 7. PUBLISH ACTIONS ── */}
                 <div className="rounded-2xl p-4 sm:p-6 bg-surface-container-lowest border border-outline-variant/40 shadow-md flex flex-col gap-3 mt-2">
-                  {/* Trust Indicator near Submit Button */}
-                  {isGovVerified ? (
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-50 border border-green-200 text-green-700 text-xs font-medium w-fit">
-                      <span className="material-symbols-outlined text-[16px] text-green-600">check_circle</span>
-                      <span>Verified Artisan</span>
-                      {govIdNumber && (
-                        <span className="font-mono text-[11px] font-bold text-green-800">
-                          ID: {govIdNumber}
-                        </span>
-                      )}
-                    </div>
-                  ) : (
+                  {!isGovVerified && (
                     <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs">
                       <div className="flex items-center gap-2 min-w-0">
                         <span className="material-symbols-outlined text-[18px] text-amber-700 shrink-0">shield</span>

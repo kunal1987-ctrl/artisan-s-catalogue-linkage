@@ -227,6 +227,12 @@ export default function HaatEventCard({ artisanProfile = null, user = null }) {
     }
   };
 
+  const getSanitizedUrl = (url) => {
+    if (!url) return 'https://handicrafts.nic.in/';
+    const match = String(url).match(/https?:\/\/[^\s)\]]+/);
+    return match ? match[0] : 'https://handicrafts.nic.in/';
+  };
+
   const handleToggleSpeech = () => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
       alert('आपके ब्राउज़र में आवाज़ (Speech Synthesis) उपलब्ध नहीं है।');
@@ -389,6 +395,19 @@ export default function HaatEventCard({ artisanProfile = null, user = null }) {
                 <span>अभी पंजीकरण करें</span>
                 <span>→</span>
               </button>
+
+              {/* Official Portal Quick Link */}
+              <a 
+                href={getSanitizedUrl(activeEvent?.registration_url)} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-sm font-medium text-amber-500 hover:text-amber-400 border-b border-amber-500/50 pb-0.5 transition-colors cursor-pointer"
+              >
+                आधिकारिक वेबसाइट
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                </svg>
+              </a>
             </div>
 
             {/* Multi-Event Carousel Dots / Quick Navigation */}

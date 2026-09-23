@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import LanguageToggle from '../components/LanguageToggle';
 import LanguageSelectorModal, { getDialectBadgeText } from '../components/LanguageSelectorModal';
 import AudioMuteButton from '../components/AudioMuteButton';
+import NotificationBar from '../components/NotificationBar';
 import useAudioAssistant from '../hooks/useAudioAssistant';
 import { validateImageLightweight, getLocalizedValidationReason } from '../utils/imageValidator';
 
@@ -2067,6 +2068,8 @@ export default function Capture() {
         onChange={handleFileSelect} 
         className="hidden" 
       />
+      {/* Global Notification Drawer & Toast Bar */}
+      <NotificationBar />
       </main>
     </div>
   );

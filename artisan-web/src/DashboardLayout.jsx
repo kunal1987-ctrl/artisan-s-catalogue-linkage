@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation, Link, Navigate } from 'react-router-dom';
 import { HelpCircle, Menu, X, Globe } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -26,6 +26,8 @@ export default function DashboardLayout() {
     openAuthModal,
     language,
     toggleNotifications,
+    notifications = [],
+    markAllNotificationsRead,
     unreadCount,
     isLoading,
     showToast,
@@ -33,6 +35,25 @@ export default function DashboardLayout() {
     session,
     isAuthenticated,
   } = useAuth();
+
+  // State to control the notification dropdown
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const notificationRef = useRef(null);
+
+  // Close notification dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setIsNotificationOpen(false);
+      }
+    }
+    if (isNotificationOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isNotificationOpen]);
 
   const isVerified = Boolean(
     artisanProfile?.verified ||
@@ -176,19 +197,117 @@ export default function DashboardLayout() {
             {/* Language Switcher using react-i18next */}
             <LanguageSwitcher />
 
-            {/* Notifications */}
-            <button
-              onClick={toggleNotifications}
-              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 flex items-center justify-center relative transition-all cursor-pointer active:scale-95 border border-gray-200"
-              title={t('nav.notifications', 'Notifications')}
-              aria-label={t('nav.notifications', 'Notifications')}
-              type="button"
-            >
-              <span className="material-symbols-outlined text-[18px] sm:text-[20px]">notifications</span>
-              {unreadCount > 0 && (
-                <span className="w-2 h-2 rounded-full bg-[#9c441c] absolute top-1 sm:top-1.5 right-1 sm:right-1.5 ring-1 ring-white animate-pulse" />
+            {/* Notifications with Dropdown Toggle */}
+            <div className="relative" ref={notificationRef}>
+              <button
+                onClick={() => setIsNotificationOpen((prev) => !prev)}
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 flex items-center justify-center relative transition-all cursor-pointer active:scale-95 border border-gray-200"
+                title={t('nav.notifications', 'Notifications')}
+                aria-label={t('nav.notifications', 'Notifications')}
+                aria-expanded={isNotificationOpen}
+                type="button"
+              >
+                <span className="material-symbols-outlined text-[18px] sm:text-[20px]">notifications</span>
+                {unreadCount > 0 && (
+                  <span className="w-2 h-2 rounded-full bg-[#9c441c] absolute top-1 sm:top-1.5 right-1 sm:right-1.5 ring-1 ring-white animate-pulse" />
+                )}
+              </button>
+
+              {/* Notification Dropdown Panel */}
+              {isNotificationOpen && (
+                <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-[#fdf9f3] text-[#180f0a] rounded-2xl shadow-2xl border border-[#d1c4bd] z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+                  {/* Dropdown Header */}
+                  <div className="px-4 py-3 bg-[#2e241e] text-white flex items-center justify-between border-b border-[#443831]">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[20px] text-[#ffdeaa]">notifications_active</span>
+                      <span className="font-bold text-xs sm:text-sm tracking-wide">
+                        {language === 'hi' ? 'सूचनाएं एवं अलर्ट' : 'Notifications & Alerts'}
+                      </span>
+                      {unreadCount > 0 && (
+                        <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-[#ff9062] text-[#180f0a]">
+                          {unreadCount}
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => setIsNotificationOpen(false)}
+                      className="w-7 h-7 rounded-full hover:bg-white/10 flex items-center justify-center text-white/80 hover:text-white transition-colors cursor-pointer"
+                      aria-label="Close"
+                      type="button"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">close</span>
+                    </button>
+                  </div>
+
+                  {/* Dropdown Subheader with Mark as Read */}
+                  <div className="px-4 py-2 bg-[#f1ede7] border-b border-[#e5dfd7] flex items-center justify-between text-xs">
+                    <span className="text-stone-600 font-medium text-[11px]">
+                      {language === 'hi' ? `${notifications.length} अपडेट उपलब्ध` : `${notifications.length} updates available`}
+                    </span>
+                    {unreadCount > 0 && (
+                      <button
+                        onClick={markAllNotificationsRead}
+                        className="text-[#9c441c] hover:underline font-bold text-[11px] cursor-pointer"
+                        type="button"
+                      >
+                        {language === 'hi' ? 'सभी पढ़ा हुआ चिह्नित करें' : 'Mark all as read'}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Dropdown Notification Items */}
+                  <div className="max-h-72 overflow-y-auto p-3 space-y-2.5">
+                    {notifications.length === 0 ? (
+                      <div className="py-6 text-center text-xs text-stone-500">
+                        {language === 'hi' ? 'कोई नई सूचना नहीं है' : 'No notifications'}
+                      </div>
+                    ) : (
+                      notifications.map((item) => (
+                        <div
+                          key={item.id}
+                          onClick={() => {
+                            if (item.link) {
+                              navigate(item.link);
+                              setIsNotificationOpen(false);
+                            }
+                          }}
+                          className={`p-3 rounded-xl border transition-all cursor-pointer ${
+                            !item.read
+                              ? 'bg-white border-[#ff9062]/50 shadow-xs ring-1 ring-[#ff9062]/20'
+                              : 'bg-[#f7f3ed] border-[#e8e2d9] opacity-85 hover:opacity-100'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <span className="font-bold text-xs text-[#180f0a] leading-tight">
+                              {language === 'hi' ? item.title_hi : item.title}
+                            </span>
+                            <span className="text-[10px] text-stone-500 shrink-0 font-medium">{item.time}</span>
+                          </div>
+                          <p className="text-[11px] text-stone-700 leading-snug">
+                            {language === 'hi' ? item.message_hi : item.message}
+                          </p>
+                          <div className="mt-1.5 flex items-center justify-between">
+                            <span className="text-[10px] font-bold text-[#9c441c] hover:underline flex items-center gap-1">
+                              <span>{language === 'hi' ? 'देखें' : 'View'}</span>
+                              <span className="material-symbols-outlined text-[11px]">arrow_forward</span>
+                            </span>
+                            {!item.read && <span className="w-1.5 h-1.5 rounded-full bg-[#ff9062]" />}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {/* Dropdown Footer */}
+                  <div className="p-2.5 bg-[#ebe8e2] border-t border-[#d1c4bd]/60 text-center">
+                    <span className="text-[10px] text-stone-600 flex items-center justify-center gap-1 font-medium">
+                      <span className="material-symbols-outlined text-[13px] text-green-700">verified</span>
+                      <span>{language === 'hi' ? 'ONDC व GeM रीयलटाइम लिंक सक्रिय' : 'ONDC & GeM Realtime Link Active'}</span>
+                    </span>
+                  </div>
+                </div>
               )}
-            </button>
+            </div>
 
             {/* Profile / Logout */}
             {isVerified ? (

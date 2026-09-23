@@ -25,7 +25,6 @@ export default function LanguageToggle({ className = '', variant = 'dark' }) {
         {langConfig.keyChar}
       </span>
       <span className="tracking-wide">{langConfig.native}</span>
-      <span className="text-[9px] px-1 py-0.2 rounded bg-black/20 text-white font-mono">ATM</span>
     </button>
   );
 }

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import useAudioAssistant from '../hooks/useAudioAssistant';
+import OndcSyncModal from '../components/OndcSyncModal';
 
 export default function Details() {
   const { id } = useParams();
@@ -34,6 +35,7 @@ export default function Details() {
     const prod = location.state?.product || product;
     return Boolean(prod?.is_gem_ready ?? true);
   });
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
 
   // Fetch product from Supabase if updated or dynamically loaded
   useEffect(() => {
@@ -488,6 +490,15 @@ export default function Details() {
                         </span>
                       ))}
                     </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsSyncModalOpen(true)}
+                      className="mt-3 flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-semibold transition cursor-pointer"
+                    >
+                      <span>🌐</span>
+                      <span>Sync to ONDC</span>
+                    </button>
                   </div>
 
                   {/* GeM Portal Channel Card */}
@@ -566,6 +577,13 @@ export default function Details() {
             </div>
           </div>
       </div>
+
+      <OndcSyncModal
+        product={product}
+        artisan={{ id: product?.artisan_id || product?.user_id, name: artisanName }}
+        isOpen={isSyncModalOpen}
+        onClose={() => setIsSyncModalOpen(false)}
+      />
     </div>
   );
 }

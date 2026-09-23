@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { clearStaleCatalogCache } from '../utils/cacheCleaner';
 import { handleAddCraftNavigation } from '../utils/authGuard';
 import MoqBadge from '../components/MoqBadge';
+import OndcSyncModal from '../components/OndcSyncModal';
 
 export default function Catalog() {
   const navigate = useNavigate();
@@ -22,6 +23,8 @@ export default function Catalog() {
   const [editingMoqId, setEditingMoqId] = useState(null);
   const [newMoq, setNewMoq] = useState(1);
   const [isSavingMoq, setIsSavingMoq] = useState(false);
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
+  const [syncTargetProduct, setSyncTargetProduct] = useState(null);
 
   const showToast = (msg) => {
     setToastMsg(msg);
@@ -528,6 +531,18 @@ export default function Catalog() {
                           }}
                         />
                       </div>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSyncTargetProduct(p);
+                          setIsSyncModalOpen(true);
+                        }}
+                        className="mt-2 w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-semibold transition cursor-pointer active:scale-95"
+                      >
+                        <span>🌐</span>
+                        <span>Sync to ONDC</span>
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -768,6 +783,16 @@ export default function Catalog() {
             <span>{toastMsg}</span>
           </div>
         )}
+
+        <OndcSyncModal
+          product={syncTargetProduct}
+          artisan={{ id: currentUser?.id, name: currentUser?.user_metadata?.name || 'Artisan' }}
+          isOpen={isSyncModalOpen}
+          onClose={() => {
+            setIsSyncModalOpen(false);
+            setSyncTargetProduct(null);
+          }}
+        />
       </main>
     </div>
   );

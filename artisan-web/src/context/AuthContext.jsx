@@ -572,7 +572,7 @@ export function AuthProvider({ children }) {
             try {
               const { data: profData } = await supabase
                 .from('profiles')
-                .select('full_name, name, is_verified, gov_id_type, gov_id_number, certificate_id, verification_date')
+                .select('*')
                 .eq('id', activeUser.id)
                 .maybeSingle();
 

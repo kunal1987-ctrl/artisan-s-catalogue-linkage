@@ -7,12 +7,21 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Verification tracking columns
+-- Verification tracking & profile columns
 ALTER TABLE public.profiles 
 ADD COLUMN IF NOT EXISTS is_verified boolean default false,
 ADD COLUMN IF NOT EXISTS gov_id_type text,
 ADD COLUMN IF NOT EXISTS gov_id_number text,
-ADD COLUMN IF NOT EXISTS verification_date timestamp with time zone;
+ADD COLUMN IF NOT EXISTS verification_date timestamp with time zone,
+ADD COLUMN IF NOT EXISTS full_name text,
+ADD COLUMN IF NOT EXISTS name text,
+ADD COLUMN IF NOT EXISTS certificate_id text,
+ADD COLUMN IF NOT EXISTS email text,
+ADD COLUMN IF NOT EXISTS phone text,
+ADD COLUMN IF NOT EXISTS profile_picture_url text,
+ADD COLUMN IF NOT EXISTS avatar text,
+ADD COLUMN IF NOT EXISTS craft text,
+ADD COLUMN IF NOT EXISTS hub text;
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;

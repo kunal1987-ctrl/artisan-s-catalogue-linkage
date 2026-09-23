@@ -1,11 +1,6 @@
 import React, { useState, useContext } from 'react';
-import { createClient } from '@supabase/supabase-js';
 import AuthContext from '../context/AuthContext';
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+import { supabase } from '../supabaseClient';
 
 export default function AuthModal({ onAuthenticated, isOpen, onClose }) {
   const authContext = useContext(AuthContext);

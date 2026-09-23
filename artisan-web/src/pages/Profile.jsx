@@ -122,7 +122,7 @@ export default function Profile() {
 
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('full_name, name, email, phone, profile_picture_url, avatar, craft_category, craft, region, hub, is_verified, gov_id_type, gov_id_number, certificate_id')
+          .select('*')
           .eq('id', activeUserId)
           .maybeSingle();
 

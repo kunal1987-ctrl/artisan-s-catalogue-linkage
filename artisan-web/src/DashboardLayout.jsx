@@ -218,7 +218,7 @@ export default function DashboardLayout() {
 
             <Link 
               className="flex items-center gap-2 group transition-transform active:scale-95 focus:outline-none focus:ring-2 focus:ring-amber-500 rounded-lg p-1" 
-              to="/"
+              to="/home"
             >
               <img 
                 src="/shilp-setu-logo.png" 
@@ -419,7 +419,7 @@ export default function DashboardLayout() {
                 {/* Drawer Header with Close */}
                 <div className="flex items-center justify-between pb-3 border-b border-[#d1c4bd]/40">
                   <Link
-                    to="/"
+                    to="/home"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="flex items-center gap-2 group transition-transform active:scale-95 focus:outline-none focus:ring-2 focus:ring-amber-500 rounded-lg p-1"
                   >

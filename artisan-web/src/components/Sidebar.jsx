@@ -96,7 +96,7 @@ export default function Sidebar({ className = '' }) {
         <div className="flex items-center px-2 pt-2">
           <Link 
             className="flex items-center gap-2 group transition-transform active:scale-95 focus:outline-none focus:ring-2 focus:ring-amber-500 rounded-lg p-1" 
-            to="/"
+            to="/home"
           >
             <img 
               src="/shilp-setu-logo.png" 

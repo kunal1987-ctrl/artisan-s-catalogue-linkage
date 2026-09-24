@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
+import i18n from '../i18n';
 import { playInstructionAudio, unlockMobileAudio } from '../utils/soundPlayer';
 
 // 16 Target Languages Configuration (+ English)
@@ -227,10 +228,26 @@ export function LanguageProvider({ children }) {
     try {
       document.documentElement.lang = currentLang;
       localStorage.setItem('shilp_setu_lang', currentLang);
+      localStorage.setItem('i18nextLng', currentLang);
       localStorage.setItem('artisan_language', currentLang);
     } catch (e) {
       console.warn('[LanguageContext] Persistence warning:', e);
     }
+  }, [currentLang]);
+
+  // Listen to external i18n language changes to keep state reactive
+  useEffect(() => {
+    if (!i18n || typeof i18n.on !== 'function') return;
+    const handleLanguageChanged = (lng) => {
+      const baseCode = lng ? lng.split('-')[0] : 'hi';
+      if (baseCode && baseCode !== currentLang && LANGUAGES.some((l) => l.code === baseCode)) {
+        setCurrentLang(baseCode);
+      }
+    };
+    i18n.on('languageChanged', handleLanguageChanged);
+    return () => {
+      i18n.off('languageChanged', handleLanguageChanged);
+    };
   }, [currentLang]);
 
   const changeLanguage = useCallback((langCode) => {
@@ -244,8 +261,12 @@ export function LanguageProvider({ children }) {
 
     try {
       localStorage.setItem('shilp_setu_lang', cleanCode);
+      localStorage.setItem('i18nextLng', cleanCode);
       localStorage.setItem('artisan_language', cleanCode);
       document.documentElement.lang = cleanCode;
+      if (i18n && typeof i18n.changeLanguage === 'function') {
+        i18n.changeLanguage(cleanCode);
+      }
     } catch (err) {
       console.warn('[LanguageContext] storage warning:', err);
     }
@@ -257,8 +278,20 @@ export function LanguageProvider({ children }) {
   const t = useCallback(
     (key, fallback) => {
       if (!key) return '';
-      if (!TRANSLATIONS[key]) return fallback || key;
-      return TRANSLATIONS[key][currentLang] || TRANSLATIONS[key]['hi'] || fallback || key;
+      // 1. First priority: Try react-i18next dot-notation keys (e.g. 'nav.dashboard', 'capture.take_photo')
+      if (i18n && typeof i18n.exists === 'function' && i18n.exists(key)) {
+        return i18n.t(key, fallback);
+      }
+      // 2. Second priority: Check legacy dictionary TRANSLATIONS
+      if (TRANSLATIONS[key]) {
+        return TRANSLATIONS[key][currentLang] || TRANSLATIONS[key]['hi'] || fallback || key;
+      }
+      // 3. Fallback via i18n translation engine
+      if (i18n && typeof i18n.t === 'function') {
+        const val = i18n.t(key, fallback || key);
+        if (val && val !== key) return val;
+      }
+      return fallback || key;
     },
     [currentLang]
   );
@@ -285,6 +318,7 @@ export function LanguageProvider({ children }) {
       openAtmLanguageModal,
       closeAtmLanguageModal,
       currentLanguageConfig,
+      i18n,
       unlockMobileAudio,
       playInstructionAudio,
     }),

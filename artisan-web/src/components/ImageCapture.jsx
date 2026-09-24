@@ -1,8 +1,8 @@
 import React from 'react';
-import { useLanguage } from '../context/LanguageContext';
+import { useTranslation } from 'react-i18next';
 
 export default function ImageCapture({ onTakePhoto, onRecordVoice, className = '' }) {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
 
   return (
     <div className={`flex flex-wrap items-center gap-3 ${className}`}>
@@ -12,7 +12,7 @@ export default function ImageCapture({ onTakePhoto, onRecordVoice, className = '
         className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-4 py-2 rounded-lg transition-colors cursor-pointer shadow-sm active:scale-95 flex items-center gap-2"
       >
         <span>📸</span>
-        <span>{t('take_photo')}</span>
+        <span>{t('capture.take_photo', t('take_photo', 'Take Product Photo'))}</span>
       </button>
       <button 
         type="button"
@@ -20,7 +20,7 @@ export default function ImageCapture({ onTakePhoto, onRecordVoice, className = '
         className="bg-stone-800 hover:bg-stone-900 text-white font-bold px-4 py-2 rounded-lg transition-colors cursor-pointer shadow-sm active:scale-95 flex items-center gap-2"
       >
         <span>🎙️</span>
-        <span>{t('record_voice')}</span>
+        <span>{t('capture.record_voice', t('record_voice', 'Record Voice Description'))}</span>
       </button>
     </div>
   );

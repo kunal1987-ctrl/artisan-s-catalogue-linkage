@@ -636,7 +636,7 @@ function OrderCard({ order, onMarkPacked, onAcceptPO, onDispatchPO, setSelectedP
             }}
           >
             <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>inventory_2</span>
-            {t('packed_btn')}
+            {t('orders.packed_btn', t('packed_btn', 'Mark as Packed'))}
           </button>
         )}
 

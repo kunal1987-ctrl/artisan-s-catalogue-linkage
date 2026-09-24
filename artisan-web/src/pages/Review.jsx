@@ -453,8 +453,8 @@ export default function Review() {
                   </>
                 ) : (
                   <>
-                    <span className="hidden sm:inline">{t('publish_ondc')}</span>
-                    <span className="sm:hidden">{t('publish_ondc')}</span>
+                    <span className="hidden sm:inline">{t('publish.btn_ondc', t('publish_ondc', 'Publish to ONDC / GeM'))}</span>
+                    <span className="sm:hidden">{t('publish.btn_ondc', t('publish_ondc', 'Publish to ONDC / GeM'))}</span>
                     <span className="material-symbols-outlined text-[16px]">rocket_launch</span>
                   </>
                 )}
@@ -1086,7 +1086,7 @@ export default function Review() {
                         ) : (
                           <>
                             <span className="text-[17px]">🚀</span>
-                            <span>{t('publish_ondc')}</span>
+                            <span>{t('publish.btn_ondc', t('publish_ondc', 'Publish to ONDC / GeM'))}</span>
                             <span className="material-symbols-outlined text-[18px]">verified</span>
                           </>
                         )}

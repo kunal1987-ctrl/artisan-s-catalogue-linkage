@@ -258,83 +258,60 @@ export default function Catalog() {
           
           {/* Top Administrative Toolbar */}
           <div className="flex items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
-            <div className="flex items-center gap-2.5">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-800">
-                {t('catalog.title', 'Craft Catalog')}
-              </h2>
-              {/* Mobile Search Toggle Button */}
-              <button
-                type="button"
-                onClick={() => setIsSearchOpen((prev) => !prev)}
-                className="sm:hidden flex items-center justify-center w-8 h-8 rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer"
-                aria-label="Toggle search"
-                title="Toggle search"
-              >
-                <span className="material-symbols-outlined text-[19px]">
-                  {isSearchOpen ? 'close' : 'search'}
-                </span>
-              </button>
-            </div>
+            <h2 className="text-lg sm:text-xl font-bold text-gray-800">
+              {t('catalog.title', 'Craft Catalog')}
+            </h2>
 
-            <button
-              onClick={(e) => handleAddCraftNavigation(navigate, e)}
-              className="bg-emerald-600 text-white px-3.5 sm:px-4 py-2 rounded-xl shadow-xs hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:outline-none flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium transition-colors cursor-pointer active:scale-95"
-            >
-              <span>📸 + 🎙️ {t('catalog.add_item', 'Add Craft')}</span>
-            </button>
-          </div>
+            <div className="flex items-center gap-2 sm:gap-3">
+              {/* Responsive Search Container */}
+              <div className="relative flex items-center justify-end w-full md:w-auto">
+                
+                {/* Mobile Search Toggle Button */}
+                <button 
+                  onClick={() => setIsSearchOpen(!isSearchOpen)}
+                  className="md:hidden p-2 text-stone-500 hover:text-amber-700 transition-colors"
+                  aria-label="Toggle search"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </button>
 
-          {/* Search Bar & Filters */}
-          <div className="flex flex-col gap-4 mb-6">
-            {/* Search Input: Responsive toggle on mobile, stays visible on desktop (sm:flex) */}
-            <div className={`flex flex-col sm:flex-row items-center justify-between gap-3 ${isSearchOpen ? 'flex' : 'hidden sm:flex'}`}>
-              <div className="relative w-full sm:w-96">
-                <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px] pointer-events-none">
-                  search
-                </span>
-                <input
-                  className="w-full h-12 pl-11 pr-16 bg-surface-container-lowest text-on-surface placeholder:text-on-surface-variant text-sm font-medium rounded-xl shadow-xs border border-surface-container-high focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all"
-                  id="productSearchInput"
-                  placeholder={t('catalog.search', 'Search crafts, sarees, pottery...')}
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                  {searchQuery && (
-                    <button
-                      type="button"
-                      onClick={() => setSearchQuery('')}
-                      className="w-7 h-7 rounded-md text-on-surface-variant hover:text-on-surface flex items-center justify-center cursor-pointer"
-                      aria-label="Clear search"
-                    >
-                      <span className="material-symbols-outlined text-[18px]">cancel</span>
-                    </button>
-                  )}
-                  <button
-                    aria-label="Voice Search"
-                    className="w-9 h-9 rounded-lg flex items-center justify-center text-secondary hover:bg-surface-container active:scale-90 transition-transform cursor-pointer"
-                    onClick={() => {
-                      handleVoiceSearch();
-                      setIsSearchOpen(true);
-                    }}
-                    type="button"
-                  >
-                    <span className="material-symbols-outlined text-[18px]">mic</span>
-                  </button>
+                {/* Search Input Field */}
+                <div className={`
+                  absolute right-0 top-full mt-2 w-64 bg-white shadow-lg rounded-xl border border-stone-200 z-50 p-2
+                  md:relative md:top-auto md:mt-0 md:w-64 md:bg-transparent md:shadow-none md:border-none md:p-0 md:flex
+                  ${isSearchOpen ? 'block' : 'hidden'} 
+                `}>
+                  <div className="relative w-full">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none hidden md:flex">
+                      <svg className="w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                    </div>
+                    <input
+                      type="text"
+                      className="block w-full p-2 md:pl-10 text-sm text-stone-900 border border-stone-300 rounded-lg bg-stone-50 focus:ring-amber-500 focus:border-amber-500 transition-all"
+                      placeholder="Search products, HSN..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      autoFocus={isSearchOpen}
+                    />
+                  </div>
                 </div>
               </div>
 
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="text-xs font-bold text-secondary hover:underline cursor-pointer self-start sm:self-center"
-                  type="button"
-                >
-                  {t('catalog.filter', 'Clear Search')}
-                </button>
-              )}
+              <button
+                onClick={(e) => handleAddCraftNavigation(navigate, e)}
+                className="bg-emerald-600 text-white px-3.5 sm:px-4 py-2 rounded-xl shadow-xs hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:outline-none flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium transition-colors cursor-pointer active:scale-95 shrink-0"
+              >
+                <span>📸 + 🎙️ {t('catalog.add_item', 'Add Craft')}</span>
+              </button>
             </div>
+          </div>
+
+          {/* Filter Pills */}
+          <div className="flex flex-col gap-4 mb-6">
 
             {/* Filter Pills */}
             <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1 no-scrollbar scroll-smooth" id="filterPillsContainer">
@@ -444,8 +421,12 @@ export default function Catalog() {
                   <span>{language === 'hi' ? '+ पहला शिल्प जोड़ें' : '+ Add First Craft'}</span>
                 </button>
               </div>
-            ) : filteredProducts.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6" id="productsGrid">
+            ) : filteredProducts.length === 0 ? (
+              <div className="text-center py-10 text-stone-500">
+                No products match your search.
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="productsGrid">
                 {filteredProducts.map((p) => (
                   <div
                     key={p.id}
@@ -581,30 +562,6 @@ export default function Catalog() {
                     </div>
                   </div>
                 ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-                <div className="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-secondary mb-3">
-                  <span className="material-symbols-outlined text-[32px]">inventory_2</span>
-                </div>
-                <h3 className="text-lg font-bold text-primary mb-1">
-                  {language === 'hi' ? 'कोई शिल्प नहीं मिला' : 'No Crafts Discovered'}
-                </h3>
-                <p className="text-sm text-on-surface-variant max-w-xs mb-4 font-normal">
-                  {language === 'hi'
-                    ? `"${searchQuery}" से मेल खाने वाले शिल्प नहीं मिले। खोज साफ़ करें या अन्य श्रेणियां देखें।`
-                    : `We couldn't locate items matching "${searchQuery}". Clear search or explore other categories.`}
-                </p>
-                <button
-                  className="h-12 px-6 rounded-full bg-primary text-on-primary font-bold text-sm shadow-sm active:scale-95 cursor-pointer"
-                  onClick={() => {
-                    setSearchQuery('');
-                    setActiveFilter('all');
-                  }}
-                  type="button"
-                >
-                  {language === 'hi' ? 'फ़िल्टर साफ़ करें' : 'Clear All Filters'}
-                </button>
               </div>
             )}
 

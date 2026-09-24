@@ -133,54 +133,44 @@ export default function Home({ customArtisanName } = {}) {
                             {language === 'hi' ? `स्वागत है, ${artisanName}!` : `Welcome, ${artisanName}!`}
                         </h2>
                     </div>
-
-                    {/* Mobile Search Toggle Button */}
-                    <button
-                        type="button"
-                        onClick={() => setIsSearchOpen((prev) => !prev)}
-                        className="md:hidden flex items-center justify-center w-10 h-10 rounded-full bg-[#f1ede7] text-primary border border-[#d1c4bd]/60 hover:bg-[#e6e2dc] transition-colors cursor-pointer shrink-0"
-                        aria-label="Toggle search"
-                        title="Toggle search"
-                    >
-                        <span className="material-symbols-outlined text-[20px]">
-                            {isSearchOpen ? 'close' : 'search'}
-                        </span>
-                    </button>
                 </div>
                 
-                {/* Search Bar Container: Toggles open on mobile, stays visible on desktop (md:block) */}
-                <div className={`w-full md:w-auto ${isSearchOpen ? 'block' : 'hidden md:block'}`}>
-                    <div className="relative w-full sm:w-80">
-                        <span
-                            className="material-symbols-outlined absolute left-3.5 top-2.5 text-[19px] text-[#80756f]">search</span>
-                        <input
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-16 py-2 rounded-full bg-[#f1ede7] border border-[#d1c4bd]/60 text-[13px] text-primary placeholder-[#80756f] focus:outline-none focus:ring-2 focus:ring-secondary/40 transition-all"
-                            placeholder={t('home.search_placeholder', 'Search crafts or speak item name...')}
-                            type="text"
-                        />
-                        <div className="absolute right-2 top-1.5 flex items-center gap-1">
-                            {searchQuery && (
-                                <button
-                                    type="button"
-                                    onClick={() => setSearchQuery('')}
-                                    className="w-6 h-6 rounded-full text-[#80756f] hover:text-primary flex items-center justify-center cursor-pointer"
-                                    aria-label="Clear search"
-                                >
-                                    <span className="material-symbols-outlined text-[16px]">cancel</span>
-                                </button>
-                            )}
-                            <button
-                                aria-label="Voice search"
-                                onClick={handleVoiceSearch}
-                                className="w-7 h-7 rounded-full bg-[#e6e2dc] text-primary flex items-center justify-center hover:bg-[#d4c3ba] transition-colors cursor-pointer"
-                                type="button"
-                            >
-                                <span className="material-symbols-outlined text-[16px]">mic</span>
-                            </button>
-                        </div>
+                {/* Responsive Search Container */}
+                <div className="relative flex items-center justify-end w-full md:w-auto">
+                  
+                  {/* Mobile Search Toggle Button */}
+                  <button 
+                    onClick={() => setIsSearchOpen(!isSearchOpen)}
+                    className="md:hidden p-2 text-stone-500 hover:text-amber-700 transition-colors"
+                    aria-label="Toggle search"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </button>
+
+                  {/* Search Input Field */}
+                  <div className={`
+                    absolute right-0 top-full mt-2 w-64 bg-white shadow-lg rounded-xl border border-stone-200 z-50 p-2
+                    md:relative md:top-auto md:mt-0 md:w-64 md:bg-transparent md:shadow-none md:border-none md:p-0 md:flex
+                    ${isSearchOpen ? 'block' : 'hidden'} 
+                  `}>
+                    <div className="relative w-full">
+                      <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none hidden md:flex">
+                        <svg className="w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                      </div>
+                      <input
+                        type="text"
+                        className="block w-full p-2 md:pl-10 text-sm text-stone-900 border border-stone-300 rounded-lg bg-stone-50 focus:ring-amber-500 focus:border-amber-500 transition-all"
+                        placeholder="Search products, HSN..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        autoFocus={isSearchOpen}
+                      />
                     </div>
+                  </div>
                 </div>
             </div>
             <div className="px-3 sm:px-6 lg:px-8 py-4 sm:py-6 flex flex-col gap-6 max-w-7xl mx-auto w-full">
@@ -367,7 +357,7 @@ export default function Home({ customArtisanName } = {}) {
                 </div>
                 
                 {/* Product Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {isLoading ? (
                         <div className="col-span-full flex flex-col items-center justify-center py-12">
                             <div className="w-8 h-8 border-3 border-primary/20 border-t-primary rounded-full animate-spin mb-3" />
@@ -411,26 +401,12 @@ export default function Home({ customArtisanName } = {}) {
                             </button>
                         </div>
                     ) : filteredProducts.length === 0 ? (
-                        /* Zero Search Results State */
-                        <div className="col-span-full rounded-2xl border border-[#d1c4bd]/40 bg-[#f7f3ed] p-8 sm:p-12 flex flex-col items-center justify-center text-center">
-                            <span className="material-symbols-outlined text-4xl text-[#80756f] mb-2">search_off</span>
-                            <h4 className="text-lg font-bold text-primary mb-1">
-                                {language === 'hi' ? `"${searchQuery}" के लिए कोई शिल्प नहीं मिला` : `No crafts matching "${searchQuery}"`}
-                            </h4>
-                            <p className="text-xs text-on-surface-variant mb-4">
-                                {language === 'hi' ? 'कृपया अन्य नाम, HSN कोड या श्रेणी खोजें।' : 'Try searching by a different name, category, or HSN code.'}
-                            </p>
-                            <button
-                                onClick={() => setSearchQuery('')}
-                                className="px-4 py-2 rounded-full bg-[#9c441c] text-white text-xs font-bold hover:bg-[#7e3514] transition-colors cursor-pointer"
-                                type="button"
-                            >
-                                {language === 'hi' ? 'खोज साफ़ करें' : 'Clear Search'}
-                            </button>
+                        <div className="col-span-full text-center py-10 text-stone-500">
+                            No products match your search.
                         </div>
                     ) : (
                         <>
-                            {(searchQuery.trim() ? filteredProducts : filteredProducts.slice(0, 4)).map((product) => {
+                            {filteredProducts.map((product) => {
                                 const isLow = (product.stock || product.qty || product.min_order_quantity || 1) <= 2;
                                 return (
                                     <div

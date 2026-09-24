@@ -1,11 +1,17 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { fal } from '@fal-ai/client';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { validateImageLightweight } from '../utils/imageValidator';
 import { addGeoWatermark } from '../utils/geoWatermark';
 import MicroVideoCapture from '../components/MicroVideoCapture';
 import exifr from 'exifr';
+
+// Configure the client using your Vite environment variable
+fal.config({
+  credentials: import.meta.env.VITE_FAL_API_KEY,
+});
 
 const MAX_IMAGES = 3;
 
@@ -118,69 +124,51 @@ export async function processImagePipeline(
   const effectivePrompt = scenePrompt || 'A beautiful, rustic wooden table bathed in warm morning sunlight, soft studio lighting, photorealistic interior design.';
   let generatedImageUrl = null;
 
-  // Primary POST to Fal.ai queue endpoint as specified in requirements
+  // Primary execution via official fal.subscribe client SDK
   try {
-    const response = await fetch('https://queue.fal.run/fal-ai/bria/background/replace', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Key ${falApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+    const result = await fal.subscribe('fal-ai/bria/background/replace', {
+      input: {
         image_url: base64DataUrl,
         prompt: effectivePrompt,
-      }),
+      },
+      logs: true,
+      onQueueUpdate: (update) => {
+        if (update.status === 'IN_PROGRESS') {
+          updateStatus('AI दृश्य तैयार कर रहा है (fal.ai processing)...');
+        }
+      },
     });
 
-    if (response.ok) {
-      const data = await response.json();
-      if (data?.image?.url || data?.image_url || data?.url) {
-        generatedImageUrl = data?.image?.url || data?.image_url || data?.url;
-      } else if (data?.response_url || data?.status_url) {
-        const pollUrl = data.response_url || data.status_url;
-        let attempts = 0;
-        while (!generatedImageUrl && attempts < 35) {
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-          attempts++;
-          const pollRes = await fetch(pollUrl, {
-            headers: { Authorization: `Key ${falApiKey}` },
-          });
-          if (pollRes.ok) {
-            const pollData = await pollRes.json();
-            if (pollData?.image?.url || pollData?.image_url || pollData?.url) {
-              generatedImageUrl = pollData?.image?.url || pollData?.image_url || pollData?.url;
-            } else if (pollData?.status === 'COMPLETED' && pollData?.payload) {
-              generatedImageUrl = pollData.payload?.image?.url || pollData.payload?.image_url || pollData.payload?.url;
-            }
-          }
-        }
-      }
-    }
-  } catch (err) {
-    console.warn('[processImagePipeline] Queue endpoint exception:', err);
+    generatedImageUrl = result.data?.image?.url || result.data?.image_url || result.data?.url || result.image?.url;
+  } catch (sdkErr) {
+    console.warn('[processImagePipeline] fal.subscribe error, trying fallback:', sdkErr);
   }
 
-  // Fallback to synchronous endpoint if queue didn't return image URL
+  // Fallback to synchronous endpoint if SDK queue didn't return image URL
   if (!generatedImageUrl) {
-    const syncRes = await fetch('https://fal.run/fal-ai/bria/background/replace', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Key ${falApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        image_url: base64DataUrl,
-        prompt: effectivePrompt,
-      }),
-    });
+    try {
+      const syncRes = await fetch('https://fal.run/fal-ai/bria/background/replace', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Key ${falApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          image_url: base64DataUrl,
+          prompt: effectivePrompt,
+        }),
+      });
 
-    if (!syncRes.ok) {
-      const errText = await syncRes.text();
-      throw new Error(`Fal.ai API error (${syncRes.status}): ${errText}`);
+      if (syncRes.ok) {
+        const syncData = await syncRes.json();
+        generatedImageUrl = syncData?.image?.url || syncData?.image_url || syncData?.url;
+      } else {
+        const errText = await syncRes.text();
+        console.warn(`[processImagePipeline] Sync endpoint error (${syncRes.status}):`, errText);
+      }
+    } catch (fetchErr) {
+      console.warn('[processImagePipeline] Direct fetch fallback failed:', fetchErr);
     }
-
-    const syncData = await syncRes.json();
-    generatedImageUrl = syncData?.image?.url || syncData?.image_url || syncData?.url;
   }
 
   if (!generatedImageUrl) {

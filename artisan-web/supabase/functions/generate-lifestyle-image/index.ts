@@ -69,19 +69,20 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    // 3. Read Sandbox API key securely
-    const apiKey =
-      Deno.env.get("PHOTOROOM_SANDBOX_API_KEY") ||
-      "sandbox_sk_pr_default_f06fe33fd5b6af31954a992e7b0b9f655d1f6bf5";
+    // 3. Read fal.ai API key securely
+    const falApiKey =
+      Deno.env.get("FAL_KEY") ||
+      Deno.env.get("VITE_FAL_API_KEY") ||
+      "b39b82a4-540f-48cb-92f5-f03e61f41cdb:22ada45a4191b4edfdeff0b1c4726692";
 
     // 4. Parse incoming payload (supports JSON or multipart/form-data)
-    let imageBlob: Blob | null = null;
+    let imageBase64Data = "";
     let contentType = req.headers.get("content-type") || "";
 
     if (contentType.includes("application/json")) {
       const body = await req.json();
-      const imageBase64 = body.imageBase64 || body.image;
-      if (!imageBase64) {
+      const rawBase64 = body.imageBase64 || body.image;
+      if (!rawBase64) {
         return new Response(
           JSON.stringify({ error: "Bad Request", message: "imageBase64 is required in JSON body" }),
           {
@@ -90,13 +91,18 @@ Deno.serve(async (req: Request) => {
           }
         );
       }
-      const bytes = base64ToUint8Array(imageBase64);
-      imageBlob = new Blob([bytes.buffer as ArrayBuffer], { type: "image/jpeg" });
+      imageBase64Data = rawBase64.includes(",") ? rawBase64 : `data:image/jpeg;base64,${rawBase64}`;
     } else if (contentType.includes("multipart/form-data")) {
       const formData = await req.formData();
       const fileEntry = formData.get("imageFile") || formData.get("image") || formData.get("file");
       if (fileEntry instanceof Blob) {
-        imageBlob = fileEntry;
+        const arrayBuf = await fileEntry.arrayBuffer();
+        const uint8 = new Uint8Array(arrayBuf);
+        let binary = "";
+        for (let i = 0; i < uint8.byteLength; i++) {
+          binary += String.fromCharCode(uint8[i]);
+        }
+        imageBase64Data = `data:image/jpeg;base64,${btoa(binary)}`;
       } else {
         return new Response(
           JSON.stringify({ error: "Bad Request", message: "imageFile file is required in form data" }),
@@ -107,13 +113,13 @@ Deno.serve(async (req: Request) => {
         );
       }
     } else {
-      // Attempt generic text/json parsing as fallback
       const rawText = await req.text();
       try {
         const body = JSON.parse(rawText);
         if (body.imageBase64) {
-          const bytes = base64ToUint8Array(body.imageBase64);
-          imageBlob = new Blob([bytes.buffer as ArrayBuffer], { type: "image/jpeg" });
+          imageBase64Data = body.imageBase64.includes(",")
+            ? body.imageBase64
+            : `data:image/jpeg;base64,${body.imageBase64}`;
         }
       } catch {
         return new Response(
@@ -126,7 +132,7 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    if (!imageBlob) {
+    if (!imageBase64Data) {
       return new Response(
         JSON.stringify({ error: "Bad Request", message: "No valid image data could be extracted" }),
         {
@@ -136,33 +142,28 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    console.info(`[Lifestyle-AI] Sending request to Photoroom API. Blob size: ${imageBlob.size} bytes`);
+    console.info(`[Lifestyle-AI] Sending request to fal.ai API natively without watermarks`);
 
-    // 5. Build FormData for Photoroom API v2 Edit endpoint
-    const photoroomFormData = new FormData();
-    photoroomFormData.append("imageFile", imageBlob, "craft.jpg");
-    photoroomFormData.append("removeBackground", "true");
-    photoroomFormData.append(
-      "background.prompt",
-      "a clean, well-lit wooden table in a sunny room, minimalist"
-    );
-
-    // 6. POST request to Photoroom v2 edit API
-    const prResponse = await fetch("https://image-api.photoroom.com/v2/edit", {
+    // 5. POST request to fal.ai Bria background replace API
+    const falResponse = await fetch("https://fal.run/fal-ai/bria/background/replace", {
       method: "POST",
       headers: {
-        "x-api-key": apiKey,
+        "Authorization": `Key ${falApiKey}`,
+        "Content-Type": "application/json",
       },
-      body: photoroomFormData,
+      body: JSON.stringify({
+        image_url: imageBase64Data,
+        prompt: "a clean, well-lit wooden table in a sunny room, minimalist artisan craft studio, commercial studio lighting",
+      }),
     });
 
-    if (!prResponse.ok) {
-      const errText = await prResponse.text();
-      console.error(`[Photoroom API Error] Status ${prResponse.status}:`, errText);
+    if (!falResponse.ok) {
+      const errText = await falResponse.text();
+      console.error(`[fal.ai API Error] Status ${falResponse.status}:`, errText);
       return new Response(
         JSON.stringify({
-          error: "Photoroom API Error",
-          status: prResponse.status,
+          error: "fal.ai API Error",
+          status: falResponse.status,
           details: errText,
         }),
         {
@@ -172,11 +173,19 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // 7. Parse returning image blob
-    const generatedBlob = await prResponse.blob();
+    const falData = await falResponse.json();
+    const resultImageUrl = falData?.image?.url || falData?.image_url || falData?.url;
+
+    if (!resultImageUrl) {
+      throw new Error("fal.ai did not return a valid image URL");
+    }
+
+    // 6. Fetch returned high-resolution image blob from fal.ai CDN
+    const generatedRes = await fetch(resultImageUrl);
+    const generatedBlob = await generatedRes.blob();
     const generatedBuffer = await generatedBlob.arrayBuffer();
 
-    console.info(`[Lifestyle-AI] Received generated image from Photoroom: ${generatedBlob.size} bytes. Uploading to Supabase Storage...`);
+    console.info(`[Lifestyle-AI] Received generated image from fal.ai: ${generatedBlob.size} bytes. Uploading to Supabase Storage...`);
 
     // 8. Securely upload to Supabase Storage bucket (`product-images`)
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";

@@ -9,7 +9,7 @@ import { handleAddCraftNavigation } from '../utils/authGuard';
 
 /**
  * Celebratory Success State Component post-upload
- * Displays the finalized Photoroom-enhanced image, multi-channel GeM & ONDC linkage badges,
+ * Displays the finalized fal.ai Studio-enhanced image, multi-channel GeM & ONDC linkage badges,
  * and a massive green "Share to WhatsApp" button for rural artisans.
  */
 export default function Success() {
@@ -166,7 +166,7 @@ export default function Success() {
               <p className="text-xs sm:text-sm text-[#e6e2dc] mt-1 leading-relaxed">
                 {language === 'hi'
                   ? 'फोटो का लाइफस्टाइल दृश्य तैयार किया गया है और यह ONDC उपभोक्ता नेटवर्क एवं सरकारी GeM पोर्टल पर सक्रिय हो चुका है।'
-                  : 'Enhanced with Photoroom AI Studio cutout & synced directly across ONDC buyer apps and Government e-Marketplace.'}
+                  : 'Enhanced with fal.ai Studio cutout & synced directly across ONDC buyer apps and Government e-Marketplace.'}
               </p>
             </div>
           </div>
@@ -183,7 +183,7 @@ export default function Success() {
 
         {/* ── CORE SHOWCASE & WHATSAPP ACTION SECTION ────────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left Column: Finalized Photoroom-Enhanced Image Card */}
+          {/* Left Column: Finalized fal.ai-Enhanced Image Card */}
           <div className="lg:col-span-6 flex flex-col gap-4">
             <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-md border border-[#d1c4bd]/60 flex flex-col gap-4">
               <div className="pb-3 border-b border-[#d1c4bd]/40">
@@ -200,10 +200,10 @@ export default function Success() {
                   className="w-full h-full object-contain p-3 sm:p-4 transition-transform duration-500 group-hover:scale-105"
                 />
 
-                {/* Floating Photoroom Badge */}
+                {/* Floating fal.ai Badge */}
                 <div className="absolute top-3 left-3 px-2.5 sm:px-3 py-1 rounded-full bg-black/75 backdrop-blur-md border border-white/20 text-white text-[10px] sm:text-[11px] font-bold flex items-center gap-1.5 shadow-lg">
                   <span className="material-symbols-outlined text-[14px] sm:text-[15px] text-[#ff9062]">auto_awesome</span>
-                  <span>{language === 'hi' ? 'फोटो-स्टूडियो उन्नत' : 'Photoroom AI Enhanced'}</span>
+                  <span>{language === 'hi' ? 'फोटो-स्टूडियो उन्नत' : 'fal.ai Studio Enhanced'}</span>
                 </div>
               </div>
 

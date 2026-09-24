@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Camera, Mic as MicrophoneIcon, AlertCircleIcon, SquareIcon, TrashIcon } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
+import { fal } from '@fal-ai/client';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import LanguageToggle from '../components/LanguageToggle';
@@ -11,6 +12,11 @@ import AudioMuteButton from '../components/AudioMuteButton';
 import NotificationBar from '../components/NotificationBar';
 import useAudioAssistant from '../hooks/useAudioAssistant';
 import { validateImageLightweight, getLocalizedValidationReason } from '../utils/imageValidator';
+
+// Configure the fal.ai client using Vite environment variable
+fal.config({
+  credentials: import.meta.env.VITE_FAL_API_KEY,
+});
 
 const blobToBase64 = (blob) =>
   new Promise((resolve, reject) => {
@@ -532,11 +538,61 @@ export default function Capture() {
       ? `Bearer ${token}`
       : `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`;
 
+    const falApiKey = import.meta.env.VITE_FAL_API_KEY;
+    if (falApiKey) {
+      fal.config({ credentials: falApiKey });
+    }
+
     for (let i = 0; i < targets.length; i++) {
       const item = targets[i];
       if (item.status === 'ready' && item.enhancedUrl) continue;
 
       try {
+        let enhancedImageUrl = null;
+
+        // 1. Process directly using fal.ai official client SDK
+        if (falApiKey) {
+          try {
+            const rawBase64 = item.base64 || '';
+            const dataUrl = rawBase64.startsWith('data:')
+              ? rawBase64
+              : `data:image/jpeg;base64,${rawBase64}`;
+
+            const result = await fal.subscribe('fal-ai/bria/background/replace', {
+              input: {
+                image_url: dataUrl,
+                prompt: 'A beautiful, clean, well-lit wooden craft table in a sunny room, minimalist artisan handicraft display, studio lighting',
+              },
+            });
+
+            enhancedImageUrl = result.data?.image?.url || result.data?.image_url || result.data?.url || result.image?.url;
+          } catch (falErr) {
+            console.warn(`[Capture] fal.subscribe angle #${i + 1} error:`, falErr);
+          }
+        }
+
+        // 2. If direct fal call succeeded, update state
+        if (enhancedImageUrl) {
+          setImages((prev) =>
+            prev.map((img) =>
+              img.id === item.id
+                ? {
+                    ...img,
+                    status: 'ready',
+                    enhancedUrl: enhancedImageUrl,
+                    previewUrl: enhancedImageUrl,
+                  }
+                : img
+            )
+          );
+          if (i === 0) {
+            setImageUrl(enhancedImageUrl);
+            setProcessedPreview(enhancedImageUrl);
+          }
+          continue;
+        }
+
+        // Fallback: use edge function if available, else keep captured preview
         const response = await fetch(`${supabaseUrl}/functions/v1/generate-lifestyle-image`, {
           method: 'POST',
           headers: {
@@ -570,7 +626,7 @@ export default function Capture() {
             continue;
           }
         }
-        throw new Error('Edge function fallback required');
+        throw new Error('Fal enhancement fallback applied');
       } catch (err) {
         console.warn(`[Capture] Angle #${i + 1} enhancement fallback:`, err);
         setImages((prev) =>
@@ -1906,7 +1962,7 @@ export default function Capture() {
                     {language === 'hi' ? 'एआई लाइफस्टाइल स्टूडियो' : 'AI Lifestyle Studio'}
                   </p>
                   <p className="text-[10px] text-[#80756f]">
-                    {language === 'hi' ? 'मार्केट-रेडी जीवनशैली दृश्य' : 'Photoroom GenAI scene'}
+                    {language === 'hi' ? 'मार्केट-रेडी जीवनशैली दृश्य' : 'fal.ai GenAI Studio scene'}
                   </p>
                 </div>
               </div>

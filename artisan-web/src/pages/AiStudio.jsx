@@ -81,12 +81,12 @@ export const compressImageBeforeUpload = (file) => {
 
 /**
  * Enterprise Generative AI Image Pipeline:
- * 1. Generative AI Contextual Background replacement via Fal.ai (bria/background/replace)
+ * 1. Generative AI Contextual Background replacement & Studio lighting via Fal.ai (fal-ai/iclight)
  * 2. Directly fetch Fal.ai composition and upload Blob to Supabase Storage ('products' bucket)
  */
 export async function processImagePipeline(
   file,
-  scenePrompt = 'A beautiful, rustic wooden table bathed in warm morning sunlight, soft studio lighting, photorealistic interior design.',
+  scenePrompt = 'Professional product photography, clean studio lighting, high resolution, soft shadows, 4k',
   userId = 'anonymous',
   statusCallback = null
 ) {
@@ -94,7 +94,7 @@ export async function processImagePipeline(
   if (typeof scenePrompt === 'string' && scenePrompt.length < 40 && !scenePrompt.includes(' ') && typeof userId === 'function') {
     statusCallback = userId;
     userId = scenePrompt;
-    scenePrompt = 'A beautiful, rustic wooden table bathed in warm morning sunlight, soft studio lighting, photorealistic interior design.';
+    scenePrompt = 'Professional product photography, clean studio lighting, high resolution, soft shadows, 4k';
   }
 
   const updateStatus = (msg) => {
@@ -106,8 +106,8 @@ export async function processImagePipeline(
   // ── Step 1: Lightweight Canvas Downscaler (Under 1MB / 1200px max) ──
   const compressedBlob = await compressImageBeforeUpload(file);
 
-  // ── Step 2: Generative AI Contextual Background (Fal.ai + Bria) ──
-  updateStatus('AI आपके उत्पाद के लिए एक सुंदर दृश्य तैयार कर रहा है...');
+  // ── Step 2: Generative AI Contextual Lighting & Background (Fal.ai iclight) ──
+  updateStatus('Enhancing product lighting and removing background...');
 
   const base64DataUrl = await new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -121,25 +121,26 @@ export async function processImagePipeline(
     throw new Error('VITE_FAL_API_KEY is not configured in environment variables');
   }
 
-  const effectivePrompt = scenePrompt || 'A beautiful, rustic wooden table bathed in warm morning sunlight, soft studio lighting, photorealistic interior design.';
+  const effectivePrompt = scenePrompt || 'clean studio lighting, high resolution, soft shadows, 4k';
   let generatedImageUrl = null;
 
-  // Primary execution via official fal.subscribe client SDK
+  // Primary execution via official fal.subscribe client SDK with fal-ai/iclight
   try {
-    const result = await fal.subscribe('fal-ai/bria/background/replace', {
+    const result = await fal.subscribe('fal-ai/iclight', {
       input: {
         image_url: base64DataUrl,
-        prompt: effectivePrompt,
+        prompt: `Professional product photography of ${effectivePrompt}, clean studio lighting, high resolution, soft shadows, 4k`,
+        lighting_preference: 'Studio',
       },
       logs: true,
       onQueueUpdate: (update) => {
         if (update.status === 'IN_PROGRESS') {
-          updateStatus('AI दृश्य तैयार कर रहा है (fal.ai processing)...');
+          updateStatus('Enhancing product lighting and removing background...');
         }
       },
     });
 
-    generatedImageUrl = result.data?.image?.url || result.data?.image_url || result.data?.url || result.image?.url;
+    generatedImageUrl = result?.image?.url || result?.data?.image?.url || result?.data?.image_url || result?.data?.url;
   } catch (sdkErr) {
     console.warn('[processImagePipeline] fal.subscribe error, trying fallback:', sdkErr);
   }
@@ -147,7 +148,7 @@ export async function processImagePipeline(
   // Fallback to synchronous endpoint if SDK queue didn't return image URL
   if (!generatedImageUrl) {
     try {
-      const syncRes = await fetch('https://fal.run/fal-ai/bria/background/replace', {
+      const syncRes = await fetch('https://fal.run/fal-ai/iclight', {
         method: 'POST',
         headers: {
           'Authorization': `Key ${falApiKey}`,
@@ -155,13 +156,14 @@ export async function processImagePipeline(
         },
         body: JSON.stringify({
           image_url: base64DataUrl,
-          prompt: effectivePrompt,
+          prompt: `Professional product photography of ${effectivePrompt}, clean studio lighting, high resolution, soft shadows, 4k`,
+          lighting_preference: 'Studio',
         }),
       });
 
       if (syncRes.ok) {
         const syncData = await syncRes.json();
-        generatedImageUrl = syncData?.image?.url || syncData?.image_url || syncData?.url;
+        generatedImageUrl = syncData?.image?.url || syncData?.data?.image?.url || syncData?.image_url || syncData?.url;
       } else {
         const errText = await syncRes.text();
         console.warn(`[processImagePipeline] Sync endpoint error (${syncRes.status}):`, errText);
@@ -172,7 +174,7 @@ export async function processImagePipeline(
   }
 
   if (!generatedImageUrl) {
-    throw new Error('Fal.ai background replacement did not return a valid image URL');
+    throw new Error('Fal.ai iclight enhancement did not return a valid image URL');
   }
 
   // ── Step 2: Fetch Composed Image Blob & Upload Directly to Supabase Storage ──
@@ -253,9 +255,50 @@ export default function AiStudio() {
   const [recordedVideoBlob, setRecordedVideoBlob] = useState(null);
   const [capturedImages, setCapturedImages] = useState([]);
   const [isEnhancing, setIsEnhancing] = useState(false);
+  const [enhanceError, setEnhanceError] = useState('');
+  const [loadingText, setLoadingText] = useState('');
+  const [enhancedImageUrl, setEnhancedImageUrl] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
   const [isWatermarking, setIsWatermarking] = useState(false);
   const fileInputRef = useRef(null);
+
+  // ── Strict fal.ai Product Lighting & Enhancement Handler ──
+  const handleEnhanceImage = async (originalImageUrl, productDescription) => {
+    setIsEnhancing(true);
+    setEnhanceError('');
+
+    try {
+      // Execute the model on fal.ai
+      const result = await fal.subscribe("fal-ai/iclight", {
+        input: {
+          image_url: originalImageUrl,
+          prompt: `Professional product photography of ${productDescription || scenePrompt}, clean studio lighting, high resolution, soft shadows, 4k`,
+          lighting_preference: "Studio",
+        },
+        logs: true,
+        onQueueUpdate: (update) => {
+          if (update.status === "IN_PROGRESS") {
+            setLoadingText("Enhancing product lighting and removing background...");
+          }
+        },
+      });
+
+      const extractedUrl = result?.image?.url || result?.data?.image?.url;
+      if (result && ((result.image && result.image.url) || extractedUrl)) {
+        // Update state with the watermark-free, fal.ai generated image
+        const finalUrl = result?.image?.url || extractedUrl;
+        setEnhancedImageUrl(finalUrl);
+        return finalUrl;
+      } else {
+        throw new Error("Failed to retrieve enhanced image from fal.ai");
+      }
+    } catch (error) {
+      console.error("fal.ai Processing Error:", error);
+      setEnhanceError("Image enhancement failed. Please ensure your VITE_FAL_API_KEY is active and try again.");
+    } finally {
+      setIsEnhancing(false);
+    }
+  };
 
   // ── Generative Scene Prompt State ──
   const [scenePrompt, setScenePrompt] = useState(
@@ -379,11 +422,13 @@ export default function AiStudio() {
     });
   };
 
-  // ── AI Batch Generative Scene Pipeline (Fal.ai Bria Background Replace + Supabase) ──
+  // ── AI Batch Generative Scene Pipeline (fal-ai/iclight + Supabase) ──
   const handleBatchEnhance = useCallback(async (imagesToEnhance = capturedImages) => {
     if (imagesToEnhance.length === 0 || isEnhancing) return;
 
     setIsEnhancing(true);
+    setEnhanceError('');
+    setLoadingText('Enhancing product lighting and removing background...');
     setStatusMessage('AI आपके उत्पाद के लिए एक सुंदर दृश्य तैयार कर रहा है...');
 
     setCapturedImages((prev) =>
@@ -400,9 +445,14 @@ export default function AiStudio() {
       try {
         const result = await processImagePipeline(item.file, scenePrompt, activeUserId, (msg) => {
           setStatusMessage(msg);
+          setLoadingText(msg);
         });
 
         const rawBase64 = await fileToBase64(item.file);
+
+        if (result?.publicUrl) {
+          setEnhancedImageUrl(result.publicUrl);
+        }
 
         updatedImages[i] = {
           ...item,
@@ -413,6 +463,7 @@ export default function AiStudio() {
         setCapturedImages([...updatedImages]);
       } catch (err) {
         console.warn(`[AiStudio] Generative pipeline error on photo #${i + 1}:`, err);
+        setEnhanceError("Image enhancement failed. Please ensure your VITE_FAL_API_KEY is active and try again.");
         let rawBase64 = '';
         try {
           rawBase64 = await fileToBase64(item.file);
@@ -431,6 +482,7 @@ export default function AiStudio() {
 
     setIsEnhancing(false);
     setStatusMessage('');
+    setLoadingText('');
   }, [capturedImages, isEnhancing, scenePrompt, user]);
 
   // Handle Preset Selection Change
@@ -519,6 +571,14 @@ export default function AiStudio() {
           </div>
         </div>
 
+        {/* Strict Error Handling Feedback */}
+        {enhanceError && (
+          <div className="p-3 bg-red-950/80 border border-red-500/50 rounded-xl flex items-start gap-2 text-red-200 text-xs font-semibold mb-3">
+            <span className="text-red-400 font-bold shrink-0">⚠️</span>
+            <span>{enhanceError}</span>
+          </div>
+        )}
+
         {/* Video Mode */}
         {captureMode === 'video' ? (
           <div className="flex-1 flex flex-col justify-center items-center">
@@ -540,9 +600,9 @@ export default function AiStudio() {
               <div className="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 border-orange-500 z-10"></div>
               <div className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-orange-500 z-10"></div>
 
-              {capturedImages.length > 0 && (
+              {(enhancedImageUrl || capturedImages.length > 0) && (
                 <img 
-                  src={capturedImages[capturedImages.length - 1].enhancedUrl || capturedImages[capturedImages.length - 1].previewUrl} 
+                  src={enhancedImageUrl || capturedImages[capturedImages.length - 1].enhancedUrl || capturedImages[capturedImages.length - 1].previewUrl} 
                   alt="Active preview"
                   className="absolute inset-0 w-full h-full object-contain"
                 />
@@ -556,7 +616,7 @@ export default function AiStudio() {
               ) : isEnhancing ? (
                 <p className="text-amber-300 text-xs sm:text-sm z-10 bg-black/85 px-4 py-2 rounded-full backdrop-blur-xs flex items-center gap-2 border border-amber-500/40 animate-pulse text-center max-w-[90%]">
                   <svg className="animate-spin h-4 w-4 text-amber-400 shrink-0" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                  <span>{statusMessage || 'AI आपके उत्पाद के लिए एक सुंदर दृश्य तैयार कर रहा है...'}</span>
+                  <span>{loadingText || statusMessage || 'Enhancing product lighting and removing background...'}</span>
                 </p>
               ) : (
                 <p className="text-stone-500 text-sm z-10 bg-black/70 px-3 py-1.5 rounded-full backdrop-blur-xs">
@@ -584,7 +644,7 @@ export default function AiStudio() {
                   <span>🎨</span>
                   <span>दृश्य शैली चुनें (Select Scene Vibe)</span>
                 </span>
-                <span className="text-[10px] text-stone-400">Fal.ai Bria AI</span>
+                <span className="text-[10px] text-stone-400">Fal.ai IC-Light</span>
               </div>
 
               {/* Scene Dropdown Selector */}

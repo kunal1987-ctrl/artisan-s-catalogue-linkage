@@ -558,14 +558,15 @@ export default function Capture() {
               ? rawBase64
               : `data:image/jpeg;base64,${rawBase64}`;
 
-            const result = await fal.subscribe('fal-ai/bria/background/replace', {
+            const result = await fal.subscribe('fal-ai/iclight', {
               input: {
                 image_url: dataUrl,
-                prompt: 'A beautiful, clean, well-lit wooden craft table in a sunny room, minimalist artisan handicraft display, studio lighting',
+                prompt: 'Professional product photography of artisan handicraft, clean studio lighting, high resolution, soft shadows, 4k',
+                lighting_preference: 'Studio',
               },
             });
 
-            enhancedImageUrl = result.data?.image?.url || result.data?.image_url || result.data?.url || result.image?.url;
+            enhancedImageUrl = result.image?.url || result.data?.image?.url || result.data?.image_url || result.data?.url;
           } catch (falErr) {
             console.warn(`[Capture] fal.subscribe angle #${i + 1} error:`, falErr);
           }

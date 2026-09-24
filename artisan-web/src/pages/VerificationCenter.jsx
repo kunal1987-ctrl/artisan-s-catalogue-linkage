@@ -271,6 +271,17 @@ export default function VerificationCenter() {
                 ? 'MoSJE आईडी, पहचान पत्र या उद्यम आधार से प्रमाणित होकर सीधे सरकारी निविदाओं (GeM) और ONDC पर थोक ऑर्डर प्राप्त करें।'
                 : 'Authenticate with MoSJE ID, Pehchan Card or Udyam Aadhaar to unlock direct GeM Government Tenders and zero-commission ONDC institutional procurement.'}
             </p>
+            <p className="mt-2 text-sm text-stone-500">
+              Don't have an ID yet?{' '}
+              <a 
+                href="https://socialjustice.gov.in/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-800 hover:underline font-medium transition-colors"
+              >
+                Find out how to get pre-verified by MoSJE ↗
+              </a>
+            </p>
           </div>
         </div>
       </div>

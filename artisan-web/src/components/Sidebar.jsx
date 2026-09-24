@@ -94,19 +94,19 @@ export default function Sidebar({ className = '' }) {
       <div className="flex flex-col gap-6">
         {/* Brand Header */}
         <div className="flex items-center px-2 pt-2">
-          <div
-            onClick={() => navigate('/home')}
-            className="flex items-center gap-3 cursor-pointer group"
+          <Link 
+            className="flex items-center gap-2 group transition-transform active:scale-95 focus:outline-none focus:ring-2 focus:ring-amber-500 rounded-lg p-1" 
+            to="/"
           >
-            <img
-              src="/shilp-setu-logo.png"
-              alt="Shilp Setu"
-              className="h-9 w-9 object-contain drop-shadow-sm group-hover:scale-105 transition-transform shrink-0"
+            <img 
+              src="/shilp-setu-logo.png" 
+              alt="Shilp Setu - Artisan Product Studio" 
+              className="h-12 sm:h-14 md:h-16 w-auto object-contain drop-shadow-sm group-hover:drop-shadow-md transition-all duration-300"
+              loading="eager"
             />
-            <span className="font-bold text-[18px] text-primary tracking-tight leading-tight">
-              {t('sidebar.brand', 'Shilp Setu')}
-            </span>
-          </div>
+            {/* Screen-reader only text since the logo contains the typography */}
+            <span className="sr-only">Shilp Setu Dashboard</span>
+          </Link>
         </div>
 
         {/* Navigation Links */}

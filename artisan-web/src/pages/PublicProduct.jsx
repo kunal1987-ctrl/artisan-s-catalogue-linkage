@@ -205,20 +205,17 @@ export default function PublicProduct() {
 
       {/* ── Top Public Header ─────────────────────────────────────────────── */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200 px-3 sm:px-8 py-2.5 sm:py-3.5 flex items-center justify-between shadow-xs gap-2">
-        <Link to="/home" className="flex items-center gap-2 sm:gap-2.5 group min-w-0">
+        <Link 
+          to="/" 
+          className="flex items-center gap-2 group transition-transform active:scale-95 focus:outline-none focus:ring-2 focus:ring-amber-500 rounded-lg p-1 shrink-0"
+        >
           <img
             src="/shilp-setu-logo.png"
-            alt="Shilp Setu"
-            className="h-8 sm:h-10 w-auto object-contain group-hover:scale-105 transition-transform shrink-0"
+            alt="Shilp Setu - Artisan Product Studio"
+            className="h-10 sm:h-12 w-auto object-contain drop-shadow-sm group-hover:drop-shadow-md transition-all duration-300"
+            loading="eager"
           />
-          <div className="flex flex-col min-w-0">
-            <span className="font-bold text-sm sm:text-base text-stone-900 tracking-tight leading-tight truncate">
-              Shilp Setu
-            </span>
-            <span className="text-[10px] text-stone-500 font-semibold truncate hidden sm:inline">
-              {isHi ? 'प्रमाणित कारीगर बाज़ार' : 'Verified Artisan Storefront'}
-            </span>
-          </div>
+          <span className="sr-only">Shilp Setu Dashboard</span>
         </Link>
 
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">

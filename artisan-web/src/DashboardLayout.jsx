@@ -216,20 +216,19 @@ export default function DashboardLayout() {
               )}
             </button>
 
-            <div 
-              onClick={() => navigate('/home')} 
-              className="flex items-center gap-2 cursor-pointer group"
-              title={t('nav.brand', 'Shilp Setu')}
+            <Link 
+              className="flex items-center gap-2 group transition-transform active:scale-95 focus:outline-none focus:ring-2 focus:ring-amber-500 rounded-lg p-1" 
+              to="/"
             >
-              <img
-                src="/shilp-setu-logo.png"
-                alt="Shilp Setu"
-                className="h-8 w-8 sm:h-9 sm:w-9 object-contain group-hover:scale-105 transition-transform shrink-0"
+              <img 
+                src="/shilp-setu-logo.png" 
+                alt="Shilp Setu - Artisan Product Studio" 
+                className="h-10 sm:h-12 md:h-14 w-auto object-contain drop-shadow-sm group-hover:drop-shadow-md transition-all duration-300"
+                loading="eager"
               />
-              <h1 className="text-base sm:text-lg font-bold text-gray-800 group-hover:text-primary transition-colors truncate">
-                {t('nav.brand', 'Shilp Setu')}
-              </h1>
-            </div>
+              {/* Screen-reader only text since the logo contains the typography */}
+              <span className="sr-only">Shilp Setu Dashboard</span>
+            </Link>
           </div>
 
           {/* Right-Side: Essential Controls Only */}
@@ -419,22 +418,19 @@ export default function DashboardLayout() {
               <div className="flex flex-col gap-5">
                 {/* Drawer Header with Close */}
                 <div className="flex items-center justify-between pb-3 border-b border-[#d1c4bd]/40">
-                  <div
-                    onClick={() => {
-                      navigate('/home');
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className="flex items-center gap-2.5 cursor-pointer"
+                  <Link
+                    to="/"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center gap-2 group transition-transform active:scale-95 focus:outline-none focus:ring-2 focus:ring-amber-500 rounded-lg p-1"
                   >
-                    <img
-                      src="/shilp-setu-logo.png"
-                      alt="Shilp Setu"
-                      className="h-8 w-8 object-contain shrink-0"
+                    <img 
+                      src="/shilp-setu-logo.png" 
+                      alt="Shilp Setu - Artisan Product Studio" 
+                      className="h-10 sm:h-12 w-auto object-contain drop-shadow-sm group-hover:drop-shadow-md transition-all duration-300"
+                      loading="eager"
                     />
-                    <span className="font-bold text-base text-primary tracking-tight">
-                      {t('sidebar.brand', 'Shilp Setu')}
-                    </span>
-                  </div>
+                    <span className="sr-only">Shilp Setu Dashboard</span>
+                  </Link>
                   <button
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 flex items-center justify-center cursor-pointer"

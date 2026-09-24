@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Camera, Mic as MicrophoneIcon, AlertCircleIcon, SquareIcon, TrashIcon } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
@@ -1560,16 +1560,19 @@ export default function Capture() {
         <header className="sticky top-0 z-20 bg-[#fdf9f3]/95 backdrop-blur-md border-b border-[#e8e2d9] w-full">
           <div className="max-w-7xl mx-auto w-full px-3 sm:px-6 lg:px-8 py-2 sm:py-2.5 flex items-center justify-between gap-2 sm:gap-4">
             <div className="flex items-center gap-2 sm:gap-3">
-              <div 
-                onClick={() => navigate('/home')}
-                className="flex items-center gap-2 cursor-pointer group"
-                title="Go to Home"
+              <Link 
+                className="flex items-center gap-2 group transition-transform active:scale-95 focus:outline-none focus:ring-2 focus:ring-amber-500 rounded-lg p-1 shrink-0" 
+                to="/"
               >
-                <div className="w-8 h-8 rounded-lg bg-[#2e241e] text-[#ffdeaa] flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                  <span className="material-symbols-outlined text-[18px]">photo_camera</span>
-                </div>
-                <span className="font-bold text-sm text-[#180f0a] tracking-tight">Shilp Setu</span>
-              </div>
+                <img 
+                  src="/shilp-setu-logo.png" 
+                  alt="Shilp Setu - Artisan Product Studio" 
+                  className="h-9 sm:h-11 w-auto object-contain drop-shadow-sm group-hover:drop-shadow-md transition-all duration-300"
+                  loading="eager"
+                />
+                {/* Screen-reader only text since the logo contains the typography */}
+                <span className="sr-only">Shilp Setu Dashboard</span>
+              </Link>
             </div>
 
             <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">

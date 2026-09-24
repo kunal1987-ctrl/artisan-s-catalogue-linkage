@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import LanguageToggle from '../components/LanguageToggle';
@@ -327,25 +327,41 @@ export default function Login() {
     <div className="min-h-screen w-full bg-[#fdf9f3] font-sans text-on-surface antialiased flex flex-col justify-center items-center p-3 sm:p-6 lg:p-8">
       {/* Top Header bar with Logo & Language Toggle */}
       <div className="w-full max-w-md flex justify-between items-center mb-5 sm:mb-6">
-        <div 
-          onClick={() => navigate('/home')}
-          className="flex items-center gap-2 sm:gap-2.5 cursor-pointer group min-w-0"
-          title="Shilp Setu"
+        <Link 
+          className="flex items-center gap-2 group transition-transform active:scale-95 focus:outline-none focus:ring-2 focus:ring-amber-500 rounded-lg p-1" 
+          to="/"
         >
-          <img
-            src="/shilp-setu-logo.png"
-            alt="Shilp Setu"
-            className="h-8 sm:h-10 w-auto object-contain group-hover:scale-105 transition-transform shrink-0"
+          <img 
+            src="/shilp-setu-logo.png" 
+            alt="Shilp Setu - Artisan Product Studio" 
+            className="h-10 sm:h-12 md:h-14 w-auto object-contain drop-shadow-sm group-hover:drop-shadow-md transition-all duration-300"
+            loading="eager"
           />
-          <span className="font-bold text-base sm:text-lg text-primary tracking-tight truncate">
-            {language === 'hi' ? 'शिल्प सेतु' : 'Shilp Setu'}
-          </span>
-        </div>
+          {/* Screen-reader only text since the logo contains the typography */}
+          <span className="sr-only">Shilp Setu Dashboard</span>
+        </Link>
         <LanguageToggle variant="light" />
       </div>
 
       {/* Main Authentication Card */}
       <div className="w-full max-w-md bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-xl border border-[#d1c4bd]/50 flex flex-col gap-5 sm:gap-6">
+        
+        {/* Prominent Shilp Setu Gateway Header */}
+        <div className="flex flex-col items-center justify-center mb-2 sm:mb-4 w-full">
+          <div className="bg-white p-4 rounded-2xl shadow-sm border border-stone-100 mb-4 sm:mb-6">
+            <img 
+              src="/shilp-setu-logo.png" 
+              alt="Shilp Setu" 
+              className="h-24 md:h-28 w-auto object-contain animate-fade-in-down" 
+            />
+          </div>
+          <h1 className="text-xl md:text-2xl font-extrabold text-stone-800 text-center tracking-tight">
+            Artisan Verification Gateway
+          </h1>
+          <p className="text-sm text-stone-500 mt-2 text-center max-w-xs">
+            Digitize your craft and connect directly to ONDC and GeM networks.
+          </p>
+        </div>
         
         {/* ─────────────────────────────────────────────────────────────────── */}
         {/* STATE 1: EMAIL INPUT */}

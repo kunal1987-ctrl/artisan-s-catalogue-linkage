@@ -116,7 +116,21 @@ export default function AuthModal({ onAuthenticated, isOpen, onClose }) {
           ✕
         </button>
 
-        <h2 className="text-xl font-bold mb-4 text-center text-stone-900">Shilp Setu Login</h2>
+        <div className="flex flex-col items-center justify-center mb-4 w-full">
+          <div className="bg-white p-2.5 rounded-2xl shadow-xs border border-stone-100 mb-3">
+            <img 
+              src="/shilp-setu-logo.png" 
+              alt="Shilp Setu" 
+              className="h-16 w-auto object-contain animate-fade-in-down" 
+            />
+          </div>
+          <h2 className="text-lg font-extrabold text-stone-800 text-center tracking-tight">
+            Artisan Verification Gateway
+          </h2>
+          <p className="text-xs text-stone-500 mt-1 text-center max-w-xs">
+            Digitize your craft and connect directly to ONDC and GeM networks.
+          </p>
+        </div>
 
         {/* 1-Click Google OAuth */}
         <button

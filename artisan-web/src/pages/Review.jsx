@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import LanguageToggle from '../components/LanguageToggle';
@@ -394,16 +394,19 @@ export default function Review() {
             >
               <span className="material-symbols-outlined text-[18px]">arrow_back</span>
             </button>
-            <div 
-              onClick={() => navigate('/home')}
-              className="flex items-center gap-2 cursor-pointer group shrink-0"
-              title="Go to Home"
+            <Link 
+              className="flex items-center gap-2 group transition-transform active:scale-95 focus:outline-none focus:ring-2 focus:ring-amber-500 rounded-lg p-1 shrink-0" 
+              to="/"
             >
-              <div className="w-8 h-8 rounded-lg bg-[#2e241e] text-[#ffdeaa] flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                <span className="material-symbols-outlined text-[18px]">palette</span>
-              </div>
-              <span className="font-bold text-sm text-white tracking-tight hidden sm:inline">Shilp Setu</span>
-            </div>
+              <img 
+                src="/shilp-setu-logo.png" 
+                alt="Shilp Setu - Artisan Product Studio" 
+                className="h-9 sm:h-11 w-auto object-contain drop-shadow-sm group-hover:drop-shadow-md transition-all duration-300"
+                loading="eager"
+              />
+              {/* Screen-reader only text since the logo contains the typography */}
+              <span className="sr-only">Shilp Setu Dashboard</span>
+            </Link>
             <div className="h-4 w-[1px] bg-white/20 mx-0.5 hidden sm:block" />
             <div className="flex items-center gap-1.5 text-xs font-bold text-white/70 truncate">
               <span

@@ -43,6 +43,34 @@ export default function Home({ customArtisanName } = {}) {
   const [showRestockModal, setShowRestockModal] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const [dismissTip, setDismissTip] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  // Dynamic filtering based on search query across title, hsn_code, category
+  const filteredProducts = products.filter((product) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      (product.title && product.title.toLowerCase().includes(query)) ||
+      (product.hsn_code && product.hsn_code.toLowerCase().includes(query)) ||
+      (product.category && product.category.toLowerCase().includes(query))
+    );
+  });
+
+  const handleVoiceSearch = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert(language === 'hi' ? 'आपके ब्राउज़र में वॉयस सर्च समर्थित नहीं है।' : 'Voice search is not supported in this browser.');
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = language === 'hi' ? 'hi-IN' : 'en-IN';
+    recognition.onresult = (event) => {
+      const transcript = event.results?.[0]?.[0]?.transcript || '';
+      setSearchQuery(transcript);
+      setIsSearchOpen(true);
+    };
+    recognition.start();
+  };
 
   // Dynamic Inventory Metric Calculation from real products
   const lowStockProducts = products.filter((p) => Number(p.stock ?? 0) <= 5);
@@ -93,30 +121,65 @@ export default function Home({ customArtisanName } = {}) {
         <div className="flex flex-col w-full pb-10">
             <div
                 className="border-b border-[#d1c4bd]/40 px-3 sm:px-6 lg:px-8 py-3.5 sm:py-4 flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
-                <div className="flex flex-col">
-                    <div
-                        className="flex items-center gap-2 text-[11px] sm:text-[12px] font-semibold text-secondary uppercase tracking-wider">
-                        <span>{t('sidebar.home', 'Home')}</span>
-                        <span>/</span>
-                        <span>{t('dashboard.breadcrumb', 'Artisan Dashboard')}</span>
+                <div className="flex items-center justify-between w-full md:w-auto">
+                    <div className="flex flex-col">
+                        <div
+                            className="flex items-center gap-2 text-[11px] sm:text-[12px] font-semibold text-secondary uppercase tracking-wider">
+                            <span>{t('sidebar.home', 'Home')}</span>
+                            <span>/</span>
+                            <span>{t('dashboard.breadcrumb', 'Artisan Dashboard')}</span>
+                        </div>
+                        <h2 className="text-xl sm:text-[24px] font-bold text-primary mt-0.5">
+                            {language === 'hi' ? `स्वागत है, ${artisanName}!` : `Welcome, ${artisanName}!`}
+                        </h2>
                     </div>
-                    <h2 className="text-xl sm:text-[24px] font-bold text-primary mt-0.5">
-                        {language === 'hi' ? `स्वागत है, ${artisanName}!` : `Welcome, ${artisanName}!`}
-                    </h2>
+
+                    {/* Mobile Search Toggle Button */}
+                    <button
+                        type="button"
+                        onClick={() => setIsSearchOpen((prev) => !prev)}
+                        className="md:hidden flex items-center justify-center w-10 h-10 rounded-full bg-[#f1ede7] text-primary border border-[#d1c4bd]/60 hover:bg-[#e6e2dc] transition-colors cursor-pointer shrink-0"
+                        aria-label="Toggle search"
+                        title="Toggle search"
+                    >
+                        <span className="material-symbols-outlined text-[20px]">
+                            {isSearchOpen ? 'close' : 'search'}
+                        </span>
+                    </button>
                 </div>
                 
-                <div className="flex items-center gap-3 w-full md:w-auto">
+                {/* Search Bar Container: Toggles open on mobile, stays visible on desktop (md:block) */}
+                <div className={`w-full md:w-auto ${isSearchOpen ? 'block' : 'hidden md:block'}`}>
                     <div className="relative w-full sm:w-80">
                         <span
                             className="material-symbols-outlined absolute left-3.5 top-2.5 text-[19px] text-[#80756f]">search</span>
                         <input
-                            className="w-full pl-10 pr-10 py-2 rounded-full bg-[#f1ede7] border border-[#d1c4bd]/60 text-[13px] text-primary placeholder-[#80756f] focus:outline-none focus:ring-2 focus:ring-secondary/40 transition-all"
-                            placeholder={t('home.search_placeholder', 'Search crafts or speak item name...')} type="text" />
-                        <button aria-label="Voice search"
-                            className="absolute right-2.5 top-1.5 w-7 h-7 rounded-full bg-[#e6e2dc] text-primary flex items-center justify-center hover:bg-[#d4c3ba] transition-colors cursor-pointer"
-                            type="button">
-                            <span className="material-symbols-outlined text-[16px]">mic</span>
-                        </button>
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-10 pr-16 py-2 rounded-full bg-[#f1ede7] border border-[#d1c4bd]/60 text-[13px] text-primary placeholder-[#80756f] focus:outline-none focus:ring-2 focus:ring-secondary/40 transition-all"
+                            placeholder={t('home.search_placeholder', 'Search crafts or speak item name...')}
+                            type="text"
+                        />
+                        <div className="absolute right-2 top-1.5 flex items-center gap-1">
+                            {searchQuery && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSearchQuery('')}
+                                    className="w-6 h-6 rounded-full text-[#80756f] hover:text-primary flex items-center justify-center cursor-pointer"
+                                    aria-label="Clear search"
+                                >
+                                    <span className="material-symbols-outlined text-[16px]">cancel</span>
+                                </button>
+                            )}
+                            <button
+                                aria-label="Voice search"
+                                onClick={handleVoiceSearch}
+                                className="w-7 h-7 rounded-full bg-[#e6e2dc] text-primary flex items-center justify-center hover:bg-[#d4c3ba] transition-colors cursor-pointer"
+                                type="button"
+                            >
+                                <span className="material-symbols-outlined text-[16px]">mic</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -267,18 +330,31 @@ export default function Home({ customArtisanName } = {}) {
                 {/* ── Government Opportunities & Live Fairs ── */}
                 <HaatEventCard currentLang={language || 'hi'} />
 
-                {/* Recent Uploads Section */}
+                {/* Recent Uploads / Search Results Section */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-4">
                     <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                         <h3 className="text-lg sm:text-[22px] font-bold text-primary">
-                            {t('home.recent_uploads', 'Recent Uploads')}
+                            {searchQuery.trim() ? (language === 'hi' ? 'खोज परिणाम' : 'Search Results') : t('home.recent_uploads', 'Recent Uploads')}
                         </h3>
                         <span className="px-2.5 py-0.5 rounded-full bg-[#ebe8e2] text-secondary font-bold text-[11px] sm:text-[12px]">
-                            {products.length} {products.length === 1 ? (language === 'hi' ? 'सक्रिय शिल्प' : 'Active Craft') : (language === 'hi' ? 'सक्रिय शिल्प' : 'Active Crafts')}
+                            {searchQuery.trim() 
+                                ? `${filteredProducts.length} ${language === 'hi' ? 'शिल्प मिले' : 'crafts found'}` 
+                                : `${products.length} ${products.length === 1 ? (language === 'hi' ? 'सक्रिय शिल्प' : 'Active Craft') : (language === 'hi' ? 'सक्रिय शिल्प' : 'Active Crafts')}`}
                         </span>
-                        <span className="text-[13px] text-on-surface-variant hidden md:inline">
-                            {t('home.ready_buyers', 'Ready to show international buyers')}
-                        </span>
+                        {searchQuery.trim() && (
+                            <button
+                                type="button"
+                                onClick={() => setSearchQuery('')}
+                                className="text-xs font-semibold text-[#9c441c] hover:underline cursor-pointer"
+                            >
+                                {language === 'hi' ? 'खोज साफ़ करें ✕' : 'Clear search ✕'}
+                            </button>
+                        )}
+                        {!searchQuery.trim() && (
+                            <span className="text-[13px] text-on-surface-variant hidden md:inline">
+                                {t('home.ready_buyers', 'Ready to show international buyers')}
+                            </span>
+                        )}
                     </div>
                     <button
                         onClick={() => navigate('/catalog')}
@@ -334,9 +410,27 @@ export default function Home({ customArtisanName } = {}) {
                                 <span>{language === 'hi' ? '+ पहला शिल्प जोड़ें' : '+ Add First Craft'}</span>
                             </button>
                         </div>
+                    ) : filteredProducts.length === 0 ? (
+                        /* Zero Search Results State */
+                        <div className="col-span-full rounded-2xl border border-[#d1c4bd]/40 bg-[#f7f3ed] p-8 sm:p-12 flex flex-col items-center justify-center text-center">
+                            <span className="material-symbols-outlined text-4xl text-[#80756f] mb-2">search_off</span>
+                            <h4 className="text-lg font-bold text-primary mb-1">
+                                {language === 'hi' ? `"${searchQuery}" के लिए कोई शिल्प नहीं मिला` : `No crafts matching "${searchQuery}"`}
+                            </h4>
+                            <p className="text-xs text-on-surface-variant mb-4">
+                                {language === 'hi' ? 'कृपया अन्य नाम, HSN कोड या श्रेणी खोजें।' : 'Try searching by a different name, category, or HSN code.'}
+                            </p>
+                            <button
+                                onClick={() => setSearchQuery('')}
+                                className="px-4 py-2 rounded-full bg-[#9c441c] text-white text-xs font-bold hover:bg-[#7e3514] transition-colors cursor-pointer"
+                                type="button"
+                            >
+                                {language === 'hi' ? 'खोज साफ़ करें' : 'Clear Search'}
+                            </button>
+                        </div>
                     ) : (
                         <>
-                            {products.slice(0, 4).map((product) => {
+                            {(searchQuery.trim() ? filteredProducts : filteredProducts.slice(0, 4)).map((product) => {
                                 const isLow = (product.stock || product.qty || product.min_order_quantity || 1) <= 2;
                                 return (
                                     <div

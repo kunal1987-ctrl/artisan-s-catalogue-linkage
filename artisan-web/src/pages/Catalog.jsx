@@ -17,6 +17,7 @@ export default function Catalog() {
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState('all'); // all | live | draft | sold_out
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [toastMsg, setToastMsg] = useState('');
@@ -215,10 +216,11 @@ export default function Catalog() {
     if (SpeechRecognition) {
       showToast('Listening for voice search... बोलें');
       const recognition = new SpeechRecognition();
-      recognition.lang = 'hi-IN';
+      recognition.lang = language === 'hi' ? 'hi-IN' : 'en-IN';
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
         setSearchQuery(transcript);
+        setIsSearchOpen(true);
         showToast(`Searched: "${transcript}"`);
       };
       recognition.start();
@@ -228,17 +230,19 @@ export default function Catalog() {
   };
 
   // Filter products based on search and active filter tab
-  const filteredProducts = products.filter((p) => {
+  const filteredProducts = products.filter((product) => {
     const matchesFilter =
       activeFilter === 'all' ||
-      (activeFilter === 'live' && p.status === 'live') ||
-      (activeFilter === 'draft' && p.status === 'draft') ||
-      (activeFilter === 'sold_out' && p.status === 'sold_out');
+      (activeFilter === 'live' && product.status === 'live') ||
+      (activeFilter === 'draft' && product.status === 'draft') ||
+      (activeFilter === 'sold_out' && product.status === 'sold_out');
 
+    const query = searchQuery.toLowerCase();
     const matchesSearch =
       !searchQuery.trim() ||
-      p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.category.toLowerCase().includes(searchQuery.toLowerCase());
+      (product.title && product.title.toLowerCase().includes(query)) ||
+      (product.hsn_code && product.hsn_code.toLowerCase().includes(query)) ||
+      (product.category && product.category.toLowerCase().includes(query));
 
     return matchesFilter && matchesSearch;
   });
@@ -253,10 +257,25 @@ export default function Catalog() {
         <div className="flex flex-col w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
           
           {/* Top Administrative Toolbar */}
-          <div className="flex items-center justify-between gap-3 sm:gap-4 mb-6 sm:mb-8">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-800">
-              {t('catalog.title', 'Craft Catalog')}
-            </h2>
+          <div className="flex items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
+            <div className="flex items-center gap-2.5">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-800">
+                {t('catalog.title', 'Craft Catalog')}
+              </h2>
+              {/* Mobile Search Toggle Button */}
+              <button
+                type="button"
+                onClick={() => setIsSearchOpen((prev) => !prev)}
+                className="sm:hidden flex items-center justify-center w-8 h-8 rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer"
+                aria-label="Toggle search"
+                title="Toggle search"
+              >
+                <span className="material-symbols-outlined text-[19px]">
+                  {isSearchOpen ? 'close' : 'search'}
+                </span>
+              </button>
+            </div>
+
             <button
               onClick={(e) => handleAddCraftNavigation(navigate, e)}
               className="bg-emerald-600 text-white px-3.5 sm:px-4 py-2 rounded-xl shadow-xs hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:outline-none flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium transition-colors cursor-pointer active:scale-95"
@@ -267,33 +286,49 @@ export default function Catalog() {
 
           {/* Search Bar & Filters */}
           <div className="flex flex-col gap-4 mb-6">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+            {/* Search Input: Responsive toggle on mobile, stays visible on desktop (sm:flex) */}
+            <div className={`flex flex-col sm:flex-row items-center justify-between gap-3 ${isSearchOpen ? 'flex' : 'hidden sm:flex'}`}>
               <div className="relative w-full sm:w-96">
                 <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px] pointer-events-none">
                   search
                 </span>
                 <input
-                  className="w-full h-12 pl-11 pr-10 bg-surface-container-lowest text-on-surface placeholder:text-on-surface-variant text-sm font-medium rounded-xl shadow-xs border border-surface-container-high focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all"
+                  className="w-full h-12 pl-11 pr-16 bg-surface-container-lowest text-on-surface placeholder:text-on-surface-variant text-sm font-medium rounded-xl shadow-xs border border-surface-container-high focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all"
                   id="productSearchInput"
                   placeholder={t('catalog.search', 'Search crafts, sarees, pottery...')}
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
-                <button
-                  aria-label="Voice Search"
-                  className="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg flex items-center justify-center text-secondary hover:bg-surface-container active:scale-90 transition-transform cursor-pointer"
-                  onClick={handleVoiceSearch}
-                  type="button"
-                >
-                  <span className="material-symbols-outlined text-[18px]">mic</span>
-                </button>
+                <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('')}
+                      className="w-7 h-7 rounded-md text-on-surface-variant hover:text-on-surface flex items-center justify-center cursor-pointer"
+                      aria-label="Clear search"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">cancel</span>
+                    </button>
+                  )}
+                  <button
+                    aria-label="Voice Search"
+                    className="w-9 h-9 rounded-lg flex items-center justify-center text-secondary hover:bg-surface-container active:scale-90 transition-transform cursor-pointer"
+                    onClick={() => {
+                      handleVoiceSearch();
+                      setIsSearchOpen(true);
+                    }}
+                    type="button"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">mic</span>
+                  </button>
+                </div>
               </div>
 
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="text-xs font-bold text-secondary hover:underline cursor-pointer"
+                  className="text-xs font-bold text-secondary hover:underline cursor-pointer self-start sm:self-center"
                   type="button"
                 >
                   {t('catalog.filter', 'Clear Search')}

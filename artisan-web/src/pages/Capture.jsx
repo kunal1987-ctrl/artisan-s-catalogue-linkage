@@ -1945,43 +1945,6 @@ export default function Capture() {
                 </div>
               </div>
             )}
-
-            {/* Feature Helper Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-[#f1ede7] border border-[#e8e2d9]">
-                <span className="material-symbols-outlined text-[20px] text-[#9c441c]">crop_free</span>
-                <div>
-                  <p className="text-[11px] font-bold text-[#180f0a]">
-                    {language === 'hi' ? 'स्वचालित किनारा पहचान' : 'Macro Edge Focus'}
-                  </p>
-                  <p className="text-[10px] text-[#80756f]">
-                    {language === 'hi' ? 'शिल्प की बारीक नक्काशी' : 'Captures intricate borders'}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-[#f1ede7] border border-[#e8e2d9]">
-                <span className="material-symbols-outlined text-[20px] text-[#9c441c]">palette</span>
-                <div>
-                  <p className="text-[11px] font-bold text-[#180f0a]">
-                    {language === 'hi' ? 'एआई लाइफस्टाइल स्टूडियो' : 'AI Lifestyle Studio'}
-                  </p>
-                  <p className="text-[10px] text-[#80756f]">
-                    {language === 'hi' ? 'मार्केट-रेडी जीवनशैली दृश्य' : 'fal.ai GenAI Studio scene'}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-[#f1ede7] border border-[#e8e2d9]">
-                <span className="material-symbols-outlined text-[20px] text-[#9c441c]">verified</span>
-                <div>
-                  <p className="text-[11px] font-bold text-[#180f0a]">
-                    {language === 'hi' ? '100% प्रामाणिक स्वदेशी' : 'Make In India'}
-                  </p>
-                  <p className="text-[10px] text-[#80756f]">
-                    {language === 'hi' ? 'शिल्पकार सीधा बाज़ार' : 'Artisan direct linkage'}
-                  </p>
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* ──────────────────────────────── RIGHT: VOICE + DESCRIPTION + AI PIPELINE ──────────────────────────────── */}

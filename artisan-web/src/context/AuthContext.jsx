@@ -103,13 +103,15 @@ export function AuthProvider({ children }) {
     try {
       const savedEmail = localStorage.getItem('artisan_verified_email');
       const savedPhone = localStorage.getItem('artisan_verified_phone');
-      if (savedEmail || savedPhone) {
+      const isGovVerified = localStorage.getItem('artisan_gov_verified') === 'true';
+      if (savedEmail || savedPhone || isGovVerified) {
         return {
           name: fallbackArtisanName,
           email: savedEmail || null,
           phone: savedPhone || null,
           cluster: 'Jaipur Terracotta Cluster',
           verified: true,
+          is_verified: isGovVerified,
         };
       }
     } catch {}
@@ -119,6 +121,7 @@ export function AuthProvider({ children }) {
       phone: null,
       cluster: 'Jaipur Terracotta Cluster',
       verified: false,
+      is_verified: false,
     };
   });
 
@@ -514,6 +517,7 @@ export function AuthProvider({ children }) {
     setArtisanProfile((prev) => ({
       ...prev,
       verified: true,
+      is_verified: true,
       isGovVerified: true,
       govIdType: verificationData.gov_id_type,
       govIdNumber: verificationData.gov_id_number,
@@ -584,6 +588,7 @@ export function AuthProvider({ children }) {
                   certificate_id: profData.certificate_id || profData.gov_id_number || null,
                   ...(profData.is_verified ? {
                     verified: true,
+                    is_verified: true,
                     isGovVerified: true,
                     govIdType: profData.gov_id_type,
                     govIdNumber: profData.gov_id_number,

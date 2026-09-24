@@ -13,8 +13,8 @@ export default function VerificationCenter({ userProfile, onVerificationSuccess 
 
   const handleVerification = async (e) => {
     e.preventDefault();
-    if (!idNumber || idNumber.length < 5) {
-      setErrorMessage('कृपया वैध आईडी दर्ज करें (Please enter a valid ID)');
+    if (!idNumber.trim()) {
+      setErrorMessage("Please enter a valid MoSJE ID or Udyam Aadhaar.");
       return;
     }
 
@@ -22,51 +22,56 @@ export default function VerificationCenter({ userProfile, onVerificationSuccess 
     setErrorMessage('');
 
     try {
-      // Step 1: Secure Gateway Handshake
-      setVerificationStep('Connecting to National e-Governance Gateway (API Setu)...');
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // --- 1. THE HACKATHON DEMO BYPASS ---
+      if (idNumber.trim().toUpperCase() === "DEMO-MOSJE-2026") {
+        setVerificationStep('Connecting to National e-Governance Gateway (API Setu)...');
+        // A. Simulate network latency for realistic presentation (1.5s)
+        await new Promise(resolve => setTimeout(resolve, 1500));
 
-      // Step 2: Ministry Database Query
+        // B. Authenticate and update Supabase backend securely
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError) throw authError;
+
+        if (user) {
+          // Update the user's profile to unlock ONDC features globally
+          const { error: dbError } = await supabase
+            .from('profiles')
+            .update({ 
+              is_verified: true, 
+              verification_id: "DEMO-MOSJE-2026",
+              verified_at: new Date().toISOString() 
+            })
+            .eq('id', user.id);
+            
+          if (dbError) throw dbError;
+        }
+
+        const mockRef = 'DEMO-MOSJE-2026';
+        setRefId(mockRef);
+        try {
+          localStorage.setItem('artisan_gov_verified', 'true');
+          localStorage.setItem('artisan_gov_id_type', idType);
+          localStorage.setItem('artisan_gov_id_number', 'DEMO-MOSJE-2026');
+          localStorage.setItem('artisan_gov_ref_id', mockRef);
+          localStorage.setItem('artisan_gov_verification_date', new Date().toISOString());
+        } catch {}
+
+        // C. Trigger success UI state
+        setStatus('success');
+        if (onVerificationSuccess) onVerificationSuccess();
+        return;
+      }
+
+      // --- 2. REAL API / FAILURE STATE DEMONSTRATION ---
+      // If they enter anything else, simulate a 2-second check and reject it
       setVerificationStep(`Querying Ministry of Textiles / MoSJE registry for ID: ${idNumber.toUpperCase()}...`);
-      await new Promise(resolve => setTimeout(resolve, 1200));
-
-      // Step 3: Cryptographic Signature Validation
-      setVerificationStep('Validating DigiLocker cryptographic signature...');
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Generate a realistic government verification reference number
-      const mockRef = `DIGI-${Math.floor(100000 + Math.random() * 900000)}-IN`;
-      setRefId(mockRef);
-
-      // Save to Supabase
-      const { data: { user } } = await supabase.auth.getUser();
-      const activeUserId = user?.id || 'd3b07384-d113-4696-a885-3b984852d0b6';
-
-      await supabase
-        .from('profiles')
-        .upsert({ 
-          id: activeUserId,
-          is_verified: true, 
-          gov_id_type: idType,
-          gov_id_number: idNumber.toUpperCase(),
-          verification_date: new Date().toISOString()
-        }, { onConflict: 'id' });
-
-      try {
-        localStorage.setItem('artisan_gov_verified', 'true');
-        localStorage.setItem('artisan_gov_id_type', idType);
-        localStorage.setItem('artisan_gov_id_number', idNumber.toUpperCase());
-        localStorage.setItem('artisan_gov_ref_id', mockRef);
-        localStorage.setItem('artisan_gov_verification_date', new Date().toISOString());
-      } catch {}
-
-      setStatus('success');
-      if (onVerificationSuccess) onVerificationSuccess();
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      throw new Error("Invalid or unregistered ID. Please verify your status on the MoSJE portal.");
 
     } catch (err) {
-      console.error(err);
+      console.error("Verification Pipeline Error:", err);
       setStatus('error');
-      setErrorMessage('सत्यापन विफल। कृपया पुनः प्रयास करें।');
+      setErrorMessage(err.message || "Network verification failed. Please try again.");
     }
   };
 
@@ -144,9 +149,21 @@ export default function VerificationCenter({ userProfile, onVerificationSuccess 
           </select>
         </div>
 
-        <div>
+        <div className="relative">
+          <span 
+            onClick={() => setIdNumber('DEMO-MOSJE-2026')} 
+            className="w-2 h-2 rounded-full cursor-pointer opacity-10 hover:opacity-100 transition-opacity absolute right-4 top-4 bg-amber-600"
+            title="Dev Shortcut"
+          />
           <div className="flex items-center justify-between mb-2">
-            <label className="block text-sm font-medium text-amber-100">दस्तावेज़ संख्या (Document Number)</label>
+            <label className="block text-sm font-medium text-amber-100">
+              दस्तावेज़ संख्या (Document Number)
+              <span 
+                onClick={() => setIdNumber('DEMO-MOSJE-2026')} 
+                className="w-2 h-2 rounded-full cursor-pointer opacity-10 hover:opacity-100 transition-opacity inline-block ml-2 bg-amber-600"
+                title="Dev Shortcut"
+              />
+            </label>
             <button
               type="button"
               onClick={() => setIdNumber(idType === 'mosje' ? 'MSJE/2026/89412' : idType === 'pehchan' ? 'AR/RAJ/710294' : 'UDYAM-RJ-02-0049210')}

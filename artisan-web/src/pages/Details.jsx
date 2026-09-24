@@ -11,7 +11,7 @@ export default function Details() {
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { language, showToast, artisanName } = useAuth();
+  const { language, showToast, artisanName, artisanProfile } = useAuth();
   const { speakPrompt, stop } = useAudioAssistant();
 
   const [product, setProduct] = useState(() => {
@@ -136,6 +136,8 @@ export default function Details() {
       }
     }
   };
+
+  const handleOndcPublish = handleToggleOndc;
 
   // Handler: List / Delist on GeM Portal
   const handleToggleGem = async () => {
@@ -406,30 +408,36 @@ export default function Details() {
                 {/* Primary Action Buttons: "List to ONDC" & "List to GeM Portal" */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* List to ONDC Button */}
-                  <button
-                    id="list-to-ondc-btn"
-                    onClick={handleToggleOndc}
-                    type="button"
-                    className={`w-full py-4 px-4 rounded-2xl font-black text-sm flex items-center justify-between gap-2 shadow-sm transition-all cursor-pointer active:scale-95 border ${
-                      isOndcListed
-                        ? 'bg-[#9c441c] hover:bg-[#833714] text-white border-[#9c441c]'
-                        : 'bg-[#f7f4ee] hover:bg-[#eae5dc] text-stone-700 border-[#d1c4bd]'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <span className="material-symbols-outlined text-[22px]">hub</span>
-                      <span className="tracking-wide">
-                        {isOndcListed ? 'List to ONDC' : 'List to ONDC'}
-                      </span>
-                    </div>
-                    <span
-                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                        isOndcListed ? 'bg-white/20 text-white' : 'bg-stone-300 text-stone-700'
+                  {artisanProfile?.is_verified ? (
+                    <button
+                      id="list-to-ondc-btn"
+                      onClick={handleOndcPublish}
+                      type="button"
+                      className={`w-full py-4 px-4 rounded-2xl font-black text-sm flex items-center justify-between gap-2 shadow-sm transition-all cursor-pointer active:scale-95 border ${
+                        isOndcListed
+                          ? 'bg-[#9c441c] hover:bg-[#833714] text-white border-[#9c441c]'
+                          : 'bg-[#f7f4ee] hover:bg-[#eae5dc] text-stone-700 border-[#d1c4bd]'
                       }`}
                     >
-                      {isOndcListed ? (language === 'hi' ? 'लाइव' : 'Live') : (language === 'hi' ? 'निष्क्रिय' : 'Off')}
-                    </span>
-                  </button>
+                      <div className="flex items-center gap-2.5">
+                        <span className="material-symbols-outlined text-[22px]">hub</span>
+                        <span className="tracking-wide">
+                          Publish to ONDC / GeM
+                        </span>
+                      </div>
+                      <span
+                        className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                          isOndcListed ? 'bg-white/20 text-white' : 'bg-stone-300 text-stone-700'
+                        }`}
+                      >
+                        {isOndcListed ? (language === 'hi' ? 'लाइव' : 'Live') : (language === 'hi' ? 'निष्क्रिय' : 'Off')}
+                      </span>
+                    </button>
+                  ) : (
+                    <div className="bg-stone-100 text-stone-500 p-3 rounded-lg border border-stone-200 flex items-center justify-center text-center">
+                      <p className="text-xs font-medium">Complete MoSJE Verification to unlock institutional network broadcasting.</p>
+                    </div>
+                  )}
 
                   {/* List to GeM Portal Button */}
                   <button

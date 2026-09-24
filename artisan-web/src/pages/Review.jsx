@@ -362,6 +362,8 @@ export default function Review() {
     await proceedWithPublish();
   };
 
+  const handleOndcPublish = handlePublish;
+
   const addTag = () => {
     if (newTag.trim() && !tags.includes(newTag.trim())) {
       setTags([...tags, newTag.trim()]);
@@ -429,30 +431,38 @@ export default function Review() {
             <AudioMuteButton variant="light" />
             <LanguageToggle variant="dark" />
 
-            <button
-              onClick={handlePublish}
-              disabled={isPublishing}
-              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-bold text-xs flex items-center gap-1.5 sm:gap-2 shadow-lg transition-all cursor-pointer ${
-                isPublishing
-                  ? 'bg-[#ff9062]/50 text-[#180f0a]/50 cursor-wait'
-                  : 'bg-[#ff9062] text-[#180f0a] hover:bg-[#ff804a] active:scale-95'
-              }`}
-              type="button"
-            >
-              {isPublishing ? (
-                <>
-                  <span className="material-symbols-outlined text-[16px] text-[#ffdeaa] animate-pulse">auto_awesome</span>
-                  <span className="hidden sm:inline">{language === 'hi' ? 'प्रकाशित हो रहा है...' : 'Publishing...'}</span>
-                  <span className="sm:hidden">{language === 'hi' ? 'प्रतीक्षा...' : 'Saving...'}</span>
-                </>
-              ) : (
-                <>
-                  <span className="hidden sm:inline">{language === 'hi' ? 'GeM व ONDC पर प्रकाशित करें' : 'Publish to ONDC & GeM'}</span>
-                  <span className="sm:hidden">{language === 'hi' ? 'प्रकाशित करें' : 'Publish'}</span>
-                  <span className="material-symbols-outlined text-[16px]">rocket_launch</span>
-                </>
-              )}
-            </button>
+            {(artisanProfile?.is_verified || isGovVerified) ? (
+              <button
+                onClick={handleOndcPublish}
+                disabled={isPublishing}
+                className={`bg-amber-600 hover:bg-amber-700 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-bold text-xs flex items-center gap-1.5 sm:gap-2 shadow-lg transition-all cursor-pointer ${
+                  isPublishing ? 'opacity-60 cursor-wait' : 'active:scale-95'
+                }`}
+                type="button"
+              >
+                {isPublishing ? (
+                  <>
+                    <span className="material-symbols-outlined text-[16px] text-[#ffdeaa] animate-pulse">auto_awesome</span>
+                    <span className="hidden sm:inline">{language === 'hi' ? 'प्रकाशित हो रहा है...' : 'Publishing...'}</span>
+                    <span className="sm:hidden">{language === 'hi' ? 'प्रतीक्षा...' : 'Saving...'}</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="hidden sm:inline">{language === 'hi' ? 'GeM व ONDC पर प्रकाशित करें' : 'Publish to ONDC / GeM'}</span>
+                    <span className="sm:hidden">{language === 'hi' ? 'प्रकाशित करें' : 'Publish'}</span>
+                    <span className="material-symbols-outlined text-[16px]">rocket_launch</span>
+                  </>
+                )}
+              </button>
+            ) : (
+              <div 
+                onClick={() => navigate('/verify')}
+                className="bg-stone-100 text-stone-600 hover:text-stone-900 px-3 py-1.5 rounded-lg border border-stone-200 text-[11px] font-semibold cursor-pointer hidden sm:block transition-colors"
+                title="Complete MoSJE Verification"
+              >
+                <span>Verify to Publish</span>
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -1053,34 +1063,34 @@ export default function Review() {
                       <span className="material-symbols-outlined text-[19px]">replay</span>
                       <span>Retake Photo & Voice</span>
                     </button>
-                    <button
-                      onClick={handlePublish}
-                      disabled={isPublishing}
-                      id="publish-bottom-btn"
-                      className={`w-full sm:flex-1 h-auto min-h-12 py-3 px-4 sm:px-6 rounded-full flex items-center justify-center gap-2 shadow-xl active:scale-[0.99] transition-all font-bold text-sm sm:text-[15px] tracking-wide text-center cursor-pointer ${
-                        isPublishing
-                          ? 'bg-primary-container/60 text-white/60 cursor-wait'
-                          : 'bg-[#180f0a] hover:bg-black text-white'
-                      }`}
-                      type="button"
-                    >
-                      {isPublishing ? (
-                        <>
-                          <span className="material-symbols-outlined text-[18px] text-[#ffdeaa] animate-pulse">auto_awesome</span>
-                          <span>Publishing to ONDC & GeM Network...</span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="text-[17px]">🚀</span>
-                          <span>
-                            {isGovVerified
-                              ? 'Publish to ONDC & GeM Network'
-                              : 'Verify & Publish to ONDC & GeM Network'}
-                          </span>
-                          <span className="material-symbols-outlined text-[18px]">verified</span>
-                        </>
-                      )}
-                    </button>
+                    {(artisanProfile?.is_verified || isGovVerified) ? (
+                      <button
+                        onClick={handleOndcPublish}
+                        disabled={isPublishing}
+                        id="publish-bottom-btn"
+                        className={`bg-amber-600 hover:bg-amber-700 text-white w-full sm:flex-1 h-auto min-h-12 py-3 px-4 sm:px-6 rounded-full flex items-center justify-center gap-2 shadow-xl active:scale-[0.99] transition-all font-bold text-sm sm:text-[15px] tracking-wide text-center cursor-pointer ${
+                          isPublishing ? 'opacity-60 cursor-wait' : ''
+                        }`}
+                        type="button"
+                      >
+                        {isPublishing ? (
+                          <>
+                            <span className="material-symbols-outlined text-[18px] text-[#ffdeaa] animate-pulse">auto_awesome</span>
+                            <span>Publishing to ONDC & GeM Network...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-[17px]">🚀</span>
+                            <span>Publish to ONDC / GeM</span>
+                            <span className="material-symbols-outlined text-[18px]">verified</span>
+                          </>
+                        )}
+                      </button>
+                    ) : (
+                      <div className="w-full sm:flex-1 bg-stone-100 text-stone-500 p-3 rounded-lg border border-stone-200 text-center">
+                        <p className="text-xs sm:text-sm font-medium">Complete MoSJE Verification to unlock institutional network broadcasting.</p>
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center justify-center gap-2 text-on-surface-variant text-[12px] text-center pt-1">
                     <span className="material-symbols-outlined text-[15px] text-emerald-700 shrink-0">verified_user</span>

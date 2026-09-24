@@ -4,21 +4,104 @@
  * Supported Regional Language Configuration for Shilp Setu
  * Configured with standard BCP 47 language codes for TTS compatibility.
  *
- * Fallback & Platform Note:
- * While the Web Speech API covers major regional languages like Tamil (தமிழ்)
- * and Telugu (తెలుగు) universally across devices, minority languages like
- * Santali (संताली) or Sindhi (سنڌي) depend heavily on the user's operating system
- * language packs. If native TTS fails for these, it will gracefully degrade
- * to visual text only.
+ * Integration Note:
+ * While Gujarati, Hindi, and Kannada will work flawlessly with TTS out of the
+ * box, the browser's OS-level speech packs will dictate whether native audio plays
+ * for Bodo, Dogri, Goan Konkani, Kashmiri, and Maithili. The UI text translation
+ * (via the Gemini AI translation pipeline) will work perfectly for all 8 languages
+ * regardless of the device's audio capabilities.
  * ─────────────────────────────────────────────────────────────────────────────
  */
+
+export const ADDITIONAL_LANGUAGES = [
+  {
+    code: 'brx-IN',
+    name: 'Bodo',
+    nativeName: 'बड़ो',
+    native: 'बड़ो',
+    script: 'Devanagari',
+    region: 'Assam & North-East India',
+    keyChar: 'ब',
+    color: '#0d9488',
+  },
+  {
+    code: 'doi-IN',
+    name: 'Dogri',
+    nativeName: 'डोगरी',
+    native: 'डोगरी',
+    script: 'Devanagari',
+    region: 'Jammu & Kashmir / Himachal',
+    keyChar: 'डो',
+    color: '#4f46e5',
+  },
+  {
+    code: 'kok-IN',
+    name: 'Goan Konkani',
+    nativeName: 'गोवा कोंकणी',
+    native: 'गोवा कोंकणी',
+    script: 'Devanagari',
+    region: 'Goa & Konkan Coast',
+    keyChar: 'कों',
+    color: '#e11d48',
+  },
+  {
+    code: 'gu-IN',
+    name: 'Gujarati',
+    nativeName: 'ગુજરાતી',
+    native: 'ગુજરાતી',
+    script: 'Gujarati',
+    region: 'Gujarat & Western India',
+    keyChar: 'ગુ',
+    color: '#ea580c',
+  },
+  {
+    code: 'hi-IN',
+    name: 'Hindi',
+    nativeName: 'हिन्दी',
+    native: 'हिन्दी',
+    script: 'Devanagari',
+    region: 'North & Central India',
+    keyChar: 'अ',
+    color: '#9c441c',
+  },
+  {
+    code: 'kn-IN',
+    name: 'Kannada',
+    nativeName: 'ಕನ್ನಡ',
+    native: 'ಕನ್ನಡ',
+    script: 'Kannada',
+    region: 'Karnataka & South India',
+    keyChar: 'ಕ',
+    color: '#059669',
+  },
+  {
+    code: 'ks-IN',
+    name: 'Kashmiri',
+    nativeName: 'कश्मीरी',
+    native: 'कश्मीरी',
+    script: 'Perso-Arabic / Devanagari',
+    region: 'Kashmir Valley & North India',
+    keyChar: 'क',
+    color: '#7c3aed',
+  },
+  {
+    code: 'mai-IN',
+    name: 'Maithili',
+    nativeName: 'मैथिली',
+    native: 'मैथिली',
+    script: 'Devanagari / Mithilakshar',
+    region: 'Mithila, Bihar & Jharkhand',
+    keyChar: 'मै',
+    color: '#ca8a04',
+  },
+];
 
 export const SUPPORTED_LANGUAGES = [
   {
     code: 'hi',
     ttsCode: 'hi-IN',
     name: 'Hindi',
-    nativeName: 'हिंदी',
+    nativeName: 'हिन्दी',
     native: 'हिंदी',
     script: 'Devanagari',
     region: 'North & Central India',
@@ -146,4 +229,6 @@ export const SUPPORTED_LANGUAGES = [
     keyChar: 'ا',
     color: '#15803d',
   },
+  // Additional Regional Languages with standard BCP 47 codes
+  ...ADDITIONAL_LANGUAGES.filter((l) => l.code !== 'hi-IN'),
 ];

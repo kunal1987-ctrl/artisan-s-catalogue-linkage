@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import i18n from '../i18n';
-import { SUPPORTED_LANGUAGES } from '../constants/languages';
-import { playAudioInstruction, getTranslatedText } from '../utils/audio';
+import { SUPPORTED_LANGUAGES, ADDITIONAL_LANGUAGES } from '../constants/languages';
+import { playAudioInstruction, playAudioInstructionWithFallback, getTranslatedText } from '../utils/audio';
 
-export { SUPPORTED_LANGUAGES };
+export { SUPPORTED_LANGUAGES, ADDITIONAL_LANGUAGES };
 
 const VALID_CODES = new Set(
   SUPPORTED_LANGUAGES.flatMap((l) => [l.code, l.code.split('-')[0], l.ttsCode].filter(Boolean))
@@ -104,8 +104,8 @@ export function LanguageProvider({ children }) {
       const instructionText = getTranslatedText('welcome_instruction', targetCode);
       const ttsCode = matched?.ttsCode || (targetCode.includes('-') ? targetCode : `${targetCode}-IN`);
 
-      // Play the audio instruction in the selected language
-      playAudioInstruction(instructionText, ttsCode);
+      // Play the audio instruction in the selected language with fallback
+      playAudioInstructionWithFallback(instructionText, ttsCode);
     }
   }, []);
 

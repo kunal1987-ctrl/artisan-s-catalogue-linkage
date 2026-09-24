@@ -4,25 +4,12 @@ import { playInstructionAudio, unlockMobileAudio } from '../utils/soundPlayer';
 
 // 16 Target Languages Configuration (+ English)
 export const LANGUAGES = [
-  { code: 'hi', name: 'Hindi', native: 'हिन्दी', script: 'Devanagari', keyChar: 'अ' },
-  { code: 'en', name: 'English', native: 'English', script: 'Latin', keyChar: 'A' },
-  { code: 'bn', name: 'Bengali', native: 'বাংলা', script: 'Bengali', keyChar: 'অ' },
-  { code: 'te', name: 'Telugu', native: 'తెలుగు', script: 'Telugu', keyChar: 'అ' },
-  { code: 'mr', name: 'Marathi', native: 'मराठी', script: 'Devanagari', keyChar: 'म' },
-  { code: 'ta', name: 'Tamil', native: 'தமிழ்', script: 'Tamil', keyChar: 'அ' },
-  { code: 'gu', name: 'Gujarati', native: 'ગુજરાતી', script: 'Gujarati', keyChar: 'ગુ' },
-  { code: 'kn', name: 'Kannada', native: 'ಕನ್ನಡ', script: 'Kannada', keyChar: 'ಕ' },
-  { code: 'or', name: 'Odia', native: 'ଓଡ଼ିଆ', script: 'Odia', keyChar: 'ଓ' },
-  { code: 'pa', name: 'Punjabi', native: 'ਪੰਜਾਬੀ', script: 'Gurmukhi', keyChar: 'ਪ' },
-  { code: 'sa', name: 'Sanskrit', native: 'संस्कृत', script: 'Devanagari', keyChar: 'सं' },
-  { code: 'sat', name: 'Santali', native: 'संताली', script: 'Ol Chiki', keyChar: 'ᱥ' },
-  { code: 'sd', name: 'Sindhi', native: 'سنڌي', script: 'Arabic', keyChar: 'س' },
-  { code: 'ur', name: 'Urdu', native: 'اردو', script: 'Perso-Arabic', keyChar: 'ا' },
-  { code: 'brx', name: 'Bodo', native: 'बड़ो', script: 'Devanagari', keyChar: 'ब' },
-  { code: 'doi', name: 'Dogri', native: 'डोगरी', script: 'Devanagari', keyChar: 'डो' },
-  { code: 'kok', name: 'Goan Konkani', native: 'गोवा कोंकणी', script: 'Devanagari', keyChar: 'कों' },
-  { code: 'ks', name: 'Kashmiri', native: 'कश्मीरी', script: 'Perso-Arabic', keyChar: 'ک' },
-  { code: 'mai', name: 'Maithili', native: 'मैथिली', script: 'Devanagari', keyChar: 'मै' },
+  { code: 'hi', name: 'Hindi', native: 'हिन्दी', short: 'HI' },
+  { code: 'en', name: 'English', native: 'English', short: 'EN' },
+  { code: 'bn', name: 'Bengali', native: 'বাংলা', short: 'BN' },
+  { code: 'mr', name: 'Marathi', native: 'मराठी', short: 'MR' },
+  { code: 'te', name: 'Telugu', native: 'తెలుగు', short: 'TE' },
+  { code: 'ta', name: 'Tamil', native: 'தமிழ்', short: 'TA' }
 ];
 
 export const SUPPORTED_LANGUAGES = LANGUAGES;

@@ -9,19 +9,6 @@ import bnTranslation from './locales/bn.json';
 import teTranslation from './locales/te.json';
 import mrTranslation from './locales/mr.json';
 import taTranslation from './locales/ta.json';
-import guTranslation from './locales/gu.json';
-import knTranslation from './locales/kn.json';
-import orTranslation from './locales/or.json';
-import paTranslation from './locales/pa.json';
-import saTranslation from './locales/sa.json';
-import satTranslation from './locales/sat.json';
-import sdTranslation from './locales/sd.json';
-import urTranslation from './locales/ur.json';
-import brxTranslation from './locales/brx.json';
-import doiTranslation from './locales/doi.json';
-import kokTranslation from './locales/kok.json';
-import ksTranslation from './locales/ks.json';
-import maiTranslation from './locales/mai.json';
 
 const resources = {
   hi: { translation: hiTranslation },
@@ -30,19 +17,6 @@ const resources = {
   te: { translation: teTranslation },
   mr: { translation: mrTranslation },
   ta: { translation: taTranslation },
-  gu: { translation: guTranslation },
-  kn: { translation: knTranslation },
-  or: { translation: orTranslation },
-  pa: { translation: paTranslation },
-  sa: { translation: saTranslation },
-  sat: { translation: satTranslation },
-  sd: { translation: sdTranslation },
-  ur: { translation: urTranslation },
-  brx: { translation: brxTranslation },
-  doi: { translation: doiTranslation },
-  kok: { translation: kokTranslation },
-  ks: { translation: ksTranslation },
-  mai: { translation: maiTranslation },
 };
 
 // Safe retrieval of initial language preference with guaranteed fallback

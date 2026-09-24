@@ -2,6 +2,7 @@ import React from 'react';
 import Home from './Home';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import AudioGuide from '../components/AudioGuide';
 
 /**
  * Dashboard Component for Shilp Setu
@@ -11,5 +12,10 @@ export default function Dashboard() {
   const { artisanName } = useAuth?.() || {};
   const { t } = useLanguage();
 
-  return <Home customArtisanName={artisanName} dashboardTitle={t('dashboard_title')} />;
+  return (
+    <>
+      <Home customArtisanName={artisanName} dashboardTitle={t('dashboard_title')} />
+      <AudioGuide />
+    </>
+  );
 }

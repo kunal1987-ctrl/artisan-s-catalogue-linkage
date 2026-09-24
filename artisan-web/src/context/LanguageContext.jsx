@@ -154,6 +154,27 @@ export const TRANSLATIONS = {
     ks: 'پنہِنجِہ مقٲمی زبانہِ منٛز ؤنیو چیزٕچ معلوٗمات۔',
     mai: 'अपना स्थानीय भाषा में बाज कऽ सामानक जानकारी जोड़ू।',
   },
+  start_app: {
+    hi: 'ऐप शुरू करें (Tap to Start)',
+    en: 'Start App (Tap to Start)',
+    bn: 'অ্যাপ শুরু করুন (Tap to Start)',
+    ta: 'செயலியைத் தொடங்கவும் (Tap to Start)',
+    te: 'యాప్‌ను ప్రారంభించండి (Tap to Start)',
+    mr: 'ॲप सुरू करा (Tap to Start)',
+    gu: 'ઍપ શરૂ કરો (Tap to Start)',
+    kn: 'ಅಪ್ಲಿಕೇಶನ್ ಪ್ರಾರಂಭಿಸಿ (Tap to Start)',
+    or: 'ଆପ୍ ଆରମ୍ଭ କରନ୍ତୁ (Tap to Start)',
+    pa: 'ਐਪ ਸ਼ੁਰੂ ਕਰੋ (Tap to Start)',
+    ur: 'ایپ شروع کریں (Tap to Start)',
+    sa: 'अनुप्रयोगम् आरभत (Tap to Start)',
+    sat: 'ᱮᱯ ᱮᱦᱚᱵ ᱢᱮ (Tap to Start)',
+    sd: 'ايپ شروع ڪريو (Tap to Start)',
+    brx: 'एप जागायनो (Tap to Start)',
+    doi: 'ऐप शुरू करो (Tap to Start)',
+    kok: 'ॲप सुरू करा (Tap to Start)',
+    ks: 'ایپ شروٗع کٔریو (Tap to Start)',
+    mai: 'ऐप शुरू करू (Tap to Start)',
+  },
 };
 
 const LanguageContext = createContext({

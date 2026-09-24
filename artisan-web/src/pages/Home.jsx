@@ -11,6 +11,7 @@ import { handleAddCraftNavigation } from '../utils/authGuard';
 import HaatEventCard from '../components/HaatEventCard';
 import RestockModal from '../components/RestockModal';
 import MoqBadge from '../components/MoqBadge';
+import AudioGuide from '../components/AudioGuide';
 
 export default function Home({ customArtisanName, dashboardTitle } = {}) {
   const navigate = useNavigate();
@@ -695,6 +696,8 @@ export default function Home({ customArtisanName, dashboardTitle } = {}) {
             <span className="text-sm font-bold">{toastMsg}</span>
           </div>
         )}
+        {/* ── AUDIO ONBOARDING GUIDE ── */}
+        <AudioGuide />
       </main>
     </div>
   );

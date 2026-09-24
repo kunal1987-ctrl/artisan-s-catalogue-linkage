@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { clearStaleCatalogCache } from '../utils/cacheCleaner';
 import { handleAddCraftNavigation } from '../utils/authGuard';
 import MoqBadge from '../components/MoqBadge';
@@ -12,6 +13,7 @@ export default function Catalog() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
+  const { currentLang } = useLanguage();
   const { language, user } = useAuth();
   const currentUser = user;
   const [products, setProducts] = useState([]);
@@ -216,7 +218,13 @@ export default function Catalog() {
     if (SpeechRecognition) {
       showToast('Listening for voice search... बोलें');
       const recognition = new SpeechRecognition();
-      recognition.lang = language === 'hi' ? 'hi-IN' : 'en-IN';
+      const localeMap = {
+        hi: 'hi-IN', bn: 'bn-IN', te: 'te-IN', mr: 'mr-IN',
+        ta: 'ta-IN', gu: 'gu-IN', kn: 'kn-IN', ur: 'ur-IN',
+        pa: 'pa-IN', or: 'or-IN', en: 'en-IN', sa: 'sa-IN',
+        kok: 'kok-IN',
+      };
+      recognition.lang = localeMap[currentLang] || 'hi-IN';
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
         setSearchQuery(transcript);

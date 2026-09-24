@@ -27,3 +27,4 @@ export default function ImageCapture({ onTakePhoto, onRecordVoice, className = '
 }
 
 export const CaptureScreen = ImageCapture;
+export { default as VoiceRecorder } from './VoiceRecorder';

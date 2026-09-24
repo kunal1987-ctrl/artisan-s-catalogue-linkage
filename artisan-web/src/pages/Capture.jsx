@@ -165,7 +165,7 @@ const speakHindi = (text = 'माफ करें, आवाज़ साफ �
 export default function Capture() {
   const navigate = useNavigate();
   const { t: tI18n, i18n } = useTranslation();
-  const { t: tLang } = useLanguage();
+  const { currentLang, t: tLang } = useLanguage();
   const t = (key, fallback) => tLang(key, tI18n(key, fallback));
   const {
     user,
@@ -1072,7 +1072,14 @@ export default function Capture() {
       }
 
       const recognition = new SpeechRecognition();
-      recognition.lang = selectedLanguage || 'en-IN'; // Dynamically respects app language changes
+      // Synchronize Speech Recognition with Global Language State
+      const speechLocaleMap = {
+        hi: 'hi-IN', bn: 'bn-IN', te: 'te-IN', mr: 'mr-IN',
+        ta: 'ta-IN', gu: 'gu-IN', kn: 'kn-IN', ur: 'ur-IN',
+        pa: 'pa-IN', or: 'or-IN', en: 'en-IN', sa: 'sa-IN',
+        kok: 'kok-IN',
+      };
+      recognition.lang = speechLocaleMap[currentLang] || 'hi-IN'; // Dynamically respects app language changes
       recognition.interimResults = true;
       recognition.continuous = true;
       currentTranscriptRef.current = '';

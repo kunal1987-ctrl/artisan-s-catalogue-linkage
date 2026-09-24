@@ -23,7 +23,6 @@ export default function AtmLanguageSelector({
 }) {
   const { t } = useTranslation();
   const { language, setLanguage, isAtmLanguageModalOpen, closeAtmLanguageModal } = useLanguage();
-  const { speak } = useAudioAssistant();
 
   const activeCode = language || 'hi';
   const showModal = mode === 'modal' ? (isOpen || isAtmLanguageModalOpen) : false;

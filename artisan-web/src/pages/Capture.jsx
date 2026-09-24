@@ -17,6 +17,7 @@ import { validateImageLightweight, getLocalizedValidationReason } from '../utils
 // Configure the fal.ai client using Vite environment variable
 fal.config({
   credentials: import.meta.env.VITE_FAL_API_KEY,
+  suppressLocalCredentialsWarning: true,
 });
 
 const blobToBase64 = (blob) =>
@@ -543,7 +544,10 @@ export default function Capture() {
 
     const falApiKey = import.meta.env.VITE_FAL_API_KEY;
     if (falApiKey) {
-      fal.config({ credentials: falApiKey });
+      fal.config({ 
+        credentials: falApiKey,
+        suppressLocalCredentialsWarning: true,
+      });
     }
 
     for (let i = 0; i < targets.length; i++) {

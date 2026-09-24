@@ -11,6 +11,7 @@ import exifr from 'exifr';
 // Configure the client using your Vite environment variable
 fal.config({
   credentials: import.meta.env.VITE_FAL_API_KEY,
+  suppressLocalCredentialsWarning: true,
 });
 
 const MAX_IMAGES = 3;

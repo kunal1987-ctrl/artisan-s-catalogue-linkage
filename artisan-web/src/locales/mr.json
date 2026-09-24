@@ -30,7 +30,9 @@
     "notifications": "सूचना",
     "new_badge": "३ नवीन",
     "change_language": "भाषा बदला",
-    "dashboard": "शिल्पकार डॅशबोर्ड"
+    "dashboard": "शिल्पकार डॅशबोर्ड",
+    "studio": "स्टुडिओ",
+    "profile": "प्रोफाइल"
   },
   "home": {
     "breadcrumb": "कारागीर डॅशबोर्ड",
@@ -160,12 +162,18 @@
     "new_badge": "३ नवीन"
   },
   "dashboard": {
-    "welcome": "स्वागत आहे, कारागीर!",
+    "welcome": "स्वागत आहे, {{userName}}!",
     "shop_name": "शिल्प सेतू दुकान",
     "shop_subtitle": "शिल्प सेतू दुकान",
     "language_board": "प्रादेशिक भाषा फलक",
     "breadcrumb": "कारागीर डॅशबोर्ड",
-    "title": "कारागीर डॅशबोर्ड"
+    "title": "कारागीर डॅशबोर्ड",
+    "supported_langs": "हिंदी, बंगाली, मराठी +१३ समर्थित",
+    "add_craft": "आपली कलाकृती जोडा",
+    "add_craft_desc": "फोटो काढा आणि आपल्या भाषेत उत्पादनाचे वर्णन करा. उर्वरित आम्ही सांभाळू.",
+    "start_cam_mic": "कॅमेरा आणि माइक सुरू करा",
+    "active_crafts": "सक्रिय कलाकृती",
+    "this_week": "या आठवड्यात"
   },
   "header": {
     "ai_cataloger": "झटपट AI कॅटलॉगर",

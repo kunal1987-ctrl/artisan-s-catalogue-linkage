@@ -16,9 +16,9 @@
   },
   "nav": {
     "brand": "शिल्प सेतु",
-    "home": "होम",
-    "catalog": "कैटलॉग",
-    "orders": "ऑर्डर्स",
+    "home": "ᱚᱲᱟᱜ",
+    "catalog": "ᱛᱟᱹᱞᱠᱟᱹ",
+    "orders": "ᱚᱰᱟᱨ ᱠᱚ",
     "support": "सहायता और समर्थन",
     "add_craft": "+ शिल्प जोड़ें",
     "studio_assistant": "एआई स्टूडियो सहायक",
@@ -29,7 +29,9 @@
     "notifications": "सूचनाएं",
     "new_badge": "3 नए",
     "change_language": "भाषा बदलें",
-    "dashboard": "ᱦᱩᱱᱟᱹᱨᱤᱭᱟᱹ ᱰᱮᱥᱵᱳᱨᱰ"
+    "dashboard": "ᱦᱩᱱᱟᱹᱨᱤᱭᱟᱹ ᱰᱮᱥᱵᱳᱨᱰ",
+    "studio": "ᱥᱴᱩᱰᱤᱭᱳ",
+    "profile": "ᱯᱨᱚᱯᱷᱟᱭᱤᱞ"
   },
   "home": {
     "breadcrumb": "शिल्पकार डैशबोर्ड",
@@ -160,12 +162,18 @@
     "new_badge": "3 नए"
   },
   "dashboard": {
-    "welcome": "स्वागत है, शिल्पकार!",
+    "welcome": "ᱥᱟᱜᱩᱱ ᱫᱟᱨᱟᱢ, {{userName}}!",
     "shop_name": "शिल्प सेतु दुकान",
     "shop_subtitle": "शिल्प सेतु दुकान",
     "language_board": "क्षेत्रीय भाषा बोर्ड",
     "breadcrumb": "शिल्पकार डैशबोर्ड",
-    "title": "शिल्पकार डैशबोर्ड"
+    "title": "शिल्पकार डैशबोर्ड",
+    "supported_langs": "ᱦᱤᱱᱫᱤ, ᱵᱟᱝᱞᱟ, ᱢᱟᱨᱟᱴᱷᱤ +᱑᱓ ᱜᱚᱲᱚ",
+    "add_craft": "ᱟᱢᱟᱜ ᱦᱩᱱᱟᱹᱨ ᱥᱮᱞᱮᱫᱽ ᱢᱮ",
+    "add_craft_desc": "ᱢᱤᱫᱴᱟᱝ ᱪᱤᱛᱟᱹᱨ ᱦᱟᱛᱟᱣ ᱢᱮ ᱟᱨ ᱟᱢᱟᱜ ᱯᱟᱹᱨᱥᱤ ᱛᱮ ᱞᱟᱹᱭ ᱢᱮ᱾ ᱥᱟᱨᱮᱡᱟᱜ ᱫᱚ ᱟᱞᱮᱞᱮ ᱥᱟᱵᱟ᱾",
+    "start_cam_mic": "ᱠᱮᱢᱨᱟ ᱟᱨ ᱢᱟᱭᱤᱠ ᱮᱦᱚᱵᱽ ᱢᱮ",
+    "active_crafts": "ᱪᱟᱹᱞᱩ ᱦᱩᱱᱟᱹᱨ ᱠᱚ",
+    "this_week": "ᱱᱚᱣᱟ ᱦᱟᱯᱛᱟ"
   },
   "header": {
     "multilingual_support": "हिंदी, बंगाली, मराठी +9 समर्थित"

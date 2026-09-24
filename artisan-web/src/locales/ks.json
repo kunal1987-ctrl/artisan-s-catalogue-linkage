@@ -16,9 +16,9 @@
   },
   "nav": {
     "brand": "शिल्प सेतु",
-    "home": "होम",
-    "catalog": "कैटलॉग",
-    "orders": "ऑर्डर्स",
+    "home": "گھر",
+    "catalog": "کیٹلاگ",
+    "orders": "آرڈر",
     "support": "सहायता और समर्थन",
     "add_craft": "+ शिल्प जोड़ें",
     "studio_assistant": "एआई स्टूडियो सहायक",
@@ -29,7 +29,9 @@
     "notifications": "सूचनाएं",
     "new_badge": "3 नए",
     "change_language": "भाषा बदलें",
-    "dashboard": "دستکار ڈیش بورڈ"
+    "dashboard": "دستکار ڈیش بورڈ",
+    "studio": "سٹیوڈیو",
+    "profile": "پروفائل"
   },
   "home": {
     "breadcrumb": "शिल्पकार डैशबोर्ड",
@@ -160,12 +162,18 @@
     "new_badge": "3 नए"
   },
   "dashboard": {
-    "welcome": "स्वागत है, शिल्पकार!",
+    "welcome": "خوش آمدید، {{userName}}!",
     "shop_name": "शिल्प सेतु दुकान",
     "shop_subtitle": "शिल्प सेतु दुकान",
     "language_board": "क्षेत्रीय भाषा बोर्ड",
     "breadcrumb": "शिल्पकार डैशबोर्ड",
-    "title": "शिल्पकार डैशबोर्ड"
+    "title": "शिल्पकार डैशबोर्ड",
+    "supported_langs": "ہندی، بنگالی، مراٹھی +13 مددگار",
+    "add_craft": "پنہِنج دستکٲری کٔریو دٲخل",
+    "add_craft_desc": "تصویر تلو تہٕ پنہِنجِہ زبانہِ منٛز ؤنیو چیزٕچ وضاحت۔ باقٕے کامہِ کرو ائس۔",
+    "start_cam_mic": "کیمرہ تہٕ مائک کٔریو شروٗع",
+    "active_crafts": "فعال دستکٲری",
+    "this_week": "یمہِ ہَفتہٕ"
   },
   "header": {
     "multilingual_support": "हिंदी, बंगाली, मराठी +9 समर्थित"

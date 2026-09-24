@@ -29,7 +29,9 @@
     "notifications": "Notifications",
     "new_badge": "3 New",
     "change_language": "Change Language",
-    "dashboard": "Artisan Dashboard"
+    "dashboard": "Artisan Dashboard",
+    "studio": "Studio",
+    "profile": "Profile"
   },
   "home": {
     "breadcrumb": "Artisan Dashboard",
@@ -160,12 +162,18 @@
     "new_badge": "3 New"
   },
   "dashboard": {
-    "welcome": "Welcome, Artisan!",
+    "welcome": "Welcome, {{userName}}!",
     "shop_name": "Shilp Setu Shop",
     "shop_subtitle": "Shilp Setu Shop",
     "language_board": "Regional Language Board",
     "breadcrumb": "Artisan Dashboard",
-    "title": "Artisan Dashboard"
+    "title": "Artisan Dashboard",
+    "supported_langs": "Hindi, Bengali, Marathi +13 supported",
+    "add_craft": "Add your craft",
+    "add_craft_desc": "Take a photo and describe the product in your language. We will handle the rest.",
+    "start_cam_mic": "Start camera and mic",
+    "active_crafts": "Active crafts",
+    "this_week": "This week"
   },
   "header": {
     "multilingual_support": "Hindi, Bengali, Marathi +9 supported"

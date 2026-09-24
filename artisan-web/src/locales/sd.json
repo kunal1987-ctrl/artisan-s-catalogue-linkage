@@ -16,9 +16,9 @@
   },
   "nav": {
     "brand": "शिल्प सेतु",
-    "home": "होम",
-    "catalog": "कैटलॉग",
-    "orders": "ऑर्डर्स",
+    "home": "گهر",
+    "catalog": "ڪيٽلاگ",
+    "orders": "آرڊر",
     "support": "सहायता और समर्थन",
     "add_craft": "+ शिल्प जोड़ें",
     "studio_assistant": "एआई स्टूडियो सहायक",
@@ -29,7 +29,9 @@
     "notifications": "सूचनाएं",
     "new_badge": "3 नए",
     "change_language": "भाषा बदलें",
-    "dashboard": "ڪاريگر ڊيش بورڊ"
+    "dashboard": "ڪاريگر ڊيش بورڊ",
+    "studio": "اسٽوڊيو",
+    "profile": "پروفائل"
   },
   "home": {
     "breadcrumb": "शिल्पकार डैशबोर्ड",
@@ -160,12 +162,18 @@
     "new_badge": "3 नए"
   },
   "dashboard": {
-    "welcome": "स्वागत है, शिल्पकार!",
+    "welcome": "ڀلي ڪري آيا، {{userName}}!",
     "shop_name": "शिल्प सेतु दुकान",
     "shop_subtitle": "शिल्प सेतु दुकान",
     "language_board": "क्षेत्रीय भाषा बोर्ड",
     "breadcrumb": "शिल्पकार डैशबोर्ड",
-    "title": "शिल्पकार डैशबोर्ड"
+    "title": "शिल्पकार डैशबोर्ड",
+    "supported_langs": "هندي، بنگالي، مراٺي +13 سپورٽ ٿيل",
+    "add_craft": "پنهنجو فن شامل ڪريو",
+    "add_craft_desc": "هڪ فوٽو ڪڍو ۽ پنهنجي ٻولي ۾ وضاحت ڪريو. باقي اسان سنڀالينداسين.",
+    "start_cam_mic": "ڪئميرا ۽ مائڪ شروع ڪريو",
+    "active_crafts": "فعال ڪاريگري",
+    "this_week": "هن هفتي"
   },
   "header": {
     "multilingual_support": "हिंदी, बंगाली, मराठी +9 समर्थित"

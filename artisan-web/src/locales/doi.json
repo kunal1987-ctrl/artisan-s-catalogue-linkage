@@ -16,9 +16,9 @@
   },
   "nav": {
     "brand": "शिल्प सेतु",
-    "home": "होम",
+    "home": "घर",
     "catalog": "कैटलॉग",
-    "orders": "ऑर्डर्स",
+    "orders": "ऑर्डर",
     "support": "सहायता और समर्थन",
     "add_craft": "+ शिल्प जोड़ें",
     "studio_assistant": "एआई स्टूडियो सहायक",
@@ -29,7 +29,9 @@
     "notifications": "सूचनाएं",
     "new_badge": "3 नए",
     "change_language": "भाषा बदलें",
-    "dashboard": "शिल्पकार डैशबोर्ड"
+    "dashboard": "शिल्पकार डैशबोर्ड",
+    "studio": "स्टूडियो",
+    "profile": "प्रोफाइल"
   },
   "home": {
     "breadcrumb": "शिल्पकार डैशबोर्ड",
@@ -160,12 +162,18 @@
     "new_badge": "3 नए"
   },
   "dashboard": {
-    "welcome": "स्वागत है, शिल्पकार!",
+    "welcome": "जी आयां नू, {{userName}}!",
     "shop_name": "शिल्प सेतु दुकान",
     "shop_subtitle": "शिल्प सेतु दुकान",
     "language_board": "क्षेत्रीय भाषा बोर्ड",
     "breadcrumb": "शिल्पकार डैशबोर्ड",
-    "title": "शिल्पकार डैशबोर्ड"
+    "title": "शिल्पकार डैशबोर्ड",
+    "supported_langs": "हिंदी, बंगाली, मराठी +13 समर्थत",
+    "add_craft": "अपनी दस्तकारी जोड़ो",
+    "add_craft_desc": "फोटो खींचो ते अपनी भाशा च चीज़ा दा विवरण दस्सो। बाकी कम्म अस्से सम्भाली लैग्गे।",
+    "start_cam_mic": "कैमरा ते माइक शुरू करो",
+    "active_crafts": "सक्रिय दस्तकारी",
+    "this_week": "इस हफ्फे"
   },
   "header": {
     "multilingual_support": "हिंदी, बंगाली, मराठी +9 समर्थित"

@@ -2,8 +2,6 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLanguage, SUPPORTED_LANGUAGES } from '../context/LanguageContext';
 import { Globe, Check, X, Sparkles } from 'lucide-react';
-import useAudioAssistant from '../hooks/useAudioAssistant';
-import { playAudioInstruction, getTranslatedText } from '../utils/audio';
 
 /**
  * AtmLanguageSelector Component
@@ -38,22 +36,10 @@ export default function AtmLanguageSelector({
 
   // The hardened click handler attached to language cards
   const handleSelectLanguage = (langKey) => {
-    // 1. Update app's state/context (triggers UI translation instantly)
+    // 1. Update app's state/context (unlocks audio, triggers UI translation, and plays MP3 via soundPlayer)
     setLanguage(langKey);
 
-    // 2. Trigger audio instruction via Web Speech API
-    try {
-      const langConfig = SUPPORTED_LANGUAGES.find(
-        (l) => l.code === langKey || l.code.split('-')[0] === langKey
-      );
-      const targetCode = langConfig?.ttsCode || (langKey.includes('-') ? langKey : `${langKey}-IN`);
-      const instructionText = getTranslatedText('welcome_instruction', targetCode);
-      playAudioInstruction(instructionText, targetCode);
-    } catch (e) {
-      console.warn('TTS playback notice:', e);
-    }
-
-    // 3. Close modal after selection
+    // 2. Close modal after selection
     if (mode === 'modal') {
       handleClose();
     }

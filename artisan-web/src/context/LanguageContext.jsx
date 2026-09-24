@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
-import { playPreRenderedAudio } from '../utils/audio';
+import { playInstructionAudio, unlockMobileAudio } from '../utils/soundPlayer';
 
 // 16 Target Languages Configuration (+ English)
 export const LANGUAGES = [
@@ -207,6 +207,21 @@ export function LanguageProvider({ children }) {
 
   const [isAtmLanguageModalOpen, setIsAtmLanguageModalOpen] = useState(false);
 
+  // Mobile Safari & Android Chrome initial user-gesture audio unlocker
+  useEffect(() => {
+    const handleFirstGesture = () => {
+      unlockMobileAudio();
+      window.removeEventListener('click', handleFirstGesture);
+      window.removeEventListener('touchstart', handleFirstGesture);
+    };
+    window.addEventListener('click', handleFirstGesture, { passive: true });
+    window.addEventListener('touchstart', handleFirstGesture, { passive: true });
+    return () => {
+      window.removeEventListener('click', handleFirstGesture);
+      window.removeEventListener('touchstart', handleFirstGesture);
+    };
+  }, []);
+
   // Sync DOM document language attribute whenever currentLang changes
   useEffect(() => {
     try {
@@ -221,6 +236,10 @@ export function LanguageProvider({ children }) {
   const changeLanguage = useCallback((langCode) => {
     if (!langCode) return;
     const cleanCode = langCode.includes('-') ? langCode.split('-')[0] : langCode;
+
+    // Ensure gesture is unlocked on mobile
+    unlockMobileAudio();
+
     setCurrentLang(cleanCode);
 
     try {
@@ -231,12 +250,8 @@ export function LanguageProvider({ children }) {
       console.warn('[LanguageContext] storage warning:', err);
     }
 
-    // 100% Reliable Pre-rendered Audio Asset Playback
-    // Note: While static UI instructions use edge-cached MP3s for reliability across all
-    // regional languages (Dogri, Bodo, Maithili, etc.), future dynamic text (like reading back
-    // a dynamically generated product description or appraisal) will require routing through
-    // the Google Cloud TTS or Bhashini API backend route, bypassing device OS TTS limitations entirely.
-    playPreRenderedAudio(cleanCode);
+    // Trigger local static audio file safely across mobile and web
+    playInstructionAudio(cleanCode);
   }, []);
 
   const t = useCallback(
@@ -270,6 +285,8 @@ export function LanguageProvider({ children }) {
       openAtmLanguageModal,
       closeAtmLanguageModal,
       currentLanguageConfig,
+      unlockMobileAudio,
+      playInstructionAudio,
     }),
     [
       currentLang,

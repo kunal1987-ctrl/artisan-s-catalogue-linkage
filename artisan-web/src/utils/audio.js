@@ -17,53 +17,30 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-let currentPlayingAudio = null;
+import { playInstructionAudio, unlockMobileAudio, stopInstructionAudio } from './soundPlayer';
+
+export { playInstructionAudio, unlockMobileAudio, stopInstructionAudio };
 
 /**
  * Plays pre-rendered static MP3 audio assets from /public/audio/${langCode}.mp3
  * @param {string} langCode - Language code (e.g. 'hi', 'ta', 'brx', 'mai')
  */
 export const playPreRenderedAudio = (langCode) => {
-  try {
-    if (typeof window === 'undefined') return;
-
-    // Stop any currently playing audio to prevent overlapping
-    if (currentPlayingAudio) {
-      currentPlayingAudio.pause();
-      currentPlayingAudio = null;
-    }
-
-    // Map complex codes to their simple file names (e.g. 'hi-IN' -> 'hi')
-    const cleanCode = langCode?.includes('-') ? langCode.split('-')[0] : (langCode || 'hi');
-    const audioPath = `/audio/${cleanCode}.mp3`;
-    
-    const instructionAudio = new Audio(audioPath);
-    currentPlayingAudio = instructionAudio;
-    
-    instructionAudio.onended = () => {
-      if (currentPlayingAudio === instructionAudio) {
-        currentPlayingAudio = null;
-      }
-    };
-
-    // Play the new audio
-    instructionAudio.play().catch((err) => {
-      console.warn(`Failed to play audio for ${langCode}. Ensure ${audioPath} exists.`, err);
-    });
-  } catch (error) {
-    console.error("Audio playback error:", error);
-  }
+  unlockMobileAudio();
+  playInstructionAudio(langCode);
 };
 
 /**
  * Backward-compatible audio instruction helpers routing directly to pre-rendered MP3s
  */
 export const playAudioInstruction = (_text, languageCode) => {
-  playPreRenderedAudio(languageCode);
+  unlockMobileAudio();
+  playInstructionAudio(languageCode);
 };
 
 export const playAudioInstructionWithFallback = (_text, languageCode) => {
-  playPreRenderedAudio(languageCode);
+  unlockMobileAudio();
+  playInstructionAudio(languageCode);
 };
 
 /**

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../context/LanguageContext';
+import { unlockMobileAudio } from '../utils/soundPlayer';
 
 export default function AudioGuide({ autoPrompt = true }) {
   const { currentLang, t } = useLanguage();
@@ -24,6 +25,7 @@ export default function AudioGuide({ autoPrompt = true }) {
   }, [currentLang]);
 
   const playNavigationInstruction = () => {
+    unlockMobileAudio();
     if (audioRef.current) {
       audioRef.current.pause();
     }

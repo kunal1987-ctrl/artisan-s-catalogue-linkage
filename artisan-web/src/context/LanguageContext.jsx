@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
+import { playPreRenderedAudio } from '../utils/audio';
 
 // 16 Target Languages Configuration (+ English)
 export const LANGUAGES = [
@@ -230,42 +231,12 @@ export function LanguageProvider({ children }) {
       console.warn('[LanguageContext] storage warning:', err);
     }
 
-    // Audio Instruction Playback
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      try {
-        window.speechSynthesis.cancel();
-        const instruction =
-          TRANSLATIONS.audio_instruction[cleanCode] ||
-          TRANSLATIONS.audio_instruction['hi'] ||
-          '';
-
-        if (instruction) {
-          const utterance = new SpeechSynthesisUtterance(instruction);
-          const ttsLang =
-            cleanCode === 'hi' || cleanCode === 'doi' || cleanCode === 'mai' || cleanCode === 'brx' || cleanCode === 'kok'
-              ? 'hi-IN'
-              : `${cleanCode}-IN`;
-
-          utterance.lang = ttsLang;
-          utterance.rate = 0.85;
-
-          const voices = window.speechSynthesis.getVoices();
-          const targetVoice = voices.find(
-            (v) =>
-              v.lang === ttsLang ||
-              v.lang.startsWith(cleanCode) ||
-              v.lang.replace('_', '-').includes(ttsLang)
-          );
-          if (targetVoice) {
-            utterance.voice = targetVoice;
-          }
-
-          window.speechSynthesis.speak(utterance);
-        }
-      } catch (audioErr) {
-        console.warn('[LanguageContext] TTS instruction audio notice:', audioErr);
-      }
-    }
+    // 100% Reliable Pre-rendered Audio Asset Playback
+    // Note: While static UI instructions use edge-cached MP3s for reliability across all
+    // regional languages (Dogri, Bodo, Maithili, etc.), future dynamic text (like reading back
+    // a dynamically generated product description or appraisal) will require routing through
+    // the Google Cloud TTS or Bhashini API backend route, bypassing device OS TTS limitations entirely.
+    playPreRenderedAudio(cleanCode);
   }, []);
 
   const t = useCallback(

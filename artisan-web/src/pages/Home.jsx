@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import Header from '../components/Header';
 import useAudioAssistant from '../hooks/useAudioAssistant';
 import { clearStaleCatalogCache } from '../utils/cacheCleaner';
@@ -11,9 +12,11 @@ import HaatEventCard from '../components/HaatEventCard';
 import RestockModal from '../components/RestockModal';
 import MoqBadge from '../components/MoqBadge';
 
-export default function Home({ customArtisanName } = {}) {
+export default function Home({ customArtisanName, dashboardTitle } = {}) {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t: translateContext, currentLang } = useLanguage();
+  const { t: tI18n } = useTranslation();
+  const t = (key, fallback) => translateContext(key, tI18n(key, fallback));
   const { language, showToast, session, artisanName: contextArtisanName } = useAuth();
   const { speakPrompt, stop } = useAudioAssistant();
 
@@ -127,7 +130,7 @@ export default function Home({ customArtisanName } = {}) {
                             className="flex items-center gap-2 text-[11px] sm:text-[12px] font-semibold text-secondary uppercase tracking-wider">
                             <span>{t('sidebar.home', 'Home')}</span>
                             <span>/</span>
-                            <span>{t('dashboard.breadcrumb', 'Artisan Dashboard')}</span>
+                            <span>{dashboardTitle || t('dashboard_title', 'Artisan Dashboard')}</span>
                         </div>
                         <h2 className="text-xl sm:text-[24px] font-bold text-primary mt-0.5">
                             {language === 'hi' ? `स्वागत है, ${artisanName}!` : `Welcome, ${artisanName}!`}

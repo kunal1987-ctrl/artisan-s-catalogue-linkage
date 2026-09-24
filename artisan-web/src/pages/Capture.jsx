@@ -6,6 +6,7 @@ import imageCompression from 'browser-image-compression';
 import { fal } from '@fal-ai/client';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import LanguageToggle from '../components/LanguageToggle';
 import LanguageSelectorModal, { getDialectBadgeText } from '../components/LanguageSelectorModal';
 import AudioMuteButton from '../components/AudioMuteButton';
@@ -163,7 +164,9 @@ const speakHindi = (text = 'माफ करें, आवाज़ साफ �
 
 export default function Capture() {
   const navigate = useNavigate();
-  const { t, i18n } = useTranslation();
+  const { t: tI18n, i18n } = useTranslation();
+  const { t: tLang } = useLanguage();
+  const t = (key, fallback) => tLang(key, tI18n(key, fallback));
   const {
     user,
     artisanProfile,
@@ -1763,13 +1766,13 @@ export default function Capture() {
                             openLiveCamera();
                           }}
                           className="relative z-10 p-5 bg-[#ff9062] text-white rounded-full hover:bg-[#ff7b44] hover:scale-105 active:scale-95 transition-transform duration-200 shadow-lg flex flex-col items-center justify-center gap-1 cursor-pointer"
-                          title={language === 'hi' ? 'कैमरा खोलें' : 'Open Camera'}
+                          title={t('take_photo')}
                         >
                           <Camera size={32}/>
                         </button>
                       </div>
                       <span className="text-xs font-semibold text-white/90 mt-2 tracking-wide">
-                        {language === 'hi' ? 'लाइव कैमरा खोलें' : 'Open Live Camera'}
+                        {t('take_photo')}
                       </span>
                       <span className="text-[10px] text-stone-400 mt-0.5">
                         {language === 'hi' ? 'सत्यापन के लिए केवल लाइव फोटो मान्य' : 'Live photo verification required'}
@@ -1955,7 +1958,7 @@ export default function Capture() {
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-[#ff9062] animate-pulse" />
                     <h2 className="text-[16px] font-bold text-white tracking-tight">
-                      {language === 'hi' ? 'शिल्प विवरण व वॉयस रिकॉर्ड' : 'Voice Note & Craft Details'}
+                      {t('record_voice')}
                     </h2>
                   </div>
                   <button

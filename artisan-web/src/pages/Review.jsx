@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import LanguageToggle from '../components/LanguageToggle';
 import AudioMuteButton from '../components/AudioMuteButton';
 import useAudioAssistant from '../hooks/useAudioAssistant';
@@ -24,6 +25,7 @@ export default function Review() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, artisanProfile, isEmailVerified, openAuthModal, setPendingProduct, showToast, language } = useAuth();
+  const { t } = useLanguage();
   const { speakPrompt, speak, stop } = useAudioAssistant();
 
   // Read AI data passed from Capture.jsx
@@ -451,8 +453,8 @@ export default function Review() {
                   </>
                 ) : (
                   <>
-                    <span className="hidden sm:inline">{language === 'hi' ? 'GeM व ONDC पर प्रकाशित करें' : 'Publish to ONDC / GeM'}</span>
-                    <span className="sm:hidden">{language === 'hi' ? 'प्रकाशित करें' : 'Publish'}</span>
+                    <span className="hidden sm:inline">{t('publish_ondc')}</span>
+                    <span className="sm:hidden">{t('publish_ondc')}</span>
                     <span className="material-symbols-outlined text-[16px]">rocket_launch</span>
                   </>
                 )}
@@ -1084,7 +1086,7 @@ export default function Review() {
                         ) : (
                           <>
                             <span className="text-[17px]">🚀</span>
-                            <span>Publish to ONDC / GeM</span>
+                            <span>{t('publish_ondc')}</span>
                             <span className="material-symbols-outlined text-[18px]">verified</span>
                           </>
                         )}

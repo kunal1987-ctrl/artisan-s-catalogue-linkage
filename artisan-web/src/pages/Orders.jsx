@@ -427,7 +427,7 @@ function getStatusCfg(status) {
 
 // ── OrderCard Component ───────────────────────────────────────────────────────
 function OrderCard({ order, onMarkPacked, onAcceptPO, onDispatchPO, setSelectedPO }) {
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const isGem = order.source === 'GeM' || order.order_type === 'gem';
   const currentStatus = order.status || 'new';
   const statusCfg = getStatusCfg(currentStatus);
@@ -636,7 +636,7 @@ function OrderCard({ order, onMarkPacked, onAcceptPO, onDispatchPO, setSelectedP
             }}
           >
             <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>inventory_2</span>
-            {language === 'hi' ? 'सामान पैक हो गया' : 'Mark as Packed'}
+            {t('packed_btn')}
           </button>
         )}
 
@@ -676,8 +676,9 @@ function OrderCard({ order, onMarkPacked, onAcceptPO, onDispatchPO, setSelectedP
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function Orders() {
-  const { t } = useTranslation();
-  const { language } = useLanguage();
+  const { t: tI18n } = useTranslation();
+  const { language, t: tLang } = useLanguage();
+  const t = (key, fallback) => tLang(key, tI18n(key, fallback));
   const { user } = useAuth();
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);

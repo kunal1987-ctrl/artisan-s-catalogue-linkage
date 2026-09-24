@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { playAudioInstruction, getTranslatedText } from '../utils/audio';
 
 export const SUPPORTED_DIALECTS = [
   {
@@ -77,6 +78,34 @@ export const SUPPORTED_DIALECTS = [
     englishName: 'Odia',
     badgeText: 'ଓଡ଼ିଆ (Odia)',
     clusters: 'Raghurajpur, Sambalpur, Pipli',
+  },
+  {
+    code: 'sa',
+    name: 'संस्कृत',
+    englishName: 'Sanskrit',
+    badgeText: 'संस्कृत (Sanskrit)',
+    clusters: 'Varanasi, Haridwar, Pan-India',
+  },
+  {
+    code: 'sat',
+    name: 'संताली',
+    englishName: 'Santali',
+    badgeText: 'संताली (Santali)',
+    clusters: 'Dumka, Mayurbhanj, Purulia',
+  },
+  {
+    code: 'sd',
+    name: 'سنڌي',
+    englishName: 'Sindhi',
+    badgeText: 'سنڌي (Sindhi)',
+    clusters: 'Ulhasnagar, Ahmedabad, Kutch',
+  },
+  {
+    code: 'ur',
+    name: 'اردو',
+    englishName: 'Urdu',
+    badgeText: 'اردو (Urdu)',
+    clusters: 'Hyderabad, Lucknow, Delhi',
   },
 ];
 
@@ -236,27 +265,10 @@ export default function LanguageSelectorModal({
                 onClick={() => {
                   if (onSelectLang) onSelectLang(item.code);
                   
-                  // Trigger regional TTS audio immediately inside click interaction
-                  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-                    try {
-                      window.speechSynthesis.cancel();
-                      const textToSpeak = AUDIO_INSTRUCTIONS[item.code] || `Selected ${item.englishName}`;
-                      const targetCode = LANG_CODES[item.code] || `${item.code}-IN`;
-                      const utterance = new SpeechSynthesisUtterance(textToSpeak);
-                      utterance.lang = targetCode;
-                      utterance.rate = 0.85;
-
-                      const matchedVoice = voices.find((v) =>
-                        v.lang === targetCode ||
-                        v.lang.replace('_', '-').includes(targetCode) ||
-                        v.lang.includes(item.code)
-                      );
-                      if (matchedVoice) utterance.voice = matchedVoice;
-                      window.speechSynthesis.speak(utterance);
-                    } catch (e) {
-                      console.warn('TTS playback notice in modal:', e);
-                    }
-                  }
+                  // Trigger regional TTS audio instruction
+                  const targetCode = item.code.includes('-') ? item.code : `${item.code}-IN`;
+                  const instructionText = getTranslatedText('welcome_instruction', targetCode) || `Selected ${item.englishName}`;
+                  playAudioInstruction(instructionText, targetCode);
 
                   onClose();
                 }}

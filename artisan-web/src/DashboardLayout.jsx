@@ -13,12 +13,21 @@ import AudioAssistantIndicator from './components/AudioAssistantIndicator';
 
 import Sidebar from './components/Sidebar';
 import { handleAddCraftNavigation } from './utils/authGuard';
+import { playAudioInstruction, getTranslatedText } from './utils/audio';
 
 export default function DashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
-  const { openAtmLanguageModal, currentLanguageConfig } = useLanguage();
+  const { openAtmLanguageModal, currentLanguageConfig, setAppLanguage } = useLanguage();
+
+  const handleLanguageChange = (selectedLangCode) => {
+    if (setAppLanguage) {
+      setAppLanguage(selectedLangCode);
+    }
+    const instructionText = getTranslatedText('welcome_instruction', selectedLangCode);
+    playAudioInstruction(instructionText, selectedLangCode);
+  };
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const {
     artisanName,

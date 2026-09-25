@@ -388,6 +388,7 @@ Deno.serve(async (req: Request) => {
   try {
     const {
       audioBase64,
+      audiosBase64,
       imageBase64,
       imagesBase64,
       images,
@@ -397,7 +398,17 @@ Deno.serve(async (req: Request) => {
 
     requestTranscript = customTranscript || "";
 
-    const hasAudio = typeof audioBase64 === "string" && audioBase64.length > 50;
+    const incomingAudios: string[] = [];
+    if (Array.isArray(audiosBase64) && audiosBase64.length > 0) {
+      audiosBase64.forEach((a: any) => {
+        if (typeof a === "string" && a.length > 50) incomingAudios.push(a);
+      });
+    }
+    if (incomingAudios.length === 0 && typeof audioBase64 === "string" && audioBase64.length > 50) {
+      incomingAudios.push(audioBase64);
+    }
+
+    const hasAudio = incomingAudios.length > 0;
     const hasTranscript = typeof customTranscript === "string" && customTranscript.trim().length > 0;
 
     const incomingImages: string[] = [];
@@ -456,52 +467,65 @@ Deno.serve(async (req: Request) => {
     }).filter((part) => part.inlineData.data.length > 50);
 
     // ───────────────────────────────────────────────────────────
-    // STEP 1: Groq Whisper Transcription
+    // STEP 1: Groq Whisper Transcription (Multi-Audio Support)
     // ───────────────────────────────────────────────────────────
     let transcript = "";
 
     if (hasAudio && groqApiKey) {
-      console.log(`[Step 1] Transcribing audio for user ${user.id} via Groq Whisper...`);
-      try {
-        const cleanAudioBase64 = audioBase64.replace(
-          /^data:audio\/[a-zA-Z0-9+.-]+;base64,/,
-          ""
-        );
-        const binaryString = atob(cleanAudioBase64);
-        const audioBytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          audioBytes[i] = binaryString.charCodeAt(i);
-        }
+      console.log(`[Step 1] Transcribing ${incomingAudios.length} audio clip(s) for user ${user.id} via Groq Whisper...`);
+      const transcribedParts: string[] = [];
 
-        const audioBlob = new Blob([audioBytes.buffer as ArrayBuffer], { type: "audio/webm" });
-        const formData = new FormData();
-        formData.append("file", audioBlob, "audio.webm");
-        formData.append("model", "whisper-large-v3");
-        if (language && typeof language === "string" && language.trim().length > 0) {
-          formData.append("language", language.trim());
-        }
+      for (let i = 0; i < incomingAudios.length; i++) {
+        try {
+          const rawAudio = incomingAudios[i];
+          const cleanAudioBase64 = rawAudio.replace(/^data:audio\/[a-zA-Z0-9+.-]+;base64,/, "");
+          const binaryString = atob(cleanAudioBase64);
+          const audioBytes = new Uint8Array(binaryString.length);
+          for (let b = 0; b < binaryString.length; b++) {
+            audioBytes[b] = binaryString.charCodeAt(b);
+          }
 
-        const whisperRes = await fetchWithTimeout(
-          "https://api.groq.com/openai/v1/audio/transcriptions",
-          {
-            method: "POST",
-            headers: { Authorization: `Bearer ${groqApiKey}` },
-            body: formData,
-          },
-          8000
-        );
+          const isMp4 = rawAudio.includes("audio/mp4") || rawAudio.includes("audio/m4a");
+          const ext = isMp4 ? "m4a" : "webm";
+          const mime = isMp4 ? "audio/mp4" : "audio/webm";
 
-        if (whisperRes.ok) {
-          const whisperData = await whisperRes.json();
-          transcript = whisperData.text || "";
-          console.log(`[Step 1 Success] Whisper transcribed (${transcript.length} chars):`, transcript);
-        } else {
-          const errText = await whisperRes.text();
-          console.warn(`[Step 1 Warning] Groq Whisper returned ${whisperRes.status}:`, errText);
-          transcript = hasTranscript ? customTranscript.trim() : "";
+          const audioBlob = new Blob([audioBytes.buffer as ArrayBuffer], { type: mime });
+          const formData = new FormData();
+          formData.append("file", audioBlob, `audio_${i + 1}.${ext}`);
+          formData.append("model", "whisper-large-v3");
+          if (language && typeof language === "string" && language.trim().length > 0) {
+            formData.append("language", language.trim() === "en" ? "en" : "hi");
+          }
+
+          const whisperRes = await fetchWithTimeout(
+            "https://api.groq.com/openai/v1/audio/transcriptions",
+            {
+              method: "POST",
+              headers: { Authorization: `Bearer ${groqApiKey}` },
+              body: formData,
+            },
+            8000
+          );
+
+          if (whisperRes.ok) {
+            const whisperData = await whisperRes.json();
+            const text = (whisperData.text || "").trim();
+            if (text) {
+              transcribedParts.push(text);
+              console.log(`[Step 1 Success] Clip #${i + 1} transcribed (${text.length} chars):`, text);
+            }
+          } else {
+            const errText = await whisperRes.text();
+            console.warn(`[Step 1 Warning] Audio clip #${i + 1} Groq status ${whisperRes.status}:`, errText);
+          }
+        } catch (clipErr: any) {
+          console.warn(`[Step 1 Warning] Audio clip #${i + 1} error:`, clipErr?.message || clipErr);
         }
-      } catch (whisperErr: any) {
-        console.warn("[Step 1 Whisper Warning]", whisperErr?.message || whisperErr);
+      }
+
+      if (transcribedParts.length > 0) {
+        transcript = transcribedParts.join(" ");
+      } else {
         transcript = hasTranscript ? customTranscript.trim() : "";
       }
     } else if (hasTranscript) {
@@ -510,6 +534,12 @@ Deno.serve(async (req: Request) => {
     } else {
       console.log("[Step 1] No audio or transcript provided; will rely on visual craft analysis.");
       transcript = "";
+    }
+
+    if (hasTranscript && transcript && !transcript.toLowerCase().includes(customTranscript.trim().toLowerCase())) {
+      transcript = `${transcript} ${customTranscript.trim()}`.trim();
+    } else if (!transcript && hasTranscript) {
+      transcript = customTranscript.trim();
     }
 
     requestTranscript = transcript;

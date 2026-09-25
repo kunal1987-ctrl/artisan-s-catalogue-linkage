@@ -435,12 +435,16 @@ export default function Capture() {
       if (target?.audioUrl) {
         try { URL.revokeObjectURL(target.audioUrl); } catch (_) {}
       }
-      return prev.filter((rec) => rec.id !== idToRemove);
+      const updated = prev.filter((rec) => rec.id !== idToRemove);
+      const remainingText = updated.map((r) => r.text).filter(Boolean).join(' ');
+      setTranscript(remainingText);
+      currentTranscriptRef.current = remainingText;
+      return updated;
     });
   }, []);
 
   // Derive the full description for the database/Gemini by joining all valid text blocks
-  const fullDescription = recordings.map((rec) => rec.text).join(' ');
+  const fullDescription = recordings.map((rec) => rec.text).filter(Boolean).join(' ');
 
   // ── AI Processing State ──
   const [aiStatus, setAiStatus] = useState('idle'); // idle | transcribing | analyzing | done | error
@@ -994,54 +998,96 @@ export default function Capture() {
   // ════════════════════════════════════════════
 
   // ════════════════════════════════════════════
-  // GROQ MEDIARECORDER VOICE CAPTURE & WHISPER PIPELINE
+  // RESILIENT MULTI-AUDIO GROQ & EDGE TRANSCRIBE PIPELINE
   // ════════════════════════════════════════════
 
-  const processWithGroq = useCallback(async (audioBlob, audioUrl) => {
+  const processWithGroq = useCallback(async (audioBlob, audioUrl, recId) => {
     try {
       setIsTranscribingVoice(true);
-      const formData = new FormData();
-      const fileExtension = (mimeTypeRef.current && mimeTypeRef.current.includes('webm')) ? 'webm' : 'm4a';
-      formData.append('file', audioBlob, `audio.${fileExtension}`);
-      formData.append('model', 'whisper-large-v3');
-      // Use clean ISO codes for Groq Whisper
-      formData.append('language', i18n.language === 'hi' || transcriptionLang === 'hi' ? 'hi' : 'en');
+      let transcribedText = '';
 
-      const groqKey = import.meta.env.VITE_GROQ_API_KEY || import.meta.env.GROQ_API_KEY;
+      // 1. Try Supabase Edge Function 'transcribe-audio' (uses server-side GROQ_API_KEY with zero CORS/client key exposure)
+      try {
+        const formData = new FormData();
+        const fileExtension = (mimeTypeRef.current && mimeTypeRef.current.includes('webm')) ? 'webm' : 'm4a';
+        formData.append('file', audioBlob, `audio.${fileExtension}`);
+        formData.append('language', i18n.language === 'hi' || transcriptionLang === 'hi' ? 'hi' : 'en');
 
-      const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${groqKey}`,
-        },
-        body: formData,
-      });
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://jrkrdlalnqswvwabktce.supabase.co';
+        const edgeRes = await fetch(`${supabaseUrl}/functions/v1/transcribe-audio`, {
+          method: 'POST',
+          body: formData,
+        });
 
-      if (!response.ok) {
-        throw new Error(`Groq API error: ${response.status}`);
+        if (edgeRes.ok) {
+          const edgeData = await edgeRes.json();
+          if (edgeData?.text && typeof edgeData.text === 'string' && edgeData.text.trim()) {
+            transcribedText = edgeData.text.trim();
+          }
+        }
+      } catch (edgeErr) {
+        console.warn('[Capture] Edge transcribe-audio error:', edgeErr);
       }
 
-      const data = await response.json();
-      if (data.text) {
-        const text = data.text.trim();
-        setTranscript((prev) => (prev ? prev + ' ' + text : text));
-        currentTranscriptRef.current += (currentTranscriptRef.current ? ' ' : '') + text;
-        setRecordings((prev) => [
-          ...prev,
-          {
-            id: Date.now(),
-            text,
-            audioUrl,
-          },
-        ]);
+      // 2. Direct Groq fallback if client key exists and edge didn't return text
+      if (!transcribedText) {
+        const groqKey = import.meta.env.VITE_GROQ_API_KEY || import.meta.env.GROQ_API_KEY;
+        if (groqKey) {
+          try {
+            const formData = new FormData();
+            const fileExtension = (mimeTypeRef.current && mimeTypeRef.current.includes('webm')) ? 'webm' : 'm4a';
+            formData.append('file', audioBlob, `audio.${fileExtension}`);
+            formData.append('model', 'whisper-large-v3');
+            formData.append('language', i18n.language === 'hi' || transcriptionLang === 'hi' ? 'hi' : 'en');
+
+            const groqRes = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${groqKey}` },
+              body: formData,
+            });
+            if (groqRes.ok) {
+              const groqData = await groqRes.json();
+              if (groqData?.text) {
+                transcribedText = groqData.text.trim();
+              }
+            }
+          } catch (groqErr) {
+            console.warn('[Capture] Direct Groq API error:', groqErr);
+          }
+        }
+      }
+
+      // 3. Update the specific recording and cumulative transcript
+      if (transcribedText) {
+        setRecordings((prev) =>
+          prev.map((r) => (r.id === recId ? { ...r, text: transcribedText, status: 'ready' } : r))
+        );
+        setTranscript((prev) => (prev ? `${prev} ${transcribedText}` : transcribedText));
+        currentTranscriptRef.current += (currentTranscriptRef.current ? ' ' : '') + transcribedText;
+        if (showToast) {
+          showToast(language === 'hi' ? '🎙️ आवाज़ का विवरण सफलतापूर्वक जोड़ा गया' : '🎙️ Voice note transcribed successfully!');
+        }
+      } else {
+        // Voice note is safely preserved for listing processing
+        const defaultLabel = language === 'hi'
+          ? 'वॉयस नोट सहेजा गया (कैटलॉग निर्माण के समय विश्लेषित होगा)'
+          : 'Voice note saved (analyzed during listing creation)';
+        setRecordings((prev) =>
+          prev.map((r) => (r.id === recId ? { ...r, text: defaultLabel, status: 'recorded' } : r))
+        );
+        if (showToast) {
+          showToast(language === 'hi' ? '🎙️ वॉयस नोट सहेजा गया' : '🎙️ Voice note recorded and saved!');
+        }
       }
     } catch (error) {
-      console.error('Groq transcription error:', error);
-      alert('Failed to process audio with Groq. Please try speaking again.');
+      console.error('[Capture] Audio processing error:', error);
+      setRecordings((prev) =>
+        prev.map((r) => (r.id === recId ? { ...r, text: 'Voice note saved', status: 'recorded' } : r))
+      );
     } finally {
       setIsTranscribingVoice(false);
     }
-  }, [i18n.language, transcriptionLang]);
+  }, [i18n.language, transcriptionLang, language, showToast]);
 
   const toggleRecording = useCallback(async () => {
     if (isRecording) {
@@ -1055,7 +1101,6 @@ export default function Capture() {
 
     // START RECORDING
     try {
-      setTranscript(''); // Clear old text
       stop(); // Silence audio assistant speech before microphone turns on
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
@@ -1129,9 +1174,29 @@ export default function Capture() {
         });
         const audioUrl = URL.createObjectURL(audioBlob);
         setAudioBlob(audioBlob);
-        blobToBase64(audioBlob).then((b64) => setAudioBase64(b64)).catch(() => {});
 
-        await processWithGroq(audioBlob, audioUrl);
+        const recId = Date.now();
+        // Immediately preserve audio in recordings list so it is NEVER lost
+        const newRecord = {
+          id: recId,
+          audioUrl,
+          audioBlob,
+          base64: null,
+          text: '',
+          status: 'transcribing',
+        };
+        setRecordings((prev) => [...prev, newRecord]);
+
+        blobToBase64(audioBlob)
+          .then((b64) => {
+            setAudioBase64(b64);
+            setRecordings((prev) =>
+              prev.map((r) => (r.id === recId ? { ...r, base64: b64 } : r))
+            );
+          })
+          .catch(() => {});
+
+        await processWithGroq(audioBlob, audioUrl, recId);
       };
 
       mediaRecorder.start(250);
@@ -1142,9 +1207,11 @@ export default function Capture() {
       }, 1000);
     } catch (error) {
       console.error('Mic access denied:', error);
-      alert('Please allow microphone access to describe your product.');
+      alert(language === 'hi'
+        ? 'कृपया माइक्रोफ़ोन अनुमति दें।'
+        : 'Please allow microphone access to describe your product.');
     }
-  }, [isRecording, stop, processWithGroq]);
+  }, [isRecording, stop, processWithGroq, language]);
 
   const startRecording = toggleRecording;
   const stopRecording = toggleRecording;
@@ -1245,18 +1312,33 @@ export default function Capture() {
       }
     }
 
-    // Dynamically grab newly recorded audio base64
-    let targetAudioBase64 = null;
-    const currentAudio = audioBlob || _audioBlob;
-    if (currentAudio) {
-      try {
-        targetAudioBase64 = await blobToBase64(currentAudio);
-      } catch (err) {
-        console.warn('[handleGenerateListing] Audio base64 encoding error:', err);
+    // Dynamically grab all recorded audio base64s for multi-audio support
+    const allAudiosBase64 = [];
+    for (const rec of recordings) {
+      if (rec.base64) {
+        allAudiosBase64.push(rec.base64);
+      } else if (rec.audioBlob) {
+        try {
+          const b64 = await blobToBase64(rec.audioBlob);
+          allAudiosBase64.push(b64);
+        } catch (err) {
+          console.warn('[handleGenerateListing] Audio base64 encoding error:', err);
+        }
       }
     }
-    if (!targetAudioBase64 && audioBase64) {
-      targetAudioBase64 = audioBase64;
+    let targetAudioBase64 = allAudiosBase64[0] || audioBase64 || null;
+    if (!targetAudioBase64) {
+      const currentAudio = audioBlob || _audioBlob;
+      if (currentAudio) {
+        try {
+          targetAudioBase64 = await blobToBase64(currentAudio);
+          if (!allAudiosBase64.includes(targetAudioBase64)) {
+            allAudiosBase64.push(targetAudioBase64);
+          }
+        } catch (err) {
+          console.warn('[handleGenerateListing] Audio base64 encoding error:', err);
+        }
+      }
     }
 
     let targetImageUrl = imageUrl || processedPreview || previewUrl;
@@ -1285,7 +1367,7 @@ export default function Capture() {
         }
 
         const imageBlob = images[0]?.blob || (image instanceof Blob ? image : null) || (imageFile instanceof Blob ? imageFile : null);
-        console.log("Sending to Gemini:", { imageBlob, transcript: activeText || transcript });
+        console.log("Sending to Gemini:", { imageBlob, transcript: activeText || transcript, audiosCount: allAudiosBase64.length });
 
         // Network Latency & Timeout Protection (15-second max timeout)
         const timeoutMs = 15000;
@@ -1302,6 +1384,7 @@ export default function Capture() {
         const invokePromise = supabase.functions.invoke('process-artisan-craft', {
           body: {
             audioBase64: targetAudioBase64 || null,
+            audiosBase64: allAudiosBase64,
             imageBase64: targetImageBase64,
             imagesBase64: allImagesBase64,
             images: allImagesBase64,
@@ -1977,16 +2060,19 @@ export default function Capture() {
                   
                   {/* Cumulative Description Display Box */}
                   <div className="w-full min-h-[5rem] p-4 bg-amber-50/40 border border-amber-200/60 rounded-2xl shadow-sm">
-                    {isTranscribingVoice ? (
+                    {recordings.some((r) => r.status === 'transcribing') ? (
                       <p className="text-amber-500 font-medium animate-pulse text-sm">
-                        {language === 'hi' ? 'एआई विवरण का अनुवाद कर रहा है...' : 'AI is transcribing...'}
+                        {language === 'hi' ? 'एआई आवाज़ का अनुवाद कर रहा है...' : 'AI is transcribing voice note...'}
                       </p>
                     ) : recordings.length > 0 ? (
                       <div className="space-y-2">
                         {recordings.map((rec, idx) => (
-                          <span key={rec.id} className="text-sm font-medium text-stone-800 inline">
-                            {rec.text}{idx < recordings.length - 1 ? ' ' : ''}
-                          </span>
+                          <div key={rec.id} className="text-sm font-medium text-stone-800">
+                            {recordings.length > 1 && (
+                              <span className="text-xs font-bold text-amber-600 mr-1.5">[{idx + 1}]</span>
+                            )}
+                            <span>{rec.text || (language === 'hi' ? 'वॉयस नोट सहेजा गया' : 'Voice note recorded')}</span>
+                          </div>
                         ))}
                       </div>
                     ) : (
@@ -1997,7 +2083,7 @@ export default function Capture() {
                   </div>
 
                   {/* Microphone Control */}
-                  <div className="flex justify-center py-2">
+                  <div className="flex flex-col items-center justify-center py-2 gap-2">
                     <button 
                       type="button"
                       onClick={toggleRecording}
@@ -2014,25 +2100,47 @@ export default function Capture() {
                       )}
                       {isRecording ? <SquareIcon className="w-7 h-7 fill-current relative z-10"/> : <MicrophoneIcon className="w-7 h-7 relative z-10"/>}
                     </button>
+                    {isRecording ? (
+                      <p className="text-center text-xs text-red-500 font-bold animate-pulse">
+                        {language === 'hi' ? `ऑडियो #${recordings.length + 1} रिकॉर्ड हो रहा है... रोकने हेतु दबाएं` : `Recording audio #${recordings.length + 1}... tap to stop`}
+                      </p>
+                    ) : (
+                      <p className="text-center text-xs text-stone-400">
+                        {recordings.length > 0 
+                          ? (language === 'hi' ? '+ और वॉयस नोट जोड़ने के लिए दबाएं' : '+ Tap to add another voice note')
+                          : (language === 'hi' ? 'बोलने के लिए माइक दबाएं' : 'Tap mic to speak')}
+                      </p>
+                    )}
                   </div>
-                  {isRecording && <p className="text-center text-xs text-red-500 font-bold animate-pulse">Listening... tap square to stop</p>}
-                  {isTranscribingVoice && <p className="text-center text-xs text-amber-500 font-bold animate-pulse">Transcribing with Groq AI...</p>}
 
                   {/* Audio Playback & Deletion List */}
                   {recordings.length > 0 && (
-                    <div className="flex flex-col gap-3 mt-4">
-                      <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider">Voice Recordings</h4>
+                    <div className="flex flex-col gap-2.5 mt-2">
+                      <div className="flex items-center justify-between pb-1 border-b border-white/10">
+                        <h4 className="text-xs font-bold text-[#ffdeaa] uppercase tracking-wider flex items-center gap-1.5">
+                          <span>🎙️ {language === 'hi' ? 'वॉयस नोट्स' : 'Voice Notes'}</span>
+                          <span className="px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-[10px] font-extrabold">
+                            {recordings.length}
+                          </span>
+                        </h4>
+                        <span className="text-[10px] text-white/50">
+                          {language === 'hi' ? 'सभी नोट्स AI को भेजे जाएंगे' : 'All notes processed by AI'}
+                        </span>
+                      </div>
                       {recordings.map((rec, index) => (
-                        <div key={rec.id} className="flex items-center gap-2 p-2 bg-white border border-stone-200 rounded-xl shadow-sm">
-                          <span className="text-xs font-bold text-stone-400 w-5 text-center">{index + 1}</span>
-                          <audio controls src={rec.audioUrl} className="h-10 w-full max-w-[200px] md:max-w-full" />
+                        <div key={rec.id} className="flex items-center gap-2 p-2 bg-[#201815] border border-white/10 rounded-xl shadow-xs">
+                          <span className="text-xs font-bold text-amber-400 w-6 text-center shrink-0">#{index + 1}</span>
+                          <audio controls src={rec.audioUrl} className="h-8 w-full max-w-[190px] sm:max-w-full" />
+                          {rec.status === 'transcribing' && (
+                            <span className="text-[10px] text-amber-400 animate-pulse shrink-0">⏳</span>
+                          )}
                           <button 
                             type="button"
                             onClick={() => deleteRecording(rec.id)}
-                            className="p-2 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors ml-auto cursor-pointer"
-                            title="Delete this recording"
+                            className="p-1.5 text-stone-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors ml-auto cursor-pointer shrink-0"
+                            title={language === 'hi' ? 'हटाएं' : 'Delete'}
                           >
-                            <TrashIcon className="w-5 h-5"/>
+                            <TrashIcon className="w-4 h-4"/>
                           </button>
                         </div>
                       ))}

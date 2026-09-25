@@ -76,34 +76,65 @@ export default function GroqVoiceRecorder({ onTranscriptionComplete, className =
 
   const transcribeWithGroq = async (audioBlob) => {
     try {
-      const formData = new FormData();
-      
-      // Assign correct extension for Groq based on OS
-      const fileExtension = mimeTypeRef.current.includes('webm') ? 'webm' : 'm4a';
-      formData.append("file", audioBlob, `audio.${fileExtension}`);
-      
-      formData.append("model", "whisper-large-v3");
-      formData.append("language", i18n.language === 'hi' ? 'hi' : 'en'); 
+      let transcribedText = '';
 
-      const groqKey = import.meta.env.VITE_GROQ_API_KEY || import.meta.env.GROQ_API_KEY;
+      // 1. Try Supabase Edge Function 'transcribe-audio' (server-side GROQ_API_KEY)
+      try {
+        const formData = new FormData();
+        const fileExtension = mimeTypeRef.current.includes('webm') ? 'webm' : 'm4a';
+        formData.append("file", audioBlob, `audio.${fileExtension}`);
+        formData.append("language", i18n.language === 'hi' ? 'hi' : 'en');
 
-      const response = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${groqKey}`
-        },
-        body: formData
-      });
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://jrkrdlalnqswvwabktce.supabase.co';
+        const edgeRes = await fetch(`${supabaseUrl}/functions/v1/transcribe-audio`, {
+          method: 'POST',
+          body: formData,
+        });
 
-      if (!response.ok) throw new Error("Groq API error");
+        if (edgeRes.ok) {
+          const edgeData = await edgeRes.json();
+          if (edgeData?.text && typeof edgeData.text === 'string' && edgeData.text.trim()) {
+            transcribedText = edgeData.text.trim();
+          }
+        }
+      } catch (edgeErr) {
+        console.warn('Edge transcribe-audio error:', edgeErr);
+      }
 
-      const data = await response.json();
-      if (data.text && onTranscriptionComplete) {
-        onTranscriptionComplete(data.text);
+      // 2. Direct Groq fallback if client key exists
+      if (!transcribedText) {
+        const groqKey = import.meta.env.VITE_GROQ_API_KEY || import.meta.env.GROQ_API_KEY;
+        if (groqKey) {
+          try {
+            const formData = new FormData();
+            const fileExtension = mimeTypeRef.current.includes('webm') ? 'webm' : 'm4a';
+            formData.append("file", audioBlob, `audio.${fileExtension}`);
+            formData.append("model", "whisper-large-v3");
+            formData.append("language", i18n.language === 'hi' ? 'hi' : 'en');
+
+            const response = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+              method: "POST",
+              headers: { "Authorization": `Bearer ${groqKey}` },
+              body: formData
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              if (data.text) {
+                transcribedText = data.text.trim();
+              }
+            }
+          } catch (groqErr) {
+            console.warn('Direct Groq error:', groqErr);
+          }
+        }
+      }
+
+      if (transcribedText && onTranscriptionComplete) {
+        onTranscriptionComplete(transcribedText);
       }
     } catch (error) {
       console.error("Transcription Failed:", error);
-      alert("Transcription failed. Please try speaking again.");
     } finally {
       setIsProcessing(false);
     }

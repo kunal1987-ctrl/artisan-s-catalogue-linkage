@@ -5,7 +5,7 @@ import { fal } from '@fal-ai/client';
  * 
  * Capabilities:
  * 1. Cloud AI Enhancement via Fal.ai (when account has active balance):
- *    - Calls `fal-ai/bria/background/replace` or `fal-ai/iclight`.
+ *    - Calls `fal-ai/bria/background/replace`.
  * 2. High-Performance Pro Studio Photography Enhancer (runs in <25ms):
  *    - Dynamic Range & Shadow Expansion: Lifts dark shadows on handicrafts to reveal fine details.
  *    - S-Curve Contrast Curve: Expands midtones for crisp professional product depth.

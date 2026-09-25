@@ -28,30 +28,22 @@ export default function ProductStudio({ onImageProcessed, onCapture }) {
         ? rawImageBase64 
         : `data:image/jpeg;base64,${rawImageBase64}`;
 
+      // 1. Use the active Bria model for lifestyle enhancement & background replacement
       const result = await fal.subscribe("fal-ai/bria/background/replace", {
         input: {
           image_url: dataUrl,
-          prompt: "Professional artisan product photography, clean aesthetic, high quality studio lighting, neutral lifestyle background",
+          prompt: "Pro studio photography, high-end commercial product shot, elegant neutral background, soft diffused studio lighting, sharp focus",
         },
         logs: true,
       }).catch(async (primaryErr) => {
-        console.warn("[ProductStudio] Bria background replace fallback to iclight / image-to-image:", primaryErr);
-        return await fal.subscribe("fal-ai/iclight", {
+        console.warn("[ProductStudio] Bria background replace fallback to image-to-image:", primaryErr);
+        return await fal.subscribe("fal-ai/image-to-image", {
           input: {
             image_url: dataUrl,
-            prompt: "Professional artisan product photography, clean aesthetic, high quality studio lighting, neutral lifestyle background",
-            lighting_preference: 'Studio',
+            prompt: "Pro studio photography, high-end commercial product shot, elegant neutral background, soft diffused studio lighting, sharp focus",
+            strength: 0.85, 
           },
           logs: true,
-        }).catch(async () => {
-          return await fal.subscribe("fal-ai/image-to-image", {
-            input: {
-              image_url: dataUrl,
-              prompt: "Professional artisan product photography, clean aesthetic, high quality studio lighting, neutral lifestyle background",
-              strength: 0.85, 
-            },
-            logs: true,
-          });
         });
       });
 

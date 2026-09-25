@@ -83,7 +83,7 @@ export const compressImageBeforeUpload = (file) => {
 
 /**
  * Enterprise Generative AI Image Pipeline:
- * 1. Generative AI Contextual Background replacement & Studio lighting via Fal.ai (fal-ai/iclight)
+ * 1. Generative AI Contextual Background replacement & Studio lighting via Fal.ai (fal-ai/bria/background/replace)
  * 2. Directly fetch Fal.ai composition and upload Blob to Supabase Storage ('products' bucket)
  */
 export async function processImagePipeline(
@@ -108,7 +108,7 @@ export async function processImagePipeline(
   // ── Step 1: Lightweight Canvas Downscaler (Under 1MB / 1200px max) ──
   const compressedBlob = await compressImageBeforeUpload(file);
 
-  // ── Step 2: Generative AI Contextual Lighting & Background (Fal.ai iclight) ──
+  // ── Step 2: Generative AI Contextual Lighting & Background (Fal.ai bria/background/replace) ──
   updateStatus('Enhancing product lighting and removing background...');
 
   const base64DataUrl = await new Promise((resolve, reject) => {
@@ -126,13 +126,12 @@ export async function processImagePipeline(
   const effectivePrompt = scenePrompt || 'clean studio lighting, high resolution, soft shadows, 4k';
   let generatedImageUrl = null;
 
-  // Primary execution via official fal.subscribe client SDK with fal-ai/iclight
+  // Primary execution via official fal.subscribe client SDK with fal-ai/bria/background/replace
   try {
-    const result = await fal.subscribe('fal-ai/iclight', {
+    const result = await fal.subscribe('fal-ai/bria/background/replace', {
       input: {
         image_url: base64DataUrl,
-        prompt: `Professional product photography of ${effectivePrompt}, clean studio lighting, high resolution, soft shadows, 4k`,
-        lighting_preference: 'Studio',
+        prompt: `Pro studio photography, high-end commercial product shot of ${effectivePrompt}, elegant neutral background, soft diffused studio lighting, sharp focus`,
       },
       logs: true,
       onQueueUpdate: (update) => {
@@ -150,7 +149,7 @@ export async function processImagePipeline(
   // Fallback to synchronous endpoint if SDK queue didn't return image URL
   if (!generatedImageUrl) {
     try {
-      const syncRes = await fetch('https://fal.run/fal-ai/iclight', {
+      const syncRes = await fetch('https://fal.run/fal-ai/bria/background/replace', {
         method: 'POST',
         headers: {
           'Authorization': `Key ${falApiKey}`,
@@ -158,8 +157,7 @@ export async function processImagePipeline(
         },
         body: JSON.stringify({
           image_url: base64DataUrl,
-          prompt: `Professional product photography of ${effectivePrompt}, clean studio lighting, high resolution, soft shadows, 4k`,
-          lighting_preference: 'Studio',
+          prompt: `Pro studio photography, high-end commercial product shot of ${effectivePrompt}, elegant neutral background, soft diffused studio lighting, sharp focus`,
         }),
       });
 
@@ -276,12 +274,11 @@ export default function AiStudio() {
     setEnhanceError('');
 
     try {
-      // Execute the model on fal.ai
-      const result = await fal.subscribe("fal-ai/iclight", {
+      // Execute the model on fal.ai (fal-ai/bria/background/replace)
+      const result = await fal.subscribe("fal-ai/bria/background/replace", {
         input: {
           image_url: originalImageUrl,
-          prompt: `Professional product photography of ${productDescription || scenePrompt}, clean studio lighting, high resolution, soft shadows, 4k`,
-          lighting_preference: "Studio",
+          prompt: `Pro studio photography, high-end commercial product shot of ${productDescription || scenePrompt}, elegant neutral background, soft diffused studio lighting, sharp focus`,
         },
         logs: true,
         onQueueUpdate: (update) => {
@@ -444,7 +441,7 @@ export default function AiStudio() {
     });
   };
 
-  // ── AI Batch Generative Scene Pipeline (fal-ai/iclight + Supabase) ──
+  // ── AI Batch Generative Scene Pipeline (fal-ai/bria/background/replace + Supabase) ──
   const handleBatchEnhance = useCallback(async (imagesToEnhance = capturedImages) => {
     if (imagesToEnhance.length === 0 || isEnhancing) return;
 

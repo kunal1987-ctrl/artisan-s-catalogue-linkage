@@ -207,6 +207,7 @@ export default function Capture() {
   // ── Multi-Image State & Dependencies ──
   const [images, setImages] = useState([]); // Array of { id, blob, file, previewUrl, base64 }
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [showOriginal, setShowOriginal] = useState(false);
 
   // Single-image backward compatibility aliases & explicit upload states
   const [image, setImage] = useState(null);
@@ -552,10 +553,13 @@ export default function Capture() {
                 ? {
                     ...img,
                     status: 'ready',
+                    originalUrl: img.originalUrl || img.previewUrl,
                     enhancedUrl: result.enhancedUrl,
                     previewUrl: result.enhancedUrl,
                     blob: newBlob,
                     base64: newBase64,
+                    isFalAi: Boolean(result.isFalAi),
+                    method: result.method,
                   }
                 : img
             )
@@ -646,9 +650,12 @@ export default function Capture() {
       blob: workingBlob,
       file: fileOrBlob instanceof File ? fileOrBlob : null,
       previewUrl: localUrl,
+      originalUrl: localUrl,
       base64: base64String,
+      originalBase64: base64String,
       status: 'pending', // pending, enhancing, ready
       enhancedUrl: null,
+      isFalAi: false,
     };
 
     setImages((prev) => {
@@ -1536,7 +1543,9 @@ export default function Capture() {
   ]);
 
   const activeImageObj = images[selectedImageIndex] || images[0];
-  const displayImage = activeImageObj?.previewUrl || processedPreview || previewUrl;
+  const displayImage = showOriginal
+    ? (activeImageObj?.originalUrl || activeImageObj?.previewUrl || previewUrl)
+    : (activeImageObj?.previewUrl || processedPreview || previewUrl);
   const isProcessing = aiStatus === 'transcribing' || aiStatus === 'analyzing' || isLoading || isTranscribingVoice;
   const isOptimizing = isProcessingImage || bgRemovalStatus === 'processing';
 
@@ -1671,7 +1680,7 @@ export default function Capture() {
                       (isOptimizing || isProcessing) ? 'blur-md scale-[0.97] opacity-80' : 'blur-none scale-100 opacity-100'
                     }`}
                   />
-                  {/* Top Angle Indicator Badge */}
+                  {/* Top Angle Indicator Badge & Interactive Compare Button */}
                   <div className="absolute top-3.5 left-3.5 sm:top-5 sm:left-5 z-20 flex items-center gap-2">
                     <span className="px-3 py-1 rounded-full bg-black/75 backdrop-blur-md border border-white/20 text-xs font-bold text-[#ffdeaa] flex items-center gap-1.5 shadow-lg">
                       <span className="material-symbols-outlined text-[15px] text-[#ff9062]">photo_camera</span>
@@ -1681,6 +1690,32 @@ export default function Capture() {
                           : `Angle #${selectedImageIndex + 1} of ${images.length || 1}`}
                       </span>
                     </span>
+
+                    {/* Interactive Before/After Compare Button */}
+                    {activeImageObj?.enhancedUrl && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowOriginal((prev) => !prev);
+                        }}
+                        className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-lg transition-all cursor-pointer backdrop-blur-md border pointer-events-auto ${
+                          showOriginal
+                            ? 'bg-amber-600 text-white border-amber-400 ring-2 ring-amber-400/50 scale-105'
+                            : 'bg-black/80 text-emerald-300 border-emerald-500/50 hover:bg-black/95'
+                        }`}
+                        title={showOriginal ? 'उन्नत फोटो देखें' : 'मूल फोटो से तुलना करें'}
+                      >
+                        <span className="material-symbols-outlined text-[14px]">
+                          {showOriginal ? 'auto_awesome' : 'compare'}
+                        </span>
+                        <span>
+                          {showOriginal
+                            ? (language === 'hi' ? '✨ उन्नत देखें' : '✨ Enhanced')
+                            : (language === 'hi' ? '👁️ मूल देखें' : '👁️ Compare')}
+                        </span>
+                      </button>
+                    )}
                   </div>
 
                   {/* Viewfinder reticle with subtle edge-scan pulse animation */}
@@ -1770,9 +1805,22 @@ export default function Capture() {
               {displayImage && (
                 <div className="relative z-20 my-auto flex flex-col items-center pointer-events-none">
                   {!isOptimizing && !isProcessing && bgRemovalStatus === 'done' && (
-                    <div className="bg-emerald-950/90 text-emerald-300 px-4 py-1.5 rounded-full border border-emerald-500/40 text-xs font-bold shadow-lg flex items-center gap-2 backdrop-blur-md">
-                      <span className="material-symbols-outlined text-[16px] text-amber-400">auto_awesome</span>
-                      <span>{language === 'hi' ? 'Fal.ai द्वारा उन्नत छवि • स्टूडियो बैकग्राउंड तैयार' : 'Enhanced by Fal.ai • Studio Lighting Ready'}</span>
+                    <div className={`px-4 py-1.5 rounded-full border text-xs font-bold shadow-lg flex items-center gap-2 backdrop-blur-md transition-all ${
+                      showOriginal
+                        ? 'bg-amber-950/90 text-amber-300 border-amber-500/50'
+                        : 'bg-emerald-950/90 text-emerald-300 border-emerald-500/40'
+                    }`}>
+                      <span className="material-symbols-outlined text-[16px] text-amber-400">
+                        {showOriginal ? 'visibility' : 'auto_awesome'}
+                      </span>
+                      <span>
+                        {showOriginal
+                          ? (language === 'hi' ? 'मूल फोटो (असंपादित)' : 'Original Camera Photo (Unedited)')
+                          : (activeImageObj?.isFalAi
+                              ? (language === 'hi' ? 'Fal.ai द्वारा उन्नत छवि • स्टूडियो बैकग्राउंड' : 'Enhanced by Fal.ai • Studio Lighting Ready')
+                              : (language === 'hi' ? 'प्रो स्टूडियो उन्नत • प्रकाश एवं रंग निखारा गया' : 'Pro Studio Enhanced • Vibrance & Lighting Ready')
+                            )}
+                      </span>
                     </div>
                   )}
                   {!isOptimizing && !isProcessing && bgRemovalStatus === 'error' && (

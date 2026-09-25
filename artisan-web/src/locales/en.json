@@ -114,6 +114,10 @@
     "category_label": "Category",
     "save_changes": "Save & Continue"
   },
+  "studio": {
+    "enhancing": "AI is creating a lifestyle background...",
+    "ready": "Lifestyle background ready"
+  },
   "success": {
     "title": "Craft Listed Successfully!",
     "subtitle": "Your craft is now live across buyer networks.",

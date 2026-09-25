@@ -732,12 +732,10 @@ export default function Capture() {
         setBase64String(base64String);
       }
 
-      // Once limit of 3 is reached, auto-send to AI batch enhancement pipeline!
-      if (updated.length === MAX_IMAGES) {
-        setTimeout(() => {
-          triggerBatchEnhancement(updated);
-        }, 250);
-      }
+      // Auto-trigger Fal.ai enhancement pipeline immediately upon capture without requiring manual click
+      setTimeout(() => {
+        triggerBatchEnhancement(updated);
+      }, 50);
 
       return updated;
     });

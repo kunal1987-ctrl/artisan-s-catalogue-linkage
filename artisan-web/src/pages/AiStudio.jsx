@@ -397,11 +397,10 @@ export default function AiStudio() {
         setCapturedImages((prev) => {
           if (prev.length >= MAX_IMAGES) return prev;
           const next = [...prev, newImageObj];
-          if (next.length === MAX_IMAGES) {
-            setTimeout(() => {
-              handleBatchEnhance(next);
-            }, 300);
-          }
+          // Auto-trigger Fal.ai enhancement pipeline immediately upon capture without requiring manual click
+          setTimeout(() => {
+            handleBatchEnhance(next);
+          }, 50);
           return next;
         });
       } catch (err) {

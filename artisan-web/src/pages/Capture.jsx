@@ -1128,7 +1128,7 @@ export default function Capture() {
           try {
             setTimeout(() => {
               if (!isIntentionalVoiceStopRef.current) recognition.start();
-            }, 50);
+            }, 150);
           } catch (e) {
             console.error('Auto-reboot failed', e);
           }

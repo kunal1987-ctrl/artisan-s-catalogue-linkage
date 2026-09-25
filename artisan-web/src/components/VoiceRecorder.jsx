@@ -1,35 +1,64 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
-export default function ResilientVoiceRecorder({ onTranscriptionComplete, className = '' }) {
+/**
+ * DEPLOYMENT & TESTING REQUIREMENT:
+ * The Web Speech API strictly requires a secure context (HTTPS).
+ * When testing on a mobile device, do NOT test over plain HTTP / local IP (e.g. http://192.168.1.5:5173).
+ * Test on the deployed Vercel https:// URL to avoid silent microphone permission blocks.
+ */
+export default function MobileSafeVoiceRecorder({ onTranscriptionComplete, className = '' }) {
   const { t, i18n } = useTranslation();
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState('');
   
-  // Refs for tracking state without triggering re-renders inside event handlers
   const recognitionRef = useRef(null);
   const isIntentionalStopRef = useRef(true);
   const accumulatedTranscriptRef = useRef('');
 
+  // Cleanup on unmount only
   useEffect(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
+    return () => {
+      isIntentionalStopRef.current = true;
+      if (recognitionRef.current) recognitionRef.current.stop();
+    };
+  }, []);
 
+  const toggleRecording = () => {
+    // 1. If currently recording, stop it manually
+    if (isRecording) {
+      isIntentionalStopRef.current = true;
+      setIsRecording(false);
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      if (onTranscriptionComplete) {
+        onTranscriptionComplete(accumulatedTranscriptRef.current.trim());
+      }
+      return;
+    }
+
+    // 2. THE FIX: Initialize DIRECTLY inside the user's click event
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Voice input is not natively supported in this mobile browser. Please use Chrome or Safari.");
+      return;
+    }
+
+    // Reset states for a fresh recording
+    accumulatedTranscriptRef.current = '';
+    setTranscript('');
+    isIntentionalStopRef.current = false;
+
+    // Create a fresh instance tied to this exact touch event
     const recognition = new SpeechRecognition();
-    recognition.continuous = true;
+    
+    // Note: iOS Safari ignores continuous=true, but we include it for Android Chrome
+    recognition.continuous = true; 
     recognition.interimResults = true;
     
-    // Inside the useEffect before recognition.start()
     const currentLang = i18n.language || 'hi';
-    
-    // Map strictly to major supported dialects to prevent dictionary failures
-    const localeMap = {
-      hi: 'hi-IN', bn: 'bn-IN', te: 'te-IN', mr: 'mr-IN', 
-      ta: 'ta-IN', en: 'en-IN'
-    };
-    
-    // If the browser struggles with the regional language, it's better to capture 
-    // phonetically in Hindi/English than to capture nothing at all.
+    const localeMap = { hi: 'hi-IN', bn: 'bn-IN', te: 'te-IN', mr: 'mr-IN', ta: 'ta-IN', en: 'en-IN' };
     recognition.lang = localeMap[currentLang] || 'hi-IN';
 
     recognition.onstart = () => {
@@ -38,86 +67,47 @@ export default function ResilientVoiceRecorder({ onTranscriptionComplete, classN
 
     recognition.onresult = (event) => {
       let currentInterim = '';
-
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         if (event.results[i].isFinal) {
-          // ONLY append to the permanent reference when the browser confirms it is a final word
           accumulatedTranscriptRef.current += event.results[i][0].transcript + ' ';
         } else {
-          // Keep interim text completely separate, used ONLY for live visual feedback
           currentInterim += event.results[i][0].transcript;
         }
       }
-
-      // Update the UI: Show the locked-in history + whatever the user is currently saying
       setTranscript(accumulatedTranscriptRef.current + currentInterim);
     };
 
     recognition.onerror = (event) => {
-      console.warn("Speech API Event:", event.error);
-      
-      // 1. Hard fail only if permissions are missing or hardware is broken
-      if (event.error === 'not-allowed' || event.error === 'audio-capture') {
-        alert("Microphone blocked! Please allow permissions in your browser address bar.");
+      console.warn("Mobile Speech Error:", event.error);
+      if (event.error === 'not-allowed') {
+        alert("Microphone access denied. Please allow permissions in your mobile browser settings.");
         isIntentionalStopRef.current = true;
         setIsRecording(false);
-        return;
       }
-      
-      // 2. THE CORE FIX: Completely ignore 'no-speech' (voice not detected). 
-      // Do NOT update the UI. Do NOT set isRecording to false. 
-      // Let it fail silently, and the onend() function will instantly restart it.
+      // Silently ignore 'no-speech' to allow the user to pause and think
     };
 
     recognition.onend = () => {
-      // If the browser stopped due to silence or a non-fatal error, 
-      // instantly reboot the microphone in the background.
+      // Mobile Safari strictly ends the recording when the user pauses.
+      // We attempt a soft reboot only if the user didn't press stop.
       if (!isIntentionalStopRef.current) {
-        try {
-          // Small timeout prevents Chrome from throwing a rapid-fire restart exception
-          setTimeout(() => {
-            if (!isIntentionalStopRef.current) recognition.start();
-          }, 50);
-        } catch (e) {
-          console.error("Auto-reboot failed", e);
-        }
+        setTimeout(() => {
+          if (!isIntentionalStopRef.current && recognitionRef.current) {
+            try { recognitionRef.current.start(); } catch (e) { /* Ignore rapid restart errors */ }
+          }
+        }, 150);
       } else {
-        // User explicitly clicked the Stop button
         setIsRecording(false);
-        if (onTranscriptionComplete) {
-          onTranscriptionComplete(accumulatedTranscriptRef.current.trim());
-        }
       }
     };
 
     recognitionRef.current = recognition;
 
-    return () => {
-      isIntentionalStopRef.current = true;
-      if (recognitionRef.current) recognitionRef.current.stop();
-    };
-  }, [i18n.language, onTranscriptionComplete]);
-
-  const toggleRecording = () => {
-    if (!recognitionRef.current) {
-      alert("Voice input is not supported in this browser.");
-      return;
-    }
-
-    if (isRecording) {
-      // Manual Stop
-      isIntentionalStopRef.current = true;
-      recognitionRef.current.stop();
-    } else {
-      // Manual Start
-      isIntentionalStopRef.current = false;
-      accumulatedTranscriptRef.current = ''; // Clear previous if starting fresh
-      setTranscript('');
-      try {
-        recognitionRef.current.start();
-      } catch (e) {
-        console.warn("Recognition already started");
-      }
+    // 3. Start the recording synchronously
+    try {
+      recognition.start();
+    } catch (e) {
+      console.error("Failed to start mobile recognition:", e);
     }
   };
 
@@ -133,7 +123,7 @@ export default function ResilientVoiceRecorder({ onTranscriptionComplete, classN
         }`}
       >
         <span className="text-2xl">{isRecording ? '⏹️' : '🎙️'}</span>
-        {isRecording ? 'Stop Recording' : t('capture.record_voice', 'Record Description')}
+        {isRecording ? 'Stop Recording' : t('capture.record_voice', 'Tap to Speak')}
       </button>
       
       {transcript && (
@@ -145,4 +135,4 @@ export default function ResilientVoiceRecorder({ onTranscriptionComplete, classN
   );
 }
 
-export { ResilientVoiceRecorder as VoiceRecorder };
+export { MobileSafeVoiceRecorder as VoiceRecorder, MobileSafeVoiceRecorder as ResilientVoiceRecorder };

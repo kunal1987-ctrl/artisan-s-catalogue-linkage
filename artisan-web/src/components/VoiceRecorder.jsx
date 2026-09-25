@@ -1,113 +1,89 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
-/**
- * DEPLOYMENT & TESTING REQUIREMENT:
- * The Web Speech API strictly requires a secure context (HTTPS).
- * When testing on a mobile device, do NOT test over plain HTTP / local IP (e.g. http://192.168.1.5:5173).
- * Test on the deployed Vercel https:// URL to avoid silent microphone permission blocks.
- */
-export default function MobileSafeVoiceRecorder({ onTranscriptionComplete, className = '' }) {
+export default function GroqVoiceRecorder({ onTranscriptionComplete, className = '' }) {
   const { t, i18n } = useTranslation();
   const [isRecording, setIsRecording] = useState(false);
-  const [transcript, setTranscript] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
   
-  const recognitionRef = useRef(null);
-  const isIntentionalStopRef = useRef(true);
-  const accumulatedTranscriptRef = useRef('');
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
 
-  // Cleanup on unmount only
-  useEffect(() => {
-    return () => {
-      isIntentionalStopRef.current = true;
-      if (recognitionRef.current) recognitionRef.current.stop();
-    };
-  }, []);
-
-  const toggleRecording = () => {
-    // 1. If currently recording, stop it manually
-    if (isRecording) {
-      isIntentionalStopRef.current = true;
-      setIsRecording(false);
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-      if (onTranscriptionComplete) {
-        onTranscriptionComplete(accumulatedTranscriptRef.current.trim());
-      }
-      return;
-    }
-
-    // 2. THE FIX: Initialize DIRECTLY inside the user's click event
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      alert("Voice input is not natively supported in this mobile browser. Please use Chrome or Safari.");
-      return;
-    }
-
-    // Reset states for a fresh recording
-    accumulatedTranscriptRef.current = '';
-    setTranscript('');
-    isIntentionalStopRef.current = false;
-
-    // Create a fresh instance tied to this exact touch event
-    const recognition = new SpeechRecognition();
-    
-    // Note: iOS Safari ignores continuous=true, but we include it for Android Chrome
-    recognition.continuous = true; 
-    recognition.interimResults = true;
-    
-    const currentLang = i18n.language || 'hi';
-    const localeMap = { hi: 'hi-IN', bn: 'bn-IN', te: 'te-IN', mr: 'mr-IN', ta: 'ta-IN', en: 'en-IN' };
-    recognition.lang = localeMap[currentLang] || 'hi-IN';
-
-    recognition.onstart = () => {
-      setIsRecording(true);
-    };
-
-    recognition.onresult = (event) => {
-      let currentInterim = '';
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        if (event.results[i].isFinal) {
-          accumulatedTranscriptRef.current += event.results[i][0].transcript + ' ';
-        } else {
-          currentInterim += event.results[i][0].transcript;
-        }
-      }
-      setTranscript(accumulatedTranscriptRef.current + currentInterim);
-    };
-
-    recognition.onerror = (event) => {
-      console.warn("Mobile Speech Error:", event.error);
-      if (event.error === 'not-allowed') {
-        alert("Microphone access denied. Please allow permissions in your mobile browser settings.");
-        isIntentionalStopRef.current = true;
-        setIsRecording(false);
-      }
-      // Silently ignore 'no-speech' to allow the user to pause and think
-    };
-
-    recognition.onend = () => {
-      // Mobile Safari strictly ends the recording when the user pauses.
-      // We attempt a soft reboot only if the user didn't press stop.
-      if (!isIntentionalStopRef.current) {
-        setTimeout(() => {
-          if (!isIntentionalStopRef.current && recognitionRef.current) {
-            try { recognitionRef.current.start(); } catch (e) { /* Ignore rapid restart errors */ }
-          }
-        }, 150);
-      } else {
-        setIsRecording(false);
-      }
-    };
-
-    recognitionRef.current = recognition;
-
-    // 3. Start the recording synchronously
+  const startRecording = async () => {
     try {
-      recognition.start();
-    } catch (e) {
-      console.error("Failed to start mobile recognition:", e);
+      // 1. Universally supported on all mobile browsers (requests mic permission)
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        setIsProcessing(true);
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        
+        // Stop all microphone tracks to turn off the red recording light on the phone
+        stream.getTracks().forEach(track => track.stop());
+
+        // 2. Send the recorded blob to Groq for transcription
+        await transcribeWithGroq(audioBlob);
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (error) {
+      console.error("Microphone access denied or unsupported:", error);
+      alert("Please allow microphone permissions to record your description.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const transcribeWithGroq = async (audioBlob) => {
+    try {
+      const groqKey = import.meta.env.VITE_GROQ_API_KEY || import.meta.env.GROQ_API_KEY;
+      const formData = new FormData();
+      formData.append("file", audioBlob, "audio.webm");
+      formData.append("model", "whisper-large-v3");
+      
+      // Pass the current selected language to help Groq's accuracy
+      const langCode = i18n.language === 'hi' ? 'hi' : (['bn', 'te', 'mr', 'ta'].includes(i18n.language) ? i18n.language : 'en'); 
+      formData.append("language", langCode);
+
+      // Send to Groq Whisper API
+      const response = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${groqKey}`
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error("Groq Whisper API response error:", response.status, errText);
+        throw new Error(`Groq Whisper returned ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.text && onTranscriptionComplete) {
+        onTranscriptionComplete(data.text);
+      }
+    } catch (error) {
+      console.error("Groq Transcription Failed:", error);
+      alert("Failed to transcribe audio. Please try again.");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -115,24 +91,23 @@ export default function MobileSafeVoiceRecorder({ onTranscriptionComplete, class
     <div className={`flex flex-col gap-3 mt-4 w-full ${className}`}>
       <button 
         type="button"
-        onClick={toggleRecording}
+        onClick={isRecording ? stopRecording : startRecording}
+        disabled={isProcessing}
         className={`px-6 py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 transition-all shadow-sm ${
           isRecording 
             ? 'bg-red-50 text-red-600 border-2 border-red-500 animate-pulse' 
             : 'bg-stone-900 text-white hover:bg-stone-800'
-        }`}
+        } disabled:opacity-50 cursor-pointer`}
       >
         <span className="text-2xl">{isRecording ? '⏹️' : '🎙️'}</span>
-        {isRecording ? 'Stop Recording' : t('capture.record_voice', 'Tap to Speak')}
+        {isRecording 
+          ? 'Stop Recording' 
+          : isProcessing 
+            ? 'Transcribing...' 
+            : t('capture.record_voice', 'Record Description')}
       </button>
-      
-      {transcript && (
-        <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-stone-800 min-h-[100px] text-lg leading-relaxed shadow-inner whitespace-pre-wrap">
-          {transcript}
-        </div>
-      )}
     </div>
   );
 }
 
-export { MobileSafeVoiceRecorder as VoiceRecorder, MobileSafeVoiceRecorder as ResilientVoiceRecorder };
+export { GroqVoiceRecorder as VoiceRecorder, GroqVoiceRecorder as ResilientVoiceRecorder, GroqVoiceRecorder as MobileSafeVoiceRecorder };

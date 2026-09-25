@@ -1804,8 +1804,8 @@ export default function Capture() {
                 <div className="relative z-20 my-auto flex flex-col items-center pointer-events-none">
                   {!isOptimizing && !isProcessing && bgRemovalStatus === 'done' && (
                     <div className="bg-emerald-950/90 text-emerald-300 px-4 py-1.5 rounded-full border border-emerald-500/40 text-xs font-bold shadow-lg flex items-center gap-2 backdrop-blur-md">
-                      <span className="material-symbols-outlined text-[16px] text-emerald-400">check_circle</span>
-                      <span>{language === 'hi' ? 'लाइफस्टाइल बैकग्राउंड तैयार' : 'Lifestyle Scene Ready'}</span>
+                      <span className="material-symbols-outlined text-[16px] text-amber-400">auto_awesome</span>
+                      <span>{language === 'hi' ? 'Fal.ai द्वारा उन्नत छवि' : 'Image enhanced by Fal.ai'}</span>
                     </div>
                   )}
                   {!isOptimizing && !isProcessing && bgRemovalStatus === 'error' && (

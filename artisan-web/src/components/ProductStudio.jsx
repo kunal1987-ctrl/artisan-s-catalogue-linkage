@@ -109,7 +109,7 @@ export default function ProductStudio({ onImageProcessed, onCapture }) {
         <div className="relative rounded-2xl overflow-hidden shadow-lg group">
           <img src={finalImage} alt="Processed Product" className="w-full h-auto max-h-[480px] object-contain bg-stone-950" />
           <div className="absolute bottom-4 left-4 bg-emerald-900/90 text-emerald-100 px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 border border-emerald-500/30 shadow-md">
-            <span>✅</span> {t('studio.ready', "लाइफस्टाइल बैकग्राउंड तैयार")}
+            <span>✨</span> {t('studio.enhanced_by', "Image enhanced by Fal.ai")}
           </div>
           <button 
             type="button"

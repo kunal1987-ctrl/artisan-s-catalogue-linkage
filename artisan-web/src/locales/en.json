@@ -116,7 +116,8 @@
   },
   "studio": {
     "enhancing": "AI is creating a lifestyle background...",
-    "ready": "Lifestyle background ready"
+    "ready": "Lifestyle background ready",
+    "enhanced_by": "Image enhanced by Fal.ai"
   },
   "success": {
     "title": "Craft Listed Successfully!",

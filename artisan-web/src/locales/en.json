@@ -101,7 +101,9 @@
     "stop_recording": "Stop & Generate",
     "listening": "Listening... Speak in your language",
     "analyzing": "AI is generating your listing...",
-    "record_voice": "Record Voice Description"
+    "record_voice": "Record Voice Description",
+    "quantity_label": "Available Quantity",
+    "quantity_desc": "How many of these items do you currently have?"
   },
   "review": {
     "title": "Review & Edit Craft",

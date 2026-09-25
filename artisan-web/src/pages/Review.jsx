@@ -330,6 +330,7 @@ export default function Review() {
         price,
         wholesalePrice,
         moq,
+        stock: Number(stock),
         gemCategory,
         pricingReasoning,
         category,
@@ -1034,6 +1035,84 @@ export default function Review() {
                         </button>
                       )}
                     </div>
+                  </div>
+                </div>
+
+                {/* ── 6.5. INVENTORY & AVAILABLE QUANTITY STEPPER ── */}
+                <div className="rounded-2xl p-4 sm:p-6 bg-surface-container-lowest border border-outline-variant/40 shadow-sm transition-all hover:border-outline flex flex-col gap-3">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className="material-symbols-outlined text-[18px] text-amber-600">inventory_2</span>
+                        <span className="text-[13px] font-bold text-gray-900 tracking-wide">
+                          {t('capture.quantity_label', 'Available Quantity')}
+                        </span>
+                      </div>
+                      <p className="text-[12px] text-gray-500">
+                        {t('capture.quantity_desc', 'How many of these items do you currently have?')}
+                      </p>
+                    </div>
+                    <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                      {stock > 0 ? (language === 'hi' ? `${stock} उपलब्ध` : `${stock} in stock`) : (language === 'hi' ? 'स्टॉक समाप्त' : 'Out of stock')}
+                    </span>
+                  </div>
+
+                  {/* Accessible Mobile-Friendly Large Stepper [-][1][+] */}
+                  <div className="flex items-center justify-center gap-4 py-2">
+                    <button
+                      type="button"
+                      onClick={() => setStock((prev) => Math.max(1, (Number(prev) || 1) - 1))}
+                      disabled={stock <= 1}
+                      className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-stone-100 hover:bg-stone-200 active:bg-stone-300 text-stone-800 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center font-bold text-2xl sm:text-3xl transition shadow-xs cursor-pointer select-none border border-stone-200"
+                      aria-label="Decrease quantity"
+                    >
+                      −
+                    </button>
+
+                    <div className="flex flex-col items-center">
+                      <input
+                        type="number"
+                        min="1"
+                        max="9999"
+                        value={stock}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value, 10);
+                          setStock(isNaN(val) ? 1 : Math.max(1, val));
+                        }}
+                        className="w-24 sm:w-28 h-14 sm:h-16 text-center text-2xl sm:text-3xl font-extrabold text-stone-900 bg-stone-50 border-2 border-stone-300 rounded-2xl focus:border-amber-600 focus:outline-none transition"
+                        aria-label="Quantity value"
+                      />
+                      <span className="text-[11px] font-medium text-stone-500 mt-1">
+                        {language === 'hi' ? 'इकाइयाँ (Units)' : 'Units ready to ship'}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setStock((prev) => (Number(prev) || 0) + 1)}
+                      className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white flex items-center justify-center font-bold text-2xl sm:text-3xl transition shadow-sm cursor-pointer select-none"
+                      aria-label="Increase quantity"
+                    >
+                      +
+                    </button>
+                  </div>
+
+                  {/* Quick Preset Buttons for Easy Single-Tap on Mobile */}
+                  <div className="flex items-center justify-center gap-2 pt-1 flex-wrap">
+                    {[1, 5, 10, 25, 50, 100].map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => setStock(preset)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                          stock === preset
+                            ? 'bg-stone-900 text-white shadow-xs'
+                            : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                        }`}
+                      >
+                        {preset}
+                      </button>
+                    ))}
                   </div>
                 </div>
 

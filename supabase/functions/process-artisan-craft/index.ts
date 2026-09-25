@@ -571,18 +571,11 @@ Deno.serve(async (req: Request) => {
 TASK 1: CLASSIFY
 Classify the product strictly into ONE allowed category: [Textiles, Pottery, Woodcraft, Metal, Jute, Art, Leather, Jewelry].
 
-TASK 2: AUTHENTICITY CHECK
-Analyze the image background and context.
-- REJECT if the background is pure digital white, transparent, or a perfect studio gradient.
-- REJECT if there are digital watermarks, stock photo logos, or promotional text overlays.
-- REJECT if the image is a photograph taken of another digital screen (screen moiré, frame, glass glare).
-- ACCEPT ONLY if the image shows natural physical environments (e.g., human hands, workshop tables, raw materials, natural outdoor/indoor lighting, natural shadows).
-
-IF the image FAILS authenticity check:
-Set "is_authentic_photo": false, "is_valid": false, and populate "rejection_reason" with the specific violation. Leave catalog fields null.
-
-IF the image PASSES authenticity check:
-Set "is_authentic_photo": true, "is_valid": true, "rejection_reason": null, assign the exact category, and extract full product catalog fields.
+TASK 2: AUTHENTICITY & QUALITY CHECK
+Analyze the craft product image.
+- ACCEPT authentic Indian handicrafts, handlooms, and artisanal goods. Note: Images are enhanced onto clean e-commerce studio backdrops (studio white, gradient with ground contact shadow) or captured in artisan workshops. Both are authentic and desirable for GeM and ONDC cataloging.
+- REJECT ONLY if the image is an overt photograph of a computer/phone screen (visible monitor bezel, scan lines) or has large stock photo watermarks.
+- For authentic craft products, set "is_authentic_photo": true, "is_valid": true, "rejection_reason": null.
 - Price: Extract the stated audio amount first. If the transcript is empty or lacks a price, perform a "Smart Appraisal"—calculate a fair market valuation based on material and complexity.
 - HSN Code: Map the precise 4-to-6 digit Indian GST classification to the primary material detected.
 - Description: Write a unique 2-sentence marketing copy reflecting visible colors, patterns, and design details.

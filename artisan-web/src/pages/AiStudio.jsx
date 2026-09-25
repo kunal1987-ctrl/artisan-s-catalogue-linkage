@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { validateImageLightweight } from '../utils/imageValidator';
 import { addGeoWatermark } from '../utils/geoWatermark';
 import MicroVideoCapture from '../components/MicroVideoCapture';
+import { enhanceAndCleanProductImage } from '../utils/imageEnhancer';
 import exifr from 'exifr';
 
 // Configure the client using your Vite environment variable
@@ -175,7 +176,13 @@ export async function processImagePipeline(
   }
 
   if (!generatedImageUrl) {
-    throw new Error('Fal.ai iclight enhancement did not return a valid image URL');
+    updateStatus('Applying studio lighting & removing background...');
+    const enhanced = await enhanceAndCleanProductImage(compressedBlob, updateStatus);
+    generatedImageUrl = enhanced.enhancedUrl;
+  }
+
+  if (!generatedImageUrl) {
+    throw new Error('Studio enhancement did not return a valid image URL');
   }
 
   // ── Step 2: Fetch Composed Image Blob & Upload Directly to Supabase Storage ──

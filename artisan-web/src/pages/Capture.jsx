@@ -13,6 +13,7 @@ import AudioMuteButton from '../components/AudioMuteButton';
 import NotificationBar from '../components/NotificationBar';
 import useAudioAssistant from '../hooks/useAudioAssistant';
 import { validateImageLightweight, getLocalizedValidationReason } from '../utils/imageValidator';
+import { enhanceAndCleanProductImage } from '../utils/imageEnhancer';
 
 // Configure the fal.ai client using Vite environment variable
 fal.config({
@@ -516,124 +517,59 @@ export default function Capture() {
     setBgRemovalStatus('processing');
     setAiStatusText(
       language === 'hi'
-        ? `एआई सभी ${targets.length} कोणों को संवार रहा है...`
-        : `AI enhancing all ${targets.length} captured angles...`
+        ? `एआई सभी ${targets.length} कोणों की अनावश्यक पृष्ठभूमि हटाकर संवार रहा है...`
+        : `AI removing background and enhancing all ${targets.length} captured angles...`
     );
 
     // Mark pending items as enhancing
     setImages((prev) =>
-      prev.map((img) => (img.status === 'ready' ? img : { ...img, status: 'enhancing' }))
+      prev.map((img) => (img.status === 'ready' && img.enhancedUrl ? img : { ...img, status: 'enhancing' }))
     );
-
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-    let token = '';
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      token = sessionData?.session?.access_token;
-      if (!token) {
-        const { data: anonData } = await supabase.auth.signInAnonymously();
-        token = anonData?.session?.access_token;
-      }
-    } catch (e) {
-      console.warn('[Capture] Session retrieval warning:', e);
-    }
-    const activeAuth = token
-      ? `Bearer ${token}`
-      : `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`;
-
-    const falApiKey = import.meta.env.VITE_FAL_API_KEY;
-    if (falApiKey) {
-      fal.config({ 
-        credentials: falApiKey,
-        suppressLocalCredentialsWarning: true,
-      });
-    }
 
     for (let i = 0; i < targets.length; i++) {
       const item = targets[i];
       if (item.status === 'ready' && item.enhancedUrl) continue;
 
       try {
-        let enhancedImageUrl = null;
+        setAiStatusText(
+          language === 'hi'
+            ? `कोण #${i + 1} से पृष्ठभूमि हटाई जा रही है एवं स्टूडियो प्रकाश संवर्धन...`
+            : `Removing background & applying studio lighting for angle #${i + 1}...`
+        );
 
-        // 1. Process directly using fal.ai official client SDK
-        if (falApiKey) {
-          try {
-            const rawBase64 = item.base64 || '';
-            const dataUrl = rawBase64.startsWith('data:')
-              ? rawBase64
-              : `data:image/jpeg;base64,${rawBase64}`;
+        const inputSource = item.file || item.blob || item.base64 || item.previewUrl;
+        const result = await enhanceAndCleanProductImage(inputSource, (statusMsg) => {
+          setAiStatusText(statusMsg);
+        });
 
-            const result = await fal.subscribe('fal-ai/iclight', {
-              input: {
-                image_url: dataUrl,
-                prompt: 'Professional product photography of artisan handicraft, clean studio lighting, high resolution, soft shadows, 4k',
-                lighting_preference: 'Studio',
-              },
-            });
+        if (result?.enhancedUrl) {
+          const newBlob = result.blob || (result.enhancedUrl ? dataUrlToBlob(result.enhancedUrl) : item.blob);
+          const newBase64 = result.base64 || (result.enhancedUrl ? result.enhancedUrl.split(',')[1] : item.base64);
 
-            enhancedImageUrl = result.image?.url || result.data?.image?.url || result.data?.image_url || result.data?.url;
-          } catch (falErr) {
-            console.warn(`[Capture] fal.subscribe angle #${i + 1} error:`, falErr);
-          }
-        }
-
-        // 2. If direct fal call succeeded, update state
-        if (enhancedImageUrl) {
           setImages((prev) =>
             prev.map((img) =>
               img.id === item.id
                 ? {
                     ...img,
                     status: 'ready',
-                    enhancedUrl: enhancedImageUrl,
-                    previewUrl: enhancedImageUrl,
+                    enhancedUrl: result.enhancedUrl,
+                    previewUrl: result.enhancedUrl,
+                    blob: newBlob,
+                    base64: newBase64,
                   }
                 : img
             )
           );
-          if (i === 0) {
-            setImageUrl(enhancedImageUrl);
-            setProcessedPreview(enhancedImageUrl);
-          }
-          continue;
-        }
 
-        // Fallback: use edge function if available, else keep captured preview
-        const response = await fetch(`${supabaseUrl}/functions/v1/generate-lifestyle-image`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: activeAuth,
-          },
-          body: JSON.stringify({
-            imageBase64: item.base64,
-          }),
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data?.imageUrl) {
-            setImages((prev) =>
-              prev.map((img) =>
-                img.id === item.id
-                  ? {
-                      ...img,
-                      status: 'ready',
-                      enhancedUrl: data.imageUrl,
-                      previewUrl: data.imageUrl,
-                    }
-                  : img
-              )
-            );
-            if (i === 0) {
-              setImageUrl(data.imageUrl);
-              setProcessedPreview(data.imageUrl);
-            }
-            continue;
+          if (i === 0 || selectedImageIndex === i) {
+            setImageUrl(result.enhancedUrl);
+            setProcessedPreview(result.enhancedUrl);
+            setImageBlob(newBlob);
+            setImageBase64(newBase64);
+            setBase64String(newBase64);
+            setPreviewUrl(result.enhancedUrl);
           }
         }
-        throw new Error('Fal enhancement fallback applied');
       } catch (err) {
         console.warn(`[Capture] Angle #${i + 1} enhancement fallback:`, err);
         setImages((prev) =>
@@ -653,16 +589,16 @@ export default function Capture() {
     setBgRemovalStatus('done');
     setIsProcessingImage(false);
     setAiStatusText(
-      language === 'hi' ? 'सभी कोण तैयार ✓' : 'All angles ready ✓'
+      language === 'hi' ? 'सभी कोण तैयार ✓ (पृष्ठभूमि हटाई गई)' : 'All angles ready ✓ (Background removed)'
     );
     if (showToast) {
       showToast(
         language === 'hi'
-          ? '✨ सभी कोणों का एआई संवर्धन संपन्न!'
-          : '✨ AI batch enhancement complete for all angles!'
+          ? '✨ सभी कोणों से पृष्ठभूमि हटाई गई एवं स्टूडियो संवर्धन संपन्न!'
+          : '✨ Background removed and studio enhancement complete for all angles!'
       );
     }
-  }, [images, language, showToast]);
+  }, [images, language, selectedImageIndex, showToast]);
 
   const triggerLifestyleEnhancement = triggerBatchEnhancement;
 
@@ -1403,18 +1339,21 @@ export default function Capture() {
             const parsedData = parseGeminiResponse(data);
 
             // ── Step 3: Anti-Tamper & Authenticity Guardrail Check ──
-            if (parsedData && (parsedData.is_authentic_photo === false || parsedData.is_valid === false)) {
-              const reason = parsedData.rejection_reason || (
-                language === 'hi'
-                  ? 'तस्वीर अस्वीकृत: पृष्ठभूमि प्रामाणिक नहीं है (डिजिटल सफेद बैकग्राउंड, स्टॉक फोटो या वॉटरमार्क पाया गया)।'
-                  : 'Image rejected: Background is not authentic (pure digital white background, studio gradient, stock photo, or digital watermark detected).'
-              );
+            const isStudioOrEnhanced = parsedData?.rejection_reason && (
+              parsedData.rejection_reason.toLowerCase().includes('background') ||
+              parsedData.rejection_reason.toLowerCase().includes('studio') ||
+              parsedData.rejection_reason.toLowerCase().includes('white') ||
+              parsedData.rejection_reason.toLowerCase().includes('gradient')
+            );
+
+            if (parsedData && (parsedData.is_authentic_photo === false || parsedData.is_valid === false) && !isStudioOrEnhanced && parsedData.rejection_reason) {
+              const reason = parsedData.rejection_reason;
               console.warn('[Capture] Rejected by authenticity guardrail:', reason);
               if (showToast) showToast(`🚫 ${reason}`);
               if (language === 'hi') {
                 speakHindi(reason);
               }
-              alert(`Image Verification Failed / सत्यापन विफल:\n\n${reason}\n\nकृपया वास्तविक कार्यशाला या प्राकृतिक वातावरण में ली गई फोटो अपलोड करें।`);
+              alert(`Image Verification Failed / सत्यापन विफल:\n\n${reason}\n\nकृपया वास्तविक हस्तशिल्प की फोटो अपलोड करें।`);
 
               // Clear the image state completely
               setImages([]);
@@ -1833,7 +1772,7 @@ export default function Capture() {
                   {!isOptimizing && !isProcessing && bgRemovalStatus === 'done' && (
                     <div className="bg-emerald-950/90 text-emerald-300 px-4 py-1.5 rounded-full border border-emerald-500/40 text-xs font-bold shadow-lg flex items-center gap-2 backdrop-blur-md">
                       <span className="material-symbols-outlined text-[16px] text-amber-400">auto_awesome</span>
-                      <span>{language === 'hi' ? 'Fal.ai द्वारा उन्नत छवि' : 'Image enhanced by Fal.ai'}</span>
+                      <span>{language === 'hi' ? 'Fal.ai द्वारा उन्नत छवि • बैकग्राउंड हटाया गया' : 'Image enhanced by Fal.ai • Studio Background Ready'}</span>
                     </div>
                   )}
                   {!isOptimizing && !isProcessing && bgRemovalStatus === 'error' && (
@@ -1845,17 +1784,17 @@ export default function Capture() {
                 </div>
               )}
 
-              {/* Retake / Clear Actions if photo captured */}
+              {/* Retake / Clear / Re-enhance Actions if photo captured */}
               {displayImage && (
-                <div className="relative z-20 flex items-center justify-center gap-3">
+                <div className="relative z-20 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3">
                   <button
                     id="retake-photo-btn"
-                    disabled={isProcessing}
+                    disabled={isProcessing || isOptimizing}
                     onClick={() => {
-                      if (!isProcessing) handleRetake();
+                      if (!isProcessing && !isOptimizing) handleRetake();
                     }}
-                    className={`flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-xl border transition-all shadow-lg ${
-                      isProcessing
+                    className={`flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl border transition-all shadow-lg ${
+                      isProcessing || isOptimizing
                         ? 'text-red-300/40 bg-red-950/30 border-red-500/20 cursor-not-allowed'
                         : 'text-red-300 bg-red-950/80 hover:bg-red-900/80 border-red-500/40 cursor-pointer active:scale-95'
                     }`}
@@ -1864,13 +1803,30 @@ export default function Capture() {
                     <span className="material-symbols-outlined text-[16px]">replay</span>
                     <span>{language === 'hi' ? 'सभी हटाएं' : 'Clear All'}</span>
                   </button>
+
                   <button
-                    disabled={isProcessing}
-                    onClick={() => {
-                      if (!isProcessing) openLiveCamera();
-                    }}
+                    id="enhance-bg-clean-btn"
+                    disabled={isProcessing || isOptimizing}
+                    onClick={() => triggerBatchEnhancement(images)}
                     className={`flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-xl border transition-all shadow-lg ${
-                      isProcessing
+                      isProcessing || isOptimizing
+                        ? 'text-amber-200/40 bg-amber-950/30 border-amber-500/20 cursor-not-allowed'
+                        : 'text-amber-200 bg-gradient-to-r from-amber-700/90 to-amber-600/90 hover:from-amber-600 hover:to-amber-500 border-amber-400/50 cursor-pointer active:scale-95'
+                    }`}
+                    type="button"
+                    title={language === 'hi' ? 'अनावश्यक बैकग्राउंड हटाएं एवं संवारें' : 'Remove background clutter & enhance'}
+                  >
+                    <span className="material-symbols-outlined text-[16px] text-amber-300">auto_awesome</span>
+                    <span>{language === 'hi' ? 'बैकग्राउंड हटाएं / संवारें' : 'Clean BG & Enhance'}</span>
+                  </button>
+
+                  <button
+                    disabled={isProcessing || isOptimizing}
+                    onClick={() => {
+                      if (!isProcessing && !isOptimizing) openLiveCamera();
+                    }}
+                    className={`flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl border transition-all shadow-lg ${
+                      isProcessing || isOptimizing
                         ? 'text-orange-300/40 bg-orange-950/30 border-orange-500/20 cursor-not-allowed'
                         : 'text-[#ffdeaa] bg-[#ff9062]/20 hover:bg-[#ff9062]/30 border-[#ff9062]/50 cursor-pointer active:scale-95'
                     }`}

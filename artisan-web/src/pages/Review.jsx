@@ -255,24 +255,38 @@ export default function Review() {
 
       // 2. Insert complete product record into public.products with verified user.id and user.phone
       const authUser = (await supabase.auth.getUser()).data?.user || user;
-      const authUserId = authUser?.id || user?.id || null;
+      const rawUserId = authUser?.id || user?.id || null;
+      const isValidUuid = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+      const authUserId = isValidUuid(rawUserId) ? rawUserId : null;
       const userPhone = artisanProfile?.phone || authUser?.phone || user?.phone || null;
 
-      const newProductId = (typeof crypto !== 'undefined' && crypto.randomUUID)
-        ? crypto.randomUUID()
-        : ('prod_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9));
+      const generateUuid = () => {
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+          return crypto.randomUUID();
+        }
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+          const r = (Math.random() * 16) | 0;
+          const v = c === 'x' ? r : (r & 0x3) | 0x8;
+          return v.toString(16);
+        });
+      };
+
+      const newProductId = generateUuid();
 
       const payload = {
         id: newProductId,
         title,
         title_hi: titleHi,
+        hindi_title: titleHi,
         description,
         description_hi: descriptionHi,
+        hindi_description: descriptionHi,
         category,
         price: Number(price),
         wholesale_price: Number(wholesalePrice),
         bulk_price: Number(wholesalePrice),
         moq: Number(moq),
+        min_order_quantity: Number(moq),
         stock: Number(stock),
         make_in_india_percentage: 100,
         msme_exempt: true,
@@ -280,22 +294,75 @@ export default function Review() {
         hsn_code: hsnCode || aiData.hsn_code || '970300',
         unspsc_code: aiData.unspsc_code || '60121002',
         is_gem_ready: true,
+        craft_origin: 'India',
         pricing_reasoning: pricingReasoning,
         tags,
         image_url: finalImageUrl,
         status: 'published',
-        artisan_id: user?.id || authUserId,
-        user_id: user?.id || authUserId,
+        artisan_id: authUserId,
+        user_id: authUserId,
         user_phone: userPhone,
       };
 
-      const { data: insertedData, error } = await supabase
-        .from('items')
+      let insertedData = null;
+
+      // Tier 1: Insert into 'products' table directly
+      const { data: prodData, error: prodErr } = await supabase
+        .from('products')
         .insert([payload])
         .select()
         .maybeSingle();
 
-      if (error) throw error;
+      if (!prodErr && prodData) {
+        insertedData = prodData;
+      } else {
+        console.warn('Direct products insert attempt note:', prodErr?.message);
+        // Tier 2: Try 'items' view
+        const { data: itemData, error: itemErr } = await supabase
+          .from('items')
+          .insert([payload])
+          .select()
+          .maybeSingle();
+
+        if (!itemErr && itemData) {
+          insertedData = itemData;
+        } else {
+          console.warn('Items view insert attempt note:', itemErr?.message);
+          // Tier 3: Core columns fallback (strips any schema cache conflicting fields)
+          const corePayload = {
+            id: newProductId,
+            title,
+            description,
+            category,
+            price: Number(price),
+            wholesale_price: Number(wholesalePrice),
+            bulk_price: Number(wholesalePrice),
+            moq: Number(moq),
+            stock: Number(stock),
+            gem_category: gemCategory,
+            hsn_code: hsnCode || aiData.hsn_code || '970300',
+            unspsc_code: aiData.unspsc_code || '60121002',
+            is_gem_ready: true,
+            tags,
+            image_url: finalImageUrl,
+            status: 'published',
+            artisan_id: authUserId,
+            user_id: authUserId,
+          };
+
+          const { data: coreData, error: coreErr } = await supabase
+            .from('products')
+            .insert([corePayload])
+            .select()
+            .maybeSingle();
+
+          if (coreErr) {
+            console.error('All product insert tiers failed:', coreErr);
+            throw coreErr;
+          }
+          insertedData = coreData;
+        }
+      }
 
       const finalizedId = insertedData?.id || payload.id;
 

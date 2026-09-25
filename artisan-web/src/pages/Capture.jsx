@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Camera, Mic as MicrophoneIcon, AlertCircleIcon, SquareIcon, TrashIcon } from 'lucide-react';
+import { Camera, Mic as MicrophoneIcon, SquareIcon, TrashIcon } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 import { fal } from '@fal-ai/client';
 import { supabase } from '../supabaseClient';
@@ -266,7 +266,7 @@ export default function Capture() {
   // ── Audio / Description State ──
   const [recordings, setRecordings] = useState([]); // Array of { id, text, audioUrl }
   const [isRecording, setIsRecording] = useState(false);
-  const [voiceError, setVoiceError] = useState('');
+  const [isTranscribingVoice, setIsTranscribingVoice] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
   const [audioBase64, setAudioBase64] = useState(null);
   const [audioBlob, setAudioBlob] = useState(null);
@@ -284,7 +284,6 @@ export default function Capture() {
 
   // Refs to maintain stream references without triggering re-renders
   const mediaRecorderRef = useRef(null);
-  const speechRecognitionRef = useRef(null);
   const audioChunksRef = useRef([]);
   const mimeTypeRef = useRef('');
   const currentTranscriptRef = useRef('');
@@ -293,7 +292,6 @@ export default function Capture() {
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
   const animFrameRef = useRef(null);
-  const isIntentionalVoiceStopRef = useRef(true);
 
   // ── AbortController Ref & Single Active Submit Lock ──
   const generateAbortControllerRef = useRef(null);
@@ -364,7 +362,6 @@ export default function Capture() {
     currentTranscriptRef.current = '';
     setRecordingDuration(0);
     setTranscript('');
-    setVoiceError('');
     setRecordings((prev) => {
       prev.forEach((r) => {
         if (r.audioUrl) {
@@ -375,10 +372,6 @@ export default function Capture() {
     });
     setAudioTranscript(null);
     setCustomTranscript('');
-    if (speechRecognitionRef.current) {
-      try { speechRecognitionRef.current.abort(); } catch (_e) { /* already stopped */ }
-      speechRecognitionRef.current = null;
-    }
     setCategory(null);
     setHsnCode(null);
     setShowAdvancedText(false);
@@ -1001,38 +994,91 @@ export default function Capture() {
   // ════════════════════════════════════════════
 
   // ════════════════════════════════════════════
-  // SYNCHRONIZED AUDIO RECORDING & WEB SPEECH API
+  // GROQ MEDIARECORDER VOICE CAPTURE & WHISPER PIPELINE
   // ════════════════════════════════════════════
 
-  const toggleRecording = useCallback(async () => {
-    setVoiceError('');
+  const processWithGroq = useCallback(async (audioBlob, audioUrl) => {
+    try {
+      setIsTranscribingVoice(true);
+      const formData = new FormData();
+      const fileExtension = (mimeTypeRef.current && mimeTypeRef.current.includes('webm')) ? 'webm' : 'm4a';
+      formData.append('file', audioBlob, `audio.${fileExtension}`);
+      formData.append('model', 'whisper-large-v3');
+      // Use clean ISO codes for Groq Whisper
+      formData.append('language', i18n.language === 'hi' || transcriptionLang === 'hi' ? 'hi' : 'en');
 
-    // If already recording, stop it manually
+      const groqKey = import.meta.env.VITE_GROQ_API_KEY || import.meta.env.GROQ_API_KEY;
+
+      const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${groqKey}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Groq API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.text) {
+        const text = data.text.trim();
+        setTranscript((prev) => (prev ? prev + ' ' + text : text));
+        currentTranscriptRef.current += (currentTranscriptRef.current ? ' ' : '') + text;
+        setRecordings((prev) => [
+          ...prev,
+          {
+            id: Date.now(),
+            text,
+            audioUrl,
+          },
+        ]);
+      }
+    } catch (error) {
+      console.error('Groq transcription error:', error);
+      alert('Failed to process audio with Groq. Please try speaking again.');
+    } finally {
+      setIsTranscribingVoice(false);
+    }
+  }, [i18n.language, transcriptionLang]);
+
+  const toggleRecording = useCallback(async () => {
     if (isRecording) {
-      isIntentionalVoiceStopRef.current = true;
+      // STOP RECORDING
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
         mediaRecorderRef.current.stop();
-      }
-      if (speechRecognitionRef.current) {
-        try { speechRecognitionRef.current.stop(); } catch (_) {}
-      }
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
       }
       setIsRecording(false);
       return;
     }
 
-    // Start new recording
+    // START RECORDING
     try {
-      isIntentionalVoiceStopRef.current = false;
-      // Immediately silence any active audio assistant speech before microphone turns on
-      stop();
+      setTranscript(''); // Clear old text
+      stop(); // Silence audio assistant speech before microphone turns on
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
       setMicUnavailable(false);
 
-      // Real-time audio level feedback via Web Audio API Analyser
+      // Support dynamic MIME detection for iOS Safari vs Android (audio/webm vs audio/mp4)
+      let recorderOptions = {};
+      if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/webm')) {
+        recorderOptions = { mimeType: 'audio/webm' };
+        mimeTypeRef.current = 'audio/webm';
+      } else if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/mp4')) {
+        recorderOptions = { mimeType: 'audio/mp4' };
+        mimeTypeRef.current = 'audio/mp4';
+      } else {
+        mimeTypeRef.current = '';
+      }
+
+      const mediaRecorder = new MediaRecorder(stream, recorderOptions);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+      setRecordingDuration(0);
+
+      // Audio level analyser for waveform feedback
       try {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         if (AudioCtx) {
@@ -1049,9 +1095,7 @@ export default function Capture() {
             if (!analyserRef.current) return;
             analyserRef.current.getByteFrequencyData(dataArray);
             let sum = 0;
-            for (let i = 0; i < dataArray.length; i++) {
-              sum += dataArray[i];
-            }
+            for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
             const avg = sum / dataArray.length;
             setAudioLevel(Math.min(100, Math.round((avg / 128) * 100)));
             animFrameRef.current = requestAnimationFrame(updateAudioLevel);
@@ -1062,95 +1106,11 @@ export default function Capture() {
         console.warn('AudioContext analyser init:', audioErr);
       }
 
-      // 1. Setup Audio File Recording (OS-aware for iOS Safari vs Android)
-      let recorderOptions = {};
-      if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/webm')) {
-        recorderOptions = { mimeType: 'audio/webm' };
-        mimeTypeRef.current = 'audio/webm';
-      } else if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/mp4')) {
-        recorderOptions = { mimeType: 'audio/mp4' };
-        mimeTypeRef.current = 'audio/mp4';
-      } else {
-        mimeTypeRef.current = '';
-      }
-
-      mediaRecorderRef.current = new MediaRecorder(stream, recorderOptions);
-      audioChunksRef.current = [];
-      setRecordingDuration(0);
-
-      mediaRecorderRef.current.ondataavailable = (event) => {
+      mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) audioChunksRef.current.push(event.data);
       };
 
-      // 2. Setup Speech Recognition
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) {
-        throw new Error('Speech recognition not supported in this browser.');
-      }
-
-      const recognition = new SpeechRecognition();
-      // Synchronize Speech Recognition with Global Language State
-      const speechLocaleMap = {
-        hi: 'hi-IN', bn: 'bn-IN', te: 'te-IN', mr: 'mr-IN',
-        ta: 'ta-IN', en: 'en-IN',
-      };
-      recognition.lang = speechLocaleMap[currentLang] || 'hi-IN'; // Fallback to broader models to prevent dictionary failures
-      recognition.interimResults = true;
-      recognition.continuous = true;
-      currentTranscriptRef.current = '';
-
-      recognition.onresult = (event) => {
-        let currentInterim = '';
-
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          if (event.results[i].isFinal) {
-            // ONLY append to the permanent reference when the browser confirms it is a final word
-            currentTranscriptRef.current += (currentTranscriptRef.current ? ' ' : '') + event.results[i][0].transcript.trim();
-          } else {
-            // Keep interim text completely separate, used ONLY for live visual feedback
-            currentInterim += event.results[i][0].transcript;
-          }
-        }
-
-        const combinedText = (currentTranscriptRef.current + (currentInterim ? ' ' + currentInterim : '')).trim();
-        setTranscript(combinedText);
-        setVoiceError('');
-      };
-
-      recognition.onerror = (event) => {
-        console.warn('Speech API Event:', event.error);
-        if (event.error === 'not-allowed' || event.error === 'audio-capture') {
-          isIntentionalVoiceStopRef.current = true;
-          setVoiceError(
-            language === 'hi'
-              ? 'माइक्रोफ़ोन अनुमति अस्वीकृत। कृपया ब्राउज़र सेटिंग्स में अनुमति दें।'
-              : 'Microphone blocked! Please allow permissions in your browser address bar.'
-          );
-          setIsRecording(false);
-          return;
-        }
-        // Completely ignore 'no-speech' (voice not detected); onend will auto-restart
-      };
-
-      // 3. Resilient speech recognition restart on pause (uninterruptible until manual stop)
-      recognition.onend = () => {
-        if (!isIntentionalVoiceStopRef.current) {
-          try {
-            setTimeout(() => {
-              if (!isIntentionalVoiceStopRef.current) recognition.start();
-            }, 150);
-          } catch (e) {
-            console.error('Auto-reboot failed', e);
-          }
-        } else {
-          if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-            mediaRecorderRef.current.stop(); // Stop audio recording when user manually finishes
-          }
-        }
-      };
-
-      mediaRecorderRef.current.onstop = () => {
-        setIsRecording(false);
+      mediaRecorder.onstop = async () => {
         if (timerRef.current) clearInterval(timerRef.current);
         if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
         if (audioContextRef.current) {
@@ -1159,59 +1119,32 @@ export default function Capture() {
         }
         setAudioLevel(0);
 
+        // Turn off mic stream tracks
         if (streamRef.current) {
-          streamRef.current.getTracks().forEach((track) => track.stop()); // Kill mic light
+          streamRef.current.getTracks().forEach((track) => track.stop());
         }
 
-        // If nothing was transcribed, throw error
-        if (!currentTranscriptRef.current.trim()) {
-          setVoiceError('No voice detected. Please tap the mic and speak clearly.');
-          return;
-        }
-
-        // Save the combined audio file and text to state
-        const audioBlob = new Blob(audioChunksRef.current, { type: mimeTypeRef.current || 'audio/mp4' });
+        const audioBlob = new Blob(audioChunksRef.current, {
+          type: mimeTypeRef.current || 'audio/mp4',
+        });
         const audioUrl = URL.createObjectURL(audioBlob);
         setAudioBlob(audioBlob);
         blobToBase64(audioBlob).then((b64) => setAudioBase64(b64)).catch(() => {});
 
-        const newText = currentTranscriptRef.current.trim();
-        setRecordings((prev) => [
-          ...prev,
-          {
-            id: Date.now(),
-            text: newText,
-            audioUrl,
-          },
-        ]);
-        setTranscript('');
+        await processWithGroq(audioBlob, audioUrl);
       };
 
-      speechRecognitionRef.current = recognition;
-
-      // Start both engines
-      mediaRecorderRef.current.start(250);
-      try {
-        recognition.start();
-      } catch (speechErr) {
-        console.warn('SpeechRecognition start error:', speechErr);
-      }
+      mediaRecorder.start(250);
       setIsRecording(true);
 
       timerRef.current = setInterval(() => {
         setRecordingDuration((prev) => prev + 1);
       }, 1000);
-
     } catch (error) {
-      console.error('Microphone Error:', error);
-      setIsRecording(false);
-      setVoiceError(
-        error.message?.includes('Permission') || error.message?.includes('denied')
-          ? 'Microphone access denied. Please allow permissions.'
-          : 'Error accessing microphone. Please try again.'
-      );
+      console.error('Mic access denied:', error);
+      alert('Please allow microphone access to describe your product.');
     }
-  }, [isRecording, language, selectedLanguage, stop]);
+  }, [isRecording, stop, processWithGroq]);
 
   const startRecording = toggleRecording;
   const stopRecording = toggleRecording;
@@ -1582,7 +1515,7 @@ export default function Capture() {
 
   const activeImageObj = images[selectedImageIndex] || images[0];
   const displayImage = activeImageObj?.previewUrl || processedPreview || previewUrl;
-  const isProcessing = aiStatus === 'transcribing' || aiStatus === 'analyzing' || isLoading;
+  const isProcessing = aiStatus === 'transcribing' || aiStatus === 'analyzing' || isLoading || isTranscribingVoice;
   const isOptimizing = isProcessingImage || bgRemovalStatus === 'processing';
 
   return (
@@ -2044,7 +1977,11 @@ export default function Capture() {
                   
                   {/* Cumulative Description Display Box */}
                   <div className="w-full min-h-[5rem] p-4 bg-amber-50/40 border border-amber-200/60 rounded-2xl shadow-sm">
-                    {recordings.length > 0 ? (
+                    {isTranscribingVoice ? (
+                      <p className="text-amber-500 font-medium animate-pulse text-sm">
+                        {language === 'hi' ? 'एआई विवरण का अनुवाद कर रहा है...' : 'AI is transcribing...'}
+                      </p>
+                    ) : recordings.length > 0 ? (
                       <div className="space-y-2">
                         {recordings.map((rec, idx) => (
                           <span key={rec.id} className="text-sm font-medium text-stone-800 inline">
@@ -2054,38 +1991,32 @@ export default function Capture() {
                       </div>
                     ) : (
                       <p className="text-sm text-stone-400 italic">
-                        Product description in {selectedLanguage || 'selected language'} will appear here...
+                        {t('capture.placeholder', `Product description in ${i18n.language === 'hi' || transcriptionLang === 'hi' ? 'Hindi' : 'English'} will appear here...`)}
                       </p>
                     )}
                   </div>
-
-                  {/* Strict Error Handling Feedback */}
-                  {voiceError && (
-                    <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2 text-red-700 text-xs font-semibold">
-                      <AlertCircleIcon className="w-4 h-4 shrink-0 mt-0.5"/>
-                      <span>{voiceError}</span>
-                    </div>
-                  )}
 
                   {/* Microphone Control */}
                   <div className="flex justify-center py-2">
                     <button 
                       type="button"
                       onClick={toggleRecording}
-                      className={`relative p-5 rounded-full transition-all duration-300 focus:outline-none ${
+                      disabled={isTranscribingVoice}
+                      className={`relative p-5 rounded-full transition-all duration-300 focus:outline-none disabled:opacity-50 ${
                         isRecording 
-                          ? 'bg-amber-600 text-white shadow-[0_0_0_15px_rgba(217,119,6,0.3)] animate-pulse scale-110' 
-                          : 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 hover:scale-105 shadow-md'
+                          ? 'bg-red-500 text-white shadow-[0_0_20px_rgba(239,68,68,0.6)] animate-pulse scale-110' 
+                          : 'bg-[#FFF9E6] text-amber-700 border border-amber-200 hover:bg-amber-100 hover:scale-105 shadow-md'
                       }`}
                     >
                       {/* Ripple rings behind button when recording */}
                       {isRecording && (
-                        <span className="absolute inset-0 rounded-full bg-amber-400 opacity-75 animate-ping pointer-events-none"></span>
+                        <span className="absolute inset-0 rounded-full bg-red-400 opacity-75 animate-ping pointer-events-none"></span>
                       )}
                       {isRecording ? <SquareIcon className="w-7 h-7 fill-current relative z-10"/> : <MicrophoneIcon className="w-7 h-7 relative z-10"/>}
                     </button>
                   </div>
-                  {isRecording && <p className="text-center text-xs text-amber-600 font-bold animate-pulse">Listening... tap square to stop</p>}
+                  {isRecording && <p className="text-center text-xs text-red-500 font-bold animate-pulse">Listening... tap square to stop</p>}
+                  {isTranscribingVoice && <p className="text-center text-xs text-amber-500 font-bold animate-pulse">Transcribing with Groq AI...</p>}
 
                   {/* Audio Playback & Deletion List */}
                   {recordings.length > 0 && (

@@ -132,4 +132,4 @@ export default function GroqVoiceRecorder({ onTranscriptionComplete, className =
   );
 }
 
-export { GroqVoiceRecorder as VoiceRecorder, GroqVoiceRecorder as ResilientVoiceRecorder, GroqVoiceRecorder as MobileSafeVoiceRecorder };
+export { GroqVoiceRecorder as VoiceRecorder, GroqVoiceRecorder as ResilientVoiceRecorder, GroqVoiceRecorder as MobileSafeVoiceRecorder, GroqVoiceRecorder as VoiceDescriptionInput };

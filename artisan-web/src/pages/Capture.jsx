@@ -292,6 +292,7 @@ export default function Capture() {
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
   const animFrameRef = useRef(null);
+  const isIntentionalVoiceStopRef = useRef(true);
 
   // ── AbortController Ref & Single Active Submit Lock ──
   const generateAbortControllerRef = useRef(null);
@@ -1009,6 +1010,7 @@ export default function Capture() {
 
     // If already recording, stop it manually
     if (isRecording) {
+      isIntentionalVoiceStopRef.current = true;
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
         mediaRecorderRef.current.stop();
       }
@@ -1024,6 +1026,7 @@ export default function Capture() {
 
     // Start new recording
     try {
+      isIntentionalVoiceStopRef.current = false;
       // Immediately silence any active audio assistant speech before microphone turns on
       stop();
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -1109,13 +1112,9 @@ export default function Capture() {
 
       recognition.onerror = (event) => {
         console.warn('Speech recognition error:', event.error);
-        if (event.error === 'no-speech' || event.error === 'audio-capture') {
-          setVoiceError(
-            language === 'hi'
-              ? 'कोई आवाज़ नहीं मिली। कृपया माइक दबाकर स्पष्ट बोलें।'
-              : 'No voice detected. Please tap the mic and speak clearly.'
-          );
-        } else if (event.error === 'not-allowed') {
+        // Ignore 'no-speech' errors as they happen naturally when the user pauses
+        if (event.error === 'not-allowed') {
+          isIntentionalVoiceStopRef.current = true;
           setVoiceError(
             language === 'hi'
               ? 'माइक्रोफ़ोन अनुमति अस्वीकृत। कृपया ब्राउज़र सेटिंग्स में अनुमति दें।'
@@ -1124,10 +1123,18 @@ export default function Capture() {
         }
       };
 
-      // 3. Handle Completion (Fires when artisan stops speaking)
+      // 3. Resilient speech recognition restart on pause (uninterruptible until manual stop)
       recognition.onend = () => {
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-          mediaRecorderRef.current.stop(); // Stop audio recording when speech ends
+        if (!isIntentionalVoiceStopRef.current) {
+          try {
+            recognition.start();
+          } catch (e) {
+            console.warn('Speech recognition auto-restart:', e);
+          }
+        } else {
+          if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+            mediaRecorderRef.current.stop(); // Stop audio recording when user manually finishes
+          }
         }
       };
 

@@ -93,7 +93,7 @@ Deno.serve(async (req: Request) => {
       }
       imageBase64Data = rawBase64.includes(",") ? rawBase64 : `data:image/jpeg;base64,${rawBase64}`;
     } else if (contentType.includes("multipart/form-data")) {
-      const formData = await req.formData();
+      const formData = (await req.formData()) as any;
       const fileEntry = formData.get("imageFile") || formData.get("image") || formData.get("file");
       if (fileEntry instanceof Blob) {
         const arrayBuf = await fileEntry.arrayBuffer();

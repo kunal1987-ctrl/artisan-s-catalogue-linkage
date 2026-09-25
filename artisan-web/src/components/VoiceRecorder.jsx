@@ -38,25 +38,18 @@ export default function ResilientVoiceRecorder({ onTranscriptionComplete, classN
 
     recognition.onresult = (event) => {
       let currentInterim = '';
-      let newlyFinalized = '';
 
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         if (event.results[i].isFinal) {
-          newlyFinalized += event.results[i][0].transcript + ' ';
+          // ONLY append to the permanent reference when the browser confirms it is a final word
+          accumulatedTranscriptRef.current += event.results[i][0].transcript + ' ';
         } else {
+          // Keep interim text completely separate, used ONLY for live visual feedback
           currentInterim += event.results[i][0].transcript;
         }
       }
 
-      if (newlyFinalized) {
-        accumulatedTranscriptRef.current += newlyFinalized;
-      } else if (currentInterim.length > 20) {
-        // THE FIX: If the browser is stuck in "interim" mode and refuses to finalize 
-        // the text (common with regional accents), force-save it to the main transcript.
-        accumulatedTranscriptRef.current += currentInterim + ' ';
-        currentInterim = ''; // Reset interim to prevent duplicate appending
-      }
-      
+      // Update the UI: Show the locked-in history + whatever the user is currently saying
       setTranscript(accumulatedTranscriptRef.current + currentInterim);
     };
 

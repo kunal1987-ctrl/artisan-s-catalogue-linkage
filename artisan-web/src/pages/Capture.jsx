@@ -1091,22 +1091,15 @@ export default function Capture() {
 
       recognition.onresult = (event) => {
         let currentInterim = '';
-        let newlyFinalized = '';
 
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           if (event.results[i].isFinal) {
-            newlyFinalized += event.results[i][0].transcript + ' ';
+            // ONLY append to the permanent reference when the browser confirms it is a final word
+            currentTranscriptRef.current += (currentTranscriptRef.current ? ' ' : '') + event.results[i][0].transcript.trim();
           } else {
+            // Keep interim text completely separate, used ONLY for live visual feedback
             currentInterim += event.results[i][0].transcript;
           }
-        }
-
-        if (newlyFinalized) {
-          currentTranscriptRef.current += (currentTranscriptRef.current ? ' ' : '') + newlyFinalized.trim();
-        } else if (currentInterim.length > 20) {
-          // Force-save stuck interim text for regional accents
-          currentTranscriptRef.current += (currentTranscriptRef.current ? ' ' : '') + currentInterim.trim();
-          currentInterim = '';
         }
 
         const combinedText = (currentTranscriptRef.current + (currentInterim ? ' ' + currentInterim : '')).trim();

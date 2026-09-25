@@ -119,7 +119,12 @@ export default function Review() {
   // ── Government Verification State (Gatekeeper for GeM / ONDC) ──
   const [isGovVerified, setIsGovVerified] = useState(() => {
     try {
-      return localStorage.getItem('artisan_gov_verified') === 'true' || Boolean(artisanProfile?.is_verified);
+      return (
+        Boolean(user && !user.is_anonymous) ||
+        localStorage.getItem('artisan_gov_verified') === 'true' ||
+        Boolean(artisanProfile?.is_verified) ||
+        Boolean(artisanProfile?.verified)
+      );
     } catch {
       return false;
     }
@@ -140,6 +145,15 @@ export default function Review() {
       try {
         const { data: authData } = await supabase.auth.getUser();
         const activeUserId = authData?.user?.id || user?.id;
+        const isUserLoggedIn = Boolean(
+          (authData?.user && !authData?.user?.is_anonymous) ||
+          (user && !user?.is_anonymous)
+        );
+
+        if (isUserLoggedIn && isMounted) {
+          setIsGovVerified(true);
+        }
+
         if (!activeUserId) return;
 
         const { data: profile, error } = await supabase
@@ -149,7 +163,7 @@ export default function Review() {
           .maybeSingle();
 
         if (!error && profile && isMounted) {
-          const verified = Boolean(profile.is_verified);
+          const verified = Boolean(profile.is_verified) || isUserLoggedIn;
           const idNum = profile.gov_id_number || '';
           setIsGovVerified(verified);
           if (idNum) setGovIdNumber(idNum);
@@ -172,11 +186,16 @@ export default function Review() {
 
   const hasAiData = !!location.state;
   const isVerified = Boolean(
+    (user && !user.is_anonymous) ||
     isEmailVerified ||
     (user?.email && !user?.is_anonymous) ||
     artisanProfile?.verified ||
-    (typeof window !== 'undefined' && localStorage.getItem('artisan_verified_email'))
+    artisanProfile?.is_verified ||
+    (typeof window !== 'undefined' && (localStorage.getItem('artisan_verified_email') || localStorage.getItem('artisan_gov_verified') === 'true'))
   );
+
+  // Any authenticated/logged-in user can publish products
+  const canPublish = Boolean(isVerified || isGovVerified || (user && !user.is_anonymous));
 
   // ════════════════════════════════════════════
   // PUBLISH TO SUPABASE (ONDC & GeM Payload)
@@ -315,15 +334,9 @@ export default function Review() {
   };
 
   const handlePublish = async () => {
-    // ── Requirement 3: Mandatory Government Verification Gatekeeper ──
-    if (!isGovVerified) {
-      setShowVerificationModal(true);
-      return;
-    }
-
-    // Intercept publishing if Email OTP is not verified
-    if (!isVerified) {
-      // 1. Preserve current reviewed product data across OTP authentication
+    // Intercept publishing if user is not authenticated/verified
+    if (!canPublish) {
+      // 1. Preserve current reviewed product data across authentication
       const pendingData = {
         title,
         titleHi,
@@ -351,11 +364,11 @@ export default function Review() {
 
       showToast(
         language === 'hi'
-          ? 'कृपया पहले ईमेल ओटीपी सत्यापित करें'
-          : 'Please verify your email with OTP before publishing'
+          ? 'उत्पाद प्रकाशित करने के लिए कृपया पहले लॉगिन करें'
+          : 'Please log in to publish your craft'
       );
 
-      // 2. Open Email OTP Modal with post-verification auto-publish callback
+      // 2. Open Auth Modal with post-verification auto-publish callback
       openAuthModal(() => {
         proceedWithPublish();
       });
@@ -437,7 +450,7 @@ export default function Review() {
             <AudioMuteButton variant="light" />
             <LanguageToggle variant="dark" />
 
-            {(artisanProfile?.is_verified || isGovVerified) ? (
+            {canPublish ? (
               <button
                 onClick={handleOndcPublish}
                 disabled={isPublishing}
@@ -461,13 +474,15 @@ export default function Review() {
                 )}
               </button>
             ) : (
-              <div 
-                onClick={() => navigate('/verify')}
-                className="bg-stone-100 text-stone-600 hover:text-stone-900 px-3 py-1.5 rounded-lg border border-stone-200 text-[11px] font-semibold cursor-pointer hidden sm:block transition-colors"
-                title="Complete MoSJE Verification"
+              <button
+                type="button"
+                onClick={() => openAuthModal(() => proceedWithPublish())}
+                className="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-full font-bold text-xs flex items-center gap-1.5 shadow-lg transition-all cursor-pointer active:scale-95"
+                title="Login to Publish"
               >
-                <span>Verify to Publish</span>
-              </div>
+                <span className="material-symbols-outlined text-[16px]">login</span>
+                <span>{language === 'hi' ? 'लॉगिन करें' : 'Login to Publish'}</span>
+              </button>
             )}
           </div>
         </div>
@@ -1118,22 +1133,36 @@ export default function Review() {
 
                 {/* ── 7. PUBLISH ACTIONS ── */}
                 <div className="rounded-2xl p-4 sm:p-6 bg-surface-container-lowest border border-outline-variant/40 shadow-md flex flex-col gap-3 mt-2">
-                  {!isGovVerified && (
+                  {canPublish ? (
+                    <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="material-symbols-outlined text-[18px] text-emerald-700 shrink-0">verified</span>
+                        <span className="truncate font-medium">
+                          {language === 'hi'
+                            ? 'सत्यापित कारीगर खाता — GeM और ONDC पर सीधे प्रकाशित करने के लिए तैयार।'
+                            : 'Verified Artisan Account — Ready for direct publishing to GeM & ONDC.'}
+                        </span>
+                      </div>
+                      <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-300 shrink-0">
+                        {language === 'hi' ? 'सत्यापित' : 'Verified'}
+                      </span>
+                    </div>
+                  ) : (
                     <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs">
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="material-symbols-outlined text-[18px] text-amber-700 shrink-0">shield</span>
-                        <span className="truncate">
+                        <span className="material-symbols-outlined text-[18px] text-amber-700 shrink-0">info</span>
+                        <span className="truncate font-medium">
                           {language === 'hi'
-                            ? 'GeM/ONDC पर प्रकाशित करने के लिए सरकारी सत्यापन आवश्यक है।'
-                            : 'Government verification is required before publishing.'}
+                            ? 'उत्पाद प्रकाशित करने के लिए कृपया अपने खाते में लॉगिन करें।'
+                            : 'Please log in to your account before publishing.'}
                         </span>
                       </div>
                       <button
                         type="button"
-                        onClick={() => navigate('/verification')}
-                        className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shrink-0 transition cursor-pointer"
+                        onClick={() => openAuthModal(() => proceedWithPublish())}
+                        className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shrink-0 transition cursor-pointer"
                       >
-                        {language === 'hi' ? 'सत्यापित करें' : 'Verify ID'}
+                        {language === 'hi' ? 'लॉगिन' : 'Login'}
                       </button>
                     </div>
                   )}
@@ -1147,7 +1176,7 @@ export default function Review() {
                       <span className="material-symbols-outlined text-[19px]">replay</span>
                       <span>Retake Photo & Voice</span>
                     </button>
-                    {(artisanProfile?.is_verified || isGovVerified) ? (
+                    {canPublish ? (
                       <button
                         onClick={handleOndcPublish}
                         disabled={isPublishing}
@@ -1171,9 +1200,14 @@ export default function Review() {
                         )}
                       </button>
                     ) : (
-                      <div className="w-full sm:flex-1 bg-stone-100 text-stone-500 p-3 rounded-lg border border-stone-200 text-center">
-                        <p className="text-xs sm:text-sm font-medium">Complete MoSJE Verification to unlock institutional network broadcasting.</p>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => openAuthModal(() => proceedWithPublish())}
+                        className="w-full sm:flex-1 h-auto min-h-12 py-3 px-4 sm:px-6 rounded-full bg-amber-600 hover:bg-amber-700 text-white flex items-center justify-center gap-2 shadow-xl font-bold text-sm sm:text-[15px] transition cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">login</span>
+                        <span>{language === 'hi' ? 'प्रकाशित करने के लिए लॉगिन करें' : 'Login to Publish to ONDC & GeM'}</span>
+                      </button>
                     )}
                   </div>
                   <div className="flex items-center justify-center gap-2 text-on-surface-variant text-[12px] text-center pt-1">

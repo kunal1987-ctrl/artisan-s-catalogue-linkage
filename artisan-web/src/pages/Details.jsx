@@ -11,7 +11,7 @@ export default function Details() {
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { language, showToast, artisanName, artisanProfile } = useAuth();
+  const { language, showToast, artisanName, artisanProfile, user, openAuthModal } = useAuth();
   const { speakPrompt, stop } = useAudioAssistant();
 
   const [product, setProduct] = useState(() => {
@@ -408,7 +408,7 @@ export default function Details() {
                 {/* Primary Action Buttons: "List to ONDC" & "List to GeM Portal" */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* List to ONDC Button */}
-                  {artisanProfile?.is_verified ? (
+                  {(user && !user.is_anonymous) || artisanProfile?.is_verified || artisanProfile?.verified || localStorage.getItem('artisan_gov_verified') === 'true' ? (
                     <button
                       id="list-to-ondc-btn"
                       onClick={handleOndcPublish}
@@ -434,9 +434,14 @@ export default function Details() {
                       </span>
                     </button>
                   ) : (
-                    <div className="bg-stone-100 text-stone-500 p-3 rounded-lg border border-stone-200 flex items-center justify-center text-center">
-                      <p className="text-xs font-medium">Complete MoSJE Verification to unlock institutional network broadcasting.</p>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => openAuthModal?.()}
+                      className="bg-amber-600 hover:bg-amber-700 text-white p-3 rounded-xl border border-amber-600 flex items-center justify-center gap-2 text-center font-bold text-xs cursor-pointer shadow-sm"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">login</span>
+                      <span>{language === 'hi' ? 'ONDC पर प्रकाशित करने के लिए लॉगिन करें' : 'Login to Publish to ONDC'}</span>
+                    </button>
                   )}
 
                   {/* List to GeM Portal Button */}

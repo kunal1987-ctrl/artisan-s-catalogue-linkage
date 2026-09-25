@@ -309,8 +309,14 @@ export default function AiStudio() {
   const [isCustomPrompt, setIsCustomPrompt] = useState(false);
 
   // Government Verification State (Gatekeeper)
+  const isUserLoggedIn = Boolean(
+    (user && !user.is_anonymous) ||
+    artisanProfile?.verified ||
+    artisanProfile?.is_verified ||
+    localStorage.getItem('artisan_gov_verified') === 'true'
+  );
   const [isVerified, setIsVerified] = useState(() => {
-    return localStorage.getItem('artisan_gov_verified') === 'true' || Boolean(artisanProfile?.is_verified);
+    return isUserLoggedIn || localStorage.getItem('artisan_gov_verified') === 'true' || Boolean(artisanProfile?.is_verified);
   });
   const [showVerificationModal, setShowVerificationModal] = useState(false);
 
@@ -319,6 +325,15 @@ export default function AiStudio() {
       try {
         const { data: authData } = await supabase.auth.getUser();
         const activeUserId = authData?.user?.id || user?.id;
+        const loggedIn = Boolean(
+          (authData?.user && !authData?.user?.is_anonymous) ||
+          (user && !user?.is_anonymous)
+        );
+
+        if (loggedIn) {
+          setIsVerified(true);
+        }
+
         if (!activeUserId) return;
 
         const { data: profile } = await supabase
@@ -328,7 +343,7 @@ export default function AiStudio() {
           .maybeSingle();
 
         if (profile) {
-          const verified = Boolean(profile.is_verified);
+          const verified = Boolean(profile.is_verified) || loggedIn;
           setIsVerified(verified);
           if (verified) localStorage.setItem('artisan_gov_verified', 'true');
         }
@@ -501,7 +516,8 @@ export default function AiStudio() {
 
   // Proceed to catalog listing / review
   const handleProceedToReview = () => {
-    if (!isVerified) {
+    const canProceed = Boolean(isVerified || isUserLoggedIn || (user && !user.is_anonymous) || artisanProfile?.verified);
+    if (!canProceed) {
       setShowVerificationModal(true);
       return;
     }

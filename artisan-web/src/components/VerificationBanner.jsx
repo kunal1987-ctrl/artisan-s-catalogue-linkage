@@ -68,9 +68,17 @@ export default function VerificationBanner() {
     };
   }, [user, artisanProfile]);
 
-  // Do not render banner if verified, loading, or already on the verification page
+  // Do not render banner if verified, logged in, loading, or already on the verification page
+  const isLoggedIn = Boolean(
+    (user && !user.is_anonymous) ||
+    artisanProfile?.verified ||
+    artisanProfile?.is_verified ||
+    (typeof window !== 'undefined' && localStorage.getItem('artisan_verified_email'))
+  );
+
   if (
     isVerified === true ||
+    isLoggedIn ||
     isVerified === null ||
     location.pathname === '/verification' ||
     location.pathname === '/verify'

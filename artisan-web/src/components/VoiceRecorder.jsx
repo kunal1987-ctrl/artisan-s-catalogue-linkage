@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export default function GroqVoiceRecorder({ onTranscriptionComplete, className = '' }) {
@@ -8,12 +8,34 @@ export default function GroqVoiceRecorder({ onTranscriptionComplete, className =
   
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
+  const mimeTypeRef = useRef('');
+
+  // Stop recording if component unmounts
+  useEffect(() => {
+    return () => {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+        mediaRecorderRef.current.stop();
+      }
+    };
+  }, []);
 
   const startRecording = async () => {
     try {
-      // 1. Universally supported on all mobile browsers (requests mic permission)
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      
+      // THE FIX: Dynamically detect supported audio format for iOS vs Android
+      let options = {};
+      if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/webm')) {
+        options = { mimeType: 'audio/webm' };
+        mimeTypeRef.current = 'audio/webm';
+      } else if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/mp4')) {
+        options = { mimeType: 'audio/mp4' };
+        mimeTypeRef.current = 'audio/mp4';
+      } else {
+        mimeTypeRef.current = ''; // Let browser choose default
+      }
+
+      const mediaRecorder = new MediaRecorder(stream, options);
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
@@ -25,19 +47,22 @@ export default function GroqVoiceRecorder({ onTranscriptionComplete, className =
 
       mediaRecorder.onstop = async () => {
         setIsProcessing(true);
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         
-        // Stop all microphone tracks to turn off the red recording light on the phone
+        // Create blob with the exact format the phone actually recorded
+        const audioBlob = new Blob(audioChunksRef.current, { 
+          type: mimeTypeRef.current || 'audio/mp4' 
+        });
+        
+        // Kill the mic tracks to remove the red recording dot on mobile
         stream.getTracks().forEach(track => track.stop());
 
-        // 2. Send the recorded blob to Groq for transcription
         await transcribeWithGroq(audioBlob);
       };
 
       mediaRecorder.start();
       setIsRecording(true);
     } catch (error) {
-      console.error("Microphone access denied or unsupported:", error);
+      console.error("Microphone access error:", error);
       alert("Please allow microphone permissions to record your description.");
     }
   };
@@ -51,16 +76,17 @@ export default function GroqVoiceRecorder({ onTranscriptionComplete, className =
 
   const transcribeWithGroq = async (audioBlob) => {
     try {
-      const groqKey = import.meta.env.VITE_GROQ_API_KEY || import.meta.env.GROQ_API_KEY;
       const formData = new FormData();
-      formData.append("file", audioBlob, "audio.webm");
-      formData.append("model", "whisper-large-v3");
       
-      // Pass the current selected language to help Groq's accuracy
-      const langCode = i18n.language === 'hi' ? 'hi' : (['bn', 'te', 'mr', 'ta'].includes(i18n.language) ? i18n.language : 'en'); 
-      formData.append("language", langCode);
+      // Assign correct extension for Groq based on OS
+      const fileExtension = mimeTypeRef.current.includes('webm') ? 'webm' : 'm4a';
+      formData.append("file", audioBlob, `audio.${fileExtension}`);
+      
+      formData.append("model", "whisper-large-v3");
+      formData.append("language", i18n.language === 'hi' ? 'hi' : 'en'); 
 
-      // Send to Groq Whisper API
+      const groqKey = import.meta.env.VITE_GROQ_API_KEY || import.meta.env.GROQ_API_KEY;
+
       const response = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
         method: "POST",
         headers: {
@@ -69,19 +95,15 @@ export default function GroqVoiceRecorder({ onTranscriptionComplete, className =
         body: formData
       });
 
-      if (!response.ok) {
-        const errText = await response.text();
-        console.error("Groq Whisper API response error:", response.status, errText);
-        throw new Error(`Groq Whisper returned ${response.status}`);
-      }
+      if (!response.ok) throw new Error("Groq API error");
 
       const data = await response.json();
       if (data.text && onTranscriptionComplete) {
         onTranscriptionComplete(data.text);
       }
     } catch (error) {
-      console.error("Groq Transcription Failed:", error);
-      alert("Failed to transcribe audio. Please try again.");
+      console.error("Transcription Failed:", error);
+      alert("Transcription failed. Please try speaking again.");
     } finally {
       setIsProcessing(false);
     }
@@ -103,7 +125,7 @@ export default function GroqVoiceRecorder({ onTranscriptionComplete, className =
         {isRecording 
           ? 'Stop Recording' 
           : isProcessing 
-            ? 'Transcribing...' 
+            ? 'Transcribing with AI...' 
             : t('capture.record_voice', 'Record Description')}
       </button>
     </div>

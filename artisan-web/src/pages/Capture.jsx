@@ -286,6 +286,7 @@ export default function Capture() {
   const mediaRecorderRef = useRef(null);
   const speechRecognitionRef = useRef(null);
   const audioChunksRef = useRef([]);
+  const mimeTypeRef = useRef('');
   const currentTranscriptRef = useRef('');
   const streamRef = useRef(null);
   const timerRef = useRef(null);
@@ -1061,8 +1062,19 @@ export default function Capture() {
         console.warn('AudioContext analyser init:', audioErr);
       }
 
-      // 1. Setup Audio File Recording
-      mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      // 1. Setup Audio File Recording (OS-aware for iOS Safari vs Android)
+      let recorderOptions = {};
+      if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/webm')) {
+        recorderOptions = { mimeType: 'audio/webm' };
+        mimeTypeRef.current = 'audio/webm';
+      } else if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/mp4')) {
+        recorderOptions = { mimeType: 'audio/mp4' };
+        mimeTypeRef.current = 'audio/mp4';
+      } else {
+        mimeTypeRef.current = '';
+      }
+
+      mediaRecorderRef.current = new MediaRecorder(stream, recorderOptions);
       audioChunksRef.current = [];
       setRecordingDuration(0);
 
@@ -1158,7 +1170,7 @@ export default function Capture() {
         }
 
         // Save the combined audio file and text to state
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const audioBlob = new Blob(audioChunksRef.current, { type: mimeTypeRef.current || 'audio/mp4' });
         const audioUrl = URL.createObjectURL(audioBlob);
         setAudioBlob(audioBlob);
         blobToBase64(audioBlob).then((b64) => setAudioBase64(b64)).catch(() => {});

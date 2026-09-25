@@ -19,12 +19,17 @@ export default function ResilientVoiceRecorder({ onTranscriptionComplete, classN
     recognition.continuous = true;
     recognition.interimResults = true;
     
-    // Map i18n language to BCP-47 Speech API locale
+    // Inside the useEffect before recognition.start()
     const currentLang = i18n.language || 'hi';
+    
+    // Map strictly to major supported dialects to prevent dictionary failures
     const localeMap = {
       hi: 'hi-IN', bn: 'bn-IN', te: 'te-IN', mr: 'mr-IN', 
       ta: 'ta-IN', en: 'en-IN'
     };
+    
+    // If the browser struggles with the regional language, it's better to capture 
+    // phonetically in Hindi/English than to capture nothing at all.
     recognition.lang = localeMap[currentLang] || 'hi-IN';
 
     recognition.onstart = () => {
@@ -32,43 +37,59 @@ export default function ResilientVoiceRecorder({ onTranscriptionComplete, classN
     };
 
     recognition.onresult = (event) => {
-      let interimTranscript = '';
-      let finalTranscript = '';
+      let currentInterim = '';
+      let newlyFinalized = '';
 
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript + ' ';
+          newlyFinalized += event.results[i][0].transcript + ' ';
         } else {
-          interimTranscript += event.results[i][0].transcript;
+          currentInterim += event.results[i][0].transcript;
         }
       }
 
-      if (finalTranscript) {
-        accumulatedTranscriptRef.current += finalTranscript;
+      if (newlyFinalized) {
+        accumulatedTranscriptRef.current += newlyFinalized;
+      } else if (currentInterim.length > 20) {
+        // THE FIX: If the browser is stuck in "interim" mode and refuses to finalize 
+        // the text (common with regional accents), force-save it to the main transcript.
+        accumulatedTranscriptRef.current += currentInterim + ' ';
+        currentInterim = ''; // Reset interim to prevent duplicate appending
       }
       
-      // Update UI with both final (locked) text and current interim (guessing) text
-      setTranscript(accumulatedTranscriptRef.current + interimTranscript);
+      setTranscript(accumulatedTranscriptRef.current + currentInterim);
     };
 
     recognition.onerror = (event) => {
-      console.warn("Speech recognition error:", event.error);
-      // Ignore 'no-speech' errors as they happen naturally when the user pauses
-      if (event.error === 'not-allowed') {
+      console.warn("Speech API Event:", event.error);
+      
+      // 1. Hard fail only if permissions are missing or hardware is broken
+      if (event.error === 'not-allowed' || event.error === 'audio-capture') {
+        alert("Microphone blocked! Please allow permissions in your browser address bar.");
         isIntentionalStopRef.current = true;
         setIsRecording(false);
+        return;
       }
+      
+      // 2. THE CORE FIX: Completely ignore 'no-speech' (voice not detected). 
+      // Do NOT update the UI. Do NOT set isRecording to false. 
+      // Let it fail silently, and the onend() function will instantly restart it.
     };
 
     recognition.onend = () => {
-      // THE FIX: If the browser stopped listening automatically, but the user didn't click stop, RESTART IT.
+      // If the browser stopped due to silence or a non-fatal error, 
+      // instantly reboot the microphone in the background.
       if (!isIntentionalStopRef.current) {
         try {
-          recognition.start();
+          // Small timeout prevents Chrome from throwing a rapid-fire restart exception
+          setTimeout(() => {
+            if (!isIntentionalStopRef.current) recognition.start();
+          }, 50);
         } catch (e) {
-          console.error("Failed to auto-restart recognition", e);
+          console.error("Auto-reboot failed", e);
         }
       } else {
+        // User explicitly clicked the Stop button
         setIsRecording(false);
         if (onTranscriptionComplete) {
           onTranscriptionComplete(accumulatedTranscriptRef.current.trim());

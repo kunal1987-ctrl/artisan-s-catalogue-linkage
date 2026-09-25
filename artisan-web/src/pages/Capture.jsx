@@ -1082,54 +1082,62 @@ export default function Capture() {
       // Synchronize Speech Recognition with Global Language State
       const speechLocaleMap = {
         hi: 'hi-IN', bn: 'bn-IN', te: 'te-IN', mr: 'mr-IN',
-        ta: 'ta-IN', gu: 'gu-IN', kn: 'kn-IN', ur: 'ur-IN',
-        pa: 'pa-IN', or: 'or-IN', en: 'en-IN', sa: 'sa-IN',
-        kok: 'kok-IN',
+        ta: 'ta-IN', en: 'en-IN',
       };
-      recognition.lang = speechLocaleMap[currentLang] || 'hi-IN'; // Dynamically respects app language changes
+      recognition.lang = speechLocaleMap[currentLang] || 'hi-IN'; // Fallback to broader models to prevent dictionary failures
       recognition.interimResults = true;
       recognition.continuous = true;
       currentTranscriptRef.current = '';
 
       recognition.onresult = (event) => {
-        let finalTranscript = '';
-        let interimTranscript = '';
+        let currentInterim = '';
+        let newlyFinalized = '';
+
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           if (event.results[i].isFinal) {
-            finalTranscript += event.results[i][0].transcript;
+            newlyFinalized += event.results[i][0].transcript + ' ';
           } else {
-            interimTranscript += event.results[i][0].transcript;
+            currentInterim += event.results[i][0].transcript;
           }
         }
-        if (finalTranscript) {
-          currentTranscriptRef.current += (currentTranscriptRef.current ? ' ' : '') + finalTranscript;
-          setTranscript(currentTranscriptRef.current);
-          setVoiceError('');
-        } else if (interimTranscript) {
-          setTranscript(currentTranscriptRef.current ? `${currentTranscriptRef.current} ${interimTranscript}` : interimTranscript);
+
+        if (newlyFinalized) {
+          currentTranscriptRef.current += (currentTranscriptRef.current ? ' ' : '') + newlyFinalized.trim();
+        } else if (currentInterim.length > 20) {
+          // Force-save stuck interim text for regional accents
+          currentTranscriptRef.current += (currentTranscriptRef.current ? ' ' : '') + currentInterim.trim();
+          currentInterim = '';
         }
+
+        const combinedText = (currentTranscriptRef.current + (currentInterim ? ' ' + currentInterim : '')).trim();
+        setTranscript(combinedText);
+        setVoiceError('');
       };
 
       recognition.onerror = (event) => {
-        console.warn('Speech recognition error:', event.error);
-        // Ignore 'no-speech' errors as they happen naturally when the user pauses
-        if (event.error === 'not-allowed') {
+        console.warn('Speech API Event:', event.error);
+        if (event.error === 'not-allowed' || event.error === 'audio-capture') {
           isIntentionalVoiceStopRef.current = true;
           setVoiceError(
             language === 'hi'
               ? 'माइक्रोफ़ोन अनुमति अस्वीकृत। कृपया ब्राउज़र सेटिंग्स में अनुमति दें।'
-              : 'Microphone access denied. Please allow permissions.'
+              : 'Microphone blocked! Please allow permissions in your browser address bar.'
           );
+          setIsRecording(false);
+          return;
         }
+        // Completely ignore 'no-speech' (voice not detected); onend will auto-restart
       };
 
       // 3. Resilient speech recognition restart on pause (uninterruptible until manual stop)
       recognition.onend = () => {
         if (!isIntentionalVoiceStopRef.current) {
           try {
-            recognition.start();
+            setTimeout(() => {
+              if (!isIntentionalVoiceStopRef.current) recognition.start();
+            }, 50);
           } catch (e) {
-            console.warn('Speech recognition auto-restart:', e);
+            console.error('Auto-reboot failed', e);
           }
         } else {
           if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {

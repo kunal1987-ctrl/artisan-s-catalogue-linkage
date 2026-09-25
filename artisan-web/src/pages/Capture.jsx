@@ -517,8 +517,8 @@ export default function Capture() {
     setBgRemovalStatus('processing');
     setAiStatusText(
       language === 'hi'
-        ? `एआई सभी ${targets.length} कोणों की अनावश्यक पृष्ठभूमि हटाकर संवार रहा है...`
-        : `AI removing background and enhancing all ${targets.length} captured angles...`
+        ? `Fal.ai सभी ${targets.length} कोणों की पृष्ठभूमि समायोजित कर संवार रहा है...`
+        : `Fal.ai adjusting background & enhancing all ${targets.length} captured angles...`
     );
 
     // Mark pending items as enhancing
@@ -533,8 +533,8 @@ export default function Capture() {
       try {
         setAiStatusText(
           language === 'hi'
-            ? `कोण #${i + 1} से पृष्ठभूमि हटाई जा रही है एवं स्टूडियो प्रकाश संवर्धन...`
-            : `Removing background & applying studio lighting for angle #${i + 1}...`
+            ? `कोण #${i + 1} का Fal.ai पृष्ठभूमि समायोजन एवं प्रकाश संवर्धन...`
+            : `Fal.ai studio lighting & background adjustment for angle #${i + 1}...`
         );
 
         const inputSource = item.file || item.blob || item.base64 || item.previewUrl;
@@ -589,13 +589,13 @@ export default function Capture() {
     setBgRemovalStatus('done');
     setIsProcessingImage(false);
     setAiStatusText(
-      language === 'hi' ? 'सभी कोण तैयार ✓ (पृष्ठभूमि हटाई गई)' : 'All angles ready ✓ (Background removed)'
+      language === 'hi' ? 'सभी कोण तैयार ✓ (Fal.ai द्वारा उन्नत)' : 'All angles ready ✓ (Enhanced by Fal.ai)'
     );
     if (showToast) {
       showToast(
         language === 'hi'
-          ? '✨ सभी कोणों से पृष्ठभूमि हटाई गई एवं स्टूडियो संवर्धन संपन्न!'
-          : '✨ Background removed and studio enhancement complete for all angles!'
+          ? '✨ सभी कोणों का Fal.ai स्टूडियो संवर्धन संपन्न!'
+          : '✨ Fal.ai studio enhancement complete for all angles!'
       );
     }
   }, [images, language, selectedImageIndex, showToast]);
@@ -1772,7 +1772,7 @@ export default function Capture() {
                   {!isOptimizing && !isProcessing && bgRemovalStatus === 'done' && (
                     <div className="bg-emerald-950/90 text-emerald-300 px-4 py-1.5 rounded-full border border-emerald-500/40 text-xs font-bold shadow-lg flex items-center gap-2 backdrop-blur-md">
                       <span className="material-symbols-outlined text-[16px] text-amber-400">auto_awesome</span>
-                      <span>{language === 'hi' ? 'Fal.ai द्वारा उन्नत छवि • बैकग्राउंड हटाया गया' : 'Image enhanced by Fal.ai • Studio Background Ready'}</span>
+                      <span>{language === 'hi' ? 'Fal.ai द्वारा उन्नत छवि • स्टूडियो बैकग्राउंड तैयार' : 'Enhanced by Fal.ai • Studio Lighting Ready'}</span>
                     </div>
                   )}
                   {!isOptimizing && !isProcessing && bgRemovalStatus === 'error' && (
@@ -1814,10 +1814,10 @@ export default function Capture() {
                         : 'text-amber-200 bg-gradient-to-r from-amber-700/90 to-amber-600/90 hover:from-amber-600 hover:to-amber-500 border-amber-400/50 cursor-pointer active:scale-95'
                     }`}
                     type="button"
-                    title={language === 'hi' ? 'अनावश्यक बैकग्राउंड हटाएं एवं संवारें' : 'Remove background clutter & enhance'}
+                    title={language === 'hi' ? 'Fal.ai द्वारा बैकग्राउंड समायोजित करें एवं प्रकाश संवारें' : 'Adjust background & enhance lighting with Fal.ai'}
                   >
                     <span className="material-symbols-outlined text-[16px] text-amber-300">auto_awesome</span>
-                    <span>{language === 'hi' ? 'बैकग्राउंड हटाएं / संवारें' : 'Clean BG & Enhance'}</span>
+                    <span>{language === 'hi' ? 'Fal.ai द्वारा संवारें' : 'Fal.ai Studio Enhance'}</span>
                   </button>
 
                   <button

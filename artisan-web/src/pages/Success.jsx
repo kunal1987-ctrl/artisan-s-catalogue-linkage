@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageToggle from '../components/LanguageToggle';
-import AudioMuteButton from '../components/AudioMuteButton';
 import useAudioAssistant from '../hooks/useAudioAssistant';
 import { handleAddCraftNavigation } from '../utils/authGuard';
 
@@ -125,7 +124,6 @@ export default function Success() {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          <AudioMuteButton variant="light" />
           <LanguageToggle variant="dark" />
           <button
             onClick={() => navigate('/catalog')}

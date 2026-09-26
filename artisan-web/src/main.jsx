@@ -7,6 +7,8 @@ import App from './App.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import { setupGlobalStorageErrorHandler } from './utils/storageCleanup.js';
 
+import { AudioProvider } from './context/AudioContext.jsx';
+
 // Initialize global storage quota & unhandled rejection recovery
 setupGlobalStorageErrorHandler();
 
@@ -15,7 +17,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <HelmetProvider>
       <ErrorBoundary>
         <Suspense fallback={<div className="flex items-center justify-center h-screen bg-[#fcf9f5] text-stone-700 font-medium">Loading interface...</div>}>
-          <App />
+          <AudioProvider>
+            <App />
+          </AudioProvider>
         </Suspense>
       </ErrorBoundary>
     </HelmetProvider>

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import * as fal from "@fal-ai/serverless-client";
 import { useTranslation } from 'react-i18next';
+import { useAudio } from '../context/AudioContext';
 
 // Configure Fal.ai client
 const falApiKey = typeof import.meta !== 'undefined' && (import.meta.env?.VITE_FAL_API_KEY || import.meta.env?.FAL_API_KEY);
@@ -17,6 +18,13 @@ export default function ProductStudio({ onImageProcessed, onCapture }) {
   const { t } = useTranslation();
   const [isProcessing, setIsProcessing] = useState(false);
   const [finalImage, setFinalImage] = useState(null);
+  const { playAudio } = useAudio();
+
+  useEffect(() => {
+    if (!finalImage) {
+      playAudio('camera_instruction');
+    }
+  }, [finalImage, playAudio]);
 
   // This function runs IMMEDIATELY after the camera snaps or file is selected
   const handleImageCapture = async (rawImageBase64) => {

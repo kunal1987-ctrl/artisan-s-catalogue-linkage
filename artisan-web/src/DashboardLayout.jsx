@@ -8,8 +8,6 @@ import { useLanguage } from './context/LanguageContext';
 import NotificationBar from './components/NotificationBar';
 import VerificationBanner from './components/VerificationBanner';
 import LanguageSwitcher from './components/LanguageSwitcher';
-import AudioMuteButton from './components/AudioMuteButton';
-import AudioAssistantIndicator from './components/AudioAssistantIndicator';
 
 import Sidebar from './components/Sidebar';
 import { handleAddCraftNavigation } from './utils/authGuard';
@@ -249,12 +247,6 @@ export default function DashboardLayout() {
 
           {/* Right-Side: Essential Controls Only */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {/* EQ waveform — visible only while audio assistant is speaking */}
-            <AudioAssistantIndicator />
-
-            {/* Audio Assistant Mute Toggle */}
-            <AudioMuteButton />
-
             {/* Language Switcher using react-i18next */}
             <LanguageSwitcher />
 

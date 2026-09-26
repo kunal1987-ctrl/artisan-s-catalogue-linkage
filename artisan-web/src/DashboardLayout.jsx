@@ -372,20 +372,19 @@ export default function DashboardLayout() {
 
 
 
-            {/* User Profile Pill */}
+            {/* User Profile Circle Avatar */}
             <button
               onClick={() => navigate('/profile')}
-              className="flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-full bg-white hover:bg-gray-50 border border-gray-200 text-gray-800 text-xs font-semibold shadow-2xs transition-all cursor-pointer active:scale-95"
-              title={t('nav.profile', 'Artisan Profile')}
-              aria-label={t('nav.profile', 'Artisan Profile')}
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full p-0.5 bg-white hover:ring-2 hover:ring-amber-500/60 border border-gray-200 shadow-2xs transition-all cursor-pointer active:scale-95 flex items-center justify-center shrink-0"
+              title={displayName || t('nav.profile', 'Artisan Profile')}
+              aria-label={displayName || t('nav.profile', 'Artisan Profile')}
               type="button"
             >
               <img
                 src={userProfile?.profile_picture_url || "https://lh3.googleusercontent.com/aida-public/AB6AXuAmvGYszZXuA45tASeKKSeAVzVfFnHtKAGtNsa4IB8eSEDv7aMN2Dj5pKYYgdmAj_qpHqPikrwnevchRmdRCCcuMRXPRl7fhyfOt-_XjOQic4K5XzVtP9-UCofnVEe570fnmUd_GNT4uQVrjHGKIIoPPyo1B2RZ4vXYFmloLyQfCyNa2hjDllGlTqYSywEQevMYAYPK6K6FMsX9YfKjc5nGMVc5iOINi_PYrPZd2lLY5bqH9AK1mI1L"}
                 alt={displayName}
-                className="w-6 h-6 rounded-full object-cover shrink-0 border border-gray-200"
+                className="w-full h-full rounded-full object-cover"
               />
-              <span className="max-w-[70px] sm:max-w-[110px] truncate">{displayName}</span>
             </button>
 
             {/* Sign in button if not logged in */}

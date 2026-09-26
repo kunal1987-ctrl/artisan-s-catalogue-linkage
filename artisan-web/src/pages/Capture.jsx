@@ -180,7 +180,6 @@ export default function Capture() {
     toggleNotifications,
     unreadCount,
   } = useAuth();
-  const { playInstruction, stopInstruction } = useAudioAssistant();
   const isVerified = Boolean(artisanProfile?.verified || user?.is_phone_verified);
 
   // State to control the notification dropdown
@@ -679,13 +678,6 @@ export default function Capture() {
         triggerBatchEnhancement(updated);
       }, 50);
 
-      // Prompt for additional angles if under max
-      if (updated.length < MAX_IMAGES) {
-        setTimeout(() => {
-          playInstruction('multiple_photo_instruction');
-        }, 1200);
-      }
-
       return updated;
     });
 
@@ -1052,7 +1044,7 @@ export default function Capture() {
 
     // START RECORDING
     try {
-      stopInstruction(); // Silence audio assistant speech before microphone turns on
+      stop(); // Silence audio assistant speech before microphone turns on
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
       setMicUnavailable(false);
@@ -1119,7 +1111,6 @@ export default function Capture() {
         if (streamRef.current) {
           streamRef.current.getTracks().forEach((track) => track.stop());
         }
-        playInstruction('recording_stopped');
 
         const audioBlob = new Blob(audioChunksRef.current, {
           type: mimeTypeRef.current || 'audio/mp4',
@@ -1153,7 +1144,6 @@ export default function Capture() {
 
       mediaRecorder.start(250);
       setIsRecording(true);
-      playInstruction('recording_started');
 
       timerRef.current = setInterval(() => {
         setRecordingDuration((prev) => prev + 1);
@@ -1299,7 +1289,6 @@ export default function Capture() {
     setAiStatus('transcribing');
     setAiStatusText(language === 'hi' ? 'आवाज़ और विवरण का विश्लेषण...' : 'Transcribing voice note...');
     setErrorMsg('');
-    playInstruction('processing_instruction');
 
     try {
       setIsLoading(true);
@@ -1489,7 +1478,6 @@ export default function Capture() {
       setExtractedPrice(resolvedPrice);
 
       setAiStatus('done');
-      playInstruction('product_generated');
 
       // Navigate to Review page with full AI profile and multi-angle images
       navigate('/review', {

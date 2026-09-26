@@ -25,7 +25,8 @@ export default function Review() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, artisanProfile, isEmailVerified, openAuthModal, setPendingProduct, showToast, language } = useAuth();
-  const { playInstruction, stopInstruction } = useAudioAssistant();
+  const { t } = useLanguage();
+  const { speakPrompt, speak, stop } = useAudioAssistant();
 
   // Read AI data passed from Capture.jsx
   const aiData = location.state || {};
@@ -39,21 +40,25 @@ export default function Review() {
     }
   }, [location.state, navigate]);
 
-  // Contextual voice prompt for review screen
+  // Contextual voice prompt for zero-literacy review screen
   useEffect(() => {
     const timer = setTimeout(() => {
       if (isSmartAppraisal) {
-        playInstruction('price_generated');
+        if (language === 'hi') {
+          speak('फोटो के आधार पर कीमत तय की गई है। आप चाहें तो इसे बदल सकते हैं।');
+        } else {
+          speak('Market price suggested based on your photo. You can edit this if needed.');
+        }
       } else {
-        playInstruction('review_instruction');
+        speakPrompt('review');
       }
     }, 600);
 
     return () => {
       clearTimeout(timer);
-      stopInstruction();
+      stop();
     };
-  }, [playInstruction, stopInstruction, isSmartAppraisal]);
+  }, [speakPrompt, speak, stop, language, isSmartAppraisal]);
 
   // ── Editable Form State ──
   const resolvedInitialTitle = aiData.name || aiData.title || (language === 'hi' ? 'हस्तशिल्प उत्पाद' : 'Handcrafted Item');
@@ -200,7 +205,6 @@ export default function Review() {
   const proceedWithPublish = async () => {
     setIsPublishing(true);
     setPublishError('');
-    playInstruction('publishing_instruction');
 
     try {
       let finalImageUrl = imageUrl;
@@ -392,7 +396,6 @@ export default function Review() {
       });
     } catch (err) {
       console.error('Publish error:', err);
-      playInstruction('generic_error');
       setPublishError(err.message || 'Failed to publish. Please try again.');
       setIsPublishing(false);
     }

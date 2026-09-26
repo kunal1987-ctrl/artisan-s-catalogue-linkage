@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation, Link, Navigate } from 'react-router-dom';
-import { HelpCircle, Menu, X, Globe, MoreVertical, LogOut } from 'lucide-react';
+import { HelpCircle, Menu, X, Globe } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from './supabaseClient';
 import { useAuth } from './context/AuthContext';
@@ -64,24 +64,6 @@ export default function DashboardLayout() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isNotificationOpen]);
-
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const menuRef = useRef(null);
-
-  // Close header more options dropdown when clicking outside
-  useEffect(() => {
-    function handleClickOutsideMenu(event) {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setIsMenuOpen(false);
-      }
-    }
-    if (isMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutsideMenu);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutsideMenu);
-    };
-  }, [isMenuOpen]);
 
   const [userProfile, setUserProfile] = useState(null);
 
@@ -383,64 +365,45 @@ export default function DashboardLayout() {
 
 
 
-            {/* User Profile Avatar */}
+            {/* User Profile Pill */}
             <button
               onClick={() => navigate('/profile')}
-              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full p-0.5 bg-white hover:ring-2 hover:ring-amber-500/50 border border-gray-200 shadow-2xs transition-all cursor-pointer active:scale-95 flex items-center justify-center shrink-0"
-              title={displayName || t('nav.profile', 'Artisan Profile')}
-              aria-label={displayName || t('nav.profile', 'Artisan Profile')}
+              className="flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-full bg-white hover:bg-gray-50 border border-gray-200 text-gray-800 text-xs font-semibold shadow-2xs transition-all cursor-pointer active:scale-95"
+              title={t('nav.profile', 'Artisan Profile')}
+              aria-label={t('nav.profile', 'Artisan Profile')}
               type="button"
             >
               <img
                 src={userProfile?.profile_picture_url || "https://lh3.googleusercontent.com/aida-public/AB6AXuAmvGYszZXuA45tASeKKSeAVzVfFnHtKAGtNsa4IB8eSEDv7aMN2Dj5pKYYgdmAj_qpHqPikrwnevchRmdRCCcuMRXPRl7fhyfOt-_XjOQic4K5XzVtP9-UCofnVEe570fnmUd_GNT4uQVrjHGKIIoPPyo1B2RZ4vXYFmloLyQfCyNa2hjDllGlTqYSywEQevMYAYPK6K6FMsX9YfKjc5nGMVc5iOINi_PYrPZd2lLY5bqH9AK1mI1L"}
                 alt={displayName}
-                className="w-full h-full rounded-full object-cover"
+                className="w-6 h-6 rounded-full object-cover shrink-0 border border-gray-200"
               />
+              <span className="max-w-[70px] sm:max-w-[110px] truncate">{displayName}</span>
             </button>
 
-            {/* Three-dots (⋮) Dropdown Menu with Logout */}
-            <div className="relative z-50" ref={menuRef}>
-              <button 
-                id="header-menu-btn"
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full hover:bg-stone-100 text-stone-700 flex items-center justify-center transition-colors cursor-pointer active:scale-95"
-                title={language === 'hi' ? 'अधिक विकल्प' : 'More Options'}
-                aria-label={language === 'hi' ? 'अधिक विकल्प' : 'More Options'}
-                aria-expanded={isMenuOpen}
+            {/* Profile / Logout */}
+            {isVerified ? (
+              <button
+                id="header-logout-btn"
+                onClick={handleLogout}
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gray-100 hover:bg-red-50 text-gray-700 hover:text-red-600 flex items-center justify-center transition-all cursor-pointer active:scale-95 border border-gray-200"
+                title={t('nav.sign_out', 'Sign Out')}
+                aria-label={t('nav.sign_out', 'Sign Out')}
                 type="button"
               >
-                <MoreVertical className="w-5 h-5 text-stone-700" />
+                <span className="material-symbols-outlined text-[18px] sm:text-[20px]">logout</span>
               </button>
-              
-              {isMenuOpen && (
-                <div className="absolute right-0 mt-2 w-40 bg-white border border-stone-200 rounded-xl shadow-lg overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                  {isVerified ? (
-                    <button 
-                      id="header-logout-btn"
-                      onClick={() => {
-                        setIsMenuOpen(false);
-                        handleLogout();
-                      }} 
-                      className="w-full text-left px-4 py-3 text-red-600 flex items-center gap-2 hover:bg-red-50 font-medium transition-colors cursor-pointer"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      <span>{t('nav.sign_out', 'Logout')}</span>
-                    </button>
-                  ) : (
-                    <button 
-                      onClick={() => {
-                        setIsMenuOpen(false);
-                        openAuthModal();
-                      }} 
-                      className="w-full text-left px-4 py-3 text-stone-700 flex items-center gap-2 hover:bg-stone-50 font-medium transition-colors cursor-pointer"
-                    >
-                      <span className="material-symbols-outlined text-[18px]">account_circle</span>
-                      <span>{t('nav.sign_in', 'Sign In')}</span>
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
+            ) : (
+              <button
+                onClick={() => openAuthModal()}
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-800 flex items-center justify-center transition-all cursor-pointer active:scale-95 border border-amber-200"
+                title={t('nav.sign_in', 'Sign In')}
+                aria-label={t('nav.sign_in', 'Sign In')}
+                type="button"
+              >
+                <span className="material-symbols-outlined text-[18px] sm:text-[20px]">account_circle</span>
+              </button>
+            )}
           </div>
         </header>
 

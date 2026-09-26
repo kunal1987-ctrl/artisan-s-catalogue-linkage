@@ -110,6 +110,13 @@ export default function DashboardLayout() {
     localStorage.getItem('artisan_verified_phone')
   );
 
+  const isLoggedIn = Boolean(
+    isAuthenticated ||
+    user ||
+    session?.user ||
+    isVerified
+  );
+
   // Production-grade logout workflow
   const handleLogout = async () => {
     try {
@@ -382,7 +389,7 @@ export default function DashboardLayout() {
             </button>
 
             {/* Profile / Logout */}
-            {isVerified ? (
+            {isLoggedIn ? (
               <button
                 id="header-logout-btn"
                 onClick={handleLogout}
@@ -449,22 +456,46 @@ export default function DashboardLayout() {
                   </button>
                 </div>
 
-                {/* Artisan Profile Card */}
-                <div
-                  onClick={() => {
-                    navigate('/profile');
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className="flex items-center gap-3 p-3 rounded-2xl bg-[#ebe8e2]/60 border border-[#d1c4bd]/40 cursor-pointer hover:bg-[#ebe8e2] transition-all"
-                >
-                  <img
-                    alt={displayName}
-                    className="w-11 h-11 rounded-full object-cover shadow-sm shrink-0"
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmvGYszZXuA45tASeKKSeAVzVfFnHtKAGtNsa4IB8eSEDv7aMN2Dj5pKYYgdmAj_qpHqPikrwnevchRmdRCCcuMRXPRl7fhyfOt-_XjOQic4K5XzVtP9-UCofnVEe570fnmUd_GNT4uQVrjHGKIIoPPyo1B2RZ4vXYFmloLyQfCyNa2hjDllGlTqYSywEQevMYAYPK6K6FMsX9YfKjc5nGMVc5iOINi_PYrPZd2lLY5bqH9AK1mI1L"
-                  />
-                  <span className="font-bold text-sm text-primary truncate min-w-0">
-                    {displayName}
-                  </span>
+                {/* Artisan Profile Card with Quick Logout */}
+                <div className="flex items-center justify-between gap-2 p-3 rounded-2xl bg-[#ebe8e2]/70 border border-[#d1c4bd]/50">
+                  <div
+                    onClick={() => {
+                      navigate('/profile');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="flex items-center gap-3 cursor-pointer min-w-0 flex-1 hover:opacity-85 transition-opacity"
+                  >
+                    <img
+                      alt={displayName}
+                      className="w-10 h-10 rounded-full object-cover shadow-sm shrink-0 border border-white"
+                      src={userProfile?.profile_picture_url || "https://lh3.googleusercontent.com/aida-public/AB6AXuAmvGYszZXuA45tASeKKSeAVzVfFnHtKAGtNsa4IB8eSEDv7aMN2Dj5pKYYgdmAj_qpHqPikrwnevchRmdRCCcuMRXPRl7fhyfOt-_XjOQic4K5XzVtP9-UCofnVEe570fnmUd_GNT4uQVrjHGKIIoPPyo1B2RZ4vXYFmloLyQfCyNa2hjDllGlTqYSywEQevMYAYPK6K6FMsX9YfKjc5nGMVc5iOINi_PYrPZd2lLY5bqH9AK1mI1L"}
+                    />
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-bold text-sm text-primary truncate">
+                        {displayName}
+                      </span>
+                      <span className="text-[11px] text-stone-500 font-medium">
+                        {language === 'hi' ? 'प्रोफ़ाइल देखें' : 'View Profile'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {isLoggedIn && (
+                    <button
+                      type="button"
+                      id="mobile-drawer-quick-logout-btn"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        handleLogout();
+                      }}
+                      title={language === 'hi' ? 'लॉगआउट करें' : 'Logout'}
+                      aria-label="Logout"
+                      className="px-2.5 py-1.5 rounded-xl bg-red-100 hover:bg-red-200 text-red-700 font-bold text-xs flex items-center gap-1 transition-all cursor-pointer active:scale-95 shrink-0 border border-red-200 shadow-2xs"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">logout</span>
+                      <span>{language === 'hi' ? 'लॉगआउट' : 'Logout'}</span>
+                    </button>
+                  )}
                 </div>
 
                 {/* Mobile Drawer Language Selector */}
@@ -538,6 +569,27 @@ export default function DashboardLayout() {
                     <HelpCircle className="w-[18px] h-[18px] shrink-0" />
                     <span>{t('sidebar.help_support', 'Help & Support')}</span>
                   </Link>
+
+                  {/* Dedicated Logout item in mobile navigation */}
+                  {isLoggedIn && (
+                    <button
+                      id="mobile-drawer-nav-logout-btn"
+                      type="button"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        handleLogout();
+                      }}
+                      className="flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-sm text-red-600 bg-red-50/80 hover:bg-red-100 hover:text-red-700 transition-all cursor-pointer text-left border border-red-200/60 active:scale-98 shadow-2xs"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="material-symbols-outlined text-[20px] text-red-600">logout</span>
+                        <span>{language === 'hi' ? 'लॉगआउट करें' : 'Sign Out / Logout'}</span>
+                      </div>
+                      <span className="text-[10px] font-semibold text-red-500 bg-red-100 px-2 py-0.5 rounded-full">
+                        {language === 'hi' ? 'बाहर निकलें' : 'Exit'}
+                      </span>
+                    </button>
+                  )}
                 </nav>
 
                 {/* Quick Add Craft Button */}
@@ -561,18 +613,19 @@ export default function DashboardLayout() {
                 </div>
               </div>
 
-              {/* Drawer Footer */}
+              {/* Drawer Footer with prominent Logout */}
               <div className="pt-4 border-t border-[#d1c4bd]/40 flex flex-col gap-2">
-                {isVerified ? (
+                {isLoggedIn ? (
                   <button
+                    id="mobile-drawer-footer-logout-btn"
                     onClick={() => {
                       setIsMobileMenuOpen(false);
                       handleLogout();
                     }}
-                    className="w-full py-2.5 px-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+                    className="w-full py-3 px-4 rounded-xl bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
                   >
-                    <span className="material-symbols-outlined text-[18px]">logout</span>
-                    <span>{t('sidebar.sign_out', 'Sign Out')}</span>
+                    <span className="material-symbols-outlined text-[20px]">logout</span>
+                    <span>{language === 'hi' ? 'लॉगआउट करें (Sign Out)' : t('sidebar.sign_out', 'Sign Out')}</span>
                   </button>
                 ) : (
                   <button
@@ -580,7 +633,7 @@ export default function DashboardLayout() {
                       setIsMobileMenuOpen(false);
                       openAuthModal();
                     }}
-                    className="w-full py-2.5 px-3 rounded-xl bg-[#2e241e] text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+                    className="w-full py-3 px-4 rounded-xl bg-[#2e241e] text-white font-bold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
                   >
                     <span className="material-symbols-outlined text-[18px]">login</span>
                     <span>{t('sidebar.sign_in', 'Sign In')}</span>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation, Link, Navigate } from 'react-router-dom';
-import { HelpCircle, Menu, X, Globe } from 'lucide-react';
+import { HelpCircle, Menu, X, Globe, MoreVertical, LogOut } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from './supabaseClient';
 import { useAuth } from './context/AuthContext';
@@ -64,6 +64,24 @@ export default function DashboardLayout() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isNotificationOpen]);
+
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  // Close header more options dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutsideMenu(event) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsMenuOpen(false);
+      }
+    }
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutsideMenu);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutsideMenu);
+    };
+  }, [isMenuOpen]);
 
   const [userProfile, setUserProfile] = useState(null);
 
@@ -381,29 +399,49 @@ export default function DashboardLayout() {
               <span className="max-w-[70px] sm:max-w-[110px] truncate">{displayName}</span>
             </button>
 
-            {/* Profile / Logout */}
-            {isVerified ? (
-              <button
-                id="header-logout-btn"
-                onClick={handleLogout}
-                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gray-100 hover:bg-red-50 text-gray-700 hover:text-red-600 flex items-center justify-center transition-all cursor-pointer active:scale-95 border border-gray-200"
-                title={t('nav.sign_out', 'Sign Out')}
-                aria-label={t('nav.sign_out', 'Sign Out')}
+            {/* Three-dots (⋮) Dropdown Menu with Logout */}
+            <div className="relative z-50" ref={menuRef}>
+              <button 
+                id="header-menu-btn"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="p-2 rounded-full hover:bg-stone-100 text-stone-700 transition-colors cursor-pointer active:scale-95"
+                title={language === 'hi' ? 'अधिक विकल्प' : 'More Options'}
+                aria-label={language === 'hi' ? 'अधिक विकल्प' : 'More Options'}
+                aria-expanded={isMenuOpen}
                 type="button"
               >
-                <span className="material-symbols-outlined text-[18px] sm:text-[20px]">logout</span>
+                <MoreVertical className="w-6 h-6 text-stone-700" />
               </button>
-            ) : (
-              <button
-                onClick={() => openAuthModal()}
-                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-800 flex items-center justify-center transition-all cursor-pointer active:scale-95 border border-amber-200"
-                title={t('nav.sign_in', 'Sign In')}
-                aria-label={t('nav.sign_in', 'Sign In')}
-                type="button"
-              >
-                <span className="material-symbols-outlined text-[18px] sm:text-[20px]">account_circle</span>
-              </button>
-            )}
+              
+              {isMenuOpen && (
+                <div className="absolute right-0 mt-2 w-40 bg-white border border-stone-200 rounded-xl shadow-lg overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                  {isVerified ? (
+                    <button 
+                      id="header-logout-btn"
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        handleLogout();
+                      }} 
+                      className="w-full text-left px-4 py-3 text-red-600 flex items-center gap-2 hover:bg-red-50 font-medium transition-colors cursor-pointer"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>{t('nav.sign_out', 'Logout')}</span>
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        openAuthModal();
+                      }} 
+                      className="w-full text-left px-4 py-3 text-stone-700 flex items-center gap-2 hover:bg-stone-50 font-medium transition-colors cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">account_circle</span>
+                      <span>{t('nav.sign_in', 'Sign In')}</span>
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </header>
 

@@ -15,7 +15,8 @@ import {
   IndianRupee,
   Landmark,
   Edit3,
-  X
+  X,
+  LogOut
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
@@ -26,7 +27,7 @@ import { useAuth } from '../context/AuthContext';
  */
 export default function Profile() {
   const navigate = useNavigate();
-  const { user, artisanProfile: contextProfile, language, showToast } = useAuth?.() || {};
+  const { user, artisanProfile: contextProfile, language, showToast, signOut } = useAuth?.() || {};
   const fileInputRef = useRef(null);
 
   const [loading, setLoading] = useState(true);
@@ -81,6 +82,30 @@ export default function Profile() {
     };
     fetchUser();
   }, []);
+
+  // ── Logout Handler ──
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error('[Profile Logout] Supabase signOut notice:', err);
+    }
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch (storageErr) {
+      console.warn('[Profile Logout] Storage clear notice:', storageErr);
+    }
+    try {
+      await signOut?.();
+    } catch {
+      // ignore
+    }
+    if (showToast) {
+      showToast(language === 'hi' ? 'सफलतापूर्वक लॉगआउट हो गया' : 'Logged out successfully');
+    }
+    navigate('/login', { replace: true });
+  };
 
   // ── 1. Data Fetching (Supabase) ──
   useEffect(() => {
@@ -739,6 +764,18 @@ export default function Profile() {
             </div>
             <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-gray-700 group-hover:translate-x-0.5 transition-all" />
           </div>
+        </div>
+
+        {/* Large touch-friendly Logout Button below profile details */}
+        <div className="mt-8 pt-6 border-t border-stone-200">
+          <button 
+            type="button"
+            onClick={handleLogout}
+            className="w-full bg-red-50 text-red-600 border border-red-200 font-bold text-lg py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-transform cursor-pointer hover:bg-red-100/80 shadow-xs"
+          >
+            <LogOut className="w-5 h-5 text-red-600" />
+            <span>Logout</span>
+          </button>
         </div>
 
       </div>

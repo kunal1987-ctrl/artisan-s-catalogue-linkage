@@ -46,6 +46,10 @@ export default function Profile() {
   });
   const [showGovIdDetails, setShowGovIdDetails] = useState(false);
 
+  // ── Hidden Demo State (Hackathon) ──
+  const [isSendingKhata, setIsSendingKhata] = useState(false);
+  const artisanDemoPhone = 'ENTER_DEMO_NUMBER_HERE'; // 10-digit number for live demo
+
   // ── Bank Details & Penny Drop Verification State ──
   const [bankAccount, setBankAccount] = useState(() => {
     const saved = localStorage.getItem('artisan_bank_details');
@@ -82,6 +86,28 @@ export default function Profile() {
     };
     fetchUser();
   }, []);
+
+  // ── Hidden Demo: Force Khata PDF via WhatsApp ──
+  const handleForceKhata = async () => {
+    setIsSendingKhata(true);
+    try {
+      const res = await fetch('http://localhost:5000/api/demo/trigger-khata', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phoneNumber: artisanDemoPhone })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('✅ Khata PDF sent to WhatsApp!');
+      } else {
+        alert(`⚠ ${data.error || 'Failed to send PDF'}`);
+      }
+    } catch (error) {
+      console.error('[Demo] Failed to send Khata PDF:', error);
+      alert('❌ Error sending PDF. Is the backend running on port 5000?');
+    }
+    setIsSendingKhata(false);
+  };
 
   // ── Logout Handler ──
   const handleLogout = async () => {
@@ -796,6 +822,28 @@ export default function Profile() {
           >
             <LogOut className="w-5 h-5" />
             <span>{language === 'hi' ? 'खाते से लॉगआउट करें (Logout)' : 'Log Out of Account'}</span>
+          </button>
+        </div>
+
+        {/* ── HIDDEN DEMO TRIGGER — Hackathon Finale ── */}
+        <div className="mt-16 pt-8 opacity-20 hover:opacity-100 transition-opacity duration-500 flex flex-col items-center gap-2">
+          <span className="text-[10px] text-stone-400 font-mono tracking-widest uppercase">Demo Controls</span>
+          <button
+            onClick={handleForceKhata}
+            disabled={isSendingKhata}
+            className="text-xs bg-stone-100 hover:bg-stone-200 text-stone-500 hover:text-stone-700 px-5 py-2.5 rounded-xl border border-stone-200 transition-all disabled:opacity-50 flex items-center gap-2 font-medium cursor-pointer active:scale-95"
+          >
+            {isSendingKhata ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Sending PDF...</span>
+              </>
+            ) : (
+              <>
+                <span>🛠</span>
+                <span>Force Khata PDF to WhatsApp</span>
+              </>
+            )}
           </button>
         </div>
 

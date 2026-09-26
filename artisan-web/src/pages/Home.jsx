@@ -5,7 +5,7 @@ import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import Header from '../components/Header';
-import { useAudio } from '../context/AudioContext';
+import useAudioAssistant from '../hooks/useAudioAssistant';
 import { clearStaleCatalogCache } from '../utils/cacheCleaner';
 import { handleAddCraftNavigation } from '../utils/authGuard';
 import HaatEventCard from '../components/HaatEventCard';
@@ -19,12 +19,19 @@ export default function Home({ customArtisanName, dashboardTitle } = {}) {
   const { t: tI18n } = useTranslation();
   const t = (key, fallback) => translateContext(key, tI18n(key, fallback));
   const { language, showToast, session, artisanName: contextArtisanName } = useAuth();
-  const { playAudio } = useAudio();
+  const { speakPrompt, stop } = useAudioAssistant();
 
-  // Automatically triggers pre-generated welcome audio on Home screen load
+  // Contextual voice prompt for zero-literacy artisans on landing screen
   useEffect(() => {
-    playAudio('welcome');
-  }, [playAudio]);
+    const timer = setTimeout(() => {
+      speakPrompt('home');
+    }, 600);
+
+    return () => {
+      clearTimeout(timer);
+      stop();
+    };
+  }, [speakPrompt, stop, language]);
   const fallback = t('home.welcome', 'Artisan');
   const artisanName =
     customArtisanName ||

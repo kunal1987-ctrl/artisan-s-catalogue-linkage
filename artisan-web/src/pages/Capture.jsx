@@ -9,8 +9,9 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageToggle from '../components/LanguageToggle';
 import LanguageSelectorModal, { getDialectBadgeText } from '../components/LanguageSelectorModal';
+import AudioMuteButton from '../components/AudioMuteButton';
 import NotificationBar from '../components/NotificationBar';
-import { useAudio } from '../context/AudioContext';
+import useAudioAssistant from '../hooks/useAudioAssistant';
 import { validateImageLightweight, getLocalizedValidationReason } from '../utils/imageValidator';
 import { enhanceAndCleanProductImage } from '../utils/imageEnhancer';
 
@@ -458,28 +459,48 @@ export default function Capture() {
   const hasDescription = Boolean(textDescription.length > 0 || recordings.length > 0 || Boolean(audioBase64) || Boolean(audioBlob) || Boolean(_audioBlob));
   const isReadyToProcess = Boolean(hasImage && hasDescription);
 
-  const { playAudio, stopAudio } = useAudio();
+  const { speakPrompt, stop } = useAudioAssistant();
 
-  // Automatically plays the camera instruction the moment this component renders
+  // Contextual voice prompt: On-load — single combined instruction for zero-literacy artisans
+  // Plays once when Capture screen mounts, before any photo/audio step prompts take over.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      speakPrompt('capture_instruction');
+    }, 500);
+    return () => {
+      clearTimeout(timer);
+      // Cancel any in-flight speech to prevent leaking audio across screens
+      stop();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [language]); // Replay if user switches language on this screen
+
+  // Contextual voice prompt: Screen 1 - Camera / Photo capture prompt for zero-literacy artisans
   useEffect(() => {
     if (!hasImage) {
-      playAudio('camera_instruction');
+      const timer = setTimeout(() => {
+        speakPrompt('camera_step');
+      }, 700);
+      return () => clearTimeout(timer);
     }
-  }, [hasImage, playAudio]);
+  }, [hasImage, speakPrompt, language]);
 
-  // When photo is ready, automatically plays mic instruction
+  // Contextual voice prompt: Screen 2 - Voice recording prompt once photo is ready
   useEffect(() => {
     if (hasImage && !audioBase64 && !customTranscript && !isRecording) {
-      playAudio('mic_instruction');
+      const timer = setTimeout(() => {
+        speakPrompt('voice_step');
+      }, 900);
+      return () => clearTimeout(timer);
     }
-  }, [hasImage, audioBase64, customTranscript, isRecording, playAudio]);
+  }, [hasImage, audioBase64, customTranscript, isRecording, speakPrompt, language]);
 
-  // Immediately silence audio when recording starts
+  // Immediately silence audio assistant when recording starts
   useEffect(() => {
     if (isRecording) {
-      stopAudio?.();
+      stop();
     }
-  }, [isRecording, stopAudio]);
+  }, [isRecording, stop]);
 
   // ════════════════════════════════════════════
   // ASYNC LIFESTYLE ENHANCEMENT
@@ -657,14 +678,11 @@ export default function Capture() {
         triggerBatchEnhancement(updated);
       }, 50);
 
-      // Auto-play mic instruction so artisan knows to describe the craft with voice
-      playAudio('mic_instruction');
-
       return updated;
     });
 
     return newImageItem;
-  }, [images.length, language, playAudio, showToast, triggerBatchEnhancement]);
+  }, [images.length, language, showToast, triggerBatchEnhancement]);
 
   const removeImage = useCallback((indexToRemove) => {
     setImages((prev) => {
@@ -1566,6 +1584,9 @@ export default function Capture() {
                   <span>{t('nav.sign_in', 'Login')}</span>
                 </button>
               )}
+
+              {/* Audio Assistant Mute Toggle */}
+              <AudioMuteButton className="h-8 sm:h-9" />
 
               {/* Language Toggle */}
               <LanguageToggle variant="light" className="h-8 sm:h-9" />

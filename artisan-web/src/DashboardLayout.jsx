@@ -8,6 +8,8 @@ import { useLanguage } from './context/LanguageContext';
 import NotificationBar from './components/NotificationBar';
 import VerificationBanner from './components/VerificationBanner';
 import LanguageSwitcher from './components/LanguageSwitcher';
+import AudioMuteButton from './components/AudioMuteButton';
+import AudioAssistantIndicator from './components/AudioAssistantIndicator';
 
 import Sidebar from './components/Sidebar';
 import { handleAddCraftNavigation } from './utils/authGuard';
@@ -247,6 +249,12 @@ export default function DashboardLayout() {
 
           {/* Right-Side: Essential Controls Only */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* EQ waveform — visible only while audio assistant is speaking */}
+            <AudioAssistantIndicator />
+
+            {/* Audio Assistant Mute Toggle */}
+            <AudioMuteButton />
+
             {/* Language Switcher using react-i18next */}
             <LanguageSwitcher />
 
@@ -380,19 +388,8 @@ export default function DashboardLayout() {
               <span className="max-w-[70px] sm:max-w-[110px] truncate">{displayName}</span>
             </button>
 
-            {/* Profile / Logout */}
-            {isLoggedIn ? (
-              <button
-                id="header-logout-btn"
-                onClick={handleLogout}
-                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gray-100 hover:bg-red-50 text-gray-700 hover:text-red-600 flex items-center justify-center transition-all cursor-pointer active:scale-95 border border-gray-200"
-                title={t('nav.sign_out', 'Sign Out')}
-                aria-label={t('nav.sign_out', 'Sign Out')}
-                type="button"
-              >
-                <span className="material-symbols-outlined text-[18px] sm:text-[20px]">logout</span>
-              </button>
-            ) : (
+            {/* Sign in button if not logged in */}
+            {!isLoggedIn && (
               <button
                 onClick={() => openAuthModal()}
                 className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-800 flex items-center justify-center transition-all cursor-pointer active:scale-95 border border-amber-200"

@@ -7,7 +7,6 @@ import { validateImageLightweight } from '../utils/imageValidator';
 import { addGeoWatermark } from '../utils/geoWatermark';
 import MicroVideoCapture from '../components/MicroVideoCapture';
 import { enhanceAndCleanProductImage } from '../utils/imageEnhancer';
-import { useAudio } from '../context/AudioContext';
 import exifr from 'exifr';
 
 // Configure the client using your Vite environment variable
@@ -256,12 +255,6 @@ const verifyImageMetadata = async (file) => {
 export default function AiStudio() {
   const navigate = useNavigate();
   const { user, artisanProfile } = useAuth?.() || {};
-  const { playAudio } = useAudio();
-
-  // Automatically plays camera instruction on studio mount
-  useEffect(() => {
-    playAudio('camera_instruction');
-  }, [playAudio]);
 
   // ── State Management ──
   const [captureMode, setCaptureMode] = useState('photos'); // 'photos' | 'video'

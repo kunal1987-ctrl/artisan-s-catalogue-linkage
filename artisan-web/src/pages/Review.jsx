@@ -4,7 +4,8 @@ import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageToggle from '../components/LanguageToggle';
-import { useAudio } from '../context/AudioContext';
+import AudioMuteButton from '../components/AudioMuteButton';
+import useAudioAssistant from '../hooks/useAudioAssistant';
 
 const GEM_CATEGORIES = [
   'Handloom / Silk Sarees',
@@ -25,7 +26,7 @@ export default function Review() {
   const location = useLocation();
   const { user, artisanProfile, isEmailVerified, openAuthModal, setPendingProduct, showToast, language } = useAuth();
   const { t } = useLanguage();
-  const { playAudio, stopAudio } = useAudio();
+  const { speakPrompt, speak, stop } = useAudioAssistant();
 
   // Read AI data passed from Capture.jsx
   const aiData = location.state || {};
@@ -39,12 +40,25 @@ export default function Review() {
     }
   }, [location.state, navigate]);
 
-  // Clean up any playing audio when unmounting
+  // Contextual voice prompt for zero-literacy review screen
   useEffect(() => {
+    const timer = setTimeout(() => {
+      if (isSmartAppraisal) {
+        if (language === 'hi') {
+          speak('फोटो के आधार पर कीमत तय की गई है। आप चाहें तो इसे बदल सकते हैं।');
+        } else {
+          speak('Market price suggested based on your photo. You can edit this if needed.');
+        }
+      } else {
+        speakPrompt('review');
+      }
+    }, 600);
+
     return () => {
-      stopAudio?.();
+      clearTimeout(timer);
+      stop();
     };
-  }, [stopAudio]);
+  }, [speakPrompt, speak, stop, language, isSmartAppraisal]);
 
   // ── Editable Form State ──
   const resolvedInitialTitle = aiData.name || aiData.title || (language === 'hi' ? 'हस्तशिल्प उत्पाद' : 'Handcrafted Item');
@@ -191,7 +205,6 @@ export default function Review() {
   const proceedWithPublish = async () => {
     setIsPublishing(true);
     setPublishError('');
-    playAudio('publishing');
 
     try {
       let finalImageUrl = imageUrl;
@@ -500,8 +513,9 @@ export default function Review() {
             </div>
           </div>
 
-          {/* Far Right: Language Switcher & Publish Button */}
+          {/* Far Right: Audio Mute, Language Switcher & Publish Button */}
           <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+            <AudioMuteButton variant="light" />
             <LanguageToggle variant="dark" />
 
             {canPublish ? (

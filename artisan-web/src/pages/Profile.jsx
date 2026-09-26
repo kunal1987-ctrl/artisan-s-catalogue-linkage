@@ -15,7 +15,8 @@ import {
   IndianRupee,
   Landmark,
   Edit3,
-  X
+  X,
+  LogOut
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
@@ -26,7 +27,7 @@ import { useAuth } from '../context/AuthContext';
  */
 export default function Profile() {
   const navigate = useNavigate();
-  const { user, artisanProfile: contextProfile, language, showToast } = useAuth?.() || {};
+  const { user, artisanProfile: contextProfile, language, showToast, signOut } = useAuth?.() || {};
   const fileInputRef = useRef(null);
 
   const [loading, setLoading] = useState(true);
@@ -81,6 +82,30 @@ export default function Profile() {
     };
     fetchUser();
   }, []);
+
+  // ── Logout Handler ──
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error('[Profile Logout] Supabase signOut notice:', err);
+    }
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch (storageErr) {
+      console.warn('[Profile Logout] Storage clear notice:', storageErr);
+    }
+    try {
+      await signOut?.();
+    } catch {
+      // ignore
+    }
+    if (showToast) {
+      showToast(language === 'hi' ? 'सफलतापूर्वक लॉगआउट हो गया' : 'Logged out successfully');
+    }
+    navigate('/login', { replace: true });
+  };
 
   // ── 1. Data Fetching (Supabase) ──
   useEffect(() => {
@@ -739,6 +764,39 @@ export default function Profile() {
             </div>
             <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-gray-700 group-hover:translate-x-0.5 transition-all" />
           </div>
+
+          {/* 5. Logout Row */}
+          <div
+            onClick={handleLogout}
+            className="bg-red-50/60 border border-red-200/80 hover:bg-red-100/70 p-4 rounded-xl flex items-center justify-between transition-colors cursor-pointer shadow-xs group"
+          >
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-lg bg-red-100 border border-red-200 text-red-600 flex items-center justify-center shrink-0">
+                <LogOut className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-sm text-red-700">
+                  {language === 'hi' ? 'लॉगआउट (Sign Out)' : 'Log Out (लॉगआउट)'}
+                </h3>
+                <p className="text-xs text-red-500">
+                  {language === 'hi' ? 'अपने खाते से सुरक्षित बाहर निकलें' : 'Sign out securely from your artisan account'}
+                </p>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-red-400 group-hover:text-red-700 group-hover:translate-x-0.5 transition-all" />
+          </div>
+        </div>
+
+        {/* Large Touch-Friendly Logout Button */}
+        <div className="mt-8 pt-6 border-t border-gray-200">
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="w-full py-4 px-6 rounded-2xl bg-red-600 hover:bg-red-700 active:scale-98 text-white font-bold text-base flex items-center justify-center gap-2.5 shadow-md transition-all cursor-pointer"
+          >
+            <LogOut className="w-5 h-5" />
+            <span>{language === 'hi' ? 'खाते से लॉगआउट करें (Logout)' : 'Log Out of Account'}</span>
+          </button>
         </div>
 
       </div>

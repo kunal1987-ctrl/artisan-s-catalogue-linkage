@@ -51,8 +51,3 @@ supabase.exe
 *.njsproj
 *.sln
 *.sw?
-
-# WhatsApp Web session data & temp files
-.wwebjs_auth
-**/server/.wwebjs_auth
-**/server/tmp

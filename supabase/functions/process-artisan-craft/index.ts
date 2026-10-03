@@ -51,7 +51,7 @@ function generateDynamicCraftProfile(transcript: string, user: any, customPrice?
   
   // Extract price from transcript or default to smart appraisal
   const spokenPriceMatch = transcript ? (transcript.match(/(?:₹|rs\.?|inr|rupees?|रुपये?|कीमत|मूल्य)\s*[:\-]?\s*(\d+)/i) || transcript.match(/(\d{2,6})/)) : null;
-  const pricingMethod = spokenPriceMatch ? 'spoken' : 'smart_appraisal';
+  const pricingMethod = customPrice ? 'fair_pricing_agent' : (spokenPriceMatch ? 'spoken' : 'smart_appraisal');
   let dynamicPrice = customPrice;
   if (!dynamicPrice) {
     dynamicPrice = spokenPriceMatch ? Number(spokenPriceMatch[1]) : 750;
@@ -394,6 +394,7 @@ Deno.serve(async (req: Request) => {
       images,
       customTranscript,
       language = "hi",
+      finalPrice,
     } = await req.json();
 
     requestTranscript = customTranscript || "";
@@ -576,7 +577,9 @@ Analyze the craft product image.
 - ACCEPT authentic Indian handicrafts, handlooms, and artisanal goods. Note: Images are enhanced onto clean e-commerce studio backdrops (studio white, gradient with ground contact shadow) or captured in artisan workshops. Both are authentic and desirable for GeM and ONDC cataloging.
 - REJECT ONLY if the image is an overt photograph of a computer/phone screen (visible monitor bezel, scan lines) or has large stock photo watermarks.
 - For authentic craft products, set "is_authentic_photo": true, "is_valid": true, "rejection_reason": null.
-- Price: Extract the stated audio amount first. If the transcript is empty or lacks a price, perform a "Smart Appraisal"—calculate a fair market valuation based on material and complexity.
+- Price: ${finalPrice && Number(finalPrice) > 0 
+    ? `An audited fair-trade price has ALREADY been established at ₹${finalPrice}. You MUST output exactly "price": ${finalPrice}, "suggested_price_inr": ${finalPrice}, "pricing_method": "fair_pricing_agent". DO NOT estimate, recalculate, or alter this price.`
+    : `Extract the stated audio amount first. If the transcript is empty or lacks a price, perform a "Smart Appraisal"—calculate a fair market valuation based on material and complexity.`}
 - HSN Code: Map the precise 4-to-6 digit Indian GST classification to the primary material detected.
 - Description: Write a unique 2-sentence marketing copy reflecting visible colors, patterns, and design details.
 
@@ -682,7 +685,7 @@ Strictly adhere to the system instructions and return valid JSON matching the Re
     // ───────────────────────────────────────────────────────────
     if (!productData) {
       console.warn("[Step 2] All Gemini attempts exhausted. Activating dynamic fallback.");
-      productData = generateDynamicCraftProfile(transcript, user);
+      productData = generateDynamicCraftProfile(transcript, user, finalPrice ? Number(finalPrice) : undefined);
       productData.rate_limited = hitRateLimit429;
     } else {
       // ── Integrity Guardrail Rejection: If craft is invalid (screen recapture / stock / not craft) ──
@@ -716,8 +719,18 @@ Strictly adhere to the system instructions and return valid JSON matching the Re
         productData.craft_category = productData.material;
       }
 
-      // Parse & normalize price
-      if (productData.price) {
+      // Parse & normalize price: rigidly prioritize pre-validated finalPrice
+      if (finalPrice && Number(finalPrice) > 0) {
+        const lockedPrice = Number(finalPrice);
+        productData.price = lockedPrice;
+        productData.suggested_retail_price_inr = lockedPrice;
+        productData.estimated_price_inr = lockedPrice;
+        productData.bulk_price = Math.round(lockedPrice * 0.72);
+        productData.suggested_wholesale_price_inr = productData.bulk_price;
+        productData.bulk_price_inr = productData.bulk_price;
+        productData.pricing_method = 'fair_pricing_agent';
+        productData.pricing_reasoning = `Audited fair-trade price (₹${lockedPrice}) validated via Fair-Pricing Agent with live market comps.`;
+      } else if (productData.price) {
         const numericPrice = Number(typeof productData.price === 'string' ? productData.price.replace(/[^0-9.]/g, '') : productData.price) || 450;
         productData.price = numericPrice;
         if (!productData.suggested_retail_price_inr) {
@@ -735,16 +748,18 @@ Strictly adhere to the system instructions and return valid JSON matching the Re
       }
 
       // Normalize pricing_method from Gemini or transcript appraisal
-      const spokenPriceMatch = transcript ? (transcript.match(/(?:₹|rs\.?|inr|rupees?|रुपये?|कीमत|मूल्य)\s*[:\-]?\s*(\d+)/i) || transcript.match(/(\d{2,6})/)) : null;
-      if (productData.pricing_method === 'smart_appraisal' || !spokenPriceMatch) {
-        productData.pricing_method = 'smart_appraisal';
-      } else {
-        productData.pricing_method = 'spoken';
-      }
-      if (productData.pricing_method === 'smart_appraisal') {
-        productData.pricing_reasoning = productData.pricing_reasoning || `Market price estimated based on visual craftsmanship, material (${productData.material || 'handcrafted'}), and standard e-commerce fair-trade rates.`;
-      } else {
-        productData.pricing_reasoning = productData.pricing_reasoning || `Price extracted directly from artisan voice description (₹${productData.price}).`;
+      if (!finalPrice || Number(finalPrice) <= 0) {
+        const spokenPriceMatch = transcript ? (transcript.match(/(?:₹|rs\.?|inr|rupees?|रुपये?|कीमत|मूल्य)\s*[:\-]?\s*(\d+)/i) || transcript.match(/(\d{2,6})/)) : null;
+        if (productData.pricing_method === 'smart_appraisal' || !spokenPriceMatch) {
+          productData.pricing_method = 'smart_appraisal';
+        } else {
+          productData.pricing_method = 'spoken';
+        }
+        if (productData.pricing_method === 'smart_appraisal') {
+          productData.pricing_reasoning = productData.pricing_reasoning || `Market price estimated based on visual craftsmanship, material (${productData.material || 'handcrafted'}), and standard e-commerce fair-trade rates.`;
+        } else {
+          productData.pricing_reasoning = productData.pricing_reasoning || `Price extracted directly from artisan voice description (₹${productData.price}).`;
+        }
       }
 
       if (productData.artisan_expected_price !== undefined && productData.artisan_expected_price !== null) {
@@ -857,7 +872,7 @@ Strictly adhere to the system instructions and return valid JSON matching the Re
     console.error("[process-artisan-craft Fatal Error]", error?.message || error);
     return new Response(
       JSON.stringify({
-        ...generateDynamicCraftProfile(requestTranscript, user),
+        ...generateDynamicCraftProfile(requestTranscript, user, finalPrice ? Number(finalPrice) : undefined),
         rate_limited: false,
         user_id: user?.id || null,
       }),

@@ -1,14 +1,13 @@
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from '../supabaseClient';
 
 /**
  * Converts a File or Blob to a base64 string using FileReader.
- * @param {File|Blob} fileOrBlob
+ * @param {File|Blob|string} fileOrBlob
  * @returns {Promise<{ base64: string, mimeType: string }>}
  */
 function fileToBase64(fileOrBlob) {
   return new Promise((resolve, reject) => {
     if (typeof fileOrBlob === 'string') {
-      // If already a data-URI or raw base64
       if (fileOrBlob.startsWith('data:')) {
         const commaIdx = fileOrBlob.indexOf(',');
         const mimeMatch = fileOrBlob.match(/^data:([^;]+);base64,/);
@@ -81,7 +80,6 @@ export async function appraiseProduct(fileOrBlob, statedCost, claimedTime) {
     throw new Error('appraiseProduct: fileOrBlob is required.');
   }
 
-  // 1. Convert image to base64
   const { base64: imageBase64, mimeType } = await fileToBase64(fileOrBlob);
 
   if (!imageBase64 || imageBase64.length < 10) {
@@ -96,12 +94,10 @@ export async function appraiseProduct(fileOrBlob, statedCost, claimedTime) {
     mimeType: fileOrBlob.type || mimeType || 'image/jpeg',
   };
 
-  // 2. Invoke the Supabase Edge Function
   const { data, error } = await supabase.functions.invoke('fair-pricing-agent', {
     body,
   });
 
-  // 3. Surface errors cleanly
   if (error) {
     let detail = error?.message || 'Unknown error from fair-pricing-agent.';
     if (error?.context?.json) {

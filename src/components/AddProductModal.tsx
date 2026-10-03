@@ -3,6 +3,8 @@ import type { Artisan } from '../types/database';
 import { supabase } from '../lib/supabaseClient';
 import { X, Plus, Sparkles, Image } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import FairPricingModal from './FairPricingModal';
+import { appraiseProduct } from '../services/pricingService';
 
 interface AddProductModalProps {
   isOpen: boolean;
@@ -30,6 +32,16 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
   const [newArtisanLocation, setNewArtisanLocation] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Fair-Pricing Modal State
+  const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
+  const [isAppraising, setIsAppraising] = useState(false);
+  const [pricingData, setPricingData] = useState<any>(null);
+  const [pricingError, setPricingError] = useState<string | null>(null);
+  const [capturedImage, setCapturedImage] = useState<File | string | null>(null);
+  const [materialCost, setMaterialCost] = useState('');
+  const [timeValue, setTimeValue] = useState<number>(1);
+  const [timeUnit, setTimeUnit] = useState<string>('hours');
 
   if (!isOpen) return null;
 
@@ -154,7 +166,49 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-neutral-300 mb-1">Price (USD) *</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-semibold text-neutral-300">Price *</label>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const targetImg = capturedImage || imageUrl;
+                    if (!targetImg) {
+                      setErrorMsg('Please upload or provide a craft image URL first.');
+                      return;
+                    }
+                    if (!materialCost || Number(materialCost) <= 0) {
+                      setErrorMsg('Please enter a valid raw material cost first.');
+                      return;
+                    }
+                    if (!timeValue || timeValue <= 0) {
+                      setErrorMsg('Please enter the time taken to make.');
+                      return;
+                    }
+                    setCapturedImage(targetImg);
+                    setIsPricingModalOpen(true);
+                    setIsAppraising(true);
+                    setPricingError(null);
+
+                    try {
+                      const data = await appraiseProduct(targetImg, Number(materialCost), `${timeValue} ${timeUnit}`);
+                      setPricingData(data);
+                      if (data?.suggested_price) {
+                        setPrice(String(data.suggested_price));
+                      }
+                    } catch (err: any) {
+                      console.error('[AddProductModal] Fair pricing error:', err);
+                      setPricingError(err?.message || 'Could not calculate price.');
+                    } finally {
+                      setIsAppraising(false); // MUST run to hide loading screen
+                    }
+                  }}
+                  className="text-[11px] font-medium text-emerald-400 hover:text-emerald-300 flex items-center gap-1 transition"
+                  title="Appraise fair price using AI agent and market comps"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  AI Fair Price
+                </button>
+              </div>
               <input
                 type="number"
                 step="0.01"
@@ -164,6 +218,49 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
                 onChange={(e) => setPrice(e.target.value)}
                 className="w-full px-3.5 py-2.5 bg-neutral-950 border border-neutral-800 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500/60"
               />
+            </div>
+
+            {/* Material Cost Input */}
+            <div>
+              <label className="block text-xs font-semibold text-neutral-300 mb-1">
+                Raw Material Cost (INR) *
+              </label>
+              <input
+                type="number"
+                placeholder="Enter material cost in ₹"
+                value={materialCost}
+                onChange={(e) => setMaterialCost(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-neutral-950 border border-neutral-800 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500/60"
+              />
+            </div>
+
+            {/* Days to Make Input */}
+            <div>
+              <label className="block text-xs font-semibold text-neutral-300 mb-1">
+                Time Taken to Make *
+              </label>
+              <div className="flex items-center space-x-2">
+                <div className="relative flex-1">
+                  <input
+                    type="number"
+                    min="0.5"
+                    step="0.5"
+                    value={timeValue}
+                    onChange={(e) => setTimeValue(parseFloat(e.target.value) || 0)}
+                    className="w-full bg-[#1e1e1e] border border-stone-700 rounded-lg px-3 py-2 text-white text-xs font-medium focus:outline-none focus:border-amber-500/60"
+                    placeholder="1"
+                  />
+                </div>
+                <select
+                  value={timeUnit}
+                  onChange={(e) => setTimeUnit(e.target.value)}
+                  className="bg-[#1e1e1e] border border-stone-700 rounded-lg px-3 py-2 text-white text-xs font-medium focus:outline-none focus:border-amber-500/60"
+                >
+                  <option value="hours">घंटे (Hours)</option>
+                  <option value="minutes">मिनट (Minutes)</option>
+                  <option value="days">दिन (Days)</option>
+                </select>
+              </div>
             </div>
 
             <div>
@@ -286,6 +383,21 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
             </button>
           </div>
         </form>
+
+        {/* AI Fair-Pricing Valuation & Labor Audit Modal */}
+        <FairPricingModal
+          isOpen={isPricingModalOpen}
+          onClose={() => setIsPricingModalOpen(false)}
+          isLoading={isAppraising}
+          pricingData={pricingData}
+          error={pricingError}
+          imageFile={capturedImage || imageUrl}
+          statedCost={Number(materialCost)}
+          claimedTime={`${timeValue} ${timeUnit}`}
+          onApplyPrice={(suggestedPrice: number) => {
+            setPrice(String(suggestedPrice));
+          }}
+        />
       </div>
     </div>
   );

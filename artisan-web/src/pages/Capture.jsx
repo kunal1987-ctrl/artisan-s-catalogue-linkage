@@ -14,6 +14,8 @@ import NotificationBar from '../components/NotificationBar';
 import useAudioAssistant from '../hooks/useAudioAssistant';
 import { validateImageLightweight, getLocalizedValidationReason } from '../utils/imageValidator';
 import { enhanceAndCleanProductImage } from '../utils/imageEnhancer';
+import FairPricingModal from '../components/FairPricingModal';
+import { appraiseProduct } from '../services/pricingService';
 
 // Configure the fal.ai client using Vite environment variable
 fal.config({
@@ -221,6 +223,17 @@ export default function Capture() {
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [bgRemovalStatus, setBgRemovalStatus] = useState('idle'); // idle | processing | done | error
+  
+  // ── Fair-Pricing Modal State ──
+  const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
+  const [isAppraising, setIsAppraising] = useState(false);
+  const [pricingData, setPricingData] = useState(null);
+  const [pricingError, setPricingError] = useState(null);
+  const [capturedImage, setCapturedImage] = useState(null);
+  const [finalPrice, setFinalPrice] = useState('');
+  const [materialCost, setMaterialCost] = useState('');
+  const [timeValue, setTimeValue] = useState(1);
+  const [timeUnit, setTimeUnit] = useState('hours');
 
   // ── WebRTC Live Camera Viewfinder State & Refs ──
   const [isCameraModalOpen, setIsCameraModalOpen] = useState(false);
@@ -755,6 +768,7 @@ export default function Capture() {
     }
 
     await addImageToState(file);
+    setCapturedImage(file);
   }, [addImageToState, language, showToast]);
 
   const handleImageSelection = handlePhotoCapture;
@@ -917,6 +931,7 @@ export default function Capture() {
 
       // Add to multi-image state
       await addImageToState(blob);
+      setCapturedImage(blob);
 
       // Close live camera modal after capture
       closeLiveCamera();
@@ -1333,6 +1348,7 @@ export default function Capture() {
             images: allImagesBase64,
             customTranscript: activeText || null,
             language: transcriptionLang,
+            finalPrice: finalPrice ? Number(finalPrice) : null,
           },
           headers: activeToken ? { Authorization: `Bearer ${activeToken}` } : {},
         });
@@ -1379,6 +1395,18 @@ export default function Capture() {
             }
 
             listingData = parsedData;
+            if (finalPrice && Number(finalPrice) > 0) {
+              const lockedPrice = Number(finalPrice);
+              listingData.price = lockedPrice;
+              listingData.suggested_retail_price_inr = lockedPrice;
+              listingData.estimated_price_inr = lockedPrice;
+              listingData.bulk_price = Math.round(lockedPrice * 0.72);
+              listingData.bulk_price_inr = Math.round(lockedPrice * 0.72);
+              listingData.suggested_wholesale_price_inr = Math.round(lockedPrice * 0.72);
+              listingData.pricing_method = 'fair_pricing_agent';
+              listingData.pricingMethod = 'fair_pricing_agent';
+              listingData.pricing_reasoning = `Audited fair-trade price (₹${lockedPrice}) validated via Fair-Pricing Agent with live market comps.`;
+            }
             if (parsedData.category || parsedData.craft_category) {
               setCategory(parsedData.category || parsedData.craft_category);
             }
@@ -1435,8 +1463,12 @@ export default function Capture() {
         console.info('Using dynamic local AI craft profile fallback');
         const resolvedText = activeText;
         const spokenPriceMatch = resolvedText ? (resolvedText.match(/(?:₹|rs\.?|inr|rupees?|रुपये?|कीमत|मूल्य)\s*[:\-]?\s*(\d+)/i) || resolvedText.match(/(\d{2,6})/)) : null;
-        const dynamicPrice = spokenPriceMatch ? Number(spokenPriceMatch[1]) : 450;
-        const pricingMethod = spokenPriceMatch ? 'spoken' : 'smart_appraisal';
+        const dynamicPrice = (finalPrice && Number(finalPrice) > 0)
+          ? Number(finalPrice)
+          : (spokenPriceMatch ? Number(spokenPriceMatch[1]) : 0);
+        const pricingMethod = (finalPrice && Number(finalPrice) > 0)
+          ? 'fair_pricing_agent'
+          : (spokenPriceMatch ? 'spoken' : 'smart_appraisal');
         const dynamicTitle = resolvedText
           ? `Handcrafted Craft (${resolvedText.slice(0, 30)}...)`
           : "Handcrafted Artisan Craft";
@@ -1458,9 +1490,11 @@ export default function Capture() {
           suggested_wholesale_price_inr: Math.round(dynamicPrice * 0.72),
           estimated_price_inr: dynamicPrice,
           bulk_price_inr: Math.round(dynamicPrice * 0.72),
-          pricing_reasoning: pricingMethod === 'smart_appraisal'
-            ? 'Market price estimated based on visual craftsmanship, material, and standard fair-trade rates.'
-            : `Price extracted from artisan voice input (₹${dynamicPrice}).`,
+          pricing_reasoning: pricingMethod === 'fair_pricing_agent'
+            ? `Audited fair-trade price (₹${dynamicPrice}) validated via Fair-Pricing Agent with live market comps.`
+            : (pricingMethod === 'smart_appraisal'
+                ? 'Market price estimated based on visual craftsmanship, material, and standard fair-trade rates.'
+                : `Price extracted from artisan voice input (₹${dynamicPrice}).`),
           gem_category: "Handicrafts - Traditional Art & Decor",
           unspsc_code: "60121002",
           hsn_code: "69120010",
@@ -1472,8 +1506,8 @@ export default function Capture() {
       }
 
       const resolvedName = listingData.name || listingData.title || (activeText ? `Handcrafted Item (${activeText.slice(0, 24)}...)` : 'Handcrafted Artisan Item');
-      const resolvedPrice = Number(listingData.price || listingData.suggested_retail_price_inr || 450);
-      const resolvedPricingMethod = listingData.pricing_method || (activeText ? 'spoken' : 'smart_appraisal');
+      const resolvedPrice = Number(finalPrice || listingData.price || listingData.suggested_retail_price_inr || 0);
+      const resolvedPricingMethod = finalPrice ? 'fair_pricing_agent' : (listingData.pricing_method || (activeText ? 'spoken' : 'smart_appraisal'));
       setExtractedName(resolvedName);
       setExtractedPrice(resolvedPrice);
 
@@ -1486,6 +1520,11 @@ export default function Capture() {
           name: resolvedName,
           title: resolvedName,
           price: resolvedPrice,
+          suggested_retail_price_inr: resolvedPrice,
+          estimated_price_inr: resolvedPrice,
+          bulk_price: Math.round(resolvedPrice * 0.72),
+          suggested_wholesale_price_inr: Math.round(resolvedPrice * 0.72),
+          bulk_price_inr: Math.round(resolvedPrice * 0.72),
           pricing_method: resolvedPricingMethod,
           pricingMethod: resolvedPricingMethod,
           imageUrl: targetImageUrl,
@@ -1537,6 +1576,7 @@ export default function Capture() {
     customTranscript,
     transcriptionLang,
     language,
+    finalPrice,
     navigate,
     showToast,
     resetCaptureState,
@@ -2244,6 +2284,159 @@ export default function Capture() {
                 </div>
               </div>
 
+              {/* ── Fair-Trade Pricing Inputs: Material Cost & Days to Make ── */}
+              <div className="mt-4 p-4 rounded-2xl bg-[#201815] border border-emerald-500/30 space-y-3 shadow-md">
+                <div className="flex items-center justify-between pb-1 border-b border-white/10">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">⚖️</span>
+                    <h4 className="text-xs font-bold text-[#ffdeaa] uppercase tracking-wider">
+                      {language === 'hi' ? 'उचित मूल्य इनपुट (Fair Pricing)' : 'Fair Price Inputs'}
+                    </h4>
+                  </div>
+                  {finalPrice ? (
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                      ✓ ₹{Math.round(Number(finalPrice)).toLocaleString('en-IN')}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-white/50">
+                      {language === 'hi' ? 'लागत और समय दर्ज करें' : 'Enter costs & time'}
+                    </span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  {/* 1. Material Cost Input */}
+                  <div>
+                    <label className="block text-[11px] font-semibold text-stone-300 mb-1 flex items-center gap-1">
+                      <span>₹</span>
+                      <span>{language === 'hi' ? 'कच्चे माल की लागत (₹)' : 'Material Cost (₹)'}</span>
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 font-bold text-sm">₹</span>
+                      <input
+                        type="number"
+                        placeholder={language === 'hi' ? 'लागत दर्ज करें (₹)' : 'Enter material cost in ₹'}
+                        value={materialCost}
+                        onChange={(e) => setMaterialCost(e.target.value)}
+                        className="w-full pl-7 pr-3 py-2 bg-[#2e241e] border border-white/15 rounded-xl text-white font-bold text-sm focus:outline-none focus:border-emerald-500 transition-colors"
+                      />
+                    </div>
+                  </div>
+
+                  {/* 2. Crafting Time Input */}
+                  <div>
+                    <label className="block text-[11px] font-semibold text-stone-300 mb-1 flex items-center gap-1">
+                      <span>⏱️</span>
+                      <span>{language === 'hi' ? 'बनाने में लगा समय' : 'Crafting Time'}</span>
+                    </label>
+                    <div className="flex items-center space-x-2">
+                      <div className="relative flex-1">
+                        <input
+                          type="number"
+                          min="0.5"
+                          step="0.5"
+                          value={timeValue}
+                          onChange={(e) => setTimeValue(parseFloat(e.target.value) || 0)}
+                          className="w-full bg-[#1e1e1e] border border-stone-700 rounded-lg px-3 py-2 text-white font-medium text-xs focus:outline-none focus:border-emerald-500 transition-colors"
+                          placeholder="1"
+                        />
+                      </div>
+                      <select
+                        value={timeUnit}
+                        onChange={(e) => setTimeUnit(e.target.value)}
+                        className="bg-[#1e1e1e] border border-stone-700 rounded-lg px-3 py-2 text-white text-xs font-medium focus:outline-none focus:border-emerald-500 transition-colors"
+                      >
+                        <option value="hours">घंटे (Hours)</option>
+                        <option value="minutes">मिनट (Minutes)</option>
+                        <option value="days">दिन (Days)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* 3. Selling Price Input (Auto-bound from AI Fair-Pricing or manually editable) */}
+                  <div className="sm:col-span-2">
+                    <label className="block text-[11px] font-semibold text-stone-300 mb-1 flex items-center justify-between">
+                      <span className="flex items-center gap-1">
+                        <span>🏷️</span>
+                        <span>{language === 'hi' ? 'विक्रय मूल्य (Selling Price in ₹)' : 'Selling Price (₹)'}</span>
+                      </span>
+                      {finalPrice ? (
+                        <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
+                          <span>✓</span>
+                          <span>{language === 'hi' ? 'उचित मूल्य द्वारा स्वतः निर्धारित' : 'AI Fair-Trade Price Auto-Bound'}</span>
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-stone-400">
+                          {language === 'hi' ? 'एआई द्वारा स्वतः भरेगा या स्वयं दर्ज करें' : 'Auto-filled by AI or enter manually'}
+                        </span>
+                      )}
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 font-bold text-sm">₹</span>
+                      <input
+                        type="number"
+                        placeholder={language === 'hi' ? 'मूल्य दर्ज करें (उदा. 95)' : 'Enter selling price (e.g. 95)'}
+                        value={finalPrice}
+                        onChange={(e) => {
+                          setFinalPrice(e.target.value);
+                          setExtractedPrice(e.target.value ? Number(e.target.value) : null);
+                        }}
+                        className="w-full pl-7 pr-3 py-2 bg-[#2e241e] border border-white/15 rounded-xl text-white font-bold text-sm focus:outline-none focus:border-emerald-500 transition-colors"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Calculate Fair Price with AI button */}
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const targetImg = capturedImage || imageFile || imageBlob || (images.length > 0 ? (images[0].file || images[0].blob) : null);
+                    if (!targetImg) {
+                      if (showToast) showToast(language === 'hi' ? 'कृपया पहले उत्पाद की फ़ोटो लें।' : 'Please capture or upload a product photo first.');
+                      return;
+                    }
+                    const cost = Number(materialCost);
+                    if (!materialCost || isNaN(cost) || cost <= 0) {
+                      if (showToast) showToast(language === 'hi' ? 'कृपया कच्चे माल की लागत दर्ज करें।' : 'Please enter your raw material cost in INR.');
+                      return;
+                    }
+                    if (!timeValue || timeValue <= 0) {
+                      if (showToast) showToast(language === 'hi' ? 'कृपया बनाने का समय दर्ज करें।' : 'Please enter crafting time.');
+                      return;
+                    }
+
+                    setCapturedImage(targetImg);
+                    setIsPricingModalOpen(true);
+                    setIsAppraising(true);
+                    setPricingError(null);
+
+                    try {
+                      const timeFormatted = `${timeValue} ${timeUnit}`;
+                      const data = await appraiseProduct(targetImg, cost, timeFormatted);
+                      setPricingData(data);
+                      if (data?.suggested_price) {
+                        setFinalPrice(String(data.suggested_price));
+                        setExtractedPrice(Number(data.suggested_price));
+                      }
+                    } catch (err) {
+                      console.error('[Capture] Fair pricing error:', err);
+                      setPricingError(err?.message || 'Could not calculate price right now.');
+                    } finally {
+                      setIsAppraising(false); // MUST run to reveal predicted price screen
+                    }
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl bg-emerald-600/30 hover:bg-emerald-600/40 border border-emerald-500/50 text-emerald-300 hover:text-emerald-200 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+                >
+                  <span className="text-sm">⚖️</span>
+                  <span>
+                    {finalPrice 
+                      ? (language === 'hi' ? 'उचित मूल्य दोबारा जांचें (Recalculate Price)' : 'Recalculate Fair Price') 
+                      : (language === 'hi' ? 'उचित मूल्य की गणना करें (Check Fair Price with AI)' : 'Calculate Fair Price with AI')}
+                  </span>
+                </button>
+              </div>
+
               {/* ── Generate Action Button & Indicator ── */}
               <div className="flex flex-col gap-3 mt-6 pt-2">
                 {/* Error Message */}
@@ -2449,6 +2642,22 @@ export default function Capture() {
       />
       {/* Global Notification Drawer & Toast Bar */}
       <NotificationBar />
+
+      {/* AI Fair-Pricing Valuation & Labor Audit Modal */}
+      <FairPricingModal
+        isOpen={isPricingModalOpen}
+        onClose={() => setIsPricingModalOpen(false)}
+        isLoading={isAppraising}
+        pricingData={pricingData}
+        error={pricingError}
+        imageFile={capturedImage || imageFile || imageBlob || (images.length > 0 ? (images[0].file || images[0].blob) : null)}
+        statedCost={Number(materialCost)}
+        claimedTime={`${timeValue} ${timeUnit}`}
+        onApplyPrice={(suggestedPrice) => {
+          setFinalPrice(String(suggestedPrice));
+          setExtractedPrice(Number(suggestedPrice));
+        }}
+      />
       </main>
     </div>
   );

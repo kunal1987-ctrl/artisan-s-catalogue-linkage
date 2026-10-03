@@ -47,3 +47,13 @@ supabase.exe
 *.njsproj
 *.sln
 *.sw?
+
+# Staging & offline drafts
+src/staging-offline/
+**/src/staging-offline/
+src/staging-authenticity/
+**/src/staging-authenticity/
+src/staging-cluster/
+**/src/staging-cluster/
+backend-staging-whatsapp/
+**/backend-staging-whatsapp/

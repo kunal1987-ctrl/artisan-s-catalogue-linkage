@@ -51,3 +51,14 @@ supabase.exe
 *.njsproj
 *.sln
 *.sw?
+
+# Staging & offline drafts
+artisan-web/src/staging-offline/
+**/src/staging-offline/
+artisan-web/src/staging-authenticity/
+**/src/staging-authenticity/
+artisan-web/src/staging-cluster/
+**/src/staging-cluster/
+staging-edge-cases/
+backend-staging-whatsapp/
+staging-ondc-mock/

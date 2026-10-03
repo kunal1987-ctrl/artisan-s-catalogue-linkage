@@ -90,6 +90,21 @@ export default function DashboardLayout() {
       }
     }
     loadLayoutProfile();
+
+    const handleAvatarUpdate = (e) => {
+      const newUrl = e?.detail?.url;
+      if (newUrl) {
+        setUserProfile((prev) => ({
+          ...(prev || {}),
+          profile_picture_url: newUrl,
+          avatar: newUrl
+        }));
+      }
+    };
+    window.addEventListener('artisan_avatar_updated', handleAvatarUpdate);
+    return () => {
+      window.removeEventListener('artisan_avatar_updated', handleAvatarUpdate);
+    };
   }, [user?.id, session?.user?.id]);
 
   const displayName = 

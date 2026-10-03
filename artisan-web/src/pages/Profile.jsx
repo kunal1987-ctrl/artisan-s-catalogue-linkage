@@ -232,33 +232,49 @@ export default function Profile() {
       const fileExt = file.name.split('.').pop() || 'jpg';
       const filePath = `${activeUserId}/${Date.now()}.${fileExt}`;
 
-      // 3. Upload file to 'avatars' bucket
-      const { error: uploadError } = await supabase.storage
+      // 3. Upload file to 'avatars' bucket (with automatic fallback to 'artisan-images')
+      let targetBucket = 'avatars';
+      let uploadRes = await supabase.storage
         .from('avatars')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: true
         });
 
-      if (uploadError) {
-        console.error('[uploadAvatar] Storage upload error:', uploadError);
-        throw uploadError;
+      if (uploadRes.error && (uploadRes.error.message?.includes('not found') || uploadRes.error.error === 'Bucket not found')) {
+        console.warn('[uploadAvatar] avatars bucket not found, attempting fallback to artisan-images');
+        targetBucket = 'artisan-images';
+        uploadRes = await supabase.storage
+          .from('artisan-images')
+          .upload(`avatars/${filePath}`, file, {
+            cacheControl: '3600',
+            upsert: true
+          });
+      }
+
+      if (uploadRes.error) {
+        console.error('[uploadAvatar] Storage upload error:', uploadRes.error);
+        throw uploadRes.error;
       }
 
       // 4. Retrieve public URL
       const { data: urlData } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
+        .from(targetBucket)
+        .getPublicUrl(targetBucket === 'artisan-images' ? `avatars/${filePath}` : filePath);
 
       const publicUrl = urlData?.publicUrl;
       if (!publicUrl) {
         throw new Error('Failed to retrieve public URL from avatars storage');
       }
 
-      // 5. Database Update: Update profile_picture_url in profiles table
+      // 5. Database Update: Update profile_picture_url & avatar in profiles table
       const { error: dbError } = await supabase
         .from('profiles')
-        .update({ profile_picture_url: publicUrl })
+        .update({
+          profile_picture_url: publicUrl,
+          avatar: publicUrl,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', activeUserId);
 
       if (dbError) {
@@ -273,6 +289,9 @@ export default function Profile() {
 
       // Cache locally for instant loading across reloads
       localStorage.setItem('artisan_avatar', publicUrl);
+
+      // Dispatch event to sync top navbar / layout immediately
+      window.dispatchEvent(new CustomEvent('artisan_avatar_updated', { detail: { url: publicUrl } }));
 
       if (showToast) {
         showToast(language === 'hi' ? '✅ प्रोफ़ाइल फ़ोटो सफलतापूर्वक अपडेट हो गई' : '✅ Profile picture updated successfully');

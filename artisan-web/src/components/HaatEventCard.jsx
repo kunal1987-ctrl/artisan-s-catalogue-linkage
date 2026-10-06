@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
+import EventMapModal from './EventMapModal';
 
 // Language voice code mappings for regional narration
 const LANG_VOICE_MAP = {
@@ -328,18 +329,14 @@ export default function HaatEventCard({ currentLang = 'hi' }) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedMapEvent, setSelectedMapEvent] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [availableVoices, setAvailableVoices] = useState([]);
 
-  // Access auth context safely
-  let authContext = {};
-  try {
-    authContext = useAuth() || {};
-  } catch {
-    authContext = {};
-  }
+  // Access auth context
+  const authContext = useAuth() || {};
   const { user, artisanName, artisanProfile } = authContext;
 
   // Form State for 1-Click Registration Modal
@@ -400,6 +397,24 @@ export default function HaatEventCard({ currentLang = 'hi' }) {
     // 1. Fetch latest events from Supabase on mount; on success, update state and cache to localStorage
     async function fetchHaatEvents() {
       try {
+        // Priority 1: Fetch dynamic AI-aggregated events from artisan_events
+        const { data: dynamicData, error: dynamicErr } = await supabase
+          .from('artisan_events')
+          .select('*')
+          .eq('is_active', true)
+          .order('start_date', { ascending: true });
+
+        if (!dynamicErr && dynamicData && dynamicData.length > 0) {
+          if (isMounted) {
+            setEvents(dynamicData);
+            try {
+              localStorage.setItem(CACHE_KEY, JSON.stringify(dynamicData));
+            } catch {}
+          }
+          return;
+        }
+
+        // Priority 2: Fallback to haat_events table
         const todayStr = new Date().toISOString().split('T')[0];
         const { data, error } = await supabase
           .from('haat_events')
@@ -424,9 +439,20 @@ export default function HaatEventCard({ currentLang = 'hi' }) {
 
     fetchHaatEvents();
 
-    // 2. Bind to supabase.channel('public:haat_events')
+    // 2. Bind to Supabase realtime channels
     const channel = supabase
-      .channel('public:haat_events')
+      .channel('public:events_realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'artisan_events',
+        },
+        () => {
+          fetchHaatEvents();
+        }
+      )
       .on(
         'postgres_changes',
         {
@@ -434,34 +460,8 @@ export default function HaatEventCard({ currentLang = 'hi' }) {
           schema: 'public',
           table: 'haat_events',
         },
-        (payload) => {
-          if (!isMounted) return;
-
-          const { eventType, new: newRecord, old: oldRecord } = payload;
-
-          setEvents((prevEvents) => {
-            let updated = prevEvents;
-
-            if (eventType === 'INSERT') {
-              // On INSERT: Append to state and update cache
-              const exists = prevEvents.some((ev) => ev.id === newRecord.id);
-              updated = exists
-                ? prevEvents.map((ev) => (ev.id === newRecord.id ? newRecord : ev))
-                : [...prevEvents, newRecord];
-            } else if (eventType === 'UPDATE') {
-              // On UPDATE: Map and replace matching ID in state and cache
-              updated = prevEvents.map((ev) => (ev.id === newRecord.id ? newRecord : ev));
-            } else if (eventType === 'DELETE') {
-              const filtered = prevEvents.filter((ev) => ev.id !== oldRecord?.id);
-              updated = filtered.length > 0 ? filtered : FALLBACK_EVENTS;
-            }
-
-            try {
-              localStorage.setItem(CACHE_KEY, JSON.stringify(updated));
-            } catch {}
-
-            return updated;
-          });
+        () => {
+          fetchHaatEvents();
         }
       )
       .subscribe((status, err) => {
@@ -490,7 +490,7 @@ export default function HaatEventCard({ currentLang = 'hi' }) {
     }
   }, [currentIndex]);
 
-  // Automatic 8-second cycle (paused on hover, speaking, or modal open)
+  // Automatic 5-second cycle (paused on hover, speaking, or modal open; resets on manual navigation)
   useEffect(() => {
     if (events.length <= 1 || isHovered || isSpeaking || isModalOpen) {
       return;
@@ -498,10 +498,10 @@ export default function HaatEventCard({ currentLang = 'hi' }) {
 
     const timer = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % events.length);
-    }, 8000);
+    }, 5000);
 
     return () => clearInterval(timer);
-  }, [events.length, isHovered, isSpeaking, isModalOpen]);
+  }, [events.length, currentIndex, isHovered, isSpeaking, isModalOpen]);
 
   const safeIndex = currentIndex >= events.length ? 0 : currentIndex;
   const activeEvent = events[safeIndex] || FALLBACK_EVENTS[0];
@@ -558,6 +558,74 @@ export default function HaatEventCard({ currentLang = 'hi' }) {
     return cleaned;
   };
 
+  const getEventStatus = (startDateStr, endDateStr) => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${day}`;
+
+    const normalize = (dStr) => {
+      if (!dStr) return null;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dStr)) return dStr;
+      try {
+        const d = new Date(dStr);
+        return isNaN(d.getTime()) ? null : d.toISOString().split('T')[0];
+      } catch {
+        return null;
+      }
+    };
+
+    const sDate = normalize(startDateStr);
+    const eDate = normalize(endDateStr);
+
+    if (sDate && todayStr < sDate) {
+      return {
+        statusType: 'upcoming',
+        title: 'UPCOMING EXHIBITION',
+        subtitle: t.stallsAvailable || 'Stalls Available',
+        badgeClasses:
+          'bg-amber-500/15 border-amber-500/30 text-amber-200 hover:border-amber-400 hover:bg-amber-500/25',
+        iconContainerClasses: 'bg-amber-500/25 text-amber-300',
+        dotColor: 'bg-amber-400',
+      };
+    }
+
+    if (eDate && todayStr > eDate) {
+      return {
+        statusType: 'past',
+        title: 'PAST EXHIBITION',
+        subtitle: 'Event Closed',
+        badgeClasses:
+          'bg-white/5 border-white/10 text-gray-400 opacity-60 hover:opacity-85 hover:border-white/20',
+        iconContainerClasses: 'bg-white/10 text-gray-400',
+        dotColor: 'bg-gray-500',
+      };
+    }
+
+    return {
+      statusType: 'live',
+      title: 'LIVE EXHIBITION',
+      subtitle: 'Happening Now',
+      badgeClasses:
+        'bg-emerald-950/40 border-emerald-500/40 text-emerald-300 hover:border-emerald-400 hover:bg-emerald-900/50 shadow-md shadow-emerald-950/40',
+      iconContainerClasses: 'bg-emerald-500/20 text-emerald-400',
+      dotColor: 'bg-emerald-400',
+    };
+  };
+
+  const getRegistrationLink = (event) => {
+    if (
+      event?.registration_url &&
+      typeof event.registration_url === 'string' &&
+      event.registration_url.trim().length > 0
+    ) {
+      return getSanitizedUrl(event.registration_url);
+    }
+    const query = encodeURIComponent(`${event?.title || 'Artisan Mela'} registration`);
+    return `https://www.google.com/search?q=${query}`;
+  };
+
   // 3. Fixed Audio Narration Logic
   const handleToggleVoice = () => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
@@ -577,12 +645,14 @@ export default function HaatEventCard({ currentLang = 'hi' }) {
       const targetCode = LANG_VOICE_MAP[safeLang] || 'hi-IN';
 
       // Construct the spoken sentence entirely in the selected language
-      const spokenTitle = getLocalizedField('title');
-      const spokenOrg = getLocalizedField('organizer');
-      const spokenLoc = getLocalizedField('location');
+      const spokenTitle = getLocalizedField('title') || activeEvent.title || '';
+      const spokenOrg = getLocalizedField('organizer') || activeEvent.organizer || 'Government of India';
+      const spokenLoc = getLocalizedField('location') || activeEvent.location || 'India';
       const spokenDesc = getLocalizedField('description') || activeEvent.description_hi || '';
 
-      const spokenText = `${spokenTitle}. ${t.organizer}: ${spokenOrg}. ${t.location}: ${spokenLoc}. ${spokenDesc}`;
+      const spokenText = spokenDesc
+        ? `${spokenTitle}. ${t.organizer}: ${spokenOrg}. ${t.location}: ${spokenLoc}. ${spokenDesc}`
+        : `Upcoming event: ${spokenTitle}, organized by ${spokenOrg}. Location: ${spokenLoc}.`;
 
       const utterance = new SpeechSynthesisUtterance(spokenText);
       utterance.lang = targetCode;
@@ -613,8 +683,6 @@ export default function HaatEventCard({ currentLang = 'hi' }) {
       setIsSpeaking(false);
     }
   };
-
-  const handleToggleSpeech = handleToggleVoice;
 
   // Open 1-Click Registration Modal
   const handleOpenRegistration = () => {
@@ -724,12 +792,25 @@ export default function HaatEventCard({ currentLang = 'hi' }) {
                 </span>
                 {getLocalizedField('organizer')}
               </span>
-              <span className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setSelectedMapEvent({
+                  location: activeEvent.location,
+                  title: getLocalizedField('title')
+                })}
+                className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 transition-all text-left group/loc cursor-pointer"
+                title="Click to view venue on interactive map"
+              >
                 <span className="material-symbols-outlined text-[16px] text-[#ff9062]">
                   location_on
                 </span>
-                {getLocalizedField('location')}
-              </span>
+                <span className="group-hover/loc:underline group-hover/loc:text-white transition-colors">
+                  {getLocalizedField('location')}
+                </span>
+                <span className="text-[10px] text-[#ffdeaa] font-semibold">
+                  (Map ↗)
+                </span>
+              </button>
               <span className="flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-[16px] text-[#ff9062]">
                   calendar_month
@@ -818,16 +899,47 @@ export default function HaatEventCard({ currentLang = 'hi' }) {
             )}
           </div>
 
-          {/* Right Side Visual Badge / Illustration */}
-          <div className="hidden sm:flex flex-col items-center justify-center p-4 bg-white/10 rounded-2xl border border-white/15 backdrop-blur-sm min-w-[120px] text-center">
-            <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-300 mb-2">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-              </svg>
-            </div>
-            <span className="text-xs font-semibold text-amber-200 tracking-wide uppercase">{t.liveExhibition}</span>
-            <span className="text-[10px] text-gray-300">{t.stallsAvailable}</span>
-          </div>
+          {/* Right Side Dynamic Clickable Status Badge */}
+          {(() => {
+            const status = getEventStatus(activeEvent.start_date, activeEvent.end_date);
+            const regLink = getRegistrationLink(activeEvent);
+            return (
+              <a
+                href={regLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={`Click to register: ${activeEvent.title}`}
+                className="group relative hidden sm:flex flex-col items-center justify-center p-4 rounded-xl border border-amber-700/50 bg-stone-800/80 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:bg-stone-800 hover:shadow-[0_0_20px_rgba(217,119,6,0.2)] active:scale-95 cursor-pointer overflow-hidden min-w-[135px] text-center select-none"
+              >
+                <div className="w-12 h-12 rounded-full bg-amber-700/20 flex items-center justify-center mb-2 animate-[pulse_3s_ease-in-out_infinite] group-hover:bg-amber-600/30 transition-colors">
+                  {status.statusType === 'live' ? (
+                    <span className="relative flex h-3.5 w-3.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500"></span>
+                    </span>
+                  ) : (
+                    <svg className="text-amber-500 w-6 h-6 transition-transform duration-300 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                    </svg>
+                  )}
+                </div>
+                <div className="flex items-center gap-1.5 justify-center mb-0.5">
+                  {status.statusType === 'live' && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  )}
+                  <span className="text-xs font-bold tracking-wide uppercase leading-tight text-white">
+                    {status.title}
+                  </span>
+                </div>
+                <span className="flex items-center gap-1 text-sm text-stone-300 mt-1 font-medium">
+                  <span>{status.subtitle}</span>
+                  <span className="transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1 text-amber-500 font-bold">
+                    ↗
+                  </span>
+                </span>
+              </a>
+            );
+          })()}
         </div>
       </div>
 
@@ -1004,6 +1116,16 @@ export default function HaatEventCard({ currentLang = 'hi' }) {
             )}
           </div>
         </div>
+      )}
+
+      {/* In-App Interactive Map Modal - Locked onto selectedMapEvent */}
+      {selectedMapEvent && (
+        <EventMapModal
+          isOpen={Boolean(selectedMapEvent)}
+          onClose={() => setSelectedMapEvent(null)}
+          locationName={selectedMapEvent.location}
+          eventTitle={selectedMapEvent.title}
+        />
       )}
     </>
   );

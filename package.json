@@ -23,6 +23,7 @@
     "expo": "~57.0.20",
     "google-search-results-nodejs": "^2.1.0",
     "google-tts-api": "^2.0.2",
+    "leaflet": "^1.9.4",
     "lucide-react": "^1.41.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",

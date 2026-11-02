@@ -23,12 +23,11 @@ export default function EventMapModal({ isOpen, onClose, locationName, eventTitl
 
   if (!isOpen) return null;
 
-  // Append ", India" to ensure rural/regional exhibition venues resolve accurately
-  const cleanLocation = (locationName || 'India').trim();
-  const queryStr = cleanLocation.toLowerCase().includes('india')
-    ? cleanLocation
-    : `${cleanLocation}, India`;
-  const searchQuery = encodeURIComponent(queryStr);
+  // Keep only letters, numbers, spaces, and commas
+  const cleanLocation = (locationName || 'India').replace(/[^a-zA-Z0-9\s,]/g, '').trim();
+  const searchQuery = encodeURIComponent(`${cleanLocation}, India`);
+
+  // Strict embed format
   const embedUrl = `https://maps.google.com/maps?q=${searchQuery}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
 
   return (
@@ -62,17 +61,29 @@ export default function EventMapModal({ isOpen, onClose, locationName, eventTitl
         </div>
 
         {/* Responsive Iframe Container */}
-        <div className="relative w-full h-80 sm:h-96 rounded-xl border border-stone-800 bg-stone-950 touch-auto">
-          <iframe
-            src={embedUrl}
-            width="100%"
-            height="100%"
-            loading="lazy"
-            style={{ border: 0, pointerEvents: 'auto' }}
-            allowFullScreen
+        <div className="relative w-full h-96 rounded-xl overflow-hidden border border-stone-800 bg-stone-900 flex flex-col items-center justify-center">
+
+          {/* Fallback UI (Sits in the background, z-0) */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-0">
+            <svg className="w-10 h-10 text-stone-600 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <p className="text-stone-400 text-sm mb-4">Live preview unavailable.</p>
+            <a href={`https://www.google.com/maps/dir/?api=1&destination=${searchQuery}`} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-md text-sm font-medium transition-colors">
+              Open in Native Maps App
+            </a>
+          </div>
+
+          {/* The Iframe (Sits on top, z-10) */}
+          <iframe 
+            className="relative z-10 w-full h-full bg-transparent"
+            src={embedUrl} 
+            loading="lazy" 
+            style={{ border: 0 }} 
+            allowFullScreen 
+            referrerPolicy="no-referrer-when-downgrade"
             title={eventTitle || 'Event Location Map'}
-            className="w-full h-full rounded-xl pointer-events-auto touch-auto block"
-          />
+          ></iframe>
         </div>
 
         {/* Footer with External Link Button to Navigate in Native App */}

@@ -31,8 +31,10 @@ export default function EventMapModal({ isOpen, onClose, locationName, eventTitl
 
   if (!isOpen) return null;
 
-  const searchQuery = encodeURIComponent(`${locationName || 'India'}, India`);
-  const embedUrl = `https://maps.google.com/maps?q=${searchQuery}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
+  const embedUrl = locationName
+    ? `https://maps.google.com/maps?q=${encodeURIComponent(locationName + ", India")}&t=&z=14&ie=UTF8&iwloc=&output=embed`
+    : "";
+  const searchQuery = locationName ? encodeURIComponent(locationName + ", India") : encodeURIComponent("India");
   const nativeMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${searchQuery}`;
 
   const modalContent = (
@@ -73,15 +75,17 @@ export default function EventMapModal({ isOpen, onClose, locationName, eventTitl
 
         {/* Responsive Google Maps Iframe Container */}
         <div className="relative w-full h-80 rounded-xl overflow-hidden border border-stone-800 bg-stone-900 mt-4">
-          <iframe 
-            className="absolute inset-0 w-full h-full"
-            src={embedUrl} 
-            loading="lazy" 
-            style={{ border: 0 }} 
-            allowFullScreen 
-            referrerPolicy="no-referrer-when-downgrade"
-            title={eventTitle || 'Event Location Map'}
-          />
+          {embedUrl && (
+            <iframe
+              title="Google Map Venue Location"
+              className="absolute inset-0 w-full h-full rounded-lg"
+              src={embedUrl}
+              loading="lazy"
+              style={{ border: 0 }}
+              allowFullScreen
+              referrerPolicy="no-referrer-when-downgrade"
+            />
+          )}
         </div>
 
         {/* Footer Direct Turn-by-Turn GPS Navigation CTA */}

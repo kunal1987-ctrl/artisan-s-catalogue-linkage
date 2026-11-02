@@ -794,10 +794,14 @@ export default function HaatEventCard({ currentLang = 'hi' }) {
               </span>
               <button
                 type="button"
-                onClick={() => setSelectedMapEvent({
-                  location: activeEvent.location,
-                  title: getLocalizedField('title')
-                })}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setSelectedMapEvent({
+                    location: activeEvent.location,
+                    title: getLocalizedField('title')
+                  });
+                }}
                 className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 transition-all text-left group/loc cursor-pointer"
                 title="Click to view venue on interactive map"
               >
@@ -819,7 +823,7 @@ export default function HaatEventCard({ currentLang = 'hi' }) {
               </span>
             </div>
 
-            {/* Action Buttons: Native Voice Narration & 1-Click Registration */}
+            {/* Action Buttons: Native Voice Narration, 1-Click Registration & View Map */}
             <div className="flex flex-wrap items-center gap-3">
               {/* Native Voice Narration Button */}
               <button
@@ -862,6 +866,26 @@ export default function HaatEventCard({ currentLang = 'hi' }) {
               >
                 <span>{t.registerNow}</span>
                 <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+              </button>
+
+              {/* In-App Interactive Map Trigger Button */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setSelectedMapEvent({
+                    location: activeEvent.location,
+                    title: getLocalizedField('title')
+                  });
+                }}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-semibold transition-all border border-white/15 active:scale-95 cursor-pointer shadow-sm hover:border-orange-500/50"
+                title="Inspect venue on interactive map"
+              >
+                <span className="material-symbols-outlined text-[18px] text-[#ff9062]">
+                  map
+                </span>
+                <span>{safeLang === 'hi' ? 'नक्शा देखें (View Map)' : 'View Map'}</span>
               </button>
 
               {/* Official Portal Quick Link */}

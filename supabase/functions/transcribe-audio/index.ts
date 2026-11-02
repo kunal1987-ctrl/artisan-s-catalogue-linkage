@@ -1,4 +1,12 @@
+// @ts-ignore
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+
+declare const Deno: {
+  serve: (handler: (req: Request) => Promise<Response> | Response) => void;
+  env: {
+    get: (key: string) => string | undefined;
+  };
+};
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -25,7 +33,7 @@ Deno.serve(async (req: Request) => {
     let language = "hi";
 
     if (contentType.includes("multipart/form-data")) {
-      const formData = await req.formData();
+      const formData = (await req.formData()) as any;
       const file = formData.get("file");
       language = (formData.get("language") as string) || "hi";
       if (file && file instanceof Blob) {

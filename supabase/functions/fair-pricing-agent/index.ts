@@ -44,9 +44,8 @@ async function fetchWithTimeout(
 // HELPER: Strip markdown fences and parse JSON from Gemini text output
 // ─────────────────────────────────────────────────────────────────────────────
 function parseStrictJson(rawText: string): any {
-  const cleaned = rawText
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/\s*```$/i, "")
+  const cleaned = (rawText || "")
+    .replace(/```json|```/g, "")
     .trim();
 
   try {

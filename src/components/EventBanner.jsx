@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import EventMapModal from './EventMapModal';
 
+// Input: { className?: string } | State: Pure stateless SVG render | Error handling: Falls back to default dimension classes if omitted.
 function MapPinIcon({ className = "w-3.5 h-3.5" }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -54,20 +55,24 @@ const DEFAULT_EVENTS = [
   },
 ];
 
+// Input: None (component mount) | State: Manages events array, slide index, TTS playback, and map modal | Error handling: Renders clean fallback banner on fetch failure or empty event list.
 export default function EventBanner() {
   const [events, setEvents] = useState(DEFAULT_EVENTS);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [hasNetworkError, setHasNetworkError] = useState(false);
   const [selectedMapEvent, setSelectedMapEvent] = useState(null);
 
   // 1. Fetch active events from Supabase artisan_events table
   useEffect(() => {
     let isMounted = true;
 
+    // Input: None (reads Supabase artisan_events) | State: Sets loading, updates events array or sets hasNetworkError | Error handling: Catches query exception, sets hasNetworkError, and safely resets loading state.
     async function fetchEvents() {
       try {
         setLoading(true);
+        setHasNetworkError(false);
         const { data, error } = await supabase
           .from('artisan_events')
           .select('*')
@@ -75,14 +80,18 @@ export default function EventBanner() {
           .order('start_date', { ascending: true });
 
         if (error) {
-          console.warn('[EventBanner] Error fetching artisan_events from Supabase:', error.message);
+          if (isMounted) setHasNetworkError(true);
         } else if (data && data.length > 0) {
           if (isMounted) {
             setEvents(data);
+            setHasNetworkError(false);
           }
+        } else if (isMounted) {
+          setEvents([]);
+          setHasNetworkError(false);
         }
-      } catch (err) {
-        console.warn('[EventBanner] Query exception, using fallback events:', err);
+      } catch {
+        if (isMounted) setHasNetworkError(true);
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -113,19 +122,19 @@ export default function EventBanner() {
 
   // Auto-play slideshow effect (every 5 seconds; background banner continues to rotate uninterrupted)
   useEffect(() => {
-    if (events.length <= 1) return;
+    if (!events || events.length <= 1) return;
     const timer = setInterval(() => {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % events.length);
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % (events?.length || 1));
     }, 5000); // 5 second transition
     return () => clearInterval(timer);
-  }, [events.length]);
+  }, [events?.length]);
 
-  const safeIndex = currentIndex >= events.length ? 0 : currentIndex;
-  const currentEvent = events[safeIndex] || DEFAULT_EVENTS[0];
+  const safeIndex = (events && events.length > 0) ? (currentIndex >= events.length ? 0 : currentIndex) : 0;
+  const currentEvent = events?.[safeIndex] || events?.[currentIndex] || DEFAULT_EVENTS[0];
 
-  // Pagination Handlers (cancels TTS on manual user navigation)
+  // Input: None | State: Decrements currentIndex circularly and cancels TTS isSpeaking | Error handling: Guards against empty/single event arrays with length checks.
   const handlePrev = () => {
-    if (events.length <= 1) return;
+    if (!events || events.length <= 1) return;
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       setIsSpeaking(false);
@@ -133,8 +142,9 @@ export default function EventBanner() {
     setCurrentIndex((prev) => (prev === 0 ? events.length - 1 : prev - 1));
   };
 
+  // Input: None | State: Increments currentIndex circularly and cancels TTS isSpeaking | Error handling: Guards against empty/single event arrays with length checks.
   const handleNext = () => {
-    if (events.length <= 1) return;
+    if (!events || events.length <= 1) return;
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       setIsSpeaking(false);
@@ -142,7 +152,7 @@ export default function EventBanner() {
     setCurrentIndex((prev) => (prev === events.length - 1 ? 0 : prev + 1));
   };
 
-  // 3. Native Web Speech API Text-to-Speech Handler
+  // Input: event object | State: Toggles isSpeaking state and triggers SpeechSynthesisUtterance | Error handling: Safe fallback alert if window.speechSynthesis is unsupported; handles utterance onerror.
   const handleListen = (event) => {
     if (!event) return;
 
@@ -178,7 +188,7 @@ export default function EventBanner() {
     }
   };
 
-  // Date Formatting Helper
+  // Input: ISO or raw date string | State: Pure formatting to en-IN date representation | Error handling: Returns 'TBD' on null/undefined and original string on NaN parse failure.
   const formatDate = (dateStr) => {
     if (!dateStr) return 'TBD';
     try {
@@ -194,7 +204,7 @@ export default function EventBanner() {
     }
   };
 
-  // 1. Dynamic Status Logic based on start_date and end_date
+  // Input: startDateStr, endDateStr | State: Pure classification into 'live', 'upcoming', or 'past' badge styles | Error handling: Normalizes date formats; safely defaults to 'live' if date parsing fails.
   const getEventStatus = (startDateStr, endDateStr) => {
     const now = new Date();
     const year = now.getFullYear();
@@ -255,7 +265,7 @@ export default function EventBanner() {
     };
   };
 
-  // 2. Clickable Registration Link with Google Search Fallback
+  // Input: event object | State: Resolves sanitized HTTPS URL or Google Search query | Error handling: Fallback to Google Search query string if registration_url is missing or blank.
   const getRegistrationLink = (event) => {
     if (
       event?.registration_url &&
@@ -271,7 +281,64 @@ export default function EventBanner() {
     return `https://www.google.com/search?q=${query}`;
   };
 
-  const status = getEventStatus(currentEvent.start_date, currentEvent.end_date);
+  // Null & Empty State Guard: Render clean fallback banner if events is empty or network request fails
+  if (hasNetworkError || !events || events.length === 0) {
+    return (
+      <div className="relative overflow-hidden bg-gradient-to-br from-[#2e241e] to-[#4a3b32] rounded-3xl p-5 sm:p-6 sm:px-8 border border-[#4a3b32] shadow-xl text-white my-4">
+        <div className="absolute top-0 right-0 p-4 opacity-10 transform translate-x-4 -translate-y-4 pointer-events-none select-none">
+          <span className="material-symbols-outlined text-[130px] text-[#ffdeaa]">
+            festival
+          </span>
+        </div>
+
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex-1">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border bg-amber-500/15 border-amber-500/30 text-amber-200 mb-3">
+              <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+              <span>{hasNetworkError ? 'सूचना (Notice)' : 'हाट एवं प्रदर्शनियाँ (Artisan Exhibitions)'}</span>
+            </div>
+
+            <h3 className="text-xl sm:text-2xl font-black text-white leading-tight tracking-tight mb-2">
+              {hasNetworkError
+                ? 'प्रदर्शनी विवरण लोड करने में असमर्थ (Exhibition Schedule Currently Offline)'
+                : 'वर्तमान में कोई सक्रिय प्रदर्शनी नहीं है (No Active Exhibitions Scheduled)'}
+            </h3>
+
+            <p className="text-[#d1c4bd] text-sm font-medium mb-4">
+              {hasNetworkError
+                ? 'नेटवर्क समस्या के कारण आगामी मेलों का विवरण प्राप्त नहीं हो सका। आप आधिकारिक सरकारी पोर्टल्स पर सीधे विवरण देख सकते हैं।'
+                : 'नए हस्तशिल्प मेलों, सरस आजीविका एवं हुनर हाट प्रदर्शनियों की सूची जल्द ही अद्यतन की जाएगी।'}
+            </p>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <a
+                href="https://rural.gov.in"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#ff9062] hover:bg-[#e87a4d] text-white text-sm font-bold transition-all shadow-lg active:scale-95 cursor-pointer"
+              >
+                <span>ग्रामीण विकास मंत्रालय पोर्टल</span>
+                <span>↗</span>
+              </a>
+              <a
+                href="https://trifed.tribal.gov.in"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-stone-300 hover:text-white text-sm font-medium border border-white/10 transition-colors cursor-pointer"
+              >
+                <span>TRIFED पोर्टल</span>
+                <svg className="w-3.5 h-3.5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const status = getEventStatus(currentEvent?.start_date, currentEvent?.end_date);
   const registrationLink = getRegistrationLink(currentEvent);
 
   return (
@@ -307,10 +374,10 @@ export default function EventBanner() {
             </a>
 
             {/* Pagination Controls */}
-            {events.length > 1 && (
+            {events?.length > 1 && (
               <div className="flex items-center gap-2 bg-black/40 rounded-full px-3 py-1 border border-white/10 text-xs text-[#d1c4bd]">
                 <span className="font-semibold text-white">
-                  {safeIndex + 1} / {events.length}
+                  {safeIndex + 1} / {events?.length}
                 </span>
                 <div className="flex items-center gap-1 border-l border-white/20 pl-2">
                   <button
@@ -338,14 +405,14 @@ export default function EventBanner() {
 
           {/* Dynamic Event Title */}
           <h3 className="text-xl sm:text-2xl font-black text-white leading-tight tracking-tight mb-2">
-            {currentEvent.title}
+            {currentEvent?.title}
           </h3>
 
           {/* Dynamic Metadata: Organizer, Location, Dates */}
           <div className="text-[#d1c4bd] text-sm font-medium mb-5 flex flex-wrap items-center gap-x-5 gap-y-2">
             <div className="flex items-center gap-1.5">
               <span className="text-[#ff9062] font-semibold">Organizer:</span>
-              <span>{currentEvent.organizer || 'Government of India'}</span>
+              <span>{currentEvent?.organizer || 'Government of India'}</span>
             </div>
 
             {/* Clickable Location with Map Modal Trigger & Continuous Ripple/Ping Animation */}
@@ -356,7 +423,7 @@ export default function EventBanner() {
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  setSelectedMapEvent(currentEvent);
+                  setSelectedMapEvent(events?.[currentIndex] || currentEvent);
                 }}
                 className="group relative inline-flex items-center gap-2 px-3 py-1.5 mt-2 rounded-full bg-stone-800/80 border border-stone-700 hover:border-orange-500 hover:bg-stone-800 hover:-translate-y-0.5 active:scale-95 transition-all duration-300 cursor-pointer shadow-sm hover:shadow-[0_0_15px_rgba(249,115,22,0.15)]"
               >
@@ -368,7 +435,7 @@ export default function EventBanner() {
 
                 {/* Location Text */}
                 <span className="text-stone-200 text-sm font-medium tracking-wide">
-                  {currentEvent.location}
+                  {currentEvent?.location}
                 </span>
 
                 {/* Animated Arrow */}
@@ -381,7 +448,7 @@ export default function EventBanner() {
             <div className="flex items-center gap-1.5">
               <span className="text-[#ff9062] font-semibold">Dates:</span>
               <span>
-                {formatDate(currentEvent.start_date)} - {formatDate(currentEvent.end_date)}
+                {formatDate(currentEvent?.start_date)} - {formatDate(currentEvent?.end_date)}
               </span>
             </div>
           </div>
@@ -391,7 +458,7 @@ export default function EventBanner() {
             {/* Text-to-Speech "Listen" Button */}
             <button
               type="button"
-              onClick={() => handleListen(currentEvent)}
+              onClick={() => handleListen(events?.[currentIndex] || currentEvent)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all border active:scale-95 cursor-pointer ${
                 isSpeaking
                   ? 'bg-amber-500/30 text-amber-200 border-amber-400 shadow-inner animate-pulse'
@@ -407,7 +474,7 @@ export default function EventBanner() {
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                setSelectedMapEvent(currentEvent);
+                setSelectedMapEvent(events?.[currentIndex] || currentEvent);
               }}
               className="relative group/map flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-semibold transition-all border border-white/15 active:scale-95 cursor-pointer shadow-sm hover:border-orange-500/50"
               title="Inspect venue on interactive map"
@@ -450,7 +517,7 @@ export default function EventBanner() {
 
         {/* Right Side Visual Clickable Badge */}
         <a
-          href={events[currentIndex].registration_url}
+          href={events?.[currentIndex]?.registration_url || currentEvent?.registration_url || registrationLink}
           target="_blank"
           rel="noopener noreferrer"
           className="group relative flex flex-col items-center justify-center w-48 p-5 rounded-2xl border border-amber-600/40 bg-stone-800/90 backdrop-blur-md transition-all duration-300 hover:-translate-y-1.5 hover:bg-stone-800 hover:shadow-[0_8px_30px_rgba(217,119,6,0.25)] active:scale-95 cursor-pointer overflow-hidden"

@@ -3,10 +3,7 @@ import FairPricingModal from '../components/FairPricingModal';
 import { appraiseProduct } from '../services/pricingService';
 import { supabase } from '../lib/supabaseClient';
 
-/**
- * AddProduct Page
- * Full product creation and Fair-Trade valuation workflow.
- */
+// Input: None (page mount) | State: Manages product metadata, image selection, AI appraisal, and publishing state | Error handling: Enforces strict input validation and surfaces localized user feedback.
 export default function AddProduct() {
   const [productTitle, setProductTitle] = useState('');
   const [productDescription, setProductDescription] = useState('');
@@ -19,7 +16,7 @@ export default function AddProduct() {
   const [craftingTimeValue, setCraftingTimeValue] = useState(1);
   const [craftingTimeUnit, setCraftingTimeUnit] = useState('hours');
   
-  // Main form selling price state (Strictly NO 1800 hardcoded initial state!)
+  // Main form selling price state (Strictly NO hardcoded initial price)
   const [sellingPrice, setSellingPrice] = useState('');
   
   // Appraisal Modal state
@@ -35,6 +32,7 @@ export default function AddProduct() {
     setTimeout(() => setToastMessage(''), 4000);
   };
 
+  // Input: File change event | State: Sets imageFile and generates imagePreview URL | Error handling: Safely ignores null or cancelled picker selections.
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -43,7 +41,7 @@ export default function AddProduct() {
     }
   };
 
-  // Trigger Appraisal Flow
+  // Input: None (reads imageFile, materialCost, craftingTimeValue) | State: Sets isLoading=true, opens modal, invokes appraiseProduct, binds sellingPrice | Error handling: Catches appraisal error, triggers toast, and guarantees isLoading=false in finally block.
   const handleAppraise = async () => {
     if (!imageFile) {
       showToast('कृपया पहले उत्पाद की तस्वीर चुनें (Please select product photo).');
@@ -51,19 +49,19 @@ export default function AddProduct() {
     }
 
     const costNum = Number(materialCost);
-    // Strict validation: Reject blank or <= 0 without fallback to 250
-    if (!materialCost || isNaN(costNum) || costNum <= 0) {
-      showToast('कृपया कच्चे माल की मान्य लागत दर्ज करें (Enter valid material cost).');
+    // Strict validation: Reject blank or < 1 without hardcoded fallbacks
+    if (!materialCost || isNaN(costNum) || costNum < 1) {
+      showToast('कृपया कच्चे माल की मान्य लागत (कम से कम ₹1) दर्ज करें (Enter valid material cost >= ₹1).');
       return;
     }
 
     const timeNum = Number(craftingTimeValue);
-    if (!craftingTimeValue || isNaN(timeNum) || timeNum <= 0) {
-      showToast('कृपया बनाने का समय दर्ज करें (Enter crafting time).');
+    if (!craftingTimeValue || isNaN(timeNum) || timeNum < 1) {
+      showToast('कृपया बनाने का समय (कम से कम 1) दर्ज करें (Enter crafting time >= 1).');
       return;
     }
 
-    // Format micro-duration as string (e.g., "30 minutes", "1 hour")
+    // Format micro-duration as string (e.g., "1 hours", "2 days")
     const formattedDuration = `${craftingTimeValue} ${craftingTimeUnit}`;
 
     // Launch modal and engage loading sequence
@@ -79,7 +77,6 @@ export default function AddProduct() {
         setSellingPrice(String(data.suggested_price));
       }
     } catch (err) {
-      console.error('[AddProduct] Appraisal error:', err);
       setPricingError(err?.message || 'Could not calculate fair price.');
     } finally {
       // Strictly unmount loading view in finally block
@@ -87,7 +84,7 @@ export default function AddProduct() {
     }
   };
 
-  // Publish Form Submission (No secondary AI generation step)
+  // Input: Form submit event | State: Sets isPublishing=true, inserts into Supabase products table, triggers confirmation toast | Error handling: Catches database insert error, displays toast, and resets isPublishing=false in finally block.
   const handlePublish = async (e) => {
     e.preventDefault();
 
@@ -117,12 +114,12 @@ export default function AddProduct() {
 
       const { error } = await supabase.from('products').insert([payload]).select().maybeSingle();
       if (error) {
-        console.warn('[AddProduct] Products table note:', error.message);
+        showToast(`प्रकाशन सूचना: ${error.message}`);
+        return;
       }
       showToast('🎉 उत्पाद सफलतापूर्वक प्रकाशित हो गया! (Product Published Successfully)');
     } catch (err) {
-      console.error('[AddProduct] Publish exception:', err);
-      showToast(`प्रकाशन त्रुटि: ${err.message || 'Error publishing product'}`);
+      showToast(`प्रकाशन त्रुटि: ${err?.message || 'Error publishing product'}`);
     } finally {
       setIsPublishing(false);
     }
@@ -205,10 +202,10 @@ export default function AddProduct() {
               <div className="flex gap-2">
                 <input
                   type="number"
-                  min="0.5"
-                  step="0.5"
+                  min="1"
+                  step="1"
                   value={craftingTimeValue}
-                  onChange={(e) => setCraftingTimeValue(parseFloat(e.target.value) || 0)}
+                  onChange={(e) => setCraftingTimeValue(Math.max(1, parseInt(e.target.value, 10) || 1))}
                   className="w-1/2 px-3 py-2.5 bg-stone-950 border border-stone-800 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500"
                   required
                 />
@@ -229,10 +226,11 @@ export default function AddProduct() {
           <button
             type="button"
             onClick={handleAppraise}
-            className="w-full py-3 px-4 rounded-xl bg-emerald-600/25 hover:bg-emerald-600/35 border border-emerald-500/50 text-emerald-300 hover:text-emerald-200 font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer"
+            disabled={isLoading || isPublishing}
+            className="w-full py-3 px-4 rounded-xl bg-emerald-600/25 hover:bg-emerald-600/35 border border-emerald-500/50 text-emerald-300 hover:text-emerald-200 font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span>⚖️</span>
-            <span>AI उचित मूल्य की गणना करें (Appraise Fair Price with AI)</span>
+            <span>{isLoading ? 'मूल्यांकन जारी है... (Calculating Fair Price...)' : 'AI उचित मूल्य की गणना करें (Appraise Fair Price with AI)'}</span>
           </button>
 
           {/* Selling Price Field (Auto-bound from appraisal, fully editable) */}
@@ -274,8 +272,8 @@ export default function AddProduct() {
           {/* "उत्पाद प्रकाशित करें" (Publish) Button */}
           <button
             type="submit"
-            disabled={isPublishing}
-            className="w-full py-3.5 px-6 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg transition active:scale-98 cursor-pointer disabled:opacity-50"
+            disabled={isLoading || isPublishing}
+            className="w-full py-3.5 px-6 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg transition active:scale-98 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isPublishing ? (
               <span>प्रकाशित हो रहा है...</span>

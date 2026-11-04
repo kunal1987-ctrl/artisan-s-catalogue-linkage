@@ -1,17 +1,7 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 
-/**
- * EventMapModal
- * In-App interactive map modal for exhibition locations using native Google Maps iframe.
- * Uses createPortal to ensure the modal is never trapped inside parent transforms or overflow:hidden.
- * 
- * Props:
- * - isOpen: boolean
- * - onClose: () => void
- * - locationName: string
- * - eventTitle: string
- */
+// Input: { isOpen, onClose, locationName, eventTitle } | State: Portals modal to document body and locks background scroll | Error handling: Safely returns null if not open, cleans up keydown listener, and provides encoded fallback query for missing location.
 export default function EventMapModal({ isOpen, onClose, locationName, eventTitle }) {
   useEffect(() => {
     const handleKeyDown = (e) => {

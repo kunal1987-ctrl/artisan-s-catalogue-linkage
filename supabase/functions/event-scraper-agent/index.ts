@@ -43,6 +43,7 @@ interface ParsedEvent {
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPER: fetch with AbortController timeout
 // ─────────────────────────────────────────────────────────────────────────────
+// Input: (url: string, options: RequestInit, timeoutMs?: number) | State: Executes HTTP fetch with abort signal | Error handling: Aborts request on timeout and clears timer in try/finally.
 async function fetchWithTimeout(
   url: string,
   options: RequestInit,
@@ -63,10 +64,10 @@ async function fetchWithTimeout(
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPER: Strip markdown fences and parse strict JSON from Gemini output
 // ─────────────────────────────────────────────────────────────────────────────
+// Input: rawText string from LLM | State: Strips markdown code wrappers and parses structured JSON | Error handling: Falls back to regex array/object extraction and throws descriptive Error on malformed syntax.
 function parseStrictJson(rawText: string): any {
-  const cleaned = rawText
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/\s*```$/i, "")
+  const cleaned = (rawText || "")
+    .replace(/```json|```/g, "")
     .trim();
 
   try {
@@ -97,6 +98,7 @@ function parseStrictJson(rawText: string): any {
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPER: Call Gemini generateContent with automatic model fallback
 // ─────────────────────────────────────────────────────────────────────────────
+// Input: (payload: any, apiKey: string) | State: Sequentially queries Gemini model candidates until HTTP 200 | Error handling: Catches per-model errors and throws exhausted candidate error if all fail.
 async function callGemini(payload: any, apiKey: string): Promise<any> {
   const candidateModels = [
     "gemini-1.5-flash",
@@ -110,7 +112,6 @@ async function callGemini(payload: any, apiKey: string): Promise<any> {
   let lastErr = "";
   for (const model of candidateModels) {
     try {
-      console.log(`[Gemini] Attempting model extraction via: ${model}...`);
       const res = await fetchWithTimeout(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
         {
@@ -122,7 +123,6 @@ async function callGemini(payload: any, apiKey: string): Promise<any> {
       );
 
       if (res.ok) {
-        console.log(`[Gemini] Successfully received response from ${model}`);
         return await res.json();
       }
 
@@ -142,6 +142,7 @@ async function callGemini(payload: any, apiKey: string): Promise<any> {
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPER: Date format validation (YYYY-MM-DD)
 // ─────────────────────────────────────────────────────────────────────────────
+// Input: candidate date string | State: Validates ISO YYYY-MM-DD pattern and Date validity | Error handling: Returns validated string or null on malformed/invalid date.
 function sanitizeDate(dateStr: any): string | null {
   if (!dateStr || typeof dateStr !== "string") return null;
   const match = dateStr.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -153,6 +154,7 @@ function sanitizeDate(dateStr: any): string | null {
 // ─────────────────────────────────────────────────────────────────────────────
 // MAIN HANDLER
 // ─────────────────────────────────────────────────────────────────────────────
+// Input: incoming Request with optional queries | State: Queries SerpApi, extracts events via Gemini, upserts to artisan_events | Error handling: Emits structured JSON error response with CORS headers and status code.
 Deno.serve(async (req: Request) => {
   // CORS Preflight
   if (req.method === "OPTIONS") {

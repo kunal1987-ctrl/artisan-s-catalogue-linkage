@@ -116,9 +116,7 @@ Return strictly valid JSON adhering to the Required JSON Output Format.`
 
     let textResult = result?.candidates?.[0]?.content?.parts?.[0]?.text || "";
     textResult = textResult
-      .replace(/^```json\s*/i, "")
-      .replace(/^```\s*/i, "")
-      .replace(/\s*```$/i, "")
+      .replace(/```json|```/g, "")
       .trim();
 
     if (!textResult) {
@@ -131,7 +129,11 @@ Return strictly valid JSON adhering to the Required JSON Output Format.`
     } catch (parseErr) {
       const jsonMatch = textResult.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        productData = JSON.parse(jsonMatch[0]);
+        try {
+          productData = JSON.parse(jsonMatch[0]);
+        } catch (_) {
+          throw parseErr;
+        }
       } else {
         throw parseErr;
       }

@@ -162,27 +162,12 @@ export default function DashboardLayout() {
     }
   };
 
-  // Immediate route protection guard: redirect unauthenticated access to /login
-  useEffect(() => {
-    if (!isLoading && !isVerified) {
-      navigate('/login', { replace: true });
-    }
-  }, [isLoading, isVerified, navigate]);
-
-  // Close mobile drawer on route navigation
-  useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [location.pathname]);
-
-  if (!isLoading && !isVerified) {
-    return <Navigate to="/login" replace />;
-  }
-
   // Dynamic badge counts from Supabase
   const [productCount, setProductCount] = useState(0);
   const [newOrderCount, setNewOrderCount] = useState(0);
 
   useEffect(() => {
+    if (!isVerified) return;
     async function fetchBadgeCounts() {
       try {
         // Products count scoped to current user
@@ -204,7 +189,23 @@ export default function DashboardLayout() {
       }
     }
     fetchBadgeCounts();
-  }, [session?.user?.id]);
+  }, [isVerified, session?.user?.id]);
+
+  // Immediate route protection guard: redirect unauthenticated access to /login
+  useEffect(() => {
+    if (!isLoading && !isVerified) {
+      navigate('/login', { replace: true });
+    }
+  }, [isLoading, isVerified, navigate]);
+
+  // Close mobile drawer on route navigation
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  if (!isLoading && !isVerified) {
+    return <Navigate to="/login" replace />;
+  }
 
   const navItems = [
     { to: '/home', label: t('sidebar.home', 'Home'), icon: 'cottage' },

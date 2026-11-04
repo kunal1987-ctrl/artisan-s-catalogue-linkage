@@ -24,10 +24,9 @@ const corsHeaders = {
 // STRICT REGEX GEMINI RESPONSE PARSER
 // ─────────────────────────────────────────────────────────────────
 const parseGeminiResponse = (rawText: string) => {
-  // Strip markdown code fences if present (```json ... ``` or ``` ... ```)
-  const cleanedText = rawText
-    .replace(/^```(?:json)?\s*/i, '')
-    .replace(/\s*```$/i, '')
+  // Strip markdown code fences if present
+  const cleanedText = (rawText || '')
+    .replace(/```json|```/g, '')
     .trim();
 
   try {
@@ -36,7 +35,11 @@ const parseGeminiResponse = (rawText: string) => {
     // Fallback: extract the first valid JSON object substring
     const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
+      try {
+        return JSON.parse(jsonMatch[0]);
+      } catch (_) {
+        // Fall through
+      }
     }
     throw new Error(`Failed to parse structured catalog response: ${parseError.message}`);
   }

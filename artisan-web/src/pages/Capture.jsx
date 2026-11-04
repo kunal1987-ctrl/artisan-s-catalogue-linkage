@@ -96,10 +96,9 @@ const parseGeminiResponse = (rawText) => {
     throw new Error('Invalid raw response text');
   }
 
-  // Strip markdown code fences if present (```json ... ``` or ``` ... ```)
+  // Strip markdown code fences if present
   const cleanedText = rawText
-    .replace(/^```(?:json)?\s*/i, '')
-    .replace(/\s*```$/i, '')
+    .replace(/```json|```/g, '')
     .trim();
 
   try {
@@ -108,7 +107,11 @@ const parseGeminiResponse = (rawText) => {
     // Fallback: extract the first valid JSON object substring
     const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
+      try {
+        return JSON.parse(jsonMatch[0]);
+      } catch (_) {
+        // Fall through
+      }
     }
     throw new Error(`Failed to parse structured catalog response: ${parseError.message}`);
   }
@@ -1325,7 +1328,6 @@ export default function Capture() {
         }
 
         const imageBlob = images[0]?.blob || (image instanceof Blob ? image : null) || (imageFile instanceof Blob ? imageFile : null);
-        console.log("Sending to Gemini:", { imageBlob, transcript: activeText || transcript, audiosCount: allAudiosBase64.length });
 
         // Network Latency & Timeout Protection (15-second max timeout)
         const timeoutMs = 15000;

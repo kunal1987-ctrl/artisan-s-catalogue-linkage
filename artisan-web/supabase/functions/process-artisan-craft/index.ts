@@ -387,6 +387,7 @@ Deno.serve(async (req: Request) => {
   }
 
   let requestTranscript = "";
+  let finalPrice: any = undefined;
 
   try {
     const {
@@ -397,9 +398,10 @@ Deno.serve(async (req: Request) => {
       images,
       customTranscript,
       language = "hi",
-      finalPrice,
+      finalPrice: incomingFinalPrice,
     } = await req.json();
 
+    finalPrice = incomingFinalPrice;
     requestTranscript = customTranscript || "";
 
     const incomingAudios: string[] = [];

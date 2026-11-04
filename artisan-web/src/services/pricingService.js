@@ -75,7 +75,7 @@ function fileToBase64(fileOrBlob) {
  *   input: object
  * }>}
  */
-export async function appraiseProduct(fileOrBlob, statedCost, claimedTime) {
+export async function appraiseProduct(fileOrBlob, statedCost, claimedTime, signal) {
   if (!fileOrBlob) {
     throw new Error('appraiseProduct: fileOrBlob is required.');
   }
@@ -94,9 +94,12 @@ export async function appraiseProduct(fileOrBlob, statedCost, claimedTime) {
     mimeType: fileOrBlob.type || mimeType || 'image/jpeg',
   };
 
-  const { data, error } = await supabase.functions.invoke('fair-pricing-agent', {
-    body,
-  });
+  const invokeOptions = { body };
+  if (signal) {
+    invokeOptions.signal = signal;
+  }
+
+  const { data, error } = await supabase.functions.invoke('fair-pricing-agent', invokeOptions);
 
   if (error) {
     let detail = error?.message || 'Unknown error from fair-pricing-agent.';

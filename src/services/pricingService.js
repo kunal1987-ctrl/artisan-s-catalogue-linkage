@@ -76,7 +76,7 @@ function fileToBase64(fileOrBlob) {
  *   input: object
  * }>}
  */
-export async function appraiseProduct(fileOrBlob, statedCost, claimedTime) {
+export async function appraiseProduct(fileOrBlob, statedCost, claimedTime, signal) {
   if (!fileOrBlob) {
     throw new Error('appraiseProduct: fileOrBlob is required.');
   }
@@ -96,10 +96,12 @@ export async function appraiseProduct(fileOrBlob, statedCost, claimedTime) {
     mimeType: fileOrBlob.type || mimeType || 'image/jpeg',
   };
 
-  // 2. Invoke the Supabase Edge Function
-  const { data, error } = await supabase.functions.invoke('fair-pricing-agent', {
-    body,
-  });
+  // 2. Invoke the Supabase Edge Function with optional abort signal
+  const invokeOptions = { body };
+  if (signal) {
+    invokeOptions.signal = signal;
+  }
+  const { data, error } = await supabase.functions.invoke('fair-pricing-agent', invokeOptions);
 
   // 3. Surface errors cleanly
   if (error) {

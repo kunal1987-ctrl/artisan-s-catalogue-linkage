@@ -1,23 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import FairPricingModal from '../components/FairPricingModal';
 import { appraiseProduct } from '../services/pricingService';
 import { supabase } from '../lib/supabaseClient';
 
-// Input: None (page mount) | State: Manages product metadata, image selection, AI appraisal, and publishing state | Error handling: Enforces strict input validation and surfaces localized user feedback.
+const DRAFT_STORAGE_KEY = 'shilp_product_draft';
+
+// Helper to safely recover draft from sessionStorage
+const getInitialDraft = () => {
+  try {
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      const saved = sessionStorage.getItem(DRAFT_STORAGE_KEY);
+      if (saved) return JSON.parse(saved);
+    }
+  } catch {
+    // Ignore storage/JSON parse errors
+  }
+  return null;
+};
+
+// Input: None (page mount) | State: Manages product metadata, image selection, AI appraisal, and publishing state | Error handling: Enforces strict input validation, synchronous locks, and deterministic fallbacks.
 export default function AddProduct() {
-  const [productTitle, setProductTitle] = useState('');
-  const [productDescription, setProductDescription] = useState('');
-  const [category] = useState('Handicrafts');
+  const initialDraft = getInitialDraft();
+
+  const [productTitle, setProductTitle] = useState(initialDraft?.productTitle || '');
+  const [productDescription, setProductDescription] = useState(initialDraft?.productDescription || '');
+  const [category] = useState(initialDraft?.category || 'Handicrafts');
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
 
-  // Pricing & Crafting inputs
-  const [materialCost, setMaterialCost] = useState('');
-  const [craftingTimeValue, setCraftingTimeValue] = useState(1);
-  const [craftingTimeUnit, setCraftingTimeUnit] = useState('hours');
+  // Pricing & Crafting inputs (recovers materialCost, craftingTime, and sellingPrice from session draft)
+  const [materialCost, setMaterialCost] = useState(initialDraft?.materialCost ?? '');
+  const [craftingTimeValue, setCraftingTimeValue] = useState(initialDraft?.craftingTimeValue ?? (initialDraft?.craftingTime ?? 1));
+  const [craftingTimeUnit, setCraftingTimeUnit] = useState(initialDraft?.craftingTimeUnit || 'hours');
   
   // Main form selling price state (Strictly NO hardcoded initial price)
-  const [sellingPrice, setSellingPrice] = useState('');
+  const [sellingPrice, setSellingPrice] = useState(initialDraft?.sellingPrice ?? '');
   
   // Appraisal Modal state
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
@@ -26,6 +43,30 @@ export default function AddProduct() {
   const [pricingError, setPricingError] = useState(null);
   const [isPublishing, setIsPublishing] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+
+  // Synchronous submission lock to prevent concurrent double-clicks and race conditions
+  const isSubmittingRef = useRef(false);
+
+  // Session Draft Recovery: Sync form draft state to sessionStorage
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        const draft = {
+          productTitle,
+          productDescription,
+          category,
+          materialCost,
+          craftingTimeValue,
+          craftingTime: craftingTimeValue,
+          craftingTimeUnit,
+          sellingPrice,
+        };
+        sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+      }
+    } catch {
+      // Ignore quota/sessionStorage errors
+    }
+  }, [productTitle, productDescription, category, materialCost, craftingTimeValue, craftingTimeUnit, sellingPrice]);
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -41,10 +82,15 @@ export default function AddProduct() {
     }
   };
 
-  // Input: None (reads imageFile, materialCost, craftingTimeValue) | State: Sets isLoading=true, opens modal, invokes appraiseProduct, binds sellingPrice | Error handling: Catches appraisal error, triggers toast, and guarantees isLoading=false in finally block.
+  // Input: None (reads imageFile, materialCost, craftingTimeValue) | State: Sets isLoading=true, opens modal, invokes appraiseProduct with 10s timeout, binds sellingPrice | Error handling: Catches appraisal timeout/error, applies deterministic cost-plus fallback price, and resets isSubmittingRef in finally block.
   const handleAppraise = async () => {
+    // Synchronous submission lock check
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+
     if (!imageFile) {
       showToast('कृपया पहले उत्पाद की तस्वीर चुनें (Please select product photo).');
+      isSubmittingRef.current = false;
       return;
     }
 
@@ -52,12 +98,14 @@ export default function AddProduct() {
     // Strict validation: Reject blank or < 1 without hardcoded fallbacks
     if (!materialCost || isNaN(costNum) || costNum < 1) {
       showToast('कृपया कच्चे माल की मान्य लागत (कम से कम ₹1) दर्ज करें (Enter valid material cost >= ₹1).');
+      isSubmittingRef.current = false;
       return;
     }
 
     const timeNum = Number(craftingTimeValue);
     if (!craftingTimeValue || isNaN(timeNum) || timeNum < 1) {
       showToast('कृपया बनाने का समय (कम से कम 1) दर्ज करें (Enter crafting time >= 1).');
+      isSubmittingRef.current = false;
       return;
     }
 
@@ -69,33 +117,81 @@ export default function AddProduct() {
     setIsLoading(true);
     setPricingError(null);
 
+    // Timeout & Deterministic Fallback: 10000ms AbortController timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+    const timeoutPromise = new Promise((_, reject) => {
+      controller.signal.addEventListener('abort', () => {
+        reject(new Error('AI pricing request timed out after 10000ms.'));
+      });
+    });
+
     try {
-      const data = await appraiseProduct(imageFile, costNum, formattedDuration);
+      const data = await Promise.race([
+        appraiseProduct(imageFile, costNum, formattedDuration, controller.signal),
+        timeoutPromise,
+      ]);
+      clearTimeout(timeoutId);
+
       setPricingData(data);
       // Auto-bind suggested_price immediately to main form sellingPrice state
       if (data?.suggested_price) {
         setSellingPrice(String(data.suggested_price));
       }
     } catch (err) {
-      setPricingError(err?.message || 'Could not calculate fair price.');
+      clearTimeout(timeoutId);
+
+      // Deterministic Fallback Price calculation when API drops, times out, or returns malformed response:
+      const craftingTime = craftingTimeValue;
+      const fallbackPrice = Math.max(150, Math.round((Number(materialCost) || 100) * 1.5 + (Number(craftingTime) || 1) * 80));
+      setSellingPrice(fallbackPrice);
+
+      setPricingData({
+        suggested_price: fallbackPrice,
+        fair_range: {
+          min: Math.round(fallbackPrice * 0.9),
+          max: Math.round(fallbackPrice * 1.2),
+        },
+        rationale: 'Deterministic cost-plus fallback applied due to network timeout or AI latency.',
+        cost_breakdown: {
+          material_cost: Number(materialCost) || 100,
+          calculated_labor_cost: Math.round((Number(craftingTime) || 1) * 80),
+          market_anchor_median: fallbackPrice,
+        },
+      });
+
+      setPricingError(
+        err?.message
+          ? `एआई सेवा अनुपलब्ध: मानक लागत आधारित मूल्य ₹${fallbackPrice} स्वतः लागू किया गया। (${err.message})`
+          : `मानक लागत आधारित मूल्य ₹${fallbackPrice} स्वतः लागू किया गया।`
+      );
     } finally {
-      // Strictly unmount loading view in finally block
+      clearTimeout(timeoutId);
+      // Strictly unmount loading view and unlock submission
       setIsLoading(false);
+      isSubmittingRef.current = false;
     }
   };
 
-  // Input: Form submit event | State: Sets isPublishing=true, inserts into Supabase products table, triggers confirmation toast | Error handling: Catches database insert error, displays toast, and resets isPublishing=false in finally block.
+  // Input: Form submit event | State: Sets isPublishing=true, inserts into Supabase products table, clears sessionStorage draft, triggers confirmation toast | Error handling: Catches database insert error, displays toast, and resets isSubmittingRef in finally block.
   const handlePublish = async (e) => {
     e.preventDefault();
+
+    // Synchronous submission lock check
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
 
     const priceNum = Number(sellingPrice);
     if (!sellingPrice || isNaN(priceNum) || priceNum <= 0) {
       showToast('कृपया मान्य विक्रय मूल्य दर्ज करें या AI उचित मूल्य का उपयोग करें।');
+      isSubmittingRef.current = false;
       return;
     }
 
     if (!productTitle.trim()) {
       showToast('कृपया उत्पाद का नाम दर्ज करें।');
+      isSubmittingRef.current = false;
       return;
     }
 
@@ -117,11 +213,22 @@ export default function AddProduct() {
         showToast(`प्रकाशन सूचना: ${error.message}`);
         return;
       }
+
+      // Clear draft on successful publish
+      try {
+        if (typeof window !== 'undefined' && window.sessionStorage) {
+          sessionStorage.removeItem(DRAFT_STORAGE_KEY);
+        }
+      } catch {
+        // Ignore
+      }
+
       showToast('🎉 उत्पाद सफलतापूर्वक प्रकाशित हो गया! (Product Published Successfully)');
     } catch (err) {
       showToast(`प्रकाशन त्रुटि: ${err?.message || 'Error publishing product'}`);
     } finally {
       setIsPublishing(false);
+      isSubmittingRef.current = false;
     }
   };
 
